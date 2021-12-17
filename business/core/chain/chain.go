@@ -40,10 +40,10 @@ func New() (*Chain, error) {
 		return nil, err
 	}
 
+	// Create the chain with no transactions currently in memory.
 	ch := Chain{
-		Genesis:   genesis,
-		TxMempool: txs,
-		Balances:  balances,
+		Genesis:  genesis,
+		Balances: balances,
 	}
 
 	return &ch, nil
@@ -95,5 +95,9 @@ func (ch *Chain) Persist() error {
 
 	// Let the caller decide what to do with the errors if
 	// there are any.
-	return errors
+	if len(errors) > 0 {
+		return errors
+	}
+
+	return nil
 }

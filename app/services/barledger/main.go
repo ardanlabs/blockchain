@@ -76,5 +76,9 @@ func hacking() error {
 	data, _ = json.MarshalIndent(db, "", "    ")
 	fmt.Println(string(data))
 
+	if err := db.Persist(); err != nil {
+		return err
+	}
+
 	return nil
 }
