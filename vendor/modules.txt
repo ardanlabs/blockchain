@@ -1,3 +1,6 @@
+# github.com/google/uuid v1.3.0
+## explicit
+github.com/google/uuid
 # go.uber.org/atomic v1.7.0
 ## explicit; go 1.13
 go.uber.org/atomic

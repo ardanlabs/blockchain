@@ -7,7 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/ardanlabs/blockchain/business/core/chain/db"
+	"github.com/ardanlabs/blockchain/business/core/chain"
 	"github.com/ardanlabs/blockchain/foundation/logger"
 	"go.uber.org/zap"
 )
@@ -62,12 +62,18 @@ func run(log *zap.SugaredLogger) error {
 }
 
 func hacking() error {
-	ch, err := db.NewChain()
+	db, err := chain.New()
 	if err != nil {
 		return err
 	}
 
-	data, _ := json.MarshalIndent(ch, "", "    ")
+	data, _ := json.MarshalIndent(db, "", "    ")
+	fmt.Println(string(data))
+
+	tx := chain.NewTx("babayaga", "bill_kennedy", 10, "whisky drink")
+	db.Add(tx)
+
+	data, _ = json.MarshalIndent(db, "", "    ")
 	fmt.Println(string(data))
 
 	return nil
