@@ -6,8 +6,11 @@ SHELL := /bin/bash
 service:
 	go run app/services/barledger/main.go
 
-balances:
+bals:
 	go run app/tooling/admin/main.go balances
+
+trans:
+	go run app/tooling/admin/main.go trans
 
 # ==============================================================================
 # Modules support
