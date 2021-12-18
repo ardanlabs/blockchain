@@ -66,6 +66,7 @@ func hacking() error {
 	if err != nil {
 		return err
 	}
+	defer db.Close()
 
 	data, _ := json.MarshalIndent(db, "", "    ")
 	fmt.Println(string(data))

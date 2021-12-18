@@ -95,14 +95,7 @@ func applyTranToBalance(tx Tx, balances map[string]uint) error {
 }
 
 // persistTran writes the transaction to disk.
-func persistTran(tx Tx) error {
-	path := "zblock/tx.db"
-	dbFile, err := os.OpenFile(path, os.O_APPEND|os.O_RDWR, 0600)
-	if err != nil {
-		return err
-	}
-	defer dbFile.Close()
-
+func persistTran(dbFile *os.File, tx Tx) error {
 	data, err := json.Marshal(tx)
 	if err != nil {
 		return err

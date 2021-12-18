@@ -37,6 +37,7 @@ func run(log *zap.SugaredLogger) error {
 	if err != nil {
 		return err
 	}
+	defer db.Close()
 
 	return processCommands(os.Args, db)
 }
