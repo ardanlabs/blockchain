@@ -1,13 +1,17 @@
 package chain
 
-import "os"
+import (
+	"os"
+	"sync"
+)
 
 // Chain represents a block chain of data.
 type Chain struct {
-	Genesis   Genesis
-	TxMempool []Tx
-	Balances  map[string]uint
+	genesis   Genesis
+	txMempool []Tx
+	balances  map[string]uint
 	dbFile    *os.File
+	mu        sync.Mutex
 }
 
 // New constructs a new blockchain for data management.
@@ -47,9 +51,9 @@ func New() (*Chain, error) {
 
 	// Create the chain with no transactions currently in memory.
 	ch := Chain{
-		Genesis:   genesis,
-		TxMempool: txs,
-		Balances:  balances,
+		genesis:   genesis,
+		txMempool: txs,
+		balances:  balances,
 		dbFile:    dbFile,
 	}
 
@@ -58,14 +62,19 @@ func New() (*Chain, error) {
 
 // Close cleanly closes the database file underneath.
 func (ch *Chain) Close() error {
+	ch.mu.Lock()
+	defer ch.mu.Unlock()
+
 	return ch.dbFile.Close()
 }
 
 // Add appends a new transactions to the blockchain.
 func (ch *Chain) Add(tx Tx) error {
+	ch.mu.Lock()
+	defer ch.mu.Unlock()
 
 	// First apply the transaction to the balance.
-	if err := applyTranToBalance(tx, ch.Balances); err != nil {
+	if err := applyTranToBalance(tx, ch.balances); err != nil {
 		return err
 	}
 
@@ -75,7 +84,48 @@ func (ch *Chain) Add(tx Tx) error {
 	}
 
 	// Append the transaction to the in-memory store.
-	ch.TxMempool = append(ch.TxMempool, tx)
+	ch.txMempool = append(ch.txMempool, tx)
 
 	return nil
+}
+
+// Genesis returns a copy of the genesis information.
+func (ch *Chain) Genesis() Genesis {
+	return ch.genesis
+}
+
+// Balances returns the set of balances by account. If the account
+// is empty, all balances are returned.
+func (ch *Chain) Balances(account string) map[string]uint {
+	balances := make(map[string]uint)
+
+	ch.mu.Lock()
+	{
+		for act, bal := range ch.balances {
+			if account == "" || account == act {
+				balances[act] = bal
+			}
+		}
+	}
+	ch.mu.Unlock()
+
+	return balances
+}
+
+// Transactions returns the set of transactions by account. If the account
+// is empty, all balances are returned.
+func (ch *Chain) Transactions(account string) []Tx {
+	var trans []Tx
+
+	ch.mu.Lock()
+	{
+		for _, tx := range ch.txMempool {
+			if account == "" || account == tx.From || account == tx.To {
+				trans = append(trans, tx)
+			}
+		}
+	}
+	ch.mu.Unlock()
+
+	return trans
 }

@@ -13,10 +13,8 @@ func Balances(args []string, db *chain.Chain) error {
 		onlyAct = args[2]
 	}
 
-	for act, bal := range db.Balances {
-		if onlyAct == "" || onlyAct == act {
-			fmt.Printf("Account: %s  Balance: %d\n", act, bal)
-		}
+	for act, bal := range db.Balances(onlyAct) {
+		fmt.Printf("Account: %s  Balance: %d\n", act, bal)
 	}
 
 	return nil

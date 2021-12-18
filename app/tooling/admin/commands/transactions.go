@@ -27,7 +27,12 @@ func Transactions(args []string, db *chain.Chain) error {
 		fmt.Println("transaction added")
 
 	default:
-		for _, tx := range db.TxMempool {
+		var acct string
+		if len(args) == 3 {
+			acct = args[2]
+		}
+
+		for _, tx := range db.Transactions(acct) {
 			fmt.Printf("ID: %s  From: %s  To: %s  Value: %d  Data: %s\n",
 				tx.ID, tx.From, tx.To, tx.Value, tx.Data)
 		}
