@@ -7,7 +7,7 @@ service:
 	go run app/services/barledger/main.go
 
 bals:
-	go run app/tooling/admin/main.go balances
+	go run app/tooling/admin/main.go bals
 
 trans:
 	go run app/tooling/admin/main.go trans

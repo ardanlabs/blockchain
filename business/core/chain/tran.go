@@ -2,8 +2,10 @@ package chain
 
 import (
 	"bufio"
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
+	"io"
 	"os"
 
 	"github.com/google/uuid"
@@ -94,16 +96,36 @@ func applyTranToBalance(tx Tx, balances map[string]uint) error {
 	return nil
 }
 
-// persistTran writes the transaction to disk.
-func persistTran(dbFile *os.File, tx Tx) error {
+// TakeSnapshot produces a hash of the current contents of
+// the transaction database.
+func takeSnapshot(dbFile *os.File) ([32]byte, error) {
+
+	// Re-read the whole file from the first byte.
+	_, err := dbFile.Seek(0, 0)
+	if err != nil {
+		return [32]byte{}, err
+	}
+
+	txsData, err := io.ReadAll(dbFile)
+	if err != nil {
+		return [32]byte{}, err
+	}
+
+	snapshot := sha256.Sum256(txsData)
+	return snapshot, nil
+}
+
+// persistTran writes the transaction to disk and returns a new
+// snapshot of the transaction database.
+func persistTran(dbFile *os.File, tx Tx) ([32]byte, error) {
 	data, err := json.Marshal(tx)
 	if err != nil {
-		return err
+		return [32]byte{}, err
 	}
 
 	if _, err = dbFile.Write(append(data, '\n')); err != nil {
-		return err
+		return [32]byte{}, err
 	}
 
-	return nil
+	return takeSnapshot(dbFile)
 }

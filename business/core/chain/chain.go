@@ -9,6 +9,7 @@ import (
 type Chain struct {
 	genesis   Genesis
 	txMempool []Tx
+	snapshot  [32]byte
 	balances  map[string]uint
 	dbFile    *os.File
 	mu        sync.Mutex
@@ -49,10 +50,17 @@ func New() (*Chain, error) {
 		return nil, err
 	}
 
+	// Take the current snapshot.
+	snapshot, err := takeSnapshot(dbFile)
+	if err != nil {
+		return nil, err
+	}
+
 	// Create the chain with no transactions currently in memory.
 	ch := Chain{
 		genesis:   genesis,
 		txMempool: txs,
+		snapshot:  snapshot,
 		balances:  balances,
 		dbFile:    dbFile,
 	}
@@ -79,9 +87,13 @@ func (ch *Chain) Add(tx Tx) error {
 	}
 
 	// Next, write the transaction to disk.
-	if err := persistTran(ch.dbFile, tx); err != nil {
+	snapshot, err := persistTran(ch.dbFile, tx)
+	if err != nil {
 		return err
 	}
+
+	// Capture the new snapshot.
+	ch.snapshot = snapshot
 
 	// Append the transaction to the in-memory store.
 	ch.txMempool = append(ch.txMempool, tx)
@@ -92,6 +104,11 @@ func (ch *Chain) Add(tx Tx) error {
 // Genesis returns a copy of the genesis information.
 func (ch *Chain) Genesis() Genesis {
 	return ch.genesis
+}
+
+// Snapshot returns the current hash of the blockchain.
+func (ch *Chain) Snapshot() [32]byte {
+	return ch.snapshot
 }
 
 // Balances returns the set of balances by account. If the account
