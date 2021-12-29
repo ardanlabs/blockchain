@@ -96,6 +96,21 @@ func applyTranToBalance(tx Tx, balances map[string]uint) error {
 	return nil
 }
 
+// persistTran writes the transaction to disk and returns a new
+// snapshot of the transaction database.
+func persistTran(dbFile *os.File, tx Tx) error {
+	data, err := json.Marshal(tx)
+	if err != nil {
+		return err
+	}
+
+	if _, err = dbFile.Write(append(data, '\n')); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // TakeSnapshot produces a hash of the current contents of
 // the transaction database.
 func takeSnapshot(dbFile *os.File) ([32]byte, error) {
@@ -113,19 +128,4 @@ func takeSnapshot(dbFile *os.File) ([32]byte, error) {
 
 	snapshot := sha256.Sum256(txsData)
 	return snapshot, nil
-}
-
-// persistTran writes the transaction to disk and returns a new
-// snapshot of the transaction database.
-func persistTran(dbFile *os.File, tx Tx) ([32]byte, error) {
-	data, err := json.Marshal(tx)
-	if err != nil {
-		return [32]byte{}, err
-	}
-
-	if _, err = dbFile.Write(append(data, '\n')); err != nil {
-		return [32]byte{}, err
-	}
-
-	return takeSnapshot(dbFile)
 }

@@ -27,6 +27,12 @@ func Transactions(args []string, db *chain.Chain) error {
 			return err
 		}
 		fmt.Println("Transaction added")
+
+		if err := db.Persist(); err != nil {
+			return err
+		}
+		fmt.Println("Transaction persisted")
+
 		fmt.Printf("New Snapshot: %x\n\n", db.Snapshot())
 
 	default:

@@ -58,11 +58,10 @@ func New() (*Chain, error) {
 
 	// Create the chain with no transactions currently in memory.
 	ch := Chain{
-		genesis:   genesis,
-		txMempool: txs,
-		snapshot:  snapshot,
-		balances:  balances,
-		dbFile:    dbFile,
+		genesis:  genesis,
+		snapshot: snapshot,
+		balances: balances,
+		dbFile:   dbFile,
 	}
 
 	return &ch, nil
@@ -86,17 +85,38 @@ func (ch *Chain) Add(tx Tx) error {
 		return err
 	}
 
-	// Next, write the transaction to disk.
-	snapshot, err := persistTran(ch.dbFile, tx)
+	// Append the transaction to the in-memory store.
+	ch.txMempool = append(ch.txMempool, tx)
+
+	return nil
+}
+
+// Persist writes the current transaction memory pool
+// to disk.
+func (ch *Chain) Persist() error {
+	ch.mu.Lock()
+	defer ch.mu.Unlock()
+
+	// Make a copy of the data for processing.
+	mempool := make([]Tx, len(ch.txMempool))
+	copy(mempool, ch.txMempool)
+
+	// Iterate of the set of transactions and after
+	// persisting each tran, remove from mempool.
+	for _, tx := range mempool {
+		if err := persistTran(ch.dbFile, tx); err != nil {
+			return err
+		}
+
+		ch.txMempool = ch.txMempool[1:]
+	}
+
+	// Capture the new snapshot for the database.
+	snapshot, err := takeSnapshot(ch.dbFile)
 	if err != nil {
 		return err
 	}
-
-	// Capture the new snapshot.
 	ch.snapshot = snapshot
-
-	// Append the transaction to the in-memory store.
-	ch.txMempool = append(ch.txMempool, tx)
 
 	return nil
 }
