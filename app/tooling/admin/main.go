@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/ardanlabs/blockchain/app/tooling/admin/commands"
-	"github.com/ardanlabs/blockchain/business/core/chain"
+	"github.com/ardanlabs/blockchain/business/sys/database"
 	"github.com/ardanlabs/blockchain/foundation/logger"
 	"go.uber.org/zap"
 )
@@ -33,7 +33,7 @@ func main() {
 }
 
 func run(log *zap.SugaredLogger) error {
-	db, err := chain.New()
+	db, err := database.New("zblock/blocks.db")
 	if err != nil {
 		return err
 	}
@@ -44,7 +44,7 @@ func run(log *zap.SugaredLogger) error {
 
 // processCommands handles the execution of the commands specified on
 // the command line.
-func processCommands(args []string, db *chain.Chain) error {
+func processCommands(args []string, db *database.DB) error {
 	switch args[1] {
 	case "bals":
 		if err := commands.Balances(args, db); err != nil {

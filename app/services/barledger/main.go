@@ -1,14 +1,19 @@
 package main
 
 import (
-	"encoding/json"
+	"context"
+	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
-	"github.com/ardanlabs/blockchain/business/core/chain"
+	"github.com/ardanlabs/blockchain/app/services/barledger/handlers"
+	"github.com/ardanlabs/blockchain/business/sys/database"
 	"github.com/ardanlabs/blockchain/foundation/logger"
+	"github.com/ardanlabs/conf"
 	"go.uber.org/zap"
 )
 
@@ -36,46 +41,137 @@ func main() {
 func run(log *zap.SugaredLogger) error {
 
 	// =========================================================================
+	// Configuration
+
+	cfg := struct {
+		conf.Version
+		Web struct {
+			ReadTimeout     time.Duration `conf:"default:5s"`
+			WriteTimeout    time.Duration `conf:"default:10s"`
+			IdleTimeout     time.Duration `conf:"default:120s"`
+			ShutdownTimeout time.Duration `conf:"default:20s"`
+			APIHost         string        `conf:"default:0.0.0.0:8080"`
+			DebugHost       string        `conf:"default:0.0.0.0:8081"`
+		}
+		DB struct {
+			Path string `conf:"default:zblock/blocks.db"`
+		}
+	}{
+		Version: conf.Version{
+			Build: build,
+			Desc:  "copyright information here",
+		},
+	}
+
+	const prefix = "BARLED"
+	help, err := conf.Parse(prefix, &cfg)
+	if err != nil {
+		if errors.Is(err, conf.ErrHelpWanted) {
+			fmt.Println(help)
+			return nil
+		}
+		return fmt.Errorf("parsing config: %w", err)
+	}
+
+	// =========================================================================
 	// App Starting
 
 	log.Infow("starting service", "version", build)
 	defer log.Infow("shutdown complete")
 
-	if err := hacking(); err != nil {
-		return err
+	out, err := conf.String(&cfg)
+	if err != nil {
+		return fmt.Errorf("generating config for output: %w", err)
 	}
+	log.Infow("startup", "config", out)
 
 	// =========================================================================
-	// Start/Stop Service
+	// Database Support
+
+	db, err := database.New(cfg.DB.Path)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	// =========================================================================
+	// Start Debug Service
+
+	log.Infow("startup", "status", "debug v1 router started", "host", cfg.Web.DebugHost)
+
+	// The Debug function returns a mux to listen and serve on for all the debug
+	// related endpoints. This includes the standard library endpoints.
+
+	// Construct the mux for the debug calls.
+	debugMux := handlers.DebugMux(build, log, db)
+
+	// Start the service listening for debug requests.
+	// Not concerned with shutting this down with load shedding.
+	go func() {
+		if err := http.ListenAndServe(cfg.Web.DebugHost, debugMux); err != nil {
+			log.Errorw("shutdown", "status", "debug v1 router closed", "host", cfg.Web.DebugHost, "ERROR", err)
+		}
+	}()
+
+	// =========================================================================
+	// Start API Service
+
+	log.Infow("startup", "status", "initializing V1 API support")
 
 	// Make a channel to listen for an interrupt or terminate signal from the OS.
 	// Use a buffered channel because the signal package requires it.
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
 
-	// Blocking main and waiting for shutdown.
-	<-shutdown
-	log.Infow("shutdown", "status", "shutdown started")
-	defer log.Infow("shutdown", "status", "shutdown complete")
+	// Construct the mux for the API calls.
+	apiMux := handlers.APIMux(handlers.APIMuxConfig{
+		Shutdown: shutdown,
+		Log:      log,
+		DB:       db,
+	})
 
-	return nil
-}
-
-func hacking() error {
-	db, err := chain.New()
-	if err != nil {
-		return err
+	// Construct a server to service the requests against the mux.
+	api := http.Server{
+		Addr:         cfg.Web.APIHost,
+		Handler:      apiMux,
+		ReadTimeout:  cfg.Web.ReadTimeout,
+		WriteTimeout: cfg.Web.WriteTimeout,
+		IdleTimeout:  cfg.Web.IdleTimeout,
+		ErrorLog:     zap.NewStdLog(log.Desugar()),
 	}
-	defer db.Close()
 
-	data, _ := json.MarshalIndent(db, "", "    ")
-	fmt.Println(string(data))
+	// Make a channel to listen for errors coming from the listener. Use a
+	// buffered channel so the goroutine can exit if we don't collect this error.
+	serverErrors := make(chan error, 1)
 
-	tx := chain.NewTx("babayaga", "bill_kennedy", 10, "whisky drink")
-	db.Add(tx)
+	// Start the service listening for api requests.
+	go func() {
+		log.Infow("startup", "status", "api router started", "host", api.Addr)
+		serverErrors <- api.ListenAndServe()
+	}()
 
-	data, _ = json.MarshalIndent(db, "", "    ")
-	fmt.Println(string(data))
+	// =========================================================================
+	// Shutdown
+
+	// Blocking main and waiting for shutdown.
+	select {
+	case err := <-serverErrors:
+		return fmt.Errorf("server error: %w", err)
+
+	case sig := <-shutdown:
+		log.Infow("shutdown", "status", "shutdown started", "signal", sig)
+		defer log.Infow("shutdown", "status", "shutdown complete", "signal", sig)
+
+		// Give outstanding requests a deadline for completion.
+		ctx, cancel := context.WithTimeout(context.Background(), cfg.Web.ShutdownTimeout)
+		defer cancel()
+
+		// Asking listener to shut down and shed load.
+		if err := api.Shutdown(ctx); err != nil {
+			api.Close()
+			return fmt.Errorf("could not stop server gracefully: %w", err)
+		}
+	}
 
 	return nil
 }
