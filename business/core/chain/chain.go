@@ -1,6 +1,9 @@
 package chain
 
 import (
+	"crypto/sha256"
+	"encoding/json"
+	"io"
 	"os"
 	"sync"
 )
@@ -9,7 +12,7 @@ import (
 type Chain struct {
 	genesis   Genesis
 	txMempool []Tx
-	snapshot  [32]byte
+	hash      [32]byte // Represents a hash of the database.
 	balances  map[string]uint
 	dbFile    *os.File
 	mu        sync.Mutex
@@ -50,18 +53,16 @@ func New() (*Chain, error) {
 		return nil, err
 	}
 
-	// Take the current snapshot.
-	snapshot, err := takeSnapshot(dbFile)
-	if err != nil {
-		return nil, err
-	}
-
 	// Create the chain with no transactions currently in memory.
 	ch := Chain{
 		genesis:  genesis,
-		snapshot: snapshot,
 		balances: balances,
 		dbFile:   dbFile,
+	}
+
+	// Capture the current hash.
+	if err := ch.captureHash(); err != nil {
+		return nil, err
 	}
 
 	return &ch, nil
@@ -101,22 +102,20 @@ func (ch *Chain) Persist() error {
 	mempool := make([]Tx, len(ch.txMempool))
 	copy(mempool, ch.txMempool)
 
-	// Iterate of the set of transactions and after
+	// Iterate over the set of transactions and after
 	// persisting each tran, remove from mempool.
 	for _, tx := range mempool {
-		if err := persistTran(ch.dbFile, tx); err != nil {
+		if err := ch.persistTran(tx); err != nil {
 			return err
 		}
 
 		ch.txMempool = ch.txMempool[1:]
 	}
 
-	// Capture the new snapshot for the database.
-	snapshot, err := takeSnapshot(ch.dbFile)
-	if err != nil {
+	// Capture the new hash for the database.
+	if err := ch.captureHash(); err != nil {
 		return err
 	}
-	ch.snapshot = snapshot
 
 	return nil
 }
@@ -126,9 +125,9 @@ func (ch *Chain) Genesis() Genesis {
 	return ch.genesis
 }
 
-// Snapshot returns the current hash of the blockchain.
-func (ch *Chain) Snapshot() [32]byte {
-	return ch.snapshot
+// Hash returns the current hash of the blockchain.
+func (ch *Chain) Hash() [32]byte {
+	return ch.hash
 }
 
 // Balances returns the set of balances by account. If the account
@@ -165,4 +164,40 @@ func (ch *Chain) Transactions(account string) []Tx {
 	ch.mu.Unlock()
 
 	return trans
+}
+
+// =============================================================================
+
+// captureHash produces a hash of the current contents of
+// the transaction database.
+func (ch *Chain) captureHash() error {
+
+	// Re-read the whole file from the first byte.
+	_, err := ch.dbFile.Seek(0, 0)
+	if err != nil {
+		return err
+	}
+
+	txsData, err := io.ReadAll(ch.dbFile)
+	if err != nil {
+		return err
+	}
+
+	ch.hash = sha256.Sum256(txsData)
+	return nil
+}
+
+// persistTran writes the transaction to disk and returns a new
+// snapshot of the transaction database.
+func (ch *Chain) persistTran(tx Tx) error {
+	data, err := json.Marshal(tx)
+	if err != nil {
+		return err
+	}
+
+	if _, err = ch.dbFile.Write(append(data, '\n')); err != nil {
+		return err
+	}
+
+	return nil
 }

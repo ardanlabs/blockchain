@@ -16,7 +16,7 @@ func Transactions(args []string, db *chain.Chain) error {
 
 	switch sub {
 	case "add":
-		fmt.Printf("Cur Snapshot: %x\n\n", db.Snapshot())
+		fmt.Printf("Cur Snapshot: %x\n\n", db.Hash())
 
 		from := args[3]
 		to := args[4]
@@ -33,7 +33,7 @@ func Transactions(args []string, db *chain.Chain) error {
 		}
 		fmt.Println("Transaction persisted")
 
-		fmt.Printf("New Snapshot: %x\n\n", db.Snapshot())
+		fmt.Printf("New Snapshot: %x\n\n", db.Hash())
 
 	default:
 		var acct string
@@ -41,7 +41,7 @@ func Transactions(args []string, db *chain.Chain) error {
 			acct = args[2]
 		}
 
-		fmt.Printf("Snapshot: %x\n\n", db.Snapshot())
+		fmt.Printf("Snapshot: %x\n\n", db.Hash())
 
 		for _, tx := range db.Transactions(acct) {
 			fmt.Printf("ID: %s  From: %s  To: %s  Value: %d  Data: %s\n",
