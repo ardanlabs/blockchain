@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/ardanlabs/blockchain/app/services/barledger/handlers"
-	"github.com/ardanlabs/blockchain/business/sys/database"
+	"github.com/ardanlabs/blockchain/foundation/database"
 	"github.com/ardanlabs/blockchain/foundation/logger"
 	"github.com/ardanlabs/conf/v2"
 	"go.uber.org/zap"

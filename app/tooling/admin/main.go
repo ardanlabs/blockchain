@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/ardanlabs/blockchain/app/tooling/admin/commands"
-	"github.com/ardanlabs/blockchain/business/sys/database"
+	"github.com/ardanlabs/blockchain/foundation/database"
 	"github.com/ardanlabs/blockchain/foundation/logger"
 	"go.uber.org/zap"
 )

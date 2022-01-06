@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/ardanlabs/blockchain/business/sys/database"
+	"github.com/ardanlabs/blockchain/foundation/database"
 )
 
 // Transactions returns the current set of transactions.

@@ -5,9 +5,10 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
-	"github.com/ardanlabs/blockchain/business/sys/database"
 	v1 "github.com/ardanlabs/blockchain/business/web/v1"
+	"github.com/ardanlabs/blockchain/foundation/database"
 	"github.com/ardanlabs/blockchain/foundation/web"
 	"go.uber.org/zap"
 )
@@ -115,9 +116,9 @@ func (h Handlers) QueryBlocks(ctx context.Context, w http.ResponseWriter, r *htt
 			Header: blockHeader{
 				PrevBlock: fmt.Sprintf("%x", orgBlock.Header.PrevBlock),
 				ThisBlock: fmt.Sprintf("%x", hash),
-				Time:      orgBlock.Header.Time,
+				Time:      time.Unix(int64(orgBlock.Header.Time), 0),
 			},
-			Transactions: orgBlock.Transactions,
+			Transactions: toTxs(orgBlock.Transactions),
 		}
 		out = append(out, newBlock)
 	}

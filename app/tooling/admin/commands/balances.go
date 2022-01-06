@@ -3,7 +3,7 @@ package commands
 import (
 	"fmt"
 
-	"github.com/ardanlabs/blockchain/business/sys/database"
+	"github.com/ardanlabs/blockchain/foundation/database"
 )
 
 // Balances returns the current set of balances.

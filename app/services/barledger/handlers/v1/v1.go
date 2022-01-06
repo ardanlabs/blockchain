@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/ardanlabs/blockchain/app/services/barledger/handlers/v1/bargrp"
-	"github.com/ardanlabs/blockchain/business/sys/database"
+	"github.com/ardanlabs/blockchain/foundation/database"
 	"github.com/ardanlabs/blockchain/foundation/web"
 	"go.uber.org/zap"
 )
