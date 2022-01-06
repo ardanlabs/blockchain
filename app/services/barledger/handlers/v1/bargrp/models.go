@@ -10,17 +10,23 @@ type newTX struct {
 	Data   string `json:"data"`
 }
 
-type bals struct {
-	Account string
-	Balance uint
+type balance struct {
+	Account string `json:"account"`
+	Balance uint   `json:"balance"`
 }
 
-type header struct {
-	PrevBlock string
-	Time      uint64
+type balances struct {
+	LastestBlock string    `json:"lastest_block"`
+	Uncommitted  int       `json:"uncommitted"`
+	Balances     []balance `json:"balances"`
+}
+
+type blockHeader struct {
+	PrevBlock string `json:"prev_block"`
+	Time      uint64 `json:"time"`
 }
 
 type block struct {
-	Header       header
-	Transactions []database.Tx
+	Header       blockHeader   `json:"header"`
+	Transactions []database.Tx `json:"transactions"`
 }

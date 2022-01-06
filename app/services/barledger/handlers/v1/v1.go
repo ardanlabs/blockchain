@@ -27,9 +27,11 @@ func Routes(app *web.App, cfg Config) {
 		DB:  cfg.DB,
 	}
 
+	app.Handle(http.MethodGet, version, "/genesis/list", bgh.QueryGenesis)
 	app.Handle(http.MethodGet, version, "/balances/list", bgh.QueryBalances)
 	app.Handle(http.MethodGet, version, "/balances/list/:acct", bgh.QueryBalances)
 	app.Handle(http.MethodGet, version, "/blocks/list", bgh.QueryBlocks)
+	app.Handle(http.MethodGet, version, "/tx/uncommitted/list", bgh.QueryUncommitted)
 	app.Handle(http.MethodPost, version, "/tx/add", bgh.AddTransaction)
 	app.Handle(http.MethodPut, version, "/tx/persist", bgh.Persist)
 }

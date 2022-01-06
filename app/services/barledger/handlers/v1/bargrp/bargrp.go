@@ -58,23 +58,38 @@ func (h Handlers) Persist(ctx context.Context, w http.ResponseWriter, r *http.Re
 	return web.Respond(ctx, w, resp, http.StatusOK)
 }
 
+// QueryGenesis returns the genesis information.
+func (h Handlers) QueryGenesis(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	gen := h.DB.Genesis()
+	return web.Respond(ctx, w, gen, http.StatusOK)
+}
+
+// QueryUncommitted returns the set of uncommitted transactions.
+func (h Handlers) QueryUncommitted(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	txs := h.DB.UncommittedTransactions()
+	return web.Respond(ctx, w, txs, http.StatusOK)
+}
+
 // QueryBalances returns the current balances for all users.
 func (h Handlers) QueryBalances(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	acct := web.Param(r, "acct")
 
-	var bals []bals
-	for act, bal := range h.DB.Balances(acct) {
-		bal := struct {
-			Account string
-			Balance uint
-		}{
+	var bals []balance
+	for act, dbBal := range h.DB.Balances(acct) {
+		bal := balance{
 			Account: act,
-			Balance: bal,
+			Balance: dbBal,
 		}
 		bals = append(bals, bal)
 	}
 
-	return web.Respond(ctx, w, bals, http.StatusOK)
+	balances := balances{
+		LastestBlock: fmt.Sprintf("%x", h.DB.LastestBlock()),
+		Uncommitted:  len(h.DB.UncommittedTransactions()),
+		Balances:     bals,
+	}
+
+	return web.Respond(ctx, w, balances, http.StatusOK)
 }
 
 // QueryBlocks returns all the blocks and their details.
@@ -85,7 +100,7 @@ func (h Handlers) QueryBlocks(ctx context.Context, w http.ResponseWriter, r *htt
 	var out []block
 	for _, orgBlock := range blocks {
 		newBlock := block{
-			Header: header{
+			Header: blockHeader{
 				PrevBlock: fmt.Sprintf("%x", orgBlock.Header.PrevBlock),
 				Time:      orgBlock.Header.Time,
 			},

@@ -49,6 +49,10 @@ func applyTranToBalance(tx Tx, balances map[string]uint) error {
 		return nil
 	}
 
+	if tx.From == tx.To {
+		return fmt.Errorf("invalid transaction, do you mean to give a reward, from %s, to %s", tx.From, tx.To)
+	}
+
 	if tx.Value > balances[tx.From] {
 		return fmt.Errorf("%s has an insufficient balance", tx.From)
 	}

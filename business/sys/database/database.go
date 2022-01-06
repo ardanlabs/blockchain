@@ -95,13 +95,13 @@ func (db *DB) Add(tx Tx) error {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 
-	// First apply the transaction to the balance.
+	// Append the transaction to the in-memory store.
+	db.txMempool = append(db.txMempool, tx)
+
+	// Update the balances.
 	if err := applyTranToBalance(tx, db.balances); err != nil {
 		return err
 	}
-
-	// Append the transaction to the in-memory store.
-	db.txMempool = append(db.txMempool, tx)
 
 	// If the number of transactions in the mempool match
 	// the number of transactions we want in each block, persist.
@@ -131,6 +131,13 @@ func (db *DB) LastestBlock() [32]byte {
 	defer db.mu.Unlock()
 
 	return db.lastestBlock
+}
+
+// UncommittedTransactions returns a copy of the mempool.
+func (db *DB) UncommittedTransactions() []Tx {
+	var cpy []Tx
+	cpy = append(cpy, db.txMempool...)
+	return cpy
 }
 
 // Balances returns the set of balances by account. If the account
