@@ -86,79 +86,80 @@ func (db *DB) Close() error {
 	}()
 
 	// Persist the remaining transactions to disk.
-	if err := db.createBlock(); err != nil {
+	if _, err := db.createBlock(); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-// Add appends a new transactions to the mempool.
-func (db *DB) AddMempool(tx Tx) error {
+// AddTransaction appends a new transactions to the mempool.
+func (db *DB) AddTransaction(tx Tx) error {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 
 	// Append the transaction to the in-memory store.
 	db.txMempool = append(db.txMempool, tx)
 
-	// If the number of transactions in the mempool match
-	// the number of transactions we want in each block, persist.
-	if db.persistRatio == len(db.txMempool) {
-		return db.createBlock()
-	}
-
 	return nil
 }
 
-// Persist writes the current transaction memory pool to disk.
-func (db *DB) Persist() error {
+// CreateBlock writes the current transactions from the
+// memory pool to disk.
+func (db *DB) CreateBlock() (Block, error) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 
 	return db.createBlock()
 }
 
-// Genesis returns a copy of the genesis information.
-func (db *DB) Genesis() Genesis {
+// =============================================================================
+
+// QueryGenesis returns a copy of the genesis information.
+func (db *DB) QueryGenesis() Genesis {
+	db.mu.Lock()
+	defer db.mu.Unlock()
+
 	return db.genesis
 }
 
-// LastestBlock returns the current hash of the latest block.
-func (db *DB) LastestBlock() [32]byte {
+// QueryLastestBlock returns the current hash of the latest block.
+func (db *DB) QueryLastestBlock() [32]byte {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 
 	return db.lastestBlock
 }
 
-// UncommittedTransactions returns a copy of the mempool.
-func (db *DB) UncommittedTransactions() []Tx {
+// QueryMempool returns a copy of the mempool.
+func (db *DB) QueryMempool() []Tx {
+	db.mu.Lock()
+	defer db.mu.Unlock()
+
 	cpy := make([]Tx, len(db.txMempool))
 	copy(cpy, db.txMempool)
 	return cpy
 }
 
-// Balances returns the set of balances by account. If the account
+// QueryBalances returns the set of balances by account. If the account
 // is empty, all balances are returned.
-func (db *DB) Balances(account string) map[string]uint {
-	balances := make(map[string]uint)
-
+func (db *DB) QueryBalances(account string) map[string]uint {
 	db.mu.Lock()
-	{
-		for act, bal := range db.balances {
-			if account == "" || account == act {
-				balances[act] = bal
-			}
+	defer db.mu.Unlock()
+
+	balances := make(map[string]uint)
+	for act, bal := range db.balances {
+		if account == "" || account == act {
+			balances[act] = bal
 		}
 	}
-	db.mu.Unlock()
 
 	return balances
 }
 
-// Blocks returns the set of blocks by account. If the account
+// QueryBlocks returns the set of blocks by account. If the account
 // is empty, all blocks are returned.
-func (db *DB) Blocks(account string) []Block {
+func (db *DB) QueryBlocks(account string) []Block {
 	blocks, err := loadBlocks(db.dbPath)
 	if err != nil {
 		return nil
@@ -171,9 +172,9 @@ func (db *DB) Blocks(account string) []Block {
 
 // createBlock writes the current transaction memory pool to disk.
 // It assumes it's always inside a mutex lock.
-func (db *DB) createBlock() error {
+func (db *DB) createBlock() (Block, error) {
 	if len(db.txMempool) == 0 {
-		return nil
+		return Block{}, nil
 	}
 
 	// If the transaction can't be applied to the balance,
@@ -189,22 +190,22 @@ func (db *DB) createBlock() error {
 
 	blockFS, err := NewBlockFS(db.lastestBlock, db.txMempool)
 	if err != nil {
-		return err
+		return Block{}, err
 	}
 
 	blockFSJson, err := json.Marshal(blockFS)
 	if err != nil {
-		return err
+		return Block{}, err
 	}
 
 	if _, err := db.file.Write(append(blockFSJson, '\n')); err != nil {
-		return err
+		return Block{}, err
 	}
 
 	db.lastestBlock = blockFS.Hash
 	db.txMempool = []Tx{}
 
-	return nil
+	return blockFS.Block, nil
 }
 
 // validateTransaction performs integrity checks on a transaction.

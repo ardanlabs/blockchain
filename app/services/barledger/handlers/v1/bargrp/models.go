@@ -1,6 +1,7 @@
 package bargrp
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/ardanlabs/blockchain/foundation/database"
@@ -50,4 +51,22 @@ type blockHeader struct {
 type block struct {
 	Header       blockHeader `json:"header"`
 	Transactions []tx        `json:"transactions"`
+}
+
+func toBlock(dbBlock database.Block) block {
+	hash, err := dbBlock.Hash()
+	if err != nil {
+		return block{}
+	}
+
+	block := block{
+		Header: blockHeader{
+			PrevBlock: fmt.Sprintf("%x", dbBlock.Header.PrevBlock),
+			ThisBlock: fmt.Sprintf("%x", hash),
+			Time:      time.Unix(int64(dbBlock.Header.Time), 0),
+		},
+		Transactions: toTxs(dbBlock.Transactions),
+	}
+
+	return block
 }

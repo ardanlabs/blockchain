@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"time"
 
 	v1 "github.com/ardanlabs/blockchain/business/web/v1"
 	"github.com/ardanlabs/blockchain/foundation/database"
@@ -34,7 +33,7 @@ func (h Handlers) AddTransaction(ctx context.Context, w http.ResponseWriter, r *
 	h.Log.Infow("add tran", "traceid", v.TraceID, "data", tx)
 
 	dbTx := database.NewTx(tx.From, tx.To, tx.Value, tx.Data)
-	if err := h.DB.AddMempool(dbTx); err != nil {
+	if err := h.DB.AddTransaction(dbTx); err != nil {
 		err = fmt.Errorf("transaction failed, %w", err)
 		return v1.NewRequestError(err, http.StatusBadRequest)
 	}
@@ -50,17 +49,22 @@ func (h Handlers) AddTransaction(ctx context.Context, w http.ResponseWriter, r *
 	return web.Respond(ctx, w, resp, http.StatusOK)
 }
 
-// Persist writes the existing transactions in the mempool to a block on disk.
-func (h Handlers) Persist(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	if err := h.DB.Persist(); err != nil {
-		err = fmt.Errorf("persist failed, %w", err)
+// CreateBlock writes the existing transactions in the mempool to a block on disk.
+func (h Handlers) CreateBlock(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	dbBlock, err := h.DB.CreateBlock()
+	if err != nil {
+		err = fmt.Errorf("create block failed, %w", err)
 		return v1.NewRequestError(err, http.StatusBadRequest)
 	}
 
 	resp := struct {
-		Status string
+		Status      string `json:"status"`
+		NumberTrans int    `json:"num_trans"`
+		Block       block  `json:"block"`
 	}{
-		Status: "mempool persisted",
+		Status:      "new block created",
+		NumberTrans: len(dbBlock.Transactions),
+		Block:       toBlock(dbBlock),
 	}
 
 	return web.Respond(ctx, w, resp, http.StatusOK)
@@ -68,13 +72,13 @@ func (h Handlers) Persist(ctx context.Context, w http.ResponseWriter, r *http.Re
 
 // QueryGenesis returns the genesis information.
 func (h Handlers) QueryGenesis(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	gen := h.DB.Genesis()
+	gen := h.DB.QueryGenesis()
 	return web.Respond(ctx, w, gen, http.StatusOK)
 }
 
-// QueryUncommitted returns the set of uncommitted transactions.
-func (h Handlers) QueryUncommitted(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	txs := h.DB.UncommittedTransactions()
+// QueryMempool returns the set of uncommitted transactions.
+func (h Handlers) QueryMempool(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	txs := h.DB.QueryMempool()
 	return web.Respond(ctx, w, txs, http.StatusOK)
 }
 
@@ -82,8 +86,10 @@ func (h Handlers) QueryUncommitted(ctx context.Context, w http.ResponseWriter, r
 func (h Handlers) QueryBalances(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	acct := web.Param(r, "acct")
 
-	var bals []balance
-	for act, dbBal := range h.DB.Balances(acct) {
+	dbBals := h.DB.QueryBalances(acct)
+	bals := make([]balance, 0, len(dbBals))
+
+	for act, dbBal := range dbBals {
 		bal := balance{
 			Account: act,
 			Balance: dbBal,
@@ -92,8 +98,8 @@ func (h Handlers) QueryBalances(ctx context.Context, w http.ResponseWriter, r *h
 	}
 
 	balances := balances{
-		LastestBlock: fmt.Sprintf("%x", h.DB.LastestBlock()),
-		Uncommitted:  len(h.DB.UncommittedTransactions()),
+		LastestBlock: fmt.Sprintf("%x", h.DB.QueryLastestBlock()),
+		Uncommitted:  len(h.DB.QueryMempool()),
 		Balances:     bals,
 	}
 
@@ -103,24 +109,11 @@ func (h Handlers) QueryBalances(ctx context.Context, w http.ResponseWriter, r *h
 // QueryBlocks returns all the blocks and their details.
 func (h Handlers) QueryBlocks(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	acct := web.Param(r, "acct")
-	blocks := h.DB.Blocks(acct)
+	dbBlocks := h.DB.QueryBlocks(acct)
 
-	var out []block
-	for _, orgBlock := range blocks {
-		hash, err := orgBlock.Hash()
-		if err != nil {
-			return err
-		}
-
-		newBlock := block{
-			Header: blockHeader{
-				PrevBlock: fmt.Sprintf("%x", orgBlock.Header.PrevBlock),
-				ThisBlock: fmt.Sprintf("%x", hash),
-				Time:      time.Unix(int64(orgBlock.Header.Time), 0),
-			},
-			Transactions: toTxs(orgBlock.Transactions),
-		}
-		out = append(out, newBlock)
+	out := make([]block, len(dbBlocks))
+	for i := range dbBlocks {
+		out[i] = toBlock(dbBlocks[i])
 	}
 
 	return web.Respond(ctx, w, out, http.StatusOK)
