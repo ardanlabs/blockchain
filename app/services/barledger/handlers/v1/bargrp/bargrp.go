@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/ardanlabs/blockchain/business/sys/database"
 	v1 "github.com/ardanlabs/blockchain/business/web/v1"
@@ -21,28 +20,33 @@ type Handlers struct {
 
 // AddTransaction adds a new transaction to the database.
 func (h Handlers) AddTransaction(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	from := web.Param(r, "from")
-	to := web.Param(r, "to")
-	valueStr := web.Param(r, "value")
-	data := web.Param(r, "data")
-
-	value, err := strconv.Atoi(valueStr)
+	v, err := web.GetValues(ctx)
 	if err != nil {
+		return web.NewShutdownError("web value missing from context")
+	}
+
+	var tx newTX
+	if err := web.Decode(r, &tx); err != nil {
+		return fmt.Errorf("unable to decode payload: %w", err)
+	}
+
+	h.Log.Infow("add tran", "traceid", v.TraceID, "data", tx)
+
+	dbTx := database.NewTx(tx.From, tx.To, tx.Value, tx.Data)
+	if err := h.DB.Add(dbTx); err != nil {
+		err = fmt.Errorf("transaction failed, %w", err)
 		return v1.NewRequestError(err, http.StatusBadRequest)
 	}
 
-	tx := database.NewTx(from, to, uint(value), data)
-	if err := h.DB.Add(tx); err != nil {
-		return err
-	}
-
+	tx.Status = "transaction added"
 	return web.Respond(ctx, w, tx, http.StatusOK)
 }
 
 // Persist writes the existing transactions in the mempool to a block on disk.
 func (h Handlers) Persist(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	if err := h.DB.Persist(); err != nil {
-		return v1.NewRequestError(err, http.StatusInternalServerError)
+		err = fmt.Errorf("persist failed, %w", err)
+		return v1.NewRequestError(err, http.StatusBadRequest)
 	}
 
 	resp := struct {
@@ -58,11 +62,7 @@ func (h Handlers) Persist(ctx context.Context, w http.ResponseWriter, r *http.Re
 func (h Handlers) QueryBalances(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	acct := web.Param(r, "acct")
 
-	var bals []struct {
-		Account string
-		Balance uint
-	}
-
+	var bals []bals
 	for act, bal := range h.DB.Balances(acct) {
 		bal := struct {
 			Account string

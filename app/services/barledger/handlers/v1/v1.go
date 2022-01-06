@@ -30,6 +30,6 @@ func Routes(app *web.App, cfg Config) {
 	app.Handle(http.MethodGet, version, "/balances/list", bgh.QueryBalances)
 	app.Handle(http.MethodGet, version, "/balances/list/:acct", bgh.QueryBalances)
 	app.Handle(http.MethodGet, version, "/blocks/list", bgh.QueryBlocks)
-	app.Handle(http.MethodPost, version, "/tx/add/:from/:to/:value/:data", bgh.AddTransaction)
-	app.Handle(http.MethodPost, version, "/tx/persist", bgh.Persist)
+	app.Handle(http.MethodPost, version, "/tx/add", bgh.AddTransaction)
+	app.Handle(http.MethodPut, version, "/tx/persist", bgh.Persist)
 }

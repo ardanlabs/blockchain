@@ -1,8 +1,6 @@
 package database
 
-import (
-	"errors"
-)
+import "fmt"
 
 const (
 	TxTypeReward = "reward"
@@ -52,7 +50,7 @@ func applyTranToBalance(tx Tx, balances map[string]uint) error {
 	}
 
 	if tx.Value > balances[tx.From] {
-		return errors.New("insufficient balance, data integrity issue")
+		return fmt.Errorf("%s has an insufficient balance", tx.From)
 	}
 
 	balances[tx.From] -= tx.Value
