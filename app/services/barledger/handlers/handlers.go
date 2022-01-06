@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/ardanlabs/blockchain/app/services/barledger/handlers/debug/checkgrp"
+	v1 "github.com/ardanlabs/blockchain/app/services/barledger/handlers/v1"
 	"github.com/ardanlabs/blockchain/business/sys/database"
 	"github.com/ardanlabs/blockchain/business/web/v1/mid"
 	"github.com/ardanlabs/blockchain/foundation/web"

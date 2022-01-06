@@ -33,7 +33,7 @@ func main() {
 }
 
 func run(log *zap.SugaredLogger) error {
-	db, err := database.New("zblock/blocks.db")
+	db, err := database.New("zblock/blocks.db", 10)
 	if err != nil {
 		return err
 	}

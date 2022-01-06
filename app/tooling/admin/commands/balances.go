@@ -13,7 +13,7 @@ func Balances(args []string, db *database.DB) error {
 		onlyAct = args[2]
 	}
 
-	fmt.Printf("LastestBlockHash: %x\n\n", db.LastestBlockHash())
+	fmt.Printf("LastestBlockHash: %x\n\n", db.LastestBlock())
 
 	for act, bal := range db.Balances(onlyAct) {
 		fmt.Printf("Account: %s  Balance: %d\n", act, bal)

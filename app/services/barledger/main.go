@@ -7,13 +7,14 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
 	"github.com/ardanlabs/blockchain/app/services/barledger/handlers"
 	"github.com/ardanlabs/blockchain/business/sys/database"
 	"github.com/ardanlabs/blockchain/foundation/logger"
-	"github.com/ardanlabs/conf"
+	"github.com/ardanlabs/conf/v2"
 	"go.uber.org/zap"
 )
 
@@ -54,7 +55,8 @@ func run(log *zap.SugaredLogger) error {
 			DebugHost       string        `conf:"default:0.0.0.0:8081"`
 		}
 		DB struct {
-			Path string `conf:"default:zblock/blocks.db"`
+			Path         string `conf:"default:zblock/blocks.db"`
+			PersistRatio string `conf:"default:10"`
 		}
 	}{
 		Version: conf.Version{
@@ -88,7 +90,12 @@ func run(log *zap.SugaredLogger) error {
 	// =========================================================================
 	// Database Support
 
-	db, err := database.New(cfg.DB.Path)
+	persistRatio, err := strconv.Atoi(cfg.DB.PersistRatio)
+	if err != nil {
+		return err
+	}
+
+	db, err := database.New(cfg.DB.Path, persistRatio)
 	if err != nil {
 		return err
 	}
@@ -103,7 +110,7 @@ func run(log *zap.SugaredLogger) error {
 	// related endpoints. This includes the standard library endpoints.
 
 	// Construct the mux for the debug calls.
-	debugMux := handlers.DebugMux(build, log, db)
+	debugMux := handlers.DebugMux(build, log)
 
 	// Start the service listening for debug requests.
 	// Not concerned with shutting this down with load shedding.

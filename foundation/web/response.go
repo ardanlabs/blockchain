@@ -19,7 +19,7 @@ func Respond(ctx context.Context, w http.ResponseWriter, data interface{}, statu
 	}
 
 	// Convert the response value to JSON.
-	jsonData, err := json.Marshal(data)
+	jsonData, err := json.MarshalIndent(data, "", "    ")
 	if err != nil {
 		return err
 	}

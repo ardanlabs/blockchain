@@ -11,14 +11,15 @@ type DB struct {
 	genesis      Genesis
 	txMempool    []Tx
 	lastestBlock [32]byte
-	balances     map[string]uint
 	dbPath       string
+	balances     map[string]uint
+	persistRatio int
 	file         *os.File
 	mu           sync.Mutex
 }
 
 // New constructs a new blockchain for data management.
-func New(dbPath string) (*DB, error) {
+func New(dbPath string, persistRatio int) (*DB, error) {
 
 	// Load the genesis file to get starting balances for
 	// founders of the block chain.
@@ -65,10 +66,11 @@ func New(dbPath string) (*DB, error) {
 	// Create the chain with no transactions currently in memory.
 	db := DB{
 		genesis:      genesis,
-		balances:     balances,
-		dbPath:       dbPath,
-		file:         file,
 		lastestBlock: lastestBlock,
+		dbPath:       dbPath,
+		balances:     balances,
+		persistRatio: persistRatio,
+		file:         file,
 	}
 
 	return &db, nil
@@ -78,6 +80,12 @@ func New(dbPath string) (*DB, error) {
 func (db *DB) Close() error {
 	db.mu.Lock()
 	defer db.mu.Unlock()
+
+	// Persist the remaining transactions to disk.
+	if err := db.persistMempool(); err != nil {
+		db.file.Close()
+		return err
+	}
 
 	return db.file.Close()
 }
@@ -95,33 +103,21 @@ func (db *DB) Add(tx Tx) error {
 	// Append the transaction to the in-memory store.
 	db.txMempool = append(db.txMempool, tx)
 
+	// If the number of transactions in the mempool match
+	// the number of transactions we want in each block, persist.
+	if db.persistRatio == len(db.txMempool) {
+		return db.persistMempool()
+	}
+
 	return nil
 }
 
-// Persist writes the current transaction memory pool
-// to disk.
+// Persist writes the current transaction memory pool to disk.
 func (db *DB) Persist() error {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 
-	blockFS, err := NewBlockFS(db.lastestBlock, db.txMempool)
-	if err != nil {
-		return err
-	}
-
-	blockFSJson, err := json.Marshal(blockFS)
-	if err != nil {
-		return err
-	}
-
-	if _, err := db.file.Write(append(blockFSJson, '\n')); err != nil {
-		return err
-	}
-
-	db.lastestBlock = blockFS.Hash
-	db.txMempool = []Tx{}
-
-	return nil
+	return db.persistMempool()
 }
 
 // Genesis returns a copy of the genesis information.
@@ -129,8 +125,11 @@ func (db *DB) Genesis() Genesis {
 	return db.genesis
 }
 
-// LastestBlockHash returns the current hash of the latest block.
-func (db *DB) LastestBlockHash() [32]byte {
+// LastestBlock returns the current hash of the latest block.
+func (db *DB) LastestBlock() [32]byte {
+	db.mu.Lock()
+	defer db.mu.Unlock()
+
 	return db.lastestBlock
 }
 
@@ -161,4 +160,33 @@ func (db *DB) Blocks(account string) []Block {
 	}
 
 	return blocks
+}
+
+// =============================================================================
+
+// persistMempool writes the current transaction memory pool to disk.
+// It assumes it's always inside a mutex lock.
+func (db *DB) persistMempool() error {
+	if len(db.txMempool) == 0 {
+		return nil
+	}
+
+	blockFS, err := NewBlockFS(db.lastestBlock, db.txMempool)
+	if err != nil {
+		return err
+	}
+
+	blockFSJson, err := json.Marshal(blockFS)
+	if err != nil {
+		return err
+	}
+
+	if _, err := db.file.Write(append(blockFSJson, '\n')); err != nil {
+		return err
+	}
+
+	db.lastestBlock = blockFS.Hash
+	db.txMempool = []Tx{}
+
+	return nil
 }

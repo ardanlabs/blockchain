@@ -30,7 +30,7 @@ func Transactions(args []string, db *database.DB) error {
 			return err
 		}
 		fmt.Println("Block 0 Persisted")
-		fmt.Printf("BlockHash: %x\n\n", db.LastestBlockHash())
+		fmt.Printf("BlockHash: %x\n\n", db.LastestBlock())
 
 		txs = []database.Tx{}
 		txs = append(txs, database.NewTx("bill_kennedy", "babayaga", 2000, ""))
@@ -50,10 +50,10 @@ func Transactions(args []string, db *database.DB) error {
 			return err
 		}
 		fmt.Println("Block 1 Persisted")
-		fmt.Printf("BlockHash: %x\n\n", db.LastestBlockHash())
+		fmt.Printf("BlockHash: %x\n\n", db.LastestBlock())
 
 	case "add":
-		fmt.Printf("LastestBlockHash: %x\n\n", db.LastestBlockHash())
+		fmt.Printf("LastestBlockHash: %x\n\n", db.LastestBlock())
 
 		from := args[3]
 		to := args[4]
@@ -69,7 +69,7 @@ func Transactions(args []string, db *database.DB) error {
 			return err
 		}
 		fmt.Println("Transaction persisted")
-		fmt.Printf("LastestBlockHash: %x\n\n", db.LastestBlockHash())
+		fmt.Printf("LastestBlockHash: %x\n\n", db.LastestBlock())
 
 	default:
 		var acct string
