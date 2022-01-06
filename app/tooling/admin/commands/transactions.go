@@ -17,11 +17,11 @@ func Transactions(args []string, db *database.DB) error {
 	switch sub {
 	case "seed":
 		var txs []database.Tx
-		txs = append(txs, database.NewTx("bill_kennedy", "bill_kennedy", 3, ""))
-		txs = append(txs, database.NewTx("bill_kennedy", "bill_kennedy", 703, "reward"))
+		txs = append(txs, database.NewTx("bill_kennedy", "bill_kennedy", 3, database.TxDataReward))
+		txs = append(txs, database.NewTx("bill_kennedy", "bill_kennedy", 703, database.TxDataReward))
 
 		for _, tx := range txs {
-			if err := db.Add(tx); err != nil {
+			if err := db.AddMempool(tx); err != nil {
 				return err
 			}
 		}
@@ -34,14 +34,14 @@ func Transactions(args []string, db *database.DB) error {
 
 		txs = []database.Tx{}
 		txs = append(txs, database.NewTx("bill_kennedy", "babayaga", 2000, ""))
-		txs = append(txs, database.NewTx("bill_kennedy", "bill_kennedy", 100, "reward"))
+		txs = append(txs, database.NewTx("bill_kennedy", "bill_kennedy", 100, database.TxDataReward))
 		txs = append(txs, database.NewTx("babayaga", "bill_kennedy", 1, ""))
 		txs = append(txs, database.NewTx("babayaga", "ceasar", 1000, ""))
 		txs = append(txs, database.NewTx("babayaga", "bill_kennedy", 50, ""))
-		txs = append(txs, database.NewTx("bill_kennedy", "bill_kennedy", 600, "reward"))
+		txs = append(txs, database.NewTx("bill_kennedy", "bill_kennedy", 600, database.TxDataReward))
 
 		for _, tx := range txs {
-			if err := db.Add(tx); err != nil {
+			if err := db.AddMempool(tx); err != nil {
 				return err
 			}
 		}
@@ -60,7 +60,7 @@ func Transactions(args []string, db *database.DB) error {
 		value, _ := strconv.Atoi(args[5])
 		data := args[6]
 		tx := database.NewTx(from, to, uint(value), data)
-		if err := db.Add(tx); err != nil {
+		if err := db.AddMempool(tx); err != nil {
 			return err
 		}
 		fmt.Println("Transaction added")

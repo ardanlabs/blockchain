@@ -2,6 +2,7 @@ package database
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"sync"
 )
@@ -40,14 +41,6 @@ func New(dbPath string, persistRatio int) (*DB, error) {
 		balances[key] = value
 	}
 
-	// Apply the transactions to the initial genesis balances, adding new
-	// accounts as it is processed.
-	for _, block := range blocks {
-		if err := applyTransToBalances(block.Transactions, balances); err != nil {
-			return nil, err
-		}
-	}
-
 	// Open the transaction database file.
 	file, err := os.OpenFile(dbPath, os.O_APPEND|os.O_RDWR, 0600)
 	if err != nil {
@@ -73,40 +66,45 @@ func New(dbPath string, persistRatio int) (*DB, error) {
 		file:         file,
 	}
 
+	// Apply the transactions to the initial genesis balances, adding new
+	// accounts as it is processed.
+	for _, block := range blocks {
+		if err := db.applyTransToBalances(block.Transactions); err != nil {
+			return nil, err
+		}
+	}
+
 	return &db, nil
 }
 
 // Close cleanly closes the database file underneath.
 func (db *DB) Close() error {
 	db.mu.Lock()
-	defer db.mu.Unlock()
+	defer func() {
+		db.file.Close()
+		db.mu.Unlock()
+	}()
 
 	// Persist the remaining transactions to disk.
-	if err := db.persistMempool(); err != nil {
-		db.file.Close()
+	if err := db.createBlock(); err != nil {
 		return err
 	}
 
-	return db.file.Close()
+	return nil
 }
 
-// Add appends a new transactions to the blockchain.
-func (db *DB) Add(tx Tx) error {
+// Add appends a new transactions to the mempool.
+func (db *DB) AddMempool(tx Tx) error {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 
 	// Append the transaction to the in-memory store.
 	db.txMempool = append(db.txMempool, tx)
 
-	// Update the balances.
-	if err := applyTranToBalance(tx, db.balances); err != nil {
-		return err
-	}
-
 	// If the number of transactions in the mempool match
 	// the number of transactions we want in each block, persist.
 	if db.persistRatio == len(db.txMempool) {
-		return db.persistMempool()
+		return db.createBlock()
 	}
 
 	return nil
@@ -117,7 +115,7 @@ func (db *DB) Persist() error {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 
-	return db.persistMempool()
+	return db.createBlock()
 }
 
 // Genesis returns a copy of the genesis information.
@@ -135,8 +133,8 @@ func (db *DB) LastestBlock() [32]byte {
 
 // UncommittedTransactions returns a copy of the mempool.
 func (db *DB) UncommittedTransactions() []Tx {
-	var cpy []Tx
-	cpy = append(cpy, db.txMempool...)
+	cpy := make([]Tx, len(db.txMempool))
+	copy(cpy, db.txMempool)
 	return cpy
 }
 
@@ -171,11 +169,22 @@ func (db *DB) Blocks(account string) []Block {
 
 // =============================================================================
 
-// persistMempool writes the current transaction memory pool to disk.
+// createBlock writes the current transaction memory pool to disk.
 // It assumes it's always inside a mutex lock.
-func (db *DB) persistMempool() error {
+func (db *DB) createBlock() error {
 	if len(db.txMempool) == 0 {
 		return nil
+	}
+
+	// If the transaction can't be applied to the balance,
+	// mark the transaction as failed.
+	for i := range db.txMempool {
+		if err := db.validateTransaction(db.txMempool[i]); err != nil {
+			db.txMempool[i].Status = TxStatusError
+			db.txMempool[i].StatusInfo = err.Error()
+			continue
+		}
+		db.txMempool[i].Status = TxStatusAccepted
 	}
 
 	blockFS, err := NewBlockFS(db.lastestBlock, db.txMempool)
@@ -194,6 +203,54 @@ func (db *DB) persistMempool() error {
 
 	db.lastestBlock = blockFS.Hash
 	db.txMempool = []Tx{}
+
+	return nil
+}
+
+// validateTransaction performs integrity checks on a transaction.
+func (db *DB) validateTransaction(tx Tx) error {
+
+	// Validate the transaction can be applied to the balance,
+	// checking for things like insufficient funds.
+	if err := db.applyTranToBalance(tx); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// applyTransToBalances applies the transactions to the specified
+// balances, adding new accounts as they are found.
+func (db *DB) applyTransToBalances(txs []Tx) error {
+	for _, tx := range txs {
+		db.applyTranToBalance(tx)
+	}
+
+	return nil
+}
+
+// applyTranToBalance performs the business logic for applying a transaction to
+// the balance sheet.
+func (db *DB) applyTranToBalance(tx Tx) error {
+	if tx.Status == TxStatusError {
+		return nil
+	}
+
+	if tx.Data == TxDataReward {
+		db.balances[tx.To] += tx.Value
+		return nil
+	}
+
+	if tx.From == tx.To {
+		return fmt.Errorf("invalid transaction, do you mean to give a reward, from %s, to %s", tx.From, tx.To)
+	}
+
+	if tx.Value > db.balances[tx.From] {
+		return fmt.Errorf("%s has an insufficient balance", tx.From)
+	}
+
+	db.balances[tx.From] -= tx.Value
+	db.balances[tx.To] += tx.Value
 
 	return nil
 }

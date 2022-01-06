@@ -2,12 +2,11 @@ package bargrp
 
 import "github.com/ardanlabs/blockchain/business/sys/database"
 
-type newTX struct {
-	Status string `json:"status"`
-	From   string `json:"from" validate:"required"`
-	To     string `json:"to" validate:"required"`
-	Value  uint   `json:"value" validate:"required"`
-	Data   string `json:"data"`
+type newTx struct {
+	From  string `json:"from" validate:"required"`
+	To    string `json:"to" validate:"required"`
+	Value uint   `json:"value" validate:"required"`
+	Data  string `json:"data"`
 }
 
 type balance struct {
@@ -23,6 +22,7 @@ type balances struct {
 
 type blockHeader struct {
 	PrevBlock string `json:"prev_block"`
+	ThisBlock string `json:"this_block"`
 	Time      uint64 `json:"time"`
 }
 

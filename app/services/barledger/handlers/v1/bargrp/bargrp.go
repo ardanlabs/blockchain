@@ -18,14 +18,14 @@ type Handlers struct {
 	DB  *database.DB
 }
 
-// AddTransaction adds a new transaction to the database.
+// AddTransaction adds a new transaction to the mempool.
 func (h Handlers) AddTransaction(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	v, err := web.GetValues(ctx)
 	if err != nil {
 		return web.NewShutdownError("web value missing from context")
 	}
 
-	var tx newTX
+	var tx newTx
 	if err := web.Decode(r, &tx); err != nil {
 		return fmt.Errorf("unable to decode payload: %w", err)
 	}
@@ -33,13 +33,20 @@ func (h Handlers) AddTransaction(ctx context.Context, w http.ResponseWriter, r *
 	h.Log.Infow("add tran", "traceid", v.TraceID, "data", tx)
 
 	dbTx := database.NewTx(tx.From, tx.To, tx.Value, tx.Data)
-	if err := h.DB.Add(dbTx); err != nil {
+	if err := h.DB.AddMempool(dbTx); err != nil {
 		err = fmt.Errorf("transaction failed, %w", err)
 		return v1.NewRequestError(err, http.StatusBadRequest)
 	}
 
-	tx.Status = "transaction added"
-	return web.Respond(ctx, w, tx, http.StatusOK)
+	resp := struct {
+		Status string `json:"status"`
+		newTx
+	}{
+		Status: "transaction added to mempool",
+		newTx:  tx,
+	}
+
+	return web.Respond(ctx, w, resp, http.StatusOK)
 }
 
 // Persist writes the existing transactions in the mempool to a block on disk.
@@ -99,9 +106,15 @@ func (h Handlers) QueryBlocks(ctx context.Context, w http.ResponseWriter, r *htt
 
 	var out []block
 	for _, orgBlock := range blocks {
+		hash, err := orgBlock.Hash()
+		if err != nil {
+			return err
+		}
+
 		newBlock := block{
 			Header: blockHeader{
 				PrevBlock: fmt.Sprintf("%x", orgBlock.Header.PrevBlock),
+				ThisBlock: fmt.Sprintf("%x", hash),
 				Time:      orgBlock.Header.Time,
 			},
 			Transactions: orgBlock.Transactions,

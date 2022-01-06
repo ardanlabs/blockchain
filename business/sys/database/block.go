@@ -85,7 +85,11 @@ func loadBlocks(dbPath string) ([]Block, error) {
 			return nil, err
 		}
 
-		hash, _ := blockFS.Block.Hash()
+		hash, err := blockFS.Block.Hash()
+		if err != nil {
+			return nil, err
+		}
+
 		if hash != blockFS.Hash {
 			return nil, fmt.Errorf("block %d has been changed", blockNum)
 		}
