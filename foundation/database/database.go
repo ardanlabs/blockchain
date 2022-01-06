@@ -2,6 +2,7 @@ package database
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"sync"
@@ -87,7 +88,9 @@ func (db *DB) Close() error {
 
 	// Persist the remaining transactions to disk.
 	if _, err := db.createBlock(); err != nil {
-		return err
+		if !errors.Is(err, ErrNoTransactions) {
+			return err
+		}
 	}
 
 	return nil
@@ -170,11 +173,15 @@ func (db *DB) QueryBlocks(account string) []Block {
 
 // =============================================================================
 
+// ErrNoTransactions is returned when a block is requested to be created
+// and there are no transactions.
+var ErrNoTransactions = errors.New("no transactions in mempool")
+
 // createBlock writes the current transaction memory pool to disk.
 // It assumes it's always inside a mutex lock.
 func (db *DB) createBlock() (Block, error) {
 	if len(db.txMempool) == 0 {
-		return Block{}, nil
+		return Block{}, ErrNoTransactions
 	}
 
 	// If the transaction can't be applied to the balance,

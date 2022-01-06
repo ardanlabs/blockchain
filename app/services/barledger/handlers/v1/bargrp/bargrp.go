@@ -3,6 +3,7 @@ package bargrp
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -53,8 +54,13 @@ func (h Handlers) AddTransaction(ctx context.Context, w http.ResponseWriter, r *
 func (h Handlers) CreateBlock(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	dbBlock, err := h.DB.CreateBlock()
 	if err != nil {
-		err = fmt.Errorf("create block failed, %w", err)
-		return v1.NewRequestError(err, http.StatusBadRequest)
+		switch {
+		case errors.Is(err, database.ErrNoTransactions):
+			return v1.NewRequestError(err, http.StatusBadRequest)
+		default:
+			err = fmt.Errorf("create block failed, %w", err)
+			return v1.NewRequestError(err, http.StatusBadRequest)
+		}
 	}
 
 	resp := struct {
