@@ -174,7 +174,20 @@ func (db *DB) QueryBlocks(account string) []Block {
 		return nil
 	}
 
-	return blocks
+	if account == "" {
+		return blocks
+	}
+
+	var out []Block
+	for _, block := range blocks {
+		for _, tran := range block.Transactions {
+			if tran.From == account || tran.To == account {
+				out = append(out, block)
+			}
+		}
+	}
+
+	return out
 }
 
 // =============================================================================
