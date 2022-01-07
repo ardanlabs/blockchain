@@ -7,6 +7,11 @@ import (
 	"github.com/ardanlabs/blockchain/foundation/database"
 )
 
+type status struct {
+	Hash   string `json:"hash"`
+	Number uint64 `json:"number"`
+}
+
 type newTx struct {
 	From  string `json:"from" validate:"required"`
 	To    string `json:"to" validate:"required"`

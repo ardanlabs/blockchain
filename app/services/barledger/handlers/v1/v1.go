@@ -27,6 +27,8 @@ func Routes(app *web.App, cfg Config) {
 		DB:  cfg.DB,
 	}
 
+	app.Handle(http.MethodGet, version, "/node/status", bgh.QueryStatus)
+
 	app.Handle(http.MethodGet, version, "/genesis/list", bgh.QueryGenesis)
 
 	app.Handle(http.MethodGet, version, "/balances/list", bgh.QueryBalances)

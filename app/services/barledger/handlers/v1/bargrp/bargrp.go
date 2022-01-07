@@ -19,6 +19,16 @@ type Handlers struct {
 	DB  *database.DB
 }
 
+// QueryStatus returns the current status of the node.
+func (h Handlers) QueryStatus(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	status := status{
+		Hash:   fmt.Sprintf("%x", h.DB.QueryLatestBlock().Hash()),
+		Number: h.DB.QueryLatestBlock().Header.Number,
+	}
+
+	return web.Respond(ctx, w, status, http.StatusOK)
+}
+
 // AddTransaction adds a new transaction to the mempool.
 func (h Handlers) AddTransaction(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	v, err := web.GetValues(ctx)
