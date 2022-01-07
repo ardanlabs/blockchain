@@ -11,13 +11,13 @@ import (
 
 // DB represents a block chain of data.
 type DB struct {
-	genesis      Genesis
-	txMempool    []Tx
-	lastestBlock [32]byte
-	dbPath       string
-	balances     map[string]uint
-	file         *os.File
-	mu           sync.Mutex
+	genesis     Genesis
+	txMempool   []Tx
+	latestBlock Block
+	dbPath      string
+	balances    map[string]uint
+	file        *os.File
+	mu          sync.Mutex
 
 	blockWriter *blockWriter
 }
@@ -51,21 +51,18 @@ func New(dbPath string, persistInterval time.Duration, evHandler EventHandler) (
 	}
 
 	// Capture the hash of the latest block.
-	var lastestBlock [32]byte
+	var latestBlock Block
 	if len(blocks) > 0 {
-		lastestBlock, err = blocks[len(blocks)-1].Hash()
-		if err != nil {
-			return nil, err
-		}
+		latestBlock = blocks[len(blocks)-1]
 	}
 
 	// Create the chain with no transactions currently in memory.
 	db := DB{
-		genesis:      genesis,
-		lastestBlock: lastestBlock,
-		dbPath:       dbPath,
-		balances:     balances,
-		file:         file,
+		genesis:     genesis,
+		latestBlock: latestBlock,
+		dbPath:      dbPath,
+		balances:    balances,
+		file:        file,
 	}
 
 	// Apply the transactions to the initial genesis balances, adding new
@@ -93,7 +90,7 @@ func (db *DB) Close() error {
 	db.blockWriter.shutdown()
 
 	// Persist the remaining transactions to disk.
-	if _, err := db.createBlock(); err != nil {
+	if _, err := db.writeBlock(); err != nil {
 		if !errors.Is(err, ErrNoTransactions) {
 			return err
 		}
@@ -113,13 +110,13 @@ func (db *DB) AddTransaction(tx Tx) error {
 	return nil
 }
 
-// CreateBlock writes the current transactions from the
+// WriteBlock writes the current transactions from the
 // memory pool to disk.
-func (db *DB) CreateBlock() (Block, error) {
+func (db *DB) WriteBlock() (Block, error) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 
-	return db.createBlock()
+	return db.writeBlock()
 }
 
 // =============================================================================
@@ -132,12 +129,12 @@ func (db *DB) QueryGenesis() Genesis {
 	return db.genesis
 }
 
-// QueryLastestBlock returns the current hash of the latest block.
-func (db *DB) QueryLastestBlock() [32]byte {
+// QueryLatestBlock returns the current hash of the latest block.
+func (db *DB) QueryLatestBlock() Block {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 
-	return db.lastestBlock
+	return db.latestBlock
 }
 
 // QueryMempool returns a copy of the mempool.
@@ -196,9 +193,9 @@ func (db *DB) QueryBlocks(account string) []Block {
 // and there are no transactions.
 var ErrNoTransactions = errors.New("no transactions in mempool")
 
-// createBlock writes the current transaction memory pool to disk.
+// writeBlock writes the current transaction memory pool to disk.
 // It assumes it's always inside a mutex lock.
-func (db *DB) createBlock() (Block, error) {
+func (db *DB) writeBlock() (Block, error) {
 	if len(db.txMempool) == 0 {
 		return Block{}, ErrNoTransactions
 	}
@@ -214,7 +211,7 @@ func (db *DB) createBlock() (Block, error) {
 		db.txMempool[i].Status = TxStatusAccepted
 	}
 
-	blockFS, err := NewBlockFS(db.lastestBlock, db.txMempool)
+	blockFS, err := NewBlockFS(db.latestBlock, db.txMempool)
 	if err != nil {
 		return Block{}, err
 	}
@@ -228,7 +225,7 @@ func (db *DB) createBlock() (Block, error) {
 		return Block{}, err
 	}
 
-	db.lastestBlock = blockFS.Hash
+	db.latestBlock = blockFS.Block
 	db.txMempool = []Tx{}
 
 	return blockFS.Block, nil

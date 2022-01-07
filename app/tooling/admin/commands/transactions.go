@@ -21,16 +21,17 @@ func Transactions(args []string, db *database.DB) error {
 		txs = append(txs, database.NewTx("bill_kennedy", "bill_kennedy", 703, database.TxDataReward))
 
 		for _, tx := range txs {
-			if err := db.AddMempool(tx); err != nil {
+			if err := db.AddTransaction(tx); err != nil {
 				return err
 			}
 		}
 
-		if err := db.Persist(); err != nil {
+		block, err := db.WriteBlock()
+		if err != nil {
 			return err
 		}
 		fmt.Println("Block 0 Persisted")
-		fmt.Printf("BlockHash: %x\n\n", db.LastestBlock())
+		fmt.Printf("BlockHash: %x\n\n", block.Hash())
 
 		txs = []database.Tx{}
 		txs = append(txs, database.NewTx("bill_kennedy", "babayaga", 2000, ""))
@@ -41,35 +42,37 @@ func Transactions(args []string, db *database.DB) error {
 		txs = append(txs, database.NewTx("bill_kennedy", "bill_kennedy", 600, database.TxDataReward))
 
 		for _, tx := range txs {
-			if err := db.AddMempool(tx); err != nil {
+			if err := db.AddTransaction(tx); err != nil {
 				return err
 			}
 		}
 
-		if err := db.Persist(); err != nil {
+		block, err = db.WriteBlock()
+		if err != nil {
 			return err
 		}
 		fmt.Println("Block 1 Persisted")
-		fmt.Printf("BlockHash: %x\n\n", db.LastestBlock())
+		fmt.Printf("BlockHash: %x\n\n", block.Hash())
 
 	case "add":
-		fmt.Printf("LastestBlockHash: %x\n\n", db.LastestBlock())
+		fmt.Printf("LastestBlockHash: %x\n\n", db.QueryLatestBlock().Hash())
 
 		from := args[3]
 		to := args[4]
 		value, _ := strconv.Atoi(args[5])
 		data := args[6]
 		tx := database.NewTx(from, to, uint(value), data)
-		if err := db.AddMempool(tx); err != nil {
+		if err := db.AddTransaction(tx); err != nil {
 			return err
 		}
 		fmt.Println("Transaction added")
 
-		if err := db.Persist(); err != nil {
+		block, err := db.WriteBlock()
+		if err != nil {
 			return err
 		}
 		fmt.Println("Transaction persisted")
-		fmt.Printf("LastestBlockHash: %x\n\n", db.LastestBlock())
+		fmt.Printf("LastestBlockHash: %x\n\n", block.Hash())
 
 	default:
 		var acct string
@@ -78,11 +81,10 @@ func Transactions(args []string, db *database.DB) error {
 		}
 
 		fmt.Println("-----------------------------------------------------------------------------------------")
-		for i, block := range db.Blocks(acct) {
-			h, _ := block.Hash()
+		for i, block := range db.QueryBlocks(acct) {
 			fmt.Println("Block:", i)
 			fmt.Printf("Prev Block: %x\n", block.Header.PrevBlock)
-			fmt.Printf("Block: %x\n", h)
+			fmt.Printf("Block: %x\n", block.Hash())
 			for _, tx := range block.Transactions {
 				fmt.Printf("From: %s  To: %s  Value: %d  Data: %s\n",
 					tx.From, tx.To, tx.Value, tx.Data)

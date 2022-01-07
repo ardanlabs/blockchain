@@ -50,9 +50,9 @@ func (h Handlers) AddTransaction(ctx context.Context, w http.ResponseWriter, r *
 	return web.Respond(ctx, w, resp, http.StatusOK)
 }
 
-// CreateBlock writes the existing transactions in the mempool to a block on disk.
-func (h Handlers) CreateBlock(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	dbBlock, err := h.DB.CreateBlock()
+// WriteBlock writes the existing transactions in the mempool to a block on disk.
+func (h Handlers) WriteBlock(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	dbBlock, err := h.DB.WriteBlock()
 	if err != nil {
 		switch {
 		case errors.Is(err, database.ErrNoTransactions):
@@ -104,7 +104,7 @@ func (h Handlers) QueryBalances(ctx context.Context, w http.ResponseWriter, r *h
 	}
 
 	balances := balances{
-		LastestBlock: fmt.Sprintf("%x", h.DB.QueryLastestBlock()),
+		LastestBlock: fmt.Sprintf("%x", h.DB.QueryLatestBlock()),
 		Uncommitted:  len(h.DB.QueryMempool()),
 		Balances:     bals,
 	}

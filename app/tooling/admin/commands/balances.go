@@ -13,9 +13,9 @@ func Balances(args []string, db *database.DB) error {
 		onlyAct = args[2]
 	}
 
-	fmt.Printf("LastestBlockHash: %x\n\n", db.LastestBlock())
+	fmt.Printf("LastestBlockHash: %x\n\n", db.QueryLatestBlock().Hash())
 
-	for act, bal := range db.Balances(onlyAct) {
+	for act, bal := range db.QueryBalances(onlyAct) {
 		fmt.Printf("Account: %s  Balance: %d\n", act, bal)
 	}
 

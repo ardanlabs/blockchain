@@ -13,6 +13,7 @@ import (
 // each block.
 type BlockHeader struct {
 	PrevBlock [32]byte
+	Number    uint64
 	Time      uint64
 }
 
@@ -24,13 +25,13 @@ type Block struct {
 
 // Hash returns the unique hash for the block by marshaling
 // the block into JSON and performing a hashing operation.
-func (b Block) Hash() ([32]byte, error) {
+func (b Block) Hash() [32]byte {
 	blockJson, err := json.Marshal(b)
 	if err != nil {
-		return [32]byte{}, err
+		return [32]byte{}
 	}
 
-	return sha256.Sum256(blockJson), nil
+	return sha256.Sum256(blockJson)
 }
 
 // BlockFS represents what is written to the DB file.
@@ -40,22 +41,18 @@ type BlockFS struct {
 }
 
 // NewBlockFS constructs a new BlockFS for persisting.
-func NewBlockFS(prevBlock [32]byte, transactions []Tx) (BlockFS, error) {
+func NewBlockFS(prevBlock Block, transactions []Tx) (BlockFS, error) {
 	block := Block{
 		Header: BlockHeader{
-			PrevBlock: prevBlock,
+			PrevBlock: prevBlock.Hash(),
+			Number:    prevBlock.Header.Number + 1,
 			Time:      uint64(time.Now().Unix()),
 		},
 		Transactions: transactions,
 	}
 
-	hash, err := block.Hash()
-	if err != nil {
-		return BlockFS{}, err
-	}
-
 	blockFS := BlockFS{
-		Hash:  hash,
+		Hash:  block.Hash(),
 		Block: block,
 	}
 
@@ -85,12 +82,7 @@ func loadBlocks(dbPath string) ([]Block, error) {
 			return nil, err
 		}
 
-		hash, err := blockFS.Block.Hash()
-		if err != nil {
-			return nil, err
-		}
-
-		if hash != blockFS.Hash {
+		if blockFS.Block.Hash() != blockFS.Hash {
 			return nil, fmt.Errorf("block %d has been changed", blockNum)
 		}
 

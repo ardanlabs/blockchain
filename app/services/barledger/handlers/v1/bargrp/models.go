@@ -45,6 +45,7 @@ type balances struct {
 type blockHeader struct {
 	PrevBlock string    `json:"prev_block"`
 	ThisBlock string    `json:"this_block"`
+	Number    uint64    `json:"number"`
 	Time      time.Time `json:"time"`
 }
 
@@ -54,15 +55,11 @@ type block struct {
 }
 
 func toBlock(dbBlock database.Block) block {
-	hash, err := dbBlock.Hash()
-	if err != nil {
-		return block{}
-	}
-
 	block := block{
 		Header: blockHeader{
 			PrevBlock: fmt.Sprintf("%x", dbBlock.Header.PrevBlock),
-			ThisBlock: fmt.Sprintf("%x", hash),
+			ThisBlock: fmt.Sprintf("%x", dbBlock.Hash()),
+			Number:    dbBlock.Header.Number,
 			Time:      time.Unix(int64(dbBlock.Header.Time), 0),
 		},
 		Transactions: toTxs(dbBlock.Transactions),

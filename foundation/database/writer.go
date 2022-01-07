@@ -24,11 +24,17 @@ type blockWriter struct {
 // newBlockWriter creates a persister for writing transactions
 // to a block.
 func newBlockWriter(db *DB, interval time.Duration, evHandler EventHandler) *blockWriter {
+	ev := func(v string) {
+		if evHandler != nil {
+			evHandler(v)
+		}
+	}
+
 	bw := blockWriter{
 		db:        db,
 		shut:      make(chan struct{}),
 		ticker:    *time.NewTicker(interval),
-		evHandler: evHandler,
+		evHandler: ev,
 	}
 
 	bw.wg.Add(1)
@@ -66,7 +72,7 @@ func (bw *blockWriter) writeBlock() {
 	bw.evHandler("block writer: started")
 	defer bw.evHandler("block writer: completed")
 
-	block, err := bw.db.CreateBlock()
+	block, err := bw.db.WriteBlock()
 	if err != nil {
 		if errors.Is(err, ErrNoTransactions) {
 			bw.evHandler("block writer: no transactions in mempool")
@@ -76,13 +82,7 @@ func (bw *blockWriter) writeBlock() {
 		return
 	}
 
-	var hash string
-	h, err := block.Hash()
-	if err != nil {
-		hash = err.Error()
-	} else {
-		hash = fmt.Sprintf("%x", h)
-	}
+	hash := fmt.Sprintf("%x", block.Hash())
 
 	bw.evHandler(fmt.Sprintf("block writer: prevBlk[%x], newBlk[%x], numTrans[%d]", block.Header.PrevBlock, hash, len(block.Transactions)))
 }

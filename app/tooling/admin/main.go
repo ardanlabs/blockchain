@@ -4,6 +4,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/ardanlabs/blockchain/app/tooling/admin/commands"
 	"github.com/ardanlabs/blockchain/foundation/database"
@@ -33,7 +34,7 @@ func main() {
 }
 
 func run(log *zap.SugaredLogger) error {
-	db, err := database.New("zblock/blocks.db", 10)
+	db, err := database.New("zblock/blocks.db", 10*time.Minute, nil)
 	if err != nil {
 		return err
 	}
