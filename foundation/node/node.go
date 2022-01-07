@@ -25,11 +25,9 @@ type Node struct {
 	latestBlock Block
 	balances    map[string]uint
 	knownPeers  []string
-
-	dbPath string
-	file   *os.File
-	mu     sync.Mutex
-
+	dbPath      string
+	file        *os.File
+	mu          sync.Mutex
 	blockWriter *blockWriter
 }
 
@@ -71,8 +69,9 @@ func New(cfg Config) (*Node, error) {
 	n := Node{
 		genesis:     genesis,
 		latestBlock: latestBlock,
-		dbPath:      cfg.DBPath,
 		balances:    balances,
+		knownPeers:  cfg.KnownPeers,
+		dbPath:      cfg.DBPath,
 		file:        file,
 	}
 

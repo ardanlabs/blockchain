@@ -88,7 +88,7 @@ func run(log *zap.SugaredLogger) error {
 	log.Infow("startup", "config", out)
 
 	// =========================================================================
-	// Database Support
+	// Node Support
 
 	d, err := time.ParseDuration(cfg.Node.BlockWriterInterval)
 	if err != nil {
@@ -98,6 +98,7 @@ func run(log *zap.SugaredLogger) error {
 	node, err := node.New(node.Config{
 		DBPath:          cfg.Node.DBPath,
 		PersistInterval: d,
+		KnownPeers:      cfg.Node.KnownPeers,
 		EvHandler:       func(v string) { log.Infow(v) },
 	})
 	if err != nil {
