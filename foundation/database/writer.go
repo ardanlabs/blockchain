@@ -38,7 +38,7 @@ func newBlockWriter(db *DB, interval time.Duration, evHandler EventHandler) *blo
 		for {
 			select {
 			case <-bw.ticker.C:
-				bw.persistWork()
+				bw.writeBlock()
 			case <-bw.shut:
 				break down
 			}
@@ -60,9 +60,9 @@ func (bw *blockWriter) shutdown() {
 	bw.evHandler("block writer: off")
 }
 
-// persistWork wakes on on an interval to write transactions from
-// the mempool into a new block.
-func (bw *blockWriter) persistWork() {
+// writeBlock performs the work to create a new block from transactions
+// in the mempool.
+func (bw *blockWriter) writeBlock() {
 	bw.evHandler("block writer: started")
 	defer bw.evHandler("block writer: completed")
 
