@@ -84,5 +84,5 @@ func (bw *blockWriter) persistWork() {
 		hash = fmt.Sprintf("%x", h)
 	}
 
-	bw.evHandler(fmt.Sprintf("block writer: prev[%x], block[%x], trans[%d]", block.Header.PrevBlock, hash, len(block.Transactions)))
+	bw.evHandler(fmt.Sprintf("block writer: prevBlk[%x], newBlk[%x], numTrans[%d]", block.Header.PrevBlock, hash, len(block.Transactions)))
 }
