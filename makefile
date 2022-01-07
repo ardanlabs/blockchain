@@ -10,8 +10,11 @@ SHELL := /bin/bash
 # ==============================================================================
 # Local support
 
-service:
+up:
 	go run app/services/barledger/main.go | go run app/tooling/logfmt/main.go
+
+down:
+	kill -INT $(shell ps | grep go-build | grep -v grep | sed -n 2,2p | cut -c1-5)
 
 seed:
 	go run app/tooling/admin/main.go trans seed

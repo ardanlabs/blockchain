@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"sync"
+	"time"
 )
 
 // DB represents a block chain of data.
@@ -15,13 +16,14 @@ type DB struct {
 	lastestBlock [32]byte
 	dbPath       string
 	balances     map[string]uint
-	persistRatio int
 	file         *os.File
 	mu           sync.Mutex
+
+	blockWriter *blockWriter
 }
 
 // New constructs a new blockchain for data management.
-func New(dbPath string, persistRatio int) (*DB, error) {
+func New(dbPath string, persistInterval time.Duration, evHandler EventHandler) (*DB, error) {
 
 	// Load the genesis file to get starting balances for
 	// founders of the block chain.
@@ -63,7 +65,6 @@ func New(dbPath string, persistRatio int) (*DB, error) {
 		lastestBlock: lastestBlock,
 		dbPath:       dbPath,
 		balances:     balances,
-		persistRatio: persistRatio,
 		file:         file,
 	}
 
@@ -75,6 +76,9 @@ func New(dbPath string, persistRatio int) (*DB, error) {
 		}
 	}
 
+	// Start the block writer.
+	db.blockWriter = newBlockWriter(&db, persistInterval, evHandler)
+
 	return &db, nil
 }
 
@@ -85,6 +89,8 @@ func (db *DB) Close() error {
 		db.file.Close()
 		db.mu.Unlock()
 	}()
+
+	db.blockWriter.shutdown()
 
 	// Persist the remaining transactions to disk.
 	if _, err := db.createBlock(); err != nil {

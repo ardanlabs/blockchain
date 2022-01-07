@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strconv"
 	"syscall"
 	"time"
 
@@ -55,8 +54,8 @@ func run(log *zap.SugaredLogger) error {
 			DebugHost       string        `conf:"default:0.0.0.0:8081"`
 		}
 		DB struct {
-			Path         string `conf:"default:zblock/blocks.db"`
-			PersistRatio string `conf:"default:10"`
+			Path                string `conf:"default:zblock/blocks.db"`
+			BlockWriterInterval string `conf:"default:10s"`
 		}
 	}{
 		Version: conf.Version{
@@ -90,12 +89,13 @@ func run(log *zap.SugaredLogger) error {
 	// =========================================================================
 	// Database Support
 
-	persistRatio, err := strconv.Atoi(cfg.DB.PersistRatio)
+	d, err := time.ParseDuration(cfg.DB.BlockWriterInterval)
 	if err != nil {
 		return err
 	}
 
-	db, err := database.New(cfg.DB.Path, persistRatio)
+	evFn := func(v string) { log.Infow(v) }
+	db, err := database.New(cfg.DB.Path, d, evFn)
 	if err != nil {
 		return err
 	}
