@@ -8,22 +8,22 @@ import (
 	"net/http"
 
 	v1 "github.com/ardanlabs/blockchain/business/web/v1"
-	"github.com/ardanlabs/blockchain/foundation/database"
+	"github.com/ardanlabs/blockchain/foundation/node"
 	"github.com/ardanlabs/blockchain/foundation/web"
 	"go.uber.org/zap"
 )
 
 // Handlers manages the set of bar ledger endpoints.
 type Handlers struct {
-	Log *zap.SugaredLogger
-	DB  *database.DB
+	Log  *zap.SugaredLogger
+	Node *node.Node
 }
 
 // QueryStatus returns the current status of the node.
 func (h Handlers) QueryStatus(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	status := status{
-		Hash:   fmt.Sprintf("%x", h.DB.QueryLatestBlock().Hash()),
-		Number: h.DB.QueryLatestBlock().Header.Number,
+		Hash:   fmt.Sprintf("%x", h.Node.QueryLatestBlock().Hash()),
+		Number: h.Node.QueryLatestBlock().Header.Number,
 	}
 
 	return web.Respond(ctx, w, status, http.StatusOK)
@@ -43,8 +43,8 @@ func (h Handlers) AddTransaction(ctx context.Context, w http.ResponseWriter, r *
 
 	h.Log.Infow("add tran", "traceid", v.TraceID, "data", tx)
 
-	dbTx := database.NewTx(tx.From, tx.To, tx.Value, tx.Data)
-	if err := h.DB.AddTransaction(dbTx); err != nil {
+	dbTx := node.NewTx(tx.From, tx.To, tx.Value, tx.Data)
+	if err := h.Node.AddTransaction(dbTx); err != nil {
 		err = fmt.Errorf("transaction failed, %w", err)
 		return v1.NewRequestError(err, http.StatusBadRequest)
 	}
@@ -62,10 +62,10 @@ func (h Handlers) AddTransaction(ctx context.Context, w http.ResponseWriter, r *
 
 // WriteBlock writes the existing transactions in the mempool to a block on disk.
 func (h Handlers) WriteBlock(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	dbBlock, err := h.DB.WriteBlock()
+	dbBlock, err := h.Node.WriteBlock()
 	if err != nil {
 		switch {
-		case errors.Is(err, database.ErrNoTransactions):
+		case errors.Is(err, node.ErrNoTransactions):
 			return v1.NewRequestError(err, http.StatusBadRequest)
 		default:
 			err = fmt.Errorf("create block failed, %w", err)
@@ -88,13 +88,13 @@ func (h Handlers) WriteBlock(ctx context.Context, w http.ResponseWriter, r *http
 
 // QueryGenesis returns the genesis information.
 func (h Handlers) QueryGenesis(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	gen := h.DB.QueryGenesis()
+	gen := h.Node.QueryGenesis()
 	return web.Respond(ctx, w, gen, http.StatusOK)
 }
 
 // QueryMempool returns the set of uncommitted transactions.
 func (h Handlers) QueryMempool(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	txs := h.DB.QueryMempool()
+	txs := h.Node.QueryMempool()
 	return web.Respond(ctx, w, txs, http.StatusOK)
 }
 
@@ -102,7 +102,7 @@ func (h Handlers) QueryMempool(ctx context.Context, w http.ResponseWriter, r *ht
 func (h Handlers) QueryBalances(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	acct := web.Param(r, "acct")
 
-	dbBals := h.DB.QueryBalances(acct)
+	dbBals := h.Node.QueryBalances(acct)
 	bals := make([]balance, 0, len(dbBals))
 
 	for act, dbBal := range dbBals {
@@ -114,8 +114,8 @@ func (h Handlers) QueryBalances(ctx context.Context, w http.ResponseWriter, r *h
 	}
 
 	balances := balances{
-		LastestBlock: fmt.Sprintf("%x", h.DB.QueryLatestBlock()),
-		Uncommitted:  len(h.DB.QueryMempool()),
+		LastestBlock: fmt.Sprintf("%x", h.Node.QueryLatestBlock()),
+		Uncommitted:  len(h.Node.QueryMempool()),
 		Balances:     bals,
 	}
 
@@ -125,7 +125,7 @@ func (h Handlers) QueryBalances(ctx context.Context, w http.ResponseWriter, r *h
 // QueryBlocks returns all the blocks and their details.
 func (h Handlers) QueryBlocks(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	acct := web.Param(r, "acct")
-	dbBlocks := h.DB.QueryBlocks(acct)
+	dbBlocks := h.Node.QueryBlocks(acct)
 
 	out := make([]block, len(dbBlocks))
 	for i := range dbBlocks {

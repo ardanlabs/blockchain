@@ -1,4 +1,4 @@
-package database
+package node
 
 // TxError represents an error on a transaction.
 type TxError struct {

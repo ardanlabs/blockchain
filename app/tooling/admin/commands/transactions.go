@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/ardanlabs/blockchain/foundation/database"
+	"github.com/ardanlabs/blockchain/foundation/node"
 )
 
 // Transactions returns the current set of transactions.
-func Transactions(args []string, db *database.DB) error {
+func Transactions(args []string, n *node.Node) error {
 	var sub string
 	if len(args) > 2 {
 		sub = args[2]
@@ -16,38 +16,38 @@ func Transactions(args []string, db *database.DB) error {
 
 	switch sub {
 	case "seed":
-		var txs []database.Tx
-		txs = append(txs, database.NewTx("bill_kennedy", "bill_kennedy", 3, database.TxDataReward))
-		txs = append(txs, database.NewTx("bill_kennedy", "bill_kennedy", 703, database.TxDataReward))
+		var txs []node.Tx
+		txs = append(txs, node.NewTx("bill_kennedy", "bill_kennedy", 3, node.TxDataReward))
+		txs = append(txs, node.NewTx("bill_kennedy", "bill_kennedy", 703, node.TxDataReward))
 
 		for _, tx := range txs {
-			if err := db.AddTransaction(tx); err != nil {
+			if err := n.AddTransaction(tx); err != nil {
 				return err
 			}
 		}
 
-		block, err := db.WriteBlock()
+		block, err := n.WriteBlock()
 		if err != nil {
 			return err
 		}
 		fmt.Println("Block 0 Persisted")
 		fmt.Printf("BlockHash: %x\n\n", block.Hash())
 
-		txs = []database.Tx{}
-		txs = append(txs, database.NewTx("bill_kennedy", "babayaga", 2000, ""))
-		txs = append(txs, database.NewTx("bill_kennedy", "bill_kennedy", 100, database.TxDataReward))
-		txs = append(txs, database.NewTx("babayaga", "bill_kennedy", 1, ""))
-		txs = append(txs, database.NewTx("babayaga", "ceasar", 1000, ""))
-		txs = append(txs, database.NewTx("babayaga", "bill_kennedy", 50, ""))
-		txs = append(txs, database.NewTx("bill_kennedy", "bill_kennedy", 600, database.TxDataReward))
+		txs = []node.Tx{}
+		txs = append(txs, node.NewTx("bill_kennedy", "babayaga", 2000, ""))
+		txs = append(txs, node.NewTx("bill_kennedy", "bill_kennedy", 100, node.TxDataReward))
+		txs = append(txs, node.NewTx("babayaga", "bill_kennedy", 1, ""))
+		txs = append(txs, node.NewTx("babayaga", "ceasar", 1000, ""))
+		txs = append(txs, node.NewTx("babayaga", "bill_kennedy", 50, ""))
+		txs = append(txs, node.NewTx("bill_kennedy", "bill_kennedy", 600, node.TxDataReward))
 
 		for _, tx := range txs {
-			if err := db.AddTransaction(tx); err != nil {
+			if err := n.AddTransaction(tx); err != nil {
 				return err
 			}
 		}
 
-		block, err = db.WriteBlock()
+		block, err = n.WriteBlock()
 		if err != nil {
 			return err
 		}
@@ -55,19 +55,19 @@ func Transactions(args []string, db *database.DB) error {
 		fmt.Printf("BlockHash: %x\n\n", block.Hash())
 
 	case "add":
-		fmt.Printf("LastestBlockHash: %x\n\n", db.QueryLatestBlock().Hash())
+		fmt.Printf("LastestBlockHash: %x\n\n", n.QueryLatestBlock().Hash())
 
 		from := args[3]
 		to := args[4]
 		value, _ := strconv.Atoi(args[5])
 		data := args[6]
-		tx := database.NewTx(from, to, uint(value), data)
-		if err := db.AddTransaction(tx); err != nil {
+		tx := node.NewTx(from, to, uint(value), data)
+		if err := n.AddTransaction(tx); err != nil {
 			return err
 		}
 		fmt.Println("Transaction added")
 
-		block, err := db.WriteBlock()
+		block, err := n.WriteBlock()
 		if err != nil {
 			return err
 		}
@@ -81,7 +81,7 @@ func Transactions(args []string, db *database.DB) error {
 		}
 
 		fmt.Println("-----------------------------------------------------------------------------------------")
-		for i, block := range db.QueryBlocks(acct) {
+		for i, block := range n.QueryBlocks(acct) {
 			fmt.Println("Block:", i)
 			fmt.Printf("Prev Block: %x\n", block.Header.PrevBlock)
 			fmt.Printf("Block: %x\n", block.Hash())

@@ -1,4 +1,4 @@
-package database
+package node
 
 import (
 	"encoding/json"
@@ -9,21 +9,32 @@ import (
 	"time"
 )
 
-// DB represents a block chain of data.
-type DB struct {
+// Config represents the configuration required to start
+// the blockchain node.
+type Config struct {
+	DBPath          string
+	PersistInterval time.Duration
+	KnownPeers      []string
+	EvHandler       EventHandler
+}
+
+// Node manages the blockchain database.
+type Node struct {
 	genesis     Genesis
 	txMempool   []Tx
 	latestBlock Block
-	dbPath      string
 	balances    map[string]uint
-	file        *os.File
-	mu          sync.Mutex
+	knownPeers  []string
+
+	dbPath string
+	file   *os.File
+	mu     sync.Mutex
 
 	blockWriter *blockWriter
 }
 
 // New constructs a new blockchain for data management.
-func New(dbPath string, persistInterval time.Duration, evHandler EventHandler) (*DB, error) {
+func New(cfg Config) (*Node, error) {
 
 	// Load the genesis file to get starting balances for
 	// founders of the block chain.
@@ -33,7 +44,7 @@ func New(dbPath string, persistInterval time.Duration, evHandler EventHandler) (
 	}
 
 	// Load the current set of recorded transactions.
-	blocks, err := loadBlocks(dbPath)
+	blocks, err := loadBlocks(cfg.DBPath)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +56,7 @@ func New(dbPath string, persistInterval time.Duration, evHandler EventHandler) (
 	}
 
 	// Open the transaction database file.
-	file, err := os.OpenFile(dbPath, os.O_APPEND|os.O_RDWR, 0600)
+	file, err := os.OpenFile(cfg.DBPath, os.O_APPEND|os.O_RDWR, 0600)
 	if err != nil {
 		return nil, err
 	}
@@ -57,10 +68,10 @@ func New(dbPath string, persistInterval time.Duration, evHandler EventHandler) (
 	}
 
 	// Create the chain with no transactions currently in memory.
-	db := DB{
+	n := Node{
 		genesis:     genesis,
 		latestBlock: latestBlock,
-		dbPath:      dbPath,
+		dbPath:      cfg.DBPath,
 		balances:    balances,
 		file:        file,
 	}
@@ -68,29 +79,29 @@ func New(dbPath string, persistInterval time.Duration, evHandler EventHandler) (
 	// Apply the transactions to the initial genesis balances, adding new
 	// accounts as it is processed.
 	for _, block := range blocks {
-		if err := db.applyTransToBalances(block.Transactions); err != nil {
+		if err := n.applyTransToBalances(block.Transactions); err != nil {
 			return nil, err
 		}
 	}
 
 	// Start the block writer.
-	db.blockWriter = newBlockWriter(&db, persistInterval, evHandler)
+	n.blockWriter = newBlockWriter(&n, cfg.PersistInterval, cfg.EvHandler)
 
-	return &db, nil
+	return &n, nil
 }
 
-// Close cleanly closes the database file underneath.
-func (db *DB) Close() error {
-	db.mu.Lock()
+// Shutdown cleanly brings the node down.
+func (n *Node) Shutdown() error {
+	n.mu.Lock()
 	defer func() {
-		db.file.Close()
-		db.mu.Unlock()
+		n.file.Close()
+		n.mu.Unlock()
 	}()
 
-	db.blockWriter.shutdown()
+	n.blockWriter.shutdown()
 
 	// Persist the remaining transactions to disk.
-	if _, err := db.writeBlock(); err != nil {
+	if _, err := n.writeBlock(); err != nil {
 		if !errors.Is(err, ErrNoTransactions) {
 			return err
 		}
@@ -100,61 +111,61 @@ func (db *DB) Close() error {
 }
 
 // AddTransaction appends a new transactions to the mempool.
-func (db *DB) AddTransaction(tx Tx) error {
-	db.mu.Lock()
-	defer db.mu.Unlock()
+func (n *Node) AddTransaction(tx Tx) error {
+	n.mu.Lock()
+	defer n.mu.Unlock()
 
 	// Append the transaction to the in-memory store.
-	db.txMempool = append(db.txMempool, tx)
+	n.txMempool = append(n.txMempool, tx)
 
 	return nil
 }
 
 // WriteBlock writes the current transactions from the
 // memory pool to disk.
-func (db *DB) WriteBlock() (Block, error) {
-	db.mu.Lock()
-	defer db.mu.Unlock()
+func (n *Node) WriteBlock() (Block, error) {
+	n.mu.Lock()
+	defer n.mu.Unlock()
 
-	return db.writeBlock()
+	return n.writeBlock()
 }
 
 // =============================================================================
 
 // QueryGenesis returns a copy of the genesis information.
-func (db *DB) QueryGenesis() Genesis {
-	db.mu.Lock()
-	defer db.mu.Unlock()
+func (n *Node) QueryGenesis() Genesis {
+	n.mu.Lock()
+	defer n.mu.Unlock()
 
-	return db.genesis
+	return n.genesis
 }
 
 // QueryLatestBlock returns the current hash of the latest block.
-func (db *DB) QueryLatestBlock() Block {
-	db.mu.Lock()
-	defer db.mu.Unlock()
+func (n *Node) QueryLatestBlock() Block {
+	n.mu.Lock()
+	defer n.mu.Unlock()
 
-	return db.latestBlock
+	return n.latestBlock
 }
 
 // QueryMempool returns a copy of the mempool.
-func (db *DB) QueryMempool() []Tx {
-	db.mu.Lock()
-	defer db.mu.Unlock()
+func (n *Node) QueryMempool() []Tx {
+	n.mu.Lock()
+	defer n.mu.Unlock()
 
-	cpy := make([]Tx, len(db.txMempool))
-	copy(cpy, db.txMempool)
+	cpy := make([]Tx, len(n.txMempool))
+	copy(cpy, n.txMempool)
 	return cpy
 }
 
 // QueryBalances returns the set of balances by account. If the account
 // is empty, all balances are returned.
-func (db *DB) QueryBalances(account string) map[string]uint {
-	db.mu.Lock()
-	defer db.mu.Unlock()
+func (n *Node) QueryBalances(account string) map[string]uint {
+	n.mu.Lock()
+	defer n.mu.Unlock()
 
 	balances := make(map[string]uint)
-	for act, bal := range db.balances {
+	for act, bal := range n.balances {
 		if account == "" || account == act {
 			balances[act] = bal
 		}
@@ -165,8 +176,8 @@ func (db *DB) QueryBalances(account string) map[string]uint {
 
 // QueryBlocks returns the set of blocks by account. If the account
 // is empty, all blocks are returned.
-func (db *DB) QueryBlocks(account string) []Block {
-	blocks, err := loadBlocks(db.dbPath)
+func (n *Node) QueryBlocks(account string) []Block {
+	blocks, err := loadBlocks(n.dbPath)
 	if err != nil {
 		return nil
 	}
@@ -195,23 +206,23 @@ var ErrNoTransactions = errors.New("no transactions in mempool")
 
 // writeBlock writes the current transaction memory pool to disk.
 // It assumes it's always inside a mutex lock.
-func (db *DB) writeBlock() (Block, error) {
-	if len(db.txMempool) == 0 {
+func (n *Node) writeBlock() (Block, error) {
+	if len(n.txMempool) == 0 {
 		return Block{}, ErrNoTransactions
 	}
 
 	// If the transaction can't be applied to the balance,
 	// mark the transaction as failed.
-	for i := range db.txMempool {
-		if err := db.validateTransaction(db.txMempool[i]); err != nil {
-			db.txMempool[i].Status = TxStatusError
-			db.txMempool[i].StatusInfo = err.Error()
+	for i := range n.txMempool {
+		if err := n.validateTransaction(n.txMempool[i]); err != nil {
+			n.txMempool[i].Status = TxStatusError
+			n.txMempool[i].StatusInfo = err.Error()
 			continue
 		}
-		db.txMempool[i].Status = TxStatusAccepted
+		n.txMempool[i].Status = TxStatusAccepted
 	}
 
-	blockFS, err := NewBlockFS(db.latestBlock, db.txMempool)
+	blockFS, err := NewBlockFS(n.latestBlock, n.txMempool)
 	if err != nil {
 		return Block{}, err
 	}
@@ -221,22 +232,22 @@ func (db *DB) writeBlock() (Block, error) {
 		return Block{}, err
 	}
 
-	if _, err := db.file.Write(append(blockFSJson, '\n')); err != nil {
+	if _, err := n.file.Write(append(blockFSJson, '\n')); err != nil {
 		return Block{}, err
 	}
 
-	db.latestBlock = blockFS.Block
-	db.txMempool = []Tx{}
+	n.latestBlock = blockFS.Block
+	n.txMempool = []Tx{}
 
 	return blockFS.Block, nil
 }
 
 // validateTransaction performs integrity checks on a transaction.
-func (db *DB) validateTransaction(tx Tx) error {
+func (n *Node) validateTransaction(tx Tx) error {
 
 	// Validate the transaction can be applied to the balance,
 	// checking for things like insufficient funds.
-	if err := db.applyTranToBalance(tx); err != nil {
+	if err := n.applyTranToBalance(tx); err != nil {
 		return err
 	}
 
@@ -245,9 +256,9 @@ func (db *DB) validateTransaction(tx Tx) error {
 
 // applyTransToBalances applies the transactions to the specified
 // balances, adding new accounts as they are found.
-func (db *DB) applyTransToBalances(txs []Tx) error {
+func (n *Node) applyTransToBalances(txs []Tx) error {
 	for _, tx := range txs {
-		db.applyTranToBalance(tx)
+		n.applyTranToBalance(tx)
 	}
 
 	return nil
@@ -255,13 +266,13 @@ func (db *DB) applyTransToBalances(txs []Tx) error {
 
 // applyTranToBalance performs the business logic for applying a transaction to
 // the balance sheet.
-func (db *DB) applyTranToBalance(tx Tx) error {
+func (n *Node) applyTranToBalance(tx Tx) error {
 	if tx.Status == TxStatusError {
 		return nil
 	}
 
 	if tx.Data == TxDataReward {
-		db.balances[tx.To] += tx.Value
+		n.balances[tx.To] += tx.Value
 		return nil
 	}
 
@@ -269,12 +280,12 @@ func (db *DB) applyTranToBalance(tx Tx) error {
 		return fmt.Errorf("invalid transaction, do you mean to give a reward, from %s, to %s", tx.From, tx.To)
 	}
 
-	if tx.Value > db.balances[tx.From] {
+	if tx.Value > n.balances[tx.From] {
 		return fmt.Errorf("%s has an insufficient balance", tx.From)
 	}
 
-	db.balances[tx.From] -= tx.Value
-	db.balances[tx.To] += tx.Value
+	n.balances[tx.From] -= tx.Value
+	n.balances[tx.To] += tx.Value
 
 	return nil
 }

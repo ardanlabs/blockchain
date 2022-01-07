@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ardanlabs/blockchain/foundation/database"
+	"github.com/ardanlabs/blockchain/foundation/node"
 )
 
 type status struct {
@@ -28,10 +28,10 @@ type tx struct {
 	StatusInfo string `json:"status_info"`
 }
 
-func toTxs(dbTxs []database.Tx) []tx {
-	tsx := make([]tx, len(dbTxs))
-	for i := range dbTxs {
-		tsx[i] = tx(dbTxs[i])
+func toTxs(nTxs []node.Tx) []tx {
+	tsx := make([]tx, len(nTxs))
+	for i := range nTxs {
+		tsx[i] = tx(nTxs[i])
 	}
 	return tsx
 }
@@ -59,15 +59,15 @@ type block struct {
 	Transactions []tx        `json:"transactions"`
 }
 
-func toBlock(dbBlock database.Block) block {
+func toBlock(nBlock node.Block) block {
 	block := block{
 		Header: blockHeader{
-			PrevBlock: fmt.Sprintf("%x", dbBlock.Header.PrevBlock),
-			ThisBlock: fmt.Sprintf("%x", dbBlock.Hash()),
-			Number:    dbBlock.Header.Number,
-			Time:      time.Unix(int64(dbBlock.Header.Time), 0),
+			PrevBlock: fmt.Sprintf("%x", nBlock.Header.PrevBlock),
+			ThisBlock: fmt.Sprintf("%x", nBlock.Hash()),
+			Number:    nBlock.Header.Number,
+			Time:      time.Unix(int64(nBlock.Header.Time), 0),
 		},
-		Transactions: toTxs(dbBlock.Transactions),
+		Transactions: toTxs(nBlock.Transactions),
 	}
 
 	return block

@@ -1,4 +1,4 @@
-package database
+package node
 
 import (
 	"errors"
@@ -14,7 +14,7 @@ type EventHandler func(v string)
 // blockWriter manages a goroutine that executes a write block
 // call on a timer.
 type blockWriter struct {
-	db        *DB
+	node      *Node
 	wg        sync.WaitGroup
 	shut      chan struct{}
 	ticker    time.Ticker
@@ -23,7 +23,7 @@ type blockWriter struct {
 
 // newBlockWriter creates a persister for writing transactions
 // to a block.
-func newBlockWriter(db *DB, interval time.Duration, evHandler EventHandler) *blockWriter {
+func newBlockWriter(n *Node, interval time.Duration, evHandler EventHandler) *blockWriter {
 	ev := func(v string) {
 		if evHandler != nil {
 			evHandler(v)
@@ -31,7 +31,7 @@ func newBlockWriter(db *DB, interval time.Duration, evHandler EventHandler) *blo
 	}
 
 	bw := blockWriter{
-		db:        db,
+		node:      n,
 		shut:      make(chan struct{}),
 		ticker:    *time.NewTicker(interval),
 		evHandler: ev,
@@ -72,7 +72,7 @@ func (bw *blockWriter) writeBlock() {
 	bw.evHandler("block writer: started")
 	defer bw.evHandler("block writer: completed")
 
-	block, err := bw.db.WriteBlock()
+	block, err := bw.node.WriteBlock()
 	if err != nil {
 		if errors.Is(err, ErrNoTransactions) {
 			bw.evHandler("block writer: no transactions in mempool")

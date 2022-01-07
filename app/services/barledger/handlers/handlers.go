@@ -10,7 +10,7 @@ import (
 	"github.com/ardanlabs/blockchain/app/services/barledger/handlers/debug/checkgrp"
 	v1 "github.com/ardanlabs/blockchain/app/services/barledger/handlers/v1"
 	"github.com/ardanlabs/blockchain/business/web/v1/mid"
-	"github.com/ardanlabs/blockchain/foundation/database"
+	"github.com/ardanlabs/blockchain/foundation/node"
 	"github.com/ardanlabs/blockchain/foundation/web"
 	"go.uber.org/zap"
 )
@@ -19,7 +19,7 @@ import (
 type APIMuxConfig struct {
 	Shutdown chan os.Signal
 	Log      *zap.SugaredLogger
-	DB       *database.DB
+	Node     *node.Node
 }
 
 // APIMux constructs a http.Handler with all application routes defined.
@@ -36,8 +36,8 @@ func APIMux(cfg APIMuxConfig) http.Handler {
 
 	// Load the v1 routes.
 	v1.Routes(app, v1.Config{
-		Log: cfg.Log,
-		DB:  cfg.DB,
+		Log:  cfg.Log,
+		Node: cfg.Node,
 	})
 
 	return app

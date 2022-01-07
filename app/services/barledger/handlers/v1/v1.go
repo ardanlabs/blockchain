@@ -6,15 +6,15 @@ import (
 	"net/http"
 
 	"github.com/ardanlabs/blockchain/app/services/barledger/handlers/v1/bargrp"
-	"github.com/ardanlabs/blockchain/foundation/database"
+	"github.com/ardanlabs/blockchain/foundation/node"
 	"github.com/ardanlabs/blockchain/foundation/web"
 	"go.uber.org/zap"
 )
 
 // Config contains all the mandatory systems required by handlers.
 type Config struct {
-	Log *zap.SugaredLogger
-	DB  *database.DB
+	Log  *zap.SugaredLogger
+	Node *node.Node
 }
 
 // Routes binds all the version 1 routes.
@@ -23,8 +23,8 @@ func Routes(app *web.App, cfg Config) {
 
 	// Register user management and authentication endpoints.
 	bgh := bargrp.Handlers{
-		Log: cfg.Log,
-		DB:  cfg.DB,
+		Log:  cfg.Log,
+		Node: cfg.Node,
 	}
 
 	app.Handle(http.MethodGet, version, "/node/status", bgh.QueryStatus)

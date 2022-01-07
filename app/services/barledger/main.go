@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/ardanlabs/blockchain/app/services/barledger/handlers"
-	"github.com/ardanlabs/blockchain/foundation/database"
 	"github.com/ardanlabs/blockchain/foundation/logger"
+	"github.com/ardanlabs/blockchain/foundation/node"
 	"github.com/ardanlabs/conf/v2"
 	"go.uber.org/zap"
 )
@@ -53,9 +53,10 @@ func run(log *zap.SugaredLogger) error {
 			APIHost         string        `conf:"default:0.0.0.0:8080"`
 			DebugHost       string        `conf:"default:0.0.0.0:8081"`
 		}
-		DB struct {
-			Path                string `conf:"default:zblock/blocks.db"`
-			BlockWriterInterval string `conf:"default:10s"`
+		Node struct {
+			DBPath              string   `conf:"default:zblock/blocks.db"`
+			BlockWriterInterval string   `conf:"default:10s"`
+			KnownPeers          []string `conf:"default:0.0.0.0:8180"`
 		}
 	}{
 		Version: conf.Version{
@@ -89,17 +90,20 @@ func run(log *zap.SugaredLogger) error {
 	// =========================================================================
 	// Database Support
 
-	d, err := time.ParseDuration(cfg.DB.BlockWriterInterval)
+	d, err := time.ParseDuration(cfg.Node.BlockWriterInterval)
 	if err != nil {
 		return err
 	}
 
-	evFn := func(v string) { log.Infow(v) }
-	db, err := database.New(cfg.DB.Path, d, evFn)
+	node, err := node.New(node.Config{
+		DBPath:          cfg.Node.DBPath,
+		PersistInterval: d,
+		EvHandler:       func(v string) { log.Infow(v) },
+	})
 	if err != nil {
 		return err
 	}
-	defer db.Close()
+	defer node.Shutdown()
 
 	// =========================================================================
 	// Start Debug Service
@@ -134,7 +138,7 @@ func run(log *zap.SugaredLogger) error {
 	apiMux := handlers.APIMux(handlers.APIMuxConfig{
 		Shutdown: shutdown,
 		Log:      log,
-		DB:       db,
+		Node:     node,
 	})
 
 	// Construct a server to service the requests against the mux.

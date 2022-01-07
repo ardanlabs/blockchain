@@ -1,8 +1,9 @@
-package database
+package node
 
 const (
 	TxDataReward = "reward"
 )
+
 const (
 	TxStatusAccepted = "accepted"
 	TxStatusError    = "error"
