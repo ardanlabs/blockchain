@@ -7,10 +7,6 @@ import (
 	"time"
 )
 
-// EventHandler defines a function that is called when events
-// occur in the processing of persisting blocks.
-type EventHandler func(v string)
-
 // blockWriter manages a goroutine that executes a write block
 // call on a timer.
 type blockWriter struct {
@@ -21,8 +17,8 @@ type blockWriter struct {
 	evHandler EventHandler
 }
 
-// newBlockWriter creates a persister for writing transactions
-// to a block.
+// newBlockWriter creates a blockWriter for writing transactions
+// from the mempool to a new block.
 func newBlockWriter(n *Node, interval time.Duration, evHandler EventHandler) *blockWriter {
 	ev := func(v string) {
 		if evHandler != nil {
@@ -44,7 +40,7 @@ func newBlockWriter(n *Node, interval time.Duration, evHandler EventHandler) *bl
 		for {
 			select {
 			case <-bw.ticker.C:
-				bw.writeBlock()
+				bw.writeBlocks()
 			case <-bw.shut:
 				break down
 			}
@@ -68,11 +64,26 @@ func (bw *blockWriter) shutdown() {
 
 // writeBlock performs the work to create a new block from transactions
 // in the mempool.
-func (bw *blockWriter) writeBlock() {
+func (bw *blockWriter) writeBlocks() {
 	bw.evHandler("block writer: started")
 	defer bw.evHandler("block writer: completed")
 
-	block, err := bw.node.WriteBlock()
+	// Query all known peers to find new peers and new blocks.
+	bw.queryKnownPeers()
+
+	// Write a new block based on the mempool.
+	bw.writeMempoolBlock()
+}
+
+// queryKnownPeers takes all the transactions from the mempool
+// and writes a new block to the database.
+func (bw *blockWriter) queryKnownPeers() {
+}
+
+// writeMempoolBlock takes all the transactions from the mempool
+// and writes a new block to the database.
+func (bw *blockWriter) writeMempoolBlock() {
+	block, err := bw.node.WriteNewBlock()
 	if err != nil {
 		if errors.Is(err, ErrNoTransactions) {
 			bw.evHandler("block writer: no transactions in mempool")

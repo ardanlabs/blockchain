@@ -26,7 +26,7 @@ func Transactions(args []string, n *node.Node) error {
 			}
 		}
 
-		block, err := n.WriteBlock()
+		block, err := n.WriteNewBlock()
 		if err != nil {
 			return err
 		}
@@ -47,7 +47,7 @@ func Transactions(args []string, n *node.Node) error {
 			}
 		}
 
-		block, err = n.WriteBlock()
+		block, err = n.WriteNewBlock()
 		if err != nil {
 			return err
 		}
@@ -67,7 +67,7 @@ func Transactions(args []string, n *node.Node) error {
 		}
 		fmt.Println("Transaction added")
 
-		block, err := n.WriteBlock()
+		block, err := n.WriteNewBlock()
 		if err != nil {
 			return err
 		}

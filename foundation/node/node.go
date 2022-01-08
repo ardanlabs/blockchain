@@ -9,6 +9,10 @@ import (
 	"time"
 )
 
+// EventHandler defines a function that is called when events
+// occur in the processing of persisting blocks.
+type EventHandler func(v string)
+
 // Config represents the configuration required to start
 // the blockchain node.
 type Config struct {
@@ -100,7 +104,7 @@ func (n *Node) Shutdown() error {
 	n.blockWriter.shutdown()
 
 	// Persist the remaining transactions to disk.
-	if _, err := n.writeBlock(); err != nil {
+	if _, err := n.writeNewBlock(); err != nil {
 		if !errors.Is(err, ErrNoTransactions) {
 			return err
 		}
@@ -120,13 +124,13 @@ func (n *Node) AddTransaction(tx Tx) error {
 	return nil
 }
 
-// WriteBlock writes the current transactions from the
+// WriteNewBlock writes the current transactions from the
 // memory pool to disk.
-func (n *Node) WriteBlock() (Block, error) {
+func (n *Node) WriteNewBlock() (Block, error) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-	return n.writeBlock()
+	return n.writeNewBlock()
 }
 
 // =============================================================================
@@ -203,9 +207,9 @@ func (n *Node) QueryBlocks(account string) []Block {
 // and there are no transactions.
 var ErrNoTransactions = errors.New("no transactions in mempool")
 
-// writeBlock writes the current transaction memory pool to disk.
+// writeNewBlock writes the current transaction memory pool to disk.
 // It assumes it's always inside a mutex lock.
-func (n *Node) writeBlock() (Block, error) {
+func (n *Node) writeNewBlock() (Block, error) {
 	if len(n.txMempool) == 0 {
 		return Block{}, ErrNoTransactions
 	}

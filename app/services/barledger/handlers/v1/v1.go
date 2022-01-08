@@ -34,7 +34,7 @@ func Routes(app *web.App, cfg Config) {
 	app.Handle(http.MethodGet, version, "/balances/list", bgh.QueryBalances)
 	app.Handle(http.MethodGet, version, "/balances/list/:acct", bgh.QueryBalances)
 
-	app.Handle(http.MethodPut, version, "/blocks/write", bgh.WriteBlock)
+	app.Handle(http.MethodPut, version, "/blocks/write", bgh.WriteNewBlock)
 	app.Handle(http.MethodGet, version, "/blocks/list", bgh.QueryBlocks)
 	app.Handle(http.MethodGet, version, "/blocks/list/:acct", bgh.QueryBlocks)
 
