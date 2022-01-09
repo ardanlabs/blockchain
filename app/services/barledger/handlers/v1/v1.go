@@ -27,18 +27,17 @@ func Routes(app *web.App, cfg Config) {
 		Node: cfg.Node,
 	}
 
-	app.Handle(http.MethodGet, version, "/node/status", bgh.QueryStatus)
-	app.Handle(http.MethodGet, version, "/node/peers", bgh.QueryKnownPeers)
+	app.Handle(http.MethodGet, version, "/node/status", bgh.Status)
 
-	app.Handle(http.MethodGet, version, "/genesis/list", bgh.QueryGenesis)
+	app.Handle(http.MethodGet, version, "/genesis/list", bgh.Genesis)
 
-	app.Handle(http.MethodGet, version, "/balances/list", bgh.QueryBalances)
-	app.Handle(http.MethodGet, version, "/balances/list/:acct", bgh.QueryBalances)
+	app.Handle(http.MethodGet, version, "/balances/list", bgh.Balances)
+	app.Handle(http.MethodGet, version, "/balances/list/:acct", bgh.Balances)
 
 	app.Handle(http.MethodPut, version, "/blocks/write", bgh.WriteNewBlock)
-	app.Handle(http.MethodGet, version, "/blocks/list", bgh.QueryBlocks)
-	app.Handle(http.MethodGet, version, "/blocks/list/:acct", bgh.QueryBlocks)
+	app.Handle(http.MethodGet, version, "/blocks/list", bgh.Blocks)
+	app.Handle(http.MethodGet, version, "/blocks/list/:acct", bgh.Blocks)
 
 	app.Handle(http.MethodPost, version, "/tx/add", bgh.AddTransaction)
-	app.Handle(http.MethodGet, version, "/tx/uncommitted/list", bgh.QueryMempool)
+	app.Handle(http.MethodGet, version, "/tx/uncommitted/list", bgh.Mempool)
 }

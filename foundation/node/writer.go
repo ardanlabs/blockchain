@@ -10,6 +10,14 @@ import (
 	"time"
 )
 
+// peerStatus represents information about the status
+// of any given peer.
+type peerStatus struct {
+	Hash       string              `json:"hash"`
+	Number     uint64              `json:"number"`
+	KnownPeers map[string]struct{} `json:"known_peers"`
+}
+
 // blockWriter manages a goroutine that executes a write block
 // call on a timer.
 type blockWriter struct {
@@ -71,56 +79,58 @@ func (bw *blockWriter) writeBlocks() {
 	bw.evHandler("block writer: started")
 	defer bw.evHandler("block writer: completed")
 
-	// Find new nodes and update the known peer list.
-	if err := bw.findNewNodes(); err != nil {
-		bw.evHandler(fmt.Sprintf("block writer: writeBlocks: findNewNodes: ERROR: %s", err))
-	}
+	for ipPort := range bw.node.KnownPeersList() {
 
-	// Write a new block based on the mempool.
-	bw.writeMempoolBlock()
-}
-
-// findNewNodes looks for new nodes on the blockchain by asking
-// known nodes for their peer list. New nodes are added to the list.
-func (bw *blockWriter) findNewNodes() error {
-	for ipPort := range bw.node.QueryKnownPeers() {
-		url := fmt.Sprintf("http://%s/v1/node/peers", ipPort)
-
-		var client http.Client
-		req, err := http.NewRequest(http.MethodGet, url, nil)
+		// Retrieve the status of this peer.
+		peer, err := bw.queryPeerStatus(ipPort)
 		if err != nil {
-			return err
+			bw.evHandler(fmt.Sprintf("block writer: writeBlocks: queryPeerStatus: ERROR: %s", err))
 		}
+		bw.evHandler(fmt.Sprintf("block writer: writeBlocks: node %s: blknum: %d: peer list %s", ipPort, peer.Number, peer.KnownPeers))
 
-		resp, err := client.Do(req)
-		if err != nil {
-			return err
-		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode != http.StatusOK {
-			msg, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return err
-			}
-			return errors.New(string(msg))
-		}
-
-		peers := make(map[string]struct{})
-		if err := json.NewDecoder(resp.Body).Decode(&peers); err != nil {
-			return err
-		}
-
-		bw.evHandler(fmt.Sprintf("block writer: findNewNodes: node %s sent peer list %s", ipPort, peers))
-
-		for ipPort := range peers {
+		// Add new peers to this nodes list.
+		for ipPort := range peer.KnownPeers {
 			if err := bw.node.AddPeerNode(ipPort); err == nil {
 				bw.evHandler(fmt.Sprintf("block writer: findNewNodes: adding node %s", ipPort))
 			}
 		}
 	}
 
-	return nil
+	// Write a new block based on the mempool.
+	bw.writeMempoolBlock()
+}
+
+// queryPeerStatus looks for new nodes on the blockchain by asking
+// known nodes for their peer list. New nodes are added to the list.
+func (bw *blockWriter) queryPeerStatus(ipPort string) (peerStatus, error) {
+	url := fmt.Sprintf("http://%s/v1/node/status", ipPort)
+
+	var client http.Client
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return peerStatus{}, err
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return peerStatus{}, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		msg, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return peerStatus{}, err
+		}
+		return peerStatus{}, errors.New(string(msg))
+	}
+
+	var peer peerStatus
+	if err := json.NewDecoder(resp.Body).Decode(&peer); err != nil {
+		return peerStatus{}, err
+	}
+
+	return peer, nil
 }
 
 // writeMempoolBlock takes all the transactions from the mempool

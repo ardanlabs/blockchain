@@ -19,19 +19,19 @@ type Handlers struct {
 	Node *node.Node
 }
 
-// QueryStatus returns the current status of the node.
-func (h Handlers) QueryStatus(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	status := status{
-		Hash:   fmt.Sprintf("%x", h.Node.QueryLatestBlock().Hash()),
-		Number: h.Node.QueryLatestBlock().Header.Number,
+// Status returns the current status of the node.
+func (h Handlers) Status(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	status := struct {
+		Hash       string              `json:"hash"`
+		Number     uint64              `json:"number"`
+		KnownPeers map[string]struct{} `json:"known_peers"`
+	}{
+		Hash:       fmt.Sprintf("%x", h.Node.LatestBlock().Hash()),
+		Number:     h.Node.LatestBlock().Header.Number,
+		KnownPeers: h.Node.KnownPeersList(),
 	}
 
 	return web.Respond(ctx, w, status, http.StatusOK)
-}
-
-// QueryKnownPeers returns the current set of known peers.
-func (h Handlers) QueryKnownPeers(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	return web.Respond(ctx, w, h.Node.QueryKnownPeers(), http.StatusOK)
 }
 
 // AddTransaction adds a new transaction to the mempool.
@@ -91,23 +91,23 @@ func (h Handlers) WriteNewBlock(ctx context.Context, w http.ResponseWriter, r *h
 	return web.Respond(ctx, w, resp, http.StatusOK)
 }
 
-// QueryGenesis returns the genesis information.
-func (h Handlers) QueryGenesis(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	gen := h.Node.QueryGenesis()
+// Genesis returns the genesis information.
+func (h Handlers) Genesis(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	gen := h.Node.Genesis()
 	return web.Respond(ctx, w, gen, http.StatusOK)
 }
 
-// QueryMempool returns the set of uncommitted transactions.
-func (h Handlers) QueryMempool(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	txs := h.Node.QueryMempool()
+// Mempool returns the set of uncommitted transactions.
+func (h Handlers) Mempool(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	txs := h.Node.Mempool()
 	return web.Respond(ctx, w, txs, http.StatusOK)
 }
 
-// QueryBalances returns the current balances for all users.
-func (h Handlers) QueryBalances(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+// Balances returns the current balances for all users.
+func (h Handlers) Balances(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	acct := web.Param(r, "acct")
 
-	dbBals := h.Node.QueryBalances(acct)
+	dbBals := h.Node.Balances(acct)
 	bals := make([]balance, 0, len(dbBals))
 
 	for act, dbBal := range dbBals {
@@ -119,18 +119,18 @@ func (h Handlers) QueryBalances(ctx context.Context, w http.ResponseWriter, r *h
 	}
 
 	balances := balances{
-		LastestBlock: fmt.Sprintf("%x", h.Node.QueryLatestBlock()),
-		Uncommitted:  len(h.Node.QueryMempool()),
+		LastestBlock: fmt.Sprintf("%x", h.Node.LatestBlock()),
+		Uncommitted:  len(h.Node.Mempool()),
 		Balances:     bals,
 	}
 
 	return web.Respond(ctx, w, balances, http.StatusOK)
 }
 
-// QueryBlocks returns all the blocks and their details.
-func (h Handlers) QueryBlocks(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+// Blocks returns all the blocks and their details.
+func (h Handlers) Blocks(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	acct := web.Param(r, "acct")
-	dbBlocks := h.Node.QueryBlocks(acct)
+	dbBlocks := h.Node.Blocks(acct)
 
 	out := make([]block, len(dbBlocks))
 	for i := range dbBlocks {

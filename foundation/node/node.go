@@ -163,8 +163,9 @@ func (n *Node) AddPeerNode(ipPort string) error {
 	return nil
 }
 
-// QueryKnownPeers returns a copy of the current known peer map.
-func (n *Node) QueryKnownPeers() map[string]struct{} {
+// KnownPeersList retrieves information about the peer for updating
+// the known peer list and their current block number.
+func (n *Node) KnownPeersList() map[string]struct{} {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
@@ -182,24 +183,24 @@ func (n *Node) QueryKnownPeers() map[string]struct{} {
 
 // =============================================================================
 
-// QueryGenesis returns a copy of the genesis information.
-func (n *Node) QueryGenesis() Genesis {
+// Genesis returns a copy of the genesis information.
+func (n *Node) Genesis() Genesis {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
 	return n.genesis
 }
 
-// QueryLatestBlock returns the current hash of the latest block.
-func (n *Node) QueryLatestBlock() Block {
+// LatestBlock returns the current hash of the latest block.
+func (n *Node) LatestBlock() Block {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
 	return n.latestBlock
 }
 
-// QueryMempool returns a copy of the mempool.
-func (n *Node) QueryMempool() []Tx {
+// Mempool returns a copy of the mempool.
+func (n *Node) Mempool() []Tx {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
@@ -208,9 +209,9 @@ func (n *Node) QueryMempool() []Tx {
 	return cpy
 }
 
-// QueryBalances returns the set of balances by account. If the account
+// Balances returns the set of balances by account. If the account
 // is empty, all balances are returned.
-func (n *Node) QueryBalances(account string) map[string]uint {
+func (n *Node) Balances(account string) map[string]uint {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
@@ -224,9 +225,9 @@ func (n *Node) QueryBalances(account string) map[string]uint {
 	return balances
 }
 
-// QueryBlocks returns the set of blocks by account. If the account
+// Blocks returns the set of blocks by account. If the account
 // is empty, all blocks are returned.
-func (n *Node) QueryBlocks(account string) []Block {
+func (n *Node) Blocks(account string) []Block {
 	blocks, err := loadBlocks(n.dbPath)
 	if err != nil {
 		return nil

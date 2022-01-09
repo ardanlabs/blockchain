@@ -55,7 +55,7 @@ func Transactions(args []string, n *node.Node) error {
 		fmt.Printf("BlockHash: %x\n\n", block.Hash())
 
 	case "add":
-		fmt.Printf("LastestBlockHash: %x\n\n", n.QueryLatestBlock().Hash())
+		fmt.Printf("LastestBlockHash: %x\n\n", n.LatestBlock().Hash())
 
 		from := args[3]
 		to := args[4]
@@ -81,7 +81,7 @@ func Transactions(args []string, n *node.Node) error {
 		}
 
 		fmt.Println("-----------------------------------------------------------------------------------------")
-		for i, block := range n.QueryBlocks(acct) {
+		for i, block := range n.Blocks(acct) {
 			fmt.Println("Block:", i)
 			fmt.Printf("Prev Block: %x\n", block.Header.PrevBlock)
 			fmt.Printf("Block: %x\n", block.Hash())
