@@ -13,9 +13,9 @@ import (
 // peerStatus represents information about the status
 // of any given peer.
 type peerStatus struct {
-	Hash       string              `json:"hash"`
-	Number     uint64              `json:"number"`
-	KnownPeers map[string]struct{} `json:"known_peers"`
+	Hash              string              `json:"hash"`
+	LatestBlockNumber uint64              `json:"latest_block_number"`
+	KnownPeers        map[string]struct{} `json:"known_peers"`
 }
 
 // blockWriter manages a goroutine that executes a write block
@@ -86,12 +86,19 @@ func (bw *blockWriter) writeBlocks() {
 		if err != nil {
 			bw.evHandler(fmt.Sprintf("block writer: writeBlocks: queryPeerStatus: ERROR: %s", err))
 		}
-		bw.evHandler(fmt.Sprintf("block writer: writeBlocks: node %s: blknum: %d: peer list %s", ipPort, peer.Number, peer.KnownPeers))
+		bw.evHandler(fmt.Sprintf("block writer: writeBlocks: node %s: latest blknum: %d: peer list %s", ipPort, peer.LatestBlockNumber, peer.KnownPeers))
 
 		// Add new peers to this nodes list.
 		for ipPort := range peer.KnownPeers {
 			if err := bw.node.AddPeerNode(ipPort); err == nil {
 				bw.evHandler(fmt.Sprintf("block writer: findNewNodes: adding node %s", ipPort))
+			}
+		}
+
+		// If this peer has blocks we don't have, we need to add it.
+		if peer.LatestBlockNumber > bw.node.LatestBlock().Header.Number {
+			if err := bw.addMissingBlocks(ipPort); err != nil {
+				bw.evHandler(fmt.Sprintf("block writer: addMissingBlocks: ERROR %s", err))
 			}
 		}
 	}
@@ -149,4 +156,11 @@ func (bw *blockWriter) writeMempoolBlock() {
 	hash := fmt.Sprintf("%x", block.Hash())
 
 	bw.evHandler(fmt.Sprintf("block writer: writeMempoolBlock: prevBlk[%x]: newBlk[%x]: numTrans[%d]", block.Header.PrevBlock, hash, len(block.Transactions)))
+}
+
+// addMissingBlocks queries the specified node asking for blocks this
+// node does not have.
+func (bw *blockWriter) addMissingBlocks(ipPort string) error {
+
+	return nil
 }

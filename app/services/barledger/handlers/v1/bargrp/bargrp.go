@@ -22,13 +22,13 @@ type Handlers struct {
 // Status returns the current status of the node.
 func (h Handlers) Status(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	status := struct {
-		Hash       string              `json:"hash"`
-		Number     uint64              `json:"number"`
-		KnownPeers map[string]struct{} `json:"known_peers"`
+		Hash              string              `json:"hash"`
+		LatestBlockNumber uint64              `json:"latest_block_number"`
+		KnownPeers        map[string]struct{} `json:"known_peers"`
 	}{
-		Hash:       fmt.Sprintf("%x", h.Node.LatestBlock().Hash()),
-		Number:     h.Node.LatestBlock().Header.Number,
-		KnownPeers: h.Node.KnownPeersList(),
+		Hash:              fmt.Sprintf("%x", h.Node.LatestBlock().Hash()),
+		LatestBlockNumber: h.Node.LatestBlock().Header.Number,
+		KnownPeers:        h.Node.KnownPeersList(),
 	}
 
 	return web.Respond(ctx, w, status, http.StatusOK)
