@@ -16,6 +16,7 @@ type EventHandler func(v string)
 // Config represents the configuration required to start
 // the blockchain node.
 type Config struct {
+	IPPort          string
 	DBPath          string
 	PersistInterval time.Duration
 	KnownPeers      []string
@@ -28,11 +29,12 @@ type Node struct {
 	txMempool   []Tx
 	latestBlock Block
 	balances    map[string]uint
-	knownPeers  []string
 	dbPath      string
 	file        *os.File
 	mu          sync.Mutex
 	blockWriter *blockWriter
+	ipPort      string
+	knownPeers  map[string]struct{}
 }
 
 // New constructs a new blockchain for data management.
@@ -69,14 +71,21 @@ func New(cfg Config) (*Node, error) {
 		latestBlock = blocks[len(blocks)-1]
 	}
 
+	// Convert the list of peers to the internal map.
+	peers := make(map[string]struct{})
+	for _, peer := range cfg.KnownPeers {
+		peers[peer] = struct{}{}
+	}
+
 	// Create the chain with no transactions currently in memory.
 	n := Node{
 		genesis:     genesis,
 		latestBlock: latestBlock,
 		balances:    balances,
-		knownPeers:  cfg.KnownPeers,
 		dbPath:      cfg.DBPath,
 		file:        file,
+		ipPort:      cfg.IPPort,
+		knownPeers:  peers,
 	}
 
 	// Apply the transactions to the initial genesis balances, adding new
@@ -113,6 +122,8 @@ func (n *Node) Shutdown() error {
 	return nil
 }
 
+// =============================================================================
+
 // AddTransaction appends a new transactions to the mempool.
 func (n *Node) AddTransaction(tx Tx) error {
 	n.mu.Lock()
@@ -131,6 +142,42 @@ func (n *Node) WriteNewBlock() (Block, error) {
 	defer n.mu.Unlock()
 
 	return n.writeNewBlock()
+}
+
+// =============================================================================
+
+// AddPeerNode adds an address to the list of peers.
+func (n *Node) AddPeerNode(ipPort string) error {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	// Don't add this node to the known peer list.
+	if ipPort == n.ipPort {
+		return errors.New("already exists")
+	}
+
+	if _, exists := n.knownPeers[ipPort]; !exists {
+		n.knownPeers[ipPort] = struct{}{}
+	}
+
+	return nil
+}
+
+// QueryKnownPeers returns a copy of the current known peer map.
+func (n *Node) QueryKnownPeers() map[string]struct{} {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	// Return a copy of the list and remove this node
+	// from the list.
+	peers := make(map[string]struct{})
+	for k := range n.knownPeers {
+		if k != n.ipPort {
+			peers[k] = struct{}{}
+		}
+	}
+
+	return peers
 }
 
 // =============================================================================

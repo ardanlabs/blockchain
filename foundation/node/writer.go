@@ -1,8 +1,11 @@
 package node
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
 	"sync"
 	"time"
 )
@@ -52,14 +55,14 @@ func newBlockWriter(n *Node, interval time.Duration, evHandler EventHandler) *bl
 
 // shutdown terminates the goroutine performing work.
 func (bw *blockWriter) shutdown() {
-	bw.evHandler("block writer: stop timer")
+	bw.evHandler("block writer: shutdown: stop timer")
 	bw.ticker.Stop()
 
-	bw.evHandler("block writer: terminate goroutine")
+	bw.evHandler("block writer: shutdown: terminate goroutine")
 	close(bw.shut)
 	bw.wg.Wait()
 
-	bw.evHandler("block writer: off")
+	bw.evHandler("block writer: shutdown: off")
 }
 
 // writeBlock performs the work to create a new block from transactions
@@ -68,16 +71,56 @@ func (bw *blockWriter) writeBlocks() {
 	bw.evHandler("block writer: started")
 	defer bw.evHandler("block writer: completed")
 
-	// Query all known peers to find new peers and new blocks.
-	bw.queryKnownPeers()
+	// Find new nodes and update the known peer list.
+	if err := bw.findNewNodes(); err != nil {
+		bw.evHandler(fmt.Sprintf("block writer: writeBlocks: findNewNodes: ERROR: %s", err))
+	}
 
 	// Write a new block based on the mempool.
 	bw.writeMempoolBlock()
 }
 
-// queryKnownPeers takes all the transactions from the mempool
-// and writes a new block to the database.
-func (bw *blockWriter) queryKnownPeers() {
+// findNewNodes looks for new nodes on the blockchain by asking
+// known nodes for their peer list. New nodes are added to the list.
+func (bw *blockWriter) findNewNodes() error {
+	for ipPort := range bw.node.QueryKnownPeers() {
+		url := fmt.Sprintf("http://%s/v1/node/peers", ipPort)
+
+		var client http.Client
+		req, err := http.NewRequest(http.MethodGet, url, nil)
+		if err != nil {
+			return err
+		}
+
+		resp, err := client.Do(req)
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			msg, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return err
+			}
+			return errors.New(string(msg))
+		}
+
+		peers := make(map[string]struct{})
+		if err := json.NewDecoder(resp.Body).Decode(&peers); err != nil {
+			return err
+		}
+
+		bw.evHandler(fmt.Sprintf("block writer: findNewNodes: node %s sent peer list %s", ipPort, peers))
+
+		for ipPort := range peers {
+			if err := bw.node.AddPeerNode(ipPort); err == nil {
+				bw.evHandler(fmt.Sprintf("block writer: findNewNodes: adding node %s", ipPort))
+			}
+		}
+	}
+
+	return nil
 }
 
 // writeMempoolBlock takes all the transactions from the mempool
@@ -86,14 +129,14 @@ func (bw *blockWriter) writeMempoolBlock() {
 	block, err := bw.node.WriteNewBlock()
 	if err != nil {
 		if errors.Is(err, ErrNoTransactions) {
-			bw.evHandler("block writer: no transactions in mempool")
+			bw.evHandler("block writer: writeMempoolBlock: no transactions in mempool")
 			return
 		}
-		bw.evHandler(fmt.Sprintf("block writer: ERROR %s", err))
+		bw.evHandler(fmt.Sprintf("block writer: writeMempoolBlock: ERROR %s", err))
 		return
 	}
 
 	hash := fmt.Sprintf("%x", block.Hash())
 
-	bw.evHandler(fmt.Sprintf("block writer: prevBlk[%x], newBlk[%x], numTrans[%d]", block.Header.PrevBlock, hash, len(block.Transactions)))
+	bw.evHandler(fmt.Sprintf("block writer: writeMempoolBlock: prevBlk[%x]: newBlk[%x]: numTrans[%d]", block.Header.PrevBlock, hash, len(block.Transactions)))
 }

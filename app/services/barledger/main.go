@@ -56,7 +56,7 @@ func run(log *zap.SugaredLogger) error {
 		Node struct {
 			DBPath              string   `conf:"default:zblock/blocks.db"`
 			BlockWriterInterval string   `conf:"default:10s"`
-			KnownPeers          []string `conf:"default:0.0.0.0:8180"`
+			KnownPeers          []string `conf:"default:0.0.0.0:8080;0.0.0.0:8180"`
 		}
 	}{
 		Version: conf.Version{
@@ -98,6 +98,7 @@ func run(log *zap.SugaredLogger) error {
 	node, err := node.New(node.Config{
 		DBPath:          cfg.Node.DBPath,
 		PersistInterval: d,
+		IPPort:          cfg.Web.APIHost,
 		KnownPeers:      cfg.Node.KnownPeers,
 		EvHandler:       func(v string) { log.Infow(v) },
 	})

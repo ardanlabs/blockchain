@@ -11,8 +11,11 @@ SHELL := /bin/bash
 # ==============================================================================
 # Local support
 
-up:
+up1:
 	go run app/services/barledger/main.go | go run app/tooling/logfmt/main.go
+
+up2:
+	go run app/services/barledger/main.go --web-api-host 0.0.0.0:8180 --web-debug-host 0.0.0.0:8181 --node-db-path zblock/blocks2.db | go run app/tooling/logfmt/main.go
 
 down:
 	kill -INT $(shell ps | grep go-build | grep -v grep | sed -n 2,2p | cut -c1-5)

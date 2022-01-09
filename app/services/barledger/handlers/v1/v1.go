@@ -28,6 +28,7 @@ func Routes(app *web.App, cfg Config) {
 	}
 
 	app.Handle(http.MethodGet, version, "/node/status", bgh.QueryStatus)
+	app.Handle(http.MethodGet, version, "/node/peers", bgh.QueryKnownPeers)
 
 	app.Handle(http.MethodGet, version, "/genesis/list", bgh.QueryGenesis)
 

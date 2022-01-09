@@ -29,6 +29,11 @@ func (h Handlers) QueryStatus(ctx context.Context, w http.ResponseWriter, r *htt
 	return web.Respond(ctx, w, status, http.StatusOK)
 }
 
+// QueryKnownPeers returns the current set of known peers.
+func (h Handlers) QueryKnownPeers(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	return web.Respond(ctx, w, h.Node.QueryKnownPeers(), http.StatusOK)
+}
+
 // AddTransaction adds a new transaction to the mempool.
 func (h Handlers) AddTransaction(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	v, err := web.GetValues(ctx)
