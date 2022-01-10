@@ -26,7 +26,7 @@ func Transactions(args []string, n *node.Node) error {
 			}
 		}
 
-		block, err := n.WriteNewBlock()
+		block, err := n.WriteNewBlockFromMempool()
 		if err != nil {
 			return err
 		}
@@ -47,7 +47,7 @@ func Transactions(args []string, n *node.Node) error {
 			}
 		}
 
-		block, err = n.WriteNewBlock()
+		block, err = n.WriteNewBlockFromMempool()
 		if err != nil {
 			return err
 		}
@@ -67,7 +67,7 @@ func Transactions(args []string, n *node.Node) error {
 		}
 		fmt.Println("Transaction added")
 
-		block, err := n.WriteNewBlock()
+		block, err := n.WriteNewBlockFromMempool()
 		if err != nil {
 			return err
 		}

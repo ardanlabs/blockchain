@@ -9,6 +9,10 @@ import (
 	"time"
 )
 
+// ErrNoTransactions is returned when a block is requested to be created
+// and there are no transactions.
+var ErrNoTransactions = errors.New("no transactions in mempool")
+
 // EventHandler defines a function that is called when events
 // occur in the processing of persisting blocks.
 type EventHandler func(v string)
@@ -48,7 +52,7 @@ func New(cfg Config) (*Node, error) {
 	}
 
 	// Load the current set of recorded transactions.
-	blocks, err := loadBlocks(cfg.DBPath)
+	blocks, err := loadBlocksFromDisk(cfg.DBPath)
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +117,7 @@ func (n *Node) Shutdown() error {
 	n.blockWriter.shutdown()
 
 	// Persist the remaining transactions to disk.
-	if _, err := n.writeNewBlock(); err != nil {
+	if _, err := n.writeNewBlockFromMempool(); err != nil {
 		if !errors.Is(err, ErrNoTransactions) {
 			return err
 		}
@@ -135,13 +139,22 @@ func (n *Node) AddTransaction(tx Tx) error {
 	return nil
 }
 
-// WriteNewBlock writes the current transactions from the
+// WriteNewBlockFromMempool writes the current transactions from the
 // memory pool to disk.
-func (n *Node) WriteNewBlock() (Block, error) {
+func (n *Node) WriteNewBlockFromMempool() (Block, error) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-	return n.writeNewBlock()
+	return n.writeNewBlockFromMempool()
+}
+
+// WriteNewBlockFromPeer accepts a block from a peer and attemps
+// to add the block to the chain.
+func (n *Node) WriteNewBlockFromPeer(peerBlock PeerBlock) (Block, error) {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	return n.writeNewBlockFromPeer(peerBlock)
 }
 
 // =============================================================================
@@ -228,7 +241,7 @@ func (n *Node) Balances(account string) map[string]uint {
 // Blocks returns the set of blocks by account. If the account
 // is empty, all blocks are returned.
 func (n *Node) Blocks(account string) []Block {
-	blocks, err := loadBlocks(n.dbPath)
+	blocks, err := loadBlocksFromDisk(n.dbPath)
 	if err != nil {
 		return nil
 	}
@@ -251,13 +264,53 @@ func (n *Node) Blocks(account string) []Block {
 
 // =============================================================================
 
-// ErrNoTransactions is returned when a block is requested to be created
-// and there are no transactions.
-var ErrNoTransactions = errors.New("no transactions in mempool")
+// writeNewBlockFromPeer writes the specified peer block to disk.
+// It assumes it's always inside a mutex lock.
+func (n *Node) writeNewBlockFromPeer(peerBlock PeerBlock) (Block, error) {
+	nextNumber := n.latestBlock.Header.Number + 1
+
+	// Validate the hash is correct.
+	hash := peerBlock.Block.Hash()
+	if peerBlock.Hash != hash {
+		return Block{}, errors.New("hash does not match")
+	}
+
+	// Validate the block number is the next in sequence.
+	if peerBlock.Header.Number != nextNumber {
+		return Block{}, fmt.Errorf("wrong block number, got %d, exp %d", peerBlock.Header.Number, nextNumber)
+	}
+
+	// Validate the previous block matches.
+	if peerBlock.Header.PrevBlock != n.latestBlock.Header.PrevBlock {
+		return Block{}, fmt.Errorf("prev block mismatch, got %d, exp %d", peerBlock.Header.PrevBlock, nextNumber)
+	}
+
+	blockFS := BlockFS{
+		Hash:  hash,
+		Block: peerBlock.Block,
+	}
+
+	blockFSJson, err := json.Marshal(blockFS)
+	if err != nil {
+		return Block{}, err
+	}
+
+	if _, err := n.file.Write(append(blockFSJson, '\n')); err != nil {
+		return Block{}, err
+	}
+
+	n.latestBlock = blockFS.Block
+
+	if err := n.applyTransToBalances(peerBlock.Transactions); err != nil {
+		return blockFS.Block, err
+	}
+
+	return blockFS.Block, nil
+}
 
 // writeNewBlock writes the current transaction memory pool to disk.
 // It assumes it's always inside a mutex lock.
-func (n *Node) writeNewBlock() (Block, error) {
+func (n *Node) writeNewBlockFromMempool() (Block, error) {
 	if len(n.txMempool) == 0 {
 		return Block{}, ErrNoTransactions
 	}
@@ -265,7 +318,7 @@ func (n *Node) writeNewBlock() (Block, error) {
 	// If the transaction can't be applied to the balance,
 	// mark the transaction as failed.
 	for i := range n.txMempool {
-		if err := n.validateTransaction(n.txMempool[i]); err != nil {
+		if err := n.applyTranToBalance(n.txMempool[i]); err != nil {
 			n.txMempool[i].Status = TxStatusError
 			n.txMempool[i].StatusInfo = err.Error()
 			continue
@@ -291,18 +344,6 @@ func (n *Node) writeNewBlock() (Block, error) {
 	n.txMempool = []Tx{}
 
 	return blockFS.Block, nil
-}
-
-// validateTransaction performs integrity checks on a transaction.
-func (n *Node) validateTransaction(tx Tx) error {
-
-	// Validate the transaction can be applied to the balance,
-	// checking for things like insufficient funds.
-	if err := n.applyTranToBalance(tx); err != nil {
-		return err
-	}
-
-	return nil
 }
 
 // applyTransToBalances applies the transactions to the specified

@@ -65,9 +65,9 @@ func (h Handlers) AddTransaction(ctx context.Context, w http.ResponseWriter, r *
 	return web.Respond(ctx, w, resp, http.StatusOK)
 }
 
-// WriteNewBlock writes the existing transactions in the mempool to a block on disk.
-func (h Handlers) WriteNewBlock(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	dbBlock, err := h.Node.WriteNewBlock()
+// WriteNewBlockFromMempool writes the existing transactions in the mempool to a block on disk.
+func (h Handlers) WriteNewBlockFromMempool(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	dbBlock, err := h.Node.WriteNewBlockFromMempool()
 	if err != nil {
 		switch {
 		case errors.Is(err, node.ErrNoTransactions):

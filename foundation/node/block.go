@@ -59,10 +59,17 @@ func NewBlockFS(prevBlock Block, transactions []Tx) (BlockFS, error) {
 	return blockFS, nil
 }
 
+// PeerBlock is used to add a block from an existing node into
+// this node.
+type PeerBlock struct {
+	Hash [32]byte
+	Block
+}
+
 // =============================================================================
 
-// loadBlocks the current set of blocks/transactions.
-func loadBlocks(dbPath string) ([]Block, error) {
+// loadBlocksFromDisk the current set of blocks/transactions.
+func loadBlocksFromDisk(dbPath string) ([]Block, error) {
 	dbFile, err := os.Open(dbPath)
 	if err != nil {
 		return nil, err

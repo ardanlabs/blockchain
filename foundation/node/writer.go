@@ -91,20 +91,27 @@ func (bw *blockWriter) writeBlocks() {
 		// Add new peers to this nodes list.
 		for ipPort := range peer.KnownPeers {
 			if err := bw.node.AddPeerNode(ipPort); err == nil {
-				bw.evHandler(fmt.Sprintf("block writer: findNewNodes: adding node %s", ipPort))
+				bw.evHandler(fmt.Sprintf("block writer: writeBlocks: AddPeerNode: adding node %s", ipPort))
 			}
 		}
 
-		// If this peer has blocks we don't have, we need to add it.
+		// If this peer has blocks we don't have, we need to add them.
 		if peer.LatestBlockNumber > bw.node.LatestBlock().Header.Number {
-			if err := bw.addMissingBlocks(ipPort); err != nil {
-				bw.evHandler(fmt.Sprintf("block writer: addMissingBlocks: ERROR %s", err))
+			if err := bw.writePeerBlocks(ipPort); err != nil {
+				bw.evHandler(fmt.Sprintf("block writer: writeBlocks: writePeerBlocks: ERROR %s", err))
 			}
 		}
 	}
 
 	// Write a new block based on the mempool.
 	bw.writeMempoolBlock()
+}
+
+// writePeerBlocks queries the specified node asking for blocks this
+// node does not have.
+func (bw *blockWriter) writePeerBlocks(ipPort string) error {
+
+	return nil
 }
 
 // queryPeerStatus looks for new nodes on the blockchain by asking
@@ -143,7 +150,7 @@ func (bw *blockWriter) queryPeerStatus(ipPort string) (peerStatus, error) {
 // writeMempoolBlock takes all the transactions from the mempool
 // and writes a new block to the database.
 func (bw *blockWriter) writeMempoolBlock() {
-	block, err := bw.node.WriteNewBlock()
+	block, err := bw.node.WriteNewBlockFromMempool()
 	if err != nil {
 		if errors.Is(err, ErrNoTransactions) {
 			bw.evHandler("block writer: writeMempoolBlock: no transactions in mempool")
@@ -156,11 +163,4 @@ func (bw *blockWriter) writeMempoolBlock() {
 	hash := fmt.Sprintf("%x", block.Hash())
 
 	bw.evHandler(fmt.Sprintf("block writer: writeMempoolBlock: prevBlk[%x]: newBlk[%x]: numTrans[%d]", block.Header.PrevBlock, hash, len(block.Transactions)))
-}
-
-// addMissingBlocks queries the specified node asking for blocks this
-// node does not have.
-func (bw *blockWriter) addMissingBlocks(ipPort string) error {
-
-	return nil
 }
