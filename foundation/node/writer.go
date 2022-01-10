@@ -160,7 +160,5 @@ func (bw *blockWriter) writeMempoolBlock() {
 		return
 	}
 
-	hash := fmt.Sprintf("%x", block.Hash())
-
-	bw.evHandler(fmt.Sprintf("block writer: writeMempoolBlock: prevBlk[%x]: newBlk[%x]: numTrans[%d]", block.Header.PrevBlock, hash, len(block.Transactions)))
+	bw.evHandler(fmt.Sprintf("block writer: writeMempoolBlock: prevBlk[%x]: newBlk[%x]: numTrans[%d]", block.Header.PrevBlock, block.Hash(), len(block.Transactions)))
 }

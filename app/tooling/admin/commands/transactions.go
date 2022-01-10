@@ -31,7 +31,7 @@ func Transactions(args []string, n *node.Node) error {
 			return err
 		}
 		fmt.Println("Block 0 Persisted")
-		fmt.Printf("BlockHash: %x\n\n", block.Hash())
+		fmt.Printf("BlockHash: %s\n\n", block.Hash())
 
 		txs = []node.Tx{}
 		txs = append(txs, node.NewTx("bill_kennedy", "babayaga", 2000, ""))
@@ -52,10 +52,10 @@ func Transactions(args []string, n *node.Node) error {
 			return err
 		}
 		fmt.Println("Block 1 Persisted")
-		fmt.Printf("BlockHash: %x\n\n", block.Hash())
+		fmt.Printf("BlockHash: %s\n\n", block.Hash())
 
 	case "add":
-		fmt.Printf("LastestBlockHash: %x\n\n", n.LatestBlock().Hash())
+		fmt.Printf("LastestBlockHash: %s\n\n", n.LatestBlock().Hash())
 
 		from := args[3]
 		to := args[4]
@@ -72,7 +72,7 @@ func Transactions(args []string, n *node.Node) error {
 			return err
 		}
 		fmt.Println("Transaction persisted")
-		fmt.Printf("LastestBlockHash: %x\n\n", block.Hash())
+		fmt.Printf("LastestBlockHash: %s\n\n", block.Hash())
 
 	default:
 		var acct string
@@ -81,10 +81,10 @@ func Transactions(args []string, n *node.Node) error {
 		}
 
 		fmt.Println("-----------------------------------------------------------------------------------------")
-		for i, block := range n.Blocks(acct) {
+		for i, block := range n.BlocksByAccount(acct) {
 			fmt.Println("Block:", i)
-			fmt.Printf("Prev Block: %x\n", block.Header.PrevBlock)
-			fmt.Printf("Block: %x\n", block.Hash())
+			fmt.Printf("Prev Block: %s\n", block.Header.PrevBlock)
+			fmt.Printf("Block: %s\n", block.Hash())
 			for _, tx := range block.Transactions {
 				fmt.Printf("From: %s  To: %s  Value: %d  Data: %s\n",
 					tx.From, tx.To, tx.Value, tx.Data)

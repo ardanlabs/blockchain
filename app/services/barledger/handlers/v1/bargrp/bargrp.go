@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	v1 "github.com/ardanlabs/blockchain/business/web/v1"
 	"github.com/ardanlabs/blockchain/foundation/node"
@@ -26,7 +27,7 @@ func (h Handlers) Status(ctx context.Context, w http.ResponseWriter, r *http.Req
 		LatestBlockNumber uint64              `json:"latest_block_number"`
 		KnownPeers        map[string]struct{} `json:"known_peers"`
 	}{
-		Hash:              fmt.Sprintf("%x", h.Node.LatestBlock().Hash()),
+		Hash:              h.Node.LatestBlock().Hash(),
 		LatestBlockNumber: h.Node.LatestBlock().Header.Number,
 		KnownPeers:        h.Node.KnownPeersList(),
 	}
@@ -119,7 +120,7 @@ func (h Handlers) Balances(ctx context.Context, w http.ResponseWriter, r *http.R
 	}
 
 	balances := balances{
-		LastestBlock: fmt.Sprintf("%x", h.Node.LatestBlock()),
+		LastestBlock: h.Node.LatestBlock().Hash(),
 		Uncommitted:  len(h.Node.Mempool()),
 		Balances:     bals,
 	}
@@ -127,10 +128,41 @@ func (h Handlers) Balances(ctx context.Context, w http.ResponseWriter, r *http.R
 	return web.Respond(ctx, w, balances, http.StatusOK)
 }
 
-// Blocks returns all the blocks and their details.
-func (h Handlers) Blocks(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+// BlocksByNumber returns all the blocks based on the specified to/from values.
+func (h Handlers) BlocksByNumber(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	toStr := web.Param(r, "to")
+	if toStr == "latest" {
+		toStr = fmt.Sprintf("%d", int(^uint(0)>>1))
+	}
+
+	from, err := strconv.Atoi(web.Param(r, "from"))
+	if err != nil {
+		return v1.NewRequestError(err, http.StatusBadRequest)
+	}
+	to, err := strconv.Atoi(toStr)
+	if err != nil {
+		return v1.NewRequestError(err, http.StatusBadRequest)
+	}
+
+	if from > to {
+		return v1.NewRequestError(errors.New("from greater than to"), http.StatusBadRequest)
+	}
+
+	dbBlocks := h.Node.BlocksByNumber(uint64(from), uint64(to))
+
+	out := make([]block, len(dbBlocks))
+	for i := range dbBlocks {
+		out[i] = toBlock(dbBlocks[i])
+	}
+
+	return web.Respond(ctx, w, out, http.StatusOK)
+}
+
+// BlocksAcct returns all the blocks and their details.
+func (h Handlers) BlocksByAccount(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	acct := web.Param(r, "acct")
-	dbBlocks := h.Node.Blocks(acct)
+
+	dbBlocks := h.Node.BlocksByAccount(acct)
 
 	out := make([]block, len(dbBlocks))
 	for i := range dbBlocks {

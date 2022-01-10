@@ -238,9 +238,26 @@ func (n *Node) Balances(account string) map[string]uint {
 	return balances
 }
 
-// Blocks returns the set of blocks by account. If the account
+// BlocksByNumber returns the set of blocks based on block numbers.
+func (n *Node) BlocksByNumber(from uint64, to uint64) []Block {
+	blocks, err := loadBlocksFromDisk(n.dbPath)
+	if err != nil {
+		return nil
+	}
+
+	var out []Block
+	for _, block := range blocks {
+		if block.Header.Number >= from && block.Header.Number <= to {
+			out = append(out, block)
+		}
+	}
+
+	return out
+}
+
+// BlocksByAccount returns the set of blocks by account. If the account
 // is empty, all blocks are returned.
-func (n *Node) Blocks(account string) []Block {
+func (n *Node) BlocksByAccount(account string) []Block {
 	blocks, err := loadBlocksFromDisk(n.dbPath)
 	if err != nil {
 		return nil

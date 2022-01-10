@@ -3,16 +3,19 @@ package node
 import (
 	"bufio"
 	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"os"
 	"time"
 )
 
+const zeroHash = "00000000000000000000000000000000"
+
 // BlockHeader represents common information required for
 // each block.
 type BlockHeader struct {
-	PrevBlock [32]byte
+	PrevBlock string
 	Number    uint64
 	Time      uint64
 }
@@ -25,26 +28,32 @@ type Block struct {
 
 // Hash returns the unique hash for the block by marshaling
 // the block into JSON and performing a hashing operation.
-func (b Block) Hash() [32]byte {
+func (b Block) Hash() string {
 	blockJson, err := json.Marshal(b)
 	if err != nil {
-		return [32]byte{}
+		return zeroHash
 	}
 
-	return sha256.Sum256(blockJson)
+	hash := sha256.Sum256(blockJson)
+	return hex.EncodeToString(hash[:])
 }
 
 // BlockFS represents what is written to the DB file.
 type BlockFS struct {
-	Hash  [32]byte
+	Hash  string
 	Block Block
 }
 
 // NewBlockFS constructs a new BlockFS for persisting.
 func NewBlockFS(prevBlock Block, transactions []Tx) (BlockFS, error) {
+	hash := zeroHash
+	if prevBlock.Header.Number > 0 {
+		hash = prevBlock.Hash()
+	}
+
 	block := Block{
 		Header: BlockHeader{
-			PrevBlock: prevBlock.Hash(),
+			PrevBlock: hash,
 			Number:    prevBlock.Header.Number + 1,
 			Time:      uint64(time.Now().Unix()),
 		},
@@ -62,7 +71,7 @@ func NewBlockFS(prevBlock Block, transactions []Tx) (BlockFS, error) {
 // PeerBlock is used to add a block from an existing node into
 // this node.
 type PeerBlock struct {
-	Hash [32]byte
+	Hash string
 	Block
 }
 
@@ -99,3 +108,16 @@ func loadBlocksFromDisk(dbPath string) ([]Block, error) {
 
 	return blocks, nil
 }
+
+// func toNodeBlock(block block) node.Block {
+// 	nBlock := node.Block{
+// 		Header: node.BlockHeader{
+// 			PrevBlock: hashToBytes(block.Header.PrevBlock),
+// 			Number:    block.Header.Number,
+// 			Time:      uint64(block.Header.Time.Unix()),
+// 		},
+// 		Transactions: toNodeTxs(block.Transactions),
+// 	}
+
+// 	return nBlock
+// }

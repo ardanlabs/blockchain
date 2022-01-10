@@ -1,7 +1,6 @@
 package bargrp
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/ardanlabs/blockchain/foundation/node"
@@ -31,6 +30,14 @@ func toTxs(nTxs []node.Tx) []tx {
 	return tsx
 }
 
+func toNodeTxs(txs []tx) []node.Tx {
+	nTsx := make([]node.Tx, len(txs))
+	for i := range txs {
+		nTsx[i] = node.Tx(txs[i])
+	}
+	return nTsx
+}
+
 type balance struct {
 	Account string `json:"account"`
 	Balance uint   `json:"balance"`
@@ -57,8 +64,8 @@ type block struct {
 func toBlock(nBlock node.Block) block {
 	block := block{
 		Header: blockHeader{
-			PrevBlock: fmt.Sprintf("%x", nBlock.Header.PrevBlock),
-			ThisBlock: fmt.Sprintf("%x", nBlock.Hash()),
+			PrevBlock: nBlock.Header.PrevBlock,
+			ThisBlock: nBlock.Hash(),
 			Number:    nBlock.Header.Number,
 			Time:      time.Unix(int64(nBlock.Header.Time), 0),
 		},

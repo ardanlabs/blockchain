@@ -34,9 +34,10 @@ func Routes(app *web.App, cfg Config) {
 	app.Handle(http.MethodGet, version, "/balances/list", bgh.Balances)
 	app.Handle(http.MethodGet, version, "/balances/list/:acct", bgh.Balances)
 
-	app.Handle(http.MethodPut, version, "/blocks/write", bgh.WriteNewBlock)
-	app.Handle(http.MethodGet, version, "/blocks/list", bgh.Blocks)
-	app.Handle(http.MethodGet, version, "/blocks/list/:acct", bgh.Blocks)
+	app.Handle(http.MethodPut, version, "/blocks/write", bgh.WriteNewBlockFromMempool)
+	app.Handle(http.MethodGet, version, "/blocks/list", bgh.BlocksByAccount)
+	app.Handle(http.MethodGet, version, "/blocks/list/:acct", bgh.BlocksByAccount)
+	app.Handle(http.MethodGet, version, "/blocks/list/:from/:to", bgh.BlocksByNumber)
 
 	app.Handle(http.MethodPost, version, "/tx/add", bgh.AddTransaction)
 	app.Handle(http.MethodGet, version, "/tx/uncommitted/list", bgh.Mempool)
