@@ -238,11 +238,19 @@ func (n *Node) Balances(account string) map[string]uint {
 	return balances
 }
 
+// LastestBlock represents the latest block in the DB.
+const LastestBlock = ^uint64(0) >> 1
+
 // BlocksByNumber returns the set of blocks based on block numbers.
 func (n *Node) BlocksByNumber(from uint64, to uint64) []Block {
 	blocks, err := loadBlocksFromDisk(n.dbPath)
 	if err != nil {
 		return nil
+	}
+
+	if from == LastestBlock {
+		from = blocks[len(blocks)-1].Header.Number
+		to = from
 	}
 
 	var out []Block
@@ -299,7 +307,7 @@ func (n *Node) writeNewBlockFromPeer(peerBlock PeerBlock) (Block, error) {
 
 	// Validate the previous block matches.
 	if peerBlock.Header.PrevBlock != n.latestBlock.Header.PrevBlock {
-		return Block{}, fmt.Errorf("prev block mismatch, got %d, exp %d", peerBlock.Header.PrevBlock, nextNumber)
+		return Block{}, fmt.Errorf("prev block mismatch, got %s, exp %s", peerBlock.Header.PrevBlock, n.latestBlock.Header.PrevBlock)
 	}
 
 	blockFS := BlockFS{

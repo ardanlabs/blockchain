@@ -130,16 +130,21 @@ func (h Handlers) Balances(ctx context.Context, w http.ResponseWriter, r *http.R
 
 // BlocksByNumber returns all the blocks based on the specified to/from values.
 func (h Handlers) BlocksByNumber(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	toStr := web.Param(r, "to")
-	if toStr == "latest" {
-		toStr = fmt.Sprintf("%d", int(^uint(0)>>1))
+	fromStr := web.Param(r, "from")
+	if fromStr == "latest" || fromStr == "" {
+		fromStr = fmt.Sprintf("%d", node.LastestBlock)
 	}
 
-	from, err := strconv.Atoi(web.Param(r, "from"))
+	toStr := web.Param(r, "to")
+	if toStr == "latest" || toStr == "" {
+		toStr = fmt.Sprintf("%d", node.LastestBlock)
+	}
+
+	from, err := strconv.ParseUint(fromStr, 10, 64)
 	if err != nil {
 		return v1.NewRequestError(err, http.StatusBadRequest)
 	}
-	to, err := strconv.Atoi(toStr)
+	to, err := strconv.ParseUint(toStr, 10, 64)
 	if err != nil {
 		return v1.NewRequestError(err, http.StatusBadRequest)
 	}
@@ -148,7 +153,7 @@ func (h Handlers) BlocksByNumber(ctx context.Context, w http.ResponseWriter, r *
 		return v1.NewRequestError(errors.New("from greater than to"), http.StatusBadRequest)
 	}
 
-	dbBlocks := h.Node.BlocksByNumber(uint64(from), uint64(to))
+	dbBlocks := h.Node.BlocksByNumber(from, to)
 
 	out := make([]block, len(dbBlocks))
 	for i := range dbBlocks {
