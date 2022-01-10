@@ -9,6 +9,9 @@ SHELL := /bin/bash
 # curl -X POST http:/localhost:8080/v1/tx/add --header 'Content-Type: application/json' --data-raw '{"from": "ceasar","to": "babayaga","value": 10}'
 # curl -X PUT http:/localhost:8080/v1/blocks/write
 
+# curl -il -X GET http://localhost:8180/v1/balances/list
+# curl -il -X GET http://localhost:8180/v1/blocks/list
+
 # ==============================================================================
 # Local support
 

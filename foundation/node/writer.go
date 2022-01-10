@@ -18,6 +18,8 @@ type peerStatus struct {
 	KnownPeers        map[string]struct{} `json:"known_peers"`
 }
 
+// =============================================================================
+
 // blockWriter manages a goroutine that executes a write block
 // call on a timer.
 type blockWriter struct {
@@ -86,7 +88,6 @@ func (bw *blockWriter) writeBlocks() {
 		if err != nil {
 			bw.evHandler(fmt.Sprintf("block writer: writeBlocks: queryPeerStatus: ERROR: %s", err))
 		}
-		bw.evHandler(fmt.Sprintf("block writer: writeBlocks: node %s: latest blknum: %d: peer list %s", ipPort, peer.LatestBlockNumber, peer.KnownPeers))
 
 		// Add new peers to this nodes list.
 		for ipPort := range peer.KnownPeers {
@@ -105,13 +106,6 @@ func (bw *blockWriter) writeBlocks() {
 
 	// Write a new block based on the mempool.
 	bw.writeMempoolBlock()
-}
-
-// writePeerBlocks queries the specified node asking for blocks this
-// node does not have.
-func (bw *blockWriter) writePeerBlocks(ipPort string) error {
-
-	return nil
 }
 
 // queryPeerStatus looks for new nodes on the blockchain by asking
@@ -144,7 +138,57 @@ func (bw *blockWriter) queryPeerStatus(ipPort string) (peerStatus, error) {
 		return peerStatus{}, err
 	}
 
+	bw.evHandler(fmt.Sprintf("block writer: writeBlocks: node %s: latest blknum: %d: peer list %s", ipPort, peer.LatestBlockNumber, peer.KnownPeers))
+
 	return peer, nil
+}
+
+// writePeerBlocks queries the specified node asking for blocks this
+// node does not have.
+func (bw *blockWriter) writePeerBlocks(ipPort string) error {
+	from := bw.node.LatestBlock().Header.Number + 1
+	url := fmt.Sprintf("http://%s/v1/blocks/list/%d/latest", ipPort, from)
+
+	var client http.Client
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return err
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusNoContent {
+		bw.evHandler("block writer: writePeerBlocks: no new block")
+		return nil
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		msg, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+		return errors.New(string(msg))
+	}
+
+	var pbs []PeerBlock
+	if err := json.NewDecoder(resp.Body).Decode(&pbs); err != nil {
+		return err
+	}
+
+	for _, pb := range pbs {
+		bw.evHandler(fmt.Sprintf("block writer: writePeerBlocks: prevBlk[%s]: newBlk[%s]: numTrans[%d]", pb.Header.PrevBlock, pb.Header.ThisBlock, len(pb.Transactions)))
+
+		_, err := bw.node.writeNewBlockFromPeer(pb)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // writeMempoolBlock takes all the transactions from the mempool

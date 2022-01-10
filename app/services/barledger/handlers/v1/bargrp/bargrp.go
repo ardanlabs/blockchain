@@ -80,13 +80,13 @@ func (h Handlers) WriteNewBlockFromMempool(ctx context.Context, w http.ResponseW
 	}
 
 	resp := struct {
-		Status      string `json:"status"`
-		NumberTrans int    `json:"num_trans"`
-		Block       block  `json:"block"`
+		Status      string     `json:"status"`
+		NumberTrans int        `json:"num_trans"`
+		Block       node.Block `json:"block"`
 	}{
 		Status:      "new block created",
 		NumberTrans: len(dbBlock.Transactions),
-		Block:       toBlock(dbBlock),
+		Block:       dbBlock,
 	}
 
 	return web.Respond(ctx, w, resp, http.StatusOK)
@@ -154,13 +154,11 @@ func (h Handlers) BlocksByNumber(ctx context.Context, w http.ResponseWriter, r *
 	}
 
 	dbBlocks := h.Node.BlocksByNumber(from, to)
-
-	out := make([]block, len(dbBlocks))
-	for i := range dbBlocks {
-		out[i] = toBlock(dbBlocks[i])
+	if len(dbBlocks) == 0 {
+		return web.Respond(ctx, w, nil, http.StatusNoContent)
 	}
 
-	return web.Respond(ctx, w, out, http.StatusOK)
+	return web.Respond(ctx, w, node.BlocksToPeerBlocks(dbBlocks), http.StatusOK)
 }
 
 // BlocksAcct returns all the blocks and their details.
@@ -168,11 +166,9 @@ func (h Handlers) BlocksByAccount(ctx context.Context, w http.ResponseWriter, r 
 	acct := web.Param(r, "acct")
 
 	dbBlocks := h.Node.BlocksByAccount(acct)
-
-	out := make([]block, len(dbBlocks))
-	for i := range dbBlocks {
-		out[i] = toBlock(dbBlocks[i])
+	if len(dbBlocks) == 0 {
+		return web.Respond(ctx, w, nil, http.StatusNoContent)
 	}
 
-	return web.Respond(ctx, w, out, http.StatusOK)
+	return web.Respond(ctx, w, node.BlocksToPeerBlocks(dbBlocks), http.StatusOK)
 }

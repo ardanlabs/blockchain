@@ -1,3 +1,4 @@
+// Package node is the implementation of our blockchain DB.
 package node
 
 import (
@@ -148,15 +149,6 @@ func (n *Node) WriteNewBlockFromMempool() (Block, error) {
 	return n.writeNewBlockFromMempool()
 }
 
-// WriteNewBlockFromPeer accepts a block from a peer and attemps
-// to add the block to the chain.
-func (n *Node) WriteNewBlockFromPeer(peerBlock PeerBlock) (Block, error) {
-	n.mu.Lock()
-	defer n.mu.Unlock()
-
-	return n.writeNewBlockFromPeer(peerBlock)
-}
-
 // =============================================================================
 
 // AddPeerNode adds an address to the list of peers.
@@ -292,27 +284,25 @@ func (n *Node) BlocksByAccount(account string) []Block {
 // writeNewBlockFromPeer writes the specified peer block to disk.
 // It assumes it's always inside a mutex lock.
 func (n *Node) writeNewBlockFromPeer(peerBlock PeerBlock) (Block, error) {
-	nextNumber := n.latestBlock.Header.Number + 1
+
+	// Convert the peer block to a block.
+	block := peerBlock.ToBlock()
 
 	// Validate the hash is correct.
-	hash := peerBlock.Block.Hash()
-	if peerBlock.Hash != hash {
+	hash := peerBlock.Header.ThisBlock
+	if block.Hash() != hash {
 		return Block{}, errors.New("hash does not match")
 	}
 
 	// Validate the block number is the next in sequence.
-	if peerBlock.Header.Number != nextNumber {
+	nextNumber := n.latestBlock.Header.Number + 1
+	if block.Header.Number != nextNumber {
 		return Block{}, fmt.Errorf("wrong block number, got %d, exp %d", peerBlock.Header.Number, nextNumber)
-	}
-
-	// Validate the previous block matches.
-	if peerBlock.Header.PrevBlock != n.latestBlock.Header.PrevBlock {
-		return Block{}, fmt.Errorf("prev block mismatch, got %s, exp %s", peerBlock.Header.PrevBlock, n.latestBlock.Header.PrevBlock)
 	}
 
 	blockFS := BlockFS{
 		Hash:  hash,
-		Block: peerBlock.Block,
+		Block: block,
 	}
 
 	blockFSJson, err := json.Marshal(blockFS)
@@ -326,7 +316,7 @@ func (n *Node) writeNewBlockFromPeer(peerBlock PeerBlock) (Block, error) {
 
 	n.latestBlock = blockFS.Block
 
-	if err := n.applyTransToBalances(peerBlock.Transactions); err != nil {
+	if err := n.applyTransToBalances(block.Transactions); err != nil {
 		return blockFS.Block, err
 	}
 

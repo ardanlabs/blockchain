@@ -38,6 +38,31 @@ func (b Block) Hash() string {
 	return hex.EncodeToString(hash[:])
 }
 
+// Converts a Block to a PeerBlock .
+func (b Block) ToPeerBlock() PeerBlock {
+	pb := PeerBlock{
+		Header: PeerBlockHeader{
+			PrevBlock: b.Header.PrevBlock,
+			ThisBlock: b.Hash(),
+			Number:    b.Header.Number,
+			Time:      b.Header.Time,
+		},
+		Transactions: b.Transactions,
+	}
+
+	return pb
+}
+
+// BlocksToPeerBlocks converts a slice of blocks to peerblocks.
+func BlocksToPeerBlocks(blocks []Block) []PeerBlock {
+	pbs := make([]PeerBlock, len(blocks))
+	for i, block := range blocks {
+		pbs[i] = block.ToPeerBlock()
+	}
+
+	return pbs
+}
+
 // BlockFS represents what is written to the DB file.
 type BlockFS struct {
 	Hash  string
@@ -68,11 +93,46 @@ func NewBlockFS(prevBlock Block, transactions []Tx) (BlockFS, error) {
 	return blockFS, nil
 }
 
-// PeerBlock is used to add a block from an existing node into
-// this node.
+// =============================================================================
+
+// PeerBlockHeader represents what a block header looks like from any
+// request to a node.
+type PeerBlockHeader struct {
+	PrevBlock string `json:"prev_block"`
+	ThisBlock string `json:"this_block"`
+	Number    uint64 `json:"number"`
+	Time      uint64 `json:"time"`
+}
+
+// peerTx represents what a block looks like from any
+// request to a node.
 type PeerBlock struct {
-	Hash string
-	Block
+	Header       PeerBlockHeader `json:"header"`
+	Transactions []Tx            `json:"transactions"`
+}
+
+// Converts a PeerBlock to a Block.
+func (pb PeerBlock) ToBlock() Block {
+	b := Block{
+		Header: BlockHeader{
+			PrevBlock: pb.Header.PrevBlock,
+			Number:    pb.Header.Number,
+			Time:      pb.Header.Time,
+		},
+		Transactions: pb.Transactions,
+	}
+
+	return b
+}
+
+// PeerBlocksToBlocks converts a slice of peer blocks to blocks.
+func PeerBlocksToBlocks(pbs []PeerBlock) []Block {
+	blocks := make([]Block, len(pbs))
+	for i, pb := range pbs {
+		blocks[i] = pb.ToBlock()
+	}
+
+	return blocks
 }
 
 // =============================================================================
