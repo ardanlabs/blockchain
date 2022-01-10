@@ -300,6 +300,11 @@ func (n *Node) writeNewBlockFromPeer(peerBlock PeerBlock) (Block, error) {
 		return Block{}, fmt.Errorf("wrong block number, got %d, exp %d", peerBlock.Header.Number, nextNumber)
 	}
 
+	// Validate the prev block hash matches our latest node.
+	if peerBlock.Header.PrevBlock != n.LatestBlock().Hash() {
+		return Block{}, fmt.Errorf("prev block doesn't match our latest, got %s, exp %s", peerBlock.Header.PrevBlock, n.LatestBlock().Hash())
+	}
+
 	blockFS := BlockFS{
 		Hash:  hash,
 		Block: block,

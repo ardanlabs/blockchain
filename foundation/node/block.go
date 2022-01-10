@@ -29,6 +29,10 @@ type Block struct {
 // Hash returns the unique hash for the block by marshaling
 // the block into JSON and performing a hashing operation.
 func (b Block) Hash() string {
+	if b.Header.Number == 0 {
+		return zeroHash
+	}
+
 	blockJson, err := json.Marshal(b)
 	if err != nil {
 		return zeroHash
