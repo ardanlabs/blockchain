@@ -30,6 +30,7 @@ func Transactions(args []string, n *node.Node) error {
 		if err != nil {
 			return err
 		}
+
 		fmt.Println("Block 0 Persisted")
 		fmt.Printf("BlockHash: %s\n\n", block.Hash())
 

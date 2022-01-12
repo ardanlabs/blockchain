@@ -2,10 +2,13 @@ package node
 
 import (
 	"bufio"
+	"context"
+	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"os"
 	"time"
 )
@@ -18,12 +21,33 @@ type BlockHeader struct {
 	PrevBlock string
 	Number    uint64
 	Time      uint64
+	Nonce     uint64
 }
 
 // Block represents a set of transactions grouped together.
 type Block struct {
 	Header       BlockHeader
 	Transactions []Tx
+}
+
+// NewBlock constructs a new BlockFS for persisting.
+func NewBlock(prevBlock Block, transactions []Tx) Block {
+	hash := zeroHash
+	if prevBlock.Header.Number > 0 {
+		hash = prevBlock.Hash()
+	}
+
+	txs := make([]Tx, len(transactions))
+	copy(txs, transactions)
+
+	return Block{
+		Header: BlockHeader{
+			PrevBlock: hash,
+			Number:    prevBlock.Header.Number + 1,
+			Time:      uint64(time.Now().Unix()),
+		},
+		Transactions: txs,
+	}
 }
 
 // Hash returns the unique hash for the block by marshaling
@@ -67,34 +91,45 @@ func BlocksToPeerBlocks(blocks []Block) []PeerBlock {
 	return pbs
 }
 
+// =============================================================================
+
 // BlockFS represents what is written to the DB file.
 type BlockFS struct {
 	Hash  string
 	Block Block
 }
 
-// NewBlockFS constructs a new BlockFS for persisting.
-func NewBlockFS(prevBlock Block, transactions []Tx) (BlockFS, error) {
-	hash := zeroHash
-	if prevBlock.Header.Number > 0 {
-		hash = prevBlock.Hash()
-	}
+// performPOW does the work to find a valid hash for
+// this block.
+func performPOW(ctx context.Context, b Block) (BlockFS, error) {
+	for {
+		// Did we timeout trying to solve the problem.
+		if ctx.Err() != nil {
+			return BlockFS{}, ctx.Err()
+		}
 
-	block := Block{
-		Header: BlockHeader{
-			PrevBlock: hash,
-			Number:    prevBlock.Header.Number + 1,
-			Time:      uint64(time.Now().Unix()),
-		},
-		Transactions: transactions,
-	}
+		// Hash the block and check if we have solved the puzzle.
+		hash := b.Hash()
+		if !isHashSolved(hash) {
 
-	blockFS := BlockFS{
-		Hash:  block.Hash(),
-		Block: block,
-	}
+			// Choose a randon number so we can try again.
+			const max = 1_000_000
+			nBig, err := rand.Int(rand.Reader, big.NewInt(max))
+			if err != nil {
+				return BlockFS{}, err
+			}
+			b.Header.Nonce = nBig.Uint64()
 
-	return blockFS, nil
+			continue
+		}
+
+		// We found a solution to the POW.
+		bfs := BlockFS{
+			Hash:  hash,
+			Block: b,
+		}
+		return bfs, nil
+	}
 }
 
 // =============================================================================
@@ -106,6 +141,7 @@ type PeerBlockHeader struct {
 	ThisBlock string `json:"this_block"`
 	Number    uint64 `json:"number"`
 	Time      uint64 `json:"time"`
+	Nonce     uint32 `json:"nonce"`
 }
 
 // peerTx represents what a block looks like from any
@@ -141,6 +177,20 @@ func PeerBlocksToBlocks(pbs []PeerBlock) []Block {
 
 // =============================================================================
 
+// isHashSolved checks the hash to make sure it complies with
+// the POW rules. Currently two leading 0's.
+func isHashSolved(hash string) bool {
+	if len(hash) != 64 {
+		return false
+	}
+
+	if hash[:2] != "00" {
+		return false
+	}
+
+	return true
+}
+
 // loadBlocksFromDisk the current set of blocks/transactions.
 func loadBlocksFromDisk(dbPath string) ([]Block, error) {
 	dbFile, err := os.Open(dbPath)
@@ -172,16 +222,3 @@ func loadBlocksFromDisk(dbPath string) ([]Block, error) {
 
 	return blocks, nil
 }
-
-// func toNodeBlock(block block) node.Block {
-// 	nBlock := node.Block{
-// 		Header: node.BlockHeader{
-// 			PrevBlock: hashToBytes(block.Header.PrevBlock),
-// 			Number:    block.Header.Number,
-// 			Time:      uint64(block.Header.Time.Unix()),
-// 		},
-// 		Transactions: toNodeTxs(block.Transactions),
-// 	}
-
-// 	return nBlock
-// }

@@ -2,6 +2,7 @@
 package node
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -96,7 +97,7 @@ func New(cfg Config) (*Node, error) {
 	// Apply the transactions to the initial genesis balances, adding new
 	// accounts as it is processed.
 	for _, block := range blocks {
-		if err := n.applyTransToBalances(block.Transactions); err != nil {
+		if err := applyTransToBalances(n.balances, block.Transactions); err != nil {
 			return nil, err
 		}
 	}
@@ -214,8 +215,8 @@ func (n *Node) Mempool() []Tx {
 	return cpy
 }
 
-// Balances returns the set of balances by account. If the account
-// is empty, all balances are returned.
+// Balances returns a copy of the set of balances by account.
+// If the account parameter is empty, all balances are returned.
 func (n *Node) Balances(account string) map[string]uint {
 	n.mu.Lock()
 	defer n.mu.Unlock()
@@ -291,7 +292,12 @@ func (n *Node) writeNewBlockFromPeer(peerBlock PeerBlock) (Block, error) {
 	// Validate the hash is correct.
 	hash := peerBlock.Header.ThisBlock
 	if block.Hash() != hash {
-		return Block{}, errors.New("hash does not match")
+		return Block{}, errors.New("generated hash does not match peer")
+	}
+
+	// Validate the hash matches the POW puzzle.
+	if !isHashSolved(hash) {
+		return Block{}, errors.New("hash does not match POW")
 	}
 
 	// Validate the block number is the next in sequence.
@@ -305,23 +311,22 @@ func (n *Node) writeNewBlockFromPeer(peerBlock PeerBlock) (Block, error) {
 		return Block{}, fmt.Errorf("prev block doesn't match our latest, got %s, exp %s", peerBlock.Header.PrevBlock, n.LatestBlock().Hash())
 	}
 
+	// Write the new block to the chain on disk.
 	blockFS := BlockFS{
 		Hash:  hash,
 		Block: block,
 	}
-
 	blockFSJson, err := json.Marshal(blockFS)
 	if err != nil {
 		return Block{}, err
 	}
-
 	if _, err := n.file.Write(append(blockFSJson, '\n')); err != nil {
 		return Block{}, err
 	}
 
+	// Update the state of the node.
 	n.latestBlock = blockFS.Block
-
-	if err := n.applyTransToBalances(block.Transactions); err != nil {
+	if err := applyTransToBalances(n.balances, block.Transactions); err != nil {
 		return blockFS.Block, err
 	}
 
@@ -335,42 +340,59 @@ func (n *Node) writeNewBlockFromMempool() (Block, error) {
 		return Block{}, ErrNoTransactions
 	}
 
-	// If the transaction can't be applied to the balance,
-	// mark the transaction as failed.
-	for i := range n.txMempool {
-		if err := n.applyTranToBalance(n.txMempool[i]); err != nil {
-			n.txMempool[i].Status = TxStatusError
-			n.txMempool[i].StatusInfo = err.Error()
-			continue
-		}
-		n.txMempool[i].Status = TxStatusAccepted
+	// Create a new block.
+	nb := NewBlock(n.latestBlock, n.txMempool)
+
+	// Get a copy of the balance sheet.
+	balances := make(map[string]uint)
+	for act, bal := range n.balances {
+		balances[act] = bal
 	}
 
-	blockFS, err := NewBlockFS(n.latestBlock, n.txMempool)
+	// Apply the transactions to that copy, setting status information.
+	for i := range nb.Transactions {
+		if err := applyTranToBalance(balances, nb.Transactions[i]); err != nil {
+			nb.Transactions[i].Status = TxStatusError
+			nb.Transactions[i].StatusInfo = err.Error()
+			continue
+		}
+		nb.Transactions[i].Status = TxStatusAccepted
+	}
+
+	// Give ourselves 10 seconds to perform the POW.
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Attempt to create a new BlockFS by solving the POW puzzle.
+	blockFS, err := performPOW(ctx, nb)
 	if err != nil {
 		return Block{}, err
 	}
 
+	// Write the new block to the chain on disk.
 	blockFSJson, err := json.Marshal(blockFS)
 	if err != nil {
 		return Block{}, err
 	}
-
 	if _, err := n.file.Write(append(blockFSJson, '\n')); err != nil {
 		return Block{}, err
 	}
 
+	// Update the state of the node.
+	n.balances = balances
 	n.latestBlock = blockFS.Block
 	n.txMempool = []Tx{}
 
 	return blockFS.Block, nil
 }
 
+// =============================================================================
+
 // applyTransToBalances applies the transactions to the specified
 // balances, adding new accounts as they are found.
-func (n *Node) applyTransToBalances(txs []Tx) error {
+func applyTransToBalances(balances map[string]uint, txs []Tx) error {
 	for _, tx := range txs {
-		n.applyTranToBalance(tx)
+		applyTranToBalance(balances, tx)
 	}
 
 	return nil
@@ -378,13 +400,13 @@ func (n *Node) applyTransToBalances(txs []Tx) error {
 
 // applyTranToBalance performs the business logic for applying a transaction to
 // the balance sheet.
-func (n *Node) applyTranToBalance(tx Tx) error {
+func applyTranToBalance(balances map[string]uint, tx Tx) error {
 	if tx.Status == TxStatusError {
 		return nil
 	}
 
 	if tx.Data == TxDataReward {
-		n.balances[tx.To] += tx.Value
+		balances[tx.To] += tx.Value
 		return nil
 	}
 
@@ -392,12 +414,12 @@ func (n *Node) applyTranToBalance(tx Tx) error {
 		return fmt.Errorf("invalid transaction, do you mean to give a reward, from %s, to %s", tx.From, tx.To)
 	}
 
-	if tx.Value > n.balances[tx.From] {
+	if tx.Value > balances[tx.From] {
 		return fmt.Errorf("%s has an insufficient balance", tx.From)
 	}
 
-	n.balances[tx.From] -= tx.Value
-	n.balances[tx.To] += tx.Value
+	balances[tx.From] -= tx.Value
+	balances[tx.To] += tx.Value
 
 	return nil
 }
