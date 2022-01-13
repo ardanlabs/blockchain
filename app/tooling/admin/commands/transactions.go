@@ -85,7 +85,7 @@ func Transactions(args []string, n *node.Node) error {
 			fmt.Printf("Block: %s\n", block.Hash())
 			for _, tx := range block.Transactions {
 				fmt.Printf("From: %s  To: %s  Value: %d  Data: %s\n",
-					tx.From, tx.To, tx.Value, tx.Data)
+					tx.Record.From, tx.Record.To, tx.Record.Value, tx.Record.Data)
 			}
 			fmt.Println("-----------------------------------------------------------------------------------------")
 		}

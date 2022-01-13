@@ -3,13 +3,20 @@ package node
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math/big"
 	"os"
 	"sync"
 	"time"
 )
+
+// zeroHash represents a has code of zeros.
+const zeroHash = "00000000000000000000000000000000"
 
 // ErrNoTransactions is returned when a block is requested to be created
 // and there are no transactions.
@@ -223,12 +230,10 @@ func (n *Node) CopyKnownPeersList() map[string]struct{} {
 	return peers
 }
 
-// CopyPublishedTransactions retrieves a copy of transactions from
-// the mempool that match the specified statuses.
-func (n *Node) CopyTransactions(statuses ...string) []Tx {
-	n.mu.Lock()
-	defer n.mu.Unlock()
-
+// copyTransactions retrieves a copy of transactions from
+// the mempool that match the specified statuses. This is
+// unexported and is called inside of a lock.
+func (n *Node) copyTransactions(statuses ...string) []Tx {
 	var txs []Tx
 	for _, tx := range n.txMempool {
 		for _, status := range statuses {
@@ -302,7 +307,7 @@ func (n *Node) QueryBlocksByAccount(account string) []Block {
 	var out []Block
 	for _, block := range blocks {
 		for _, tran := range block.Transactions {
-			if tran.From == account || tran.To == account {
+			if tran.Record.From == account || tran.Record.To == account {
 				out = append(out, block)
 			}
 		}
@@ -371,8 +376,8 @@ func (n *Node) writeNewBlockFromTransactions() (Block, error) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-	// Get the set of transactions that have been published.
-	txs := n.CopyTransactions(TxStatusNew, TxStatusPublished)
+	// Get the set of new and published transactions.
+	txs := n.copyTransactions(TxStatusNew, TxStatusPublished)
 	if len(txs) == 0 {
 		return Block{}, ErrNoTransactions
 	}
@@ -421,4 +426,29 @@ func (n *Node) writeNewBlockFromTransactions() (Block, error) {
 	n.txMempool = []Tx{}
 
 	return blockFS.Block, nil
+}
+
+// =============================================================================
+
+// generateHash takes a value and produces a 32 byte hash.
+func generateHash(v interface{}) string {
+	blockJson, err := json.Marshal(v)
+	if err != nil {
+		return zeroHash
+	}
+
+	hash := sha256.Sum256(blockJson)
+	return hex.EncodeToString(hash[:])
+}
+
+// generateNonce generates a new nonce (number once).
+func generateNonce() uint64 {
+	const max = 1_000_000
+
+	nBig, err := rand.Int(rand.Reader, big.NewInt(max))
+	if err != nil {
+		return 0
+	}
+
+	return nBig.Uint64()
 }

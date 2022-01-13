@@ -244,6 +244,9 @@ func (bw *bcWorker) publishNewTransactions(ipPort string) error {
 // mineNewBlock takes all the transactions from the mempool and writes a
 // new block to the database.
 func (bw *bcWorker) mineNewBlock() {
+	bw.evHandler("bcWorker: performWork: mineNewBlock: started")
+	defer bw.evHandler("bcWorker: performWork: mineNewBlock: cempleted")
+
 	block, err := bw.node.writeNewBlockFromTransactions()
 	if err != nil {
 		if errors.Is(err, ErrNoTransactions) {

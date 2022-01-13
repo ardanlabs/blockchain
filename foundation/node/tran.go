@@ -1,6 +1,8 @@
 package node
 
-import "fmt"
+import (
+	"fmt"
+)
 
 const (
 	TxDataReward = "reward"
@@ -13,24 +15,37 @@ const (
 	TxStatusPublished = "published"
 )
 
-// Tx represents a transaction in the database.
+// TxRecord represents a transaction in the database.
+type TxRecord struct {
+	Nonce uint64 `json:"nonce"`
+	From  string `json:"from"`
+	To    string `json:"to"`
+	Value uint   `json:"value"`
+	Data  string `json:"data"`
+}
+
+// Tx represents what is written to the DB file.
 type Tx struct {
-	From       string `json:"from"`
-	To         string `json:"to"`
-	Value      uint   `json:"value"`
-	Data       string `json:"data"`
-	Status     string `json:"status"`
-	StatusInfo string `json:"status_info"`
+	Hash       string   `json:"hash"`
+	Status     string   `json:"status"`
+	StatusInfo string   `json:"status_info"`
+	Record     TxRecord `json:"tx"`
 }
 
 // NewTx constructs a new Tx for use.
 func NewTx(from, to string, value uint, data string) Tx {
+	txRecord := TxRecord{
+		Nonce: generateNonce(),
+		From:  from,
+		To:    to,
+		Value: value,
+		Data:  data,
+	}
+
 	return Tx{
-		From:   from,
-		To:     to,
-		Value:  value,
-		Data:   data,
+		Hash:   generateHash(txRecord),
 		Status: TxStatusNew,
+		Record: txRecord,
 	}
 }
 
@@ -53,21 +68,21 @@ func applyTranToBalance(balances map[string]uint, tx Tx) error {
 		return nil
 	}
 
-	if tx.Data == TxDataReward {
-		balances[tx.To] += tx.Value
+	if tx.Record.Data == TxDataReward {
+		balances[tx.Record.To] += tx.Record.Value
 		return nil
 	}
 
-	if tx.From == tx.To {
-		return fmt.Errorf("invalid transaction, do you mean to give a reward, from %s, to %s", tx.From, tx.To)
+	if tx.Record.From == tx.Record.To {
+		return fmt.Errorf("invalid transaction, do you mean to give a reward, from %s, to %s", tx.Record.From, tx.Record.To)
 	}
 
-	if tx.Value > balances[tx.From] {
-		return fmt.Errorf("%s has an insufficient balance", tx.From)
+	if tx.Record.Value > balances[tx.Record.From] {
+		return fmt.Errorf("%s has an insufficient balance", tx.Record.From)
 	}
 
-	balances[tx.From] -= tx.Value
-	balances[tx.To] += tx.Value
+	balances[tx.Record.From] -= tx.Record.Value
+	balances[tx.Record.To] += tx.Record.Value
 
 	return nil
 }

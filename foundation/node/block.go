@@ -3,31 +3,25 @@ package node
 import (
 	"bufio"
 	"context"
-	"crypto/rand"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"math/big"
 	"os"
 	"time"
 )
 
-const zeroHash = "00000000000000000000000000000000"
-
 // BlockHeader represents common information required for
 // each block.
 type BlockHeader struct {
-	PrevBlock string
-	Number    uint64
-	Time      uint64
-	Nonce     uint64
+	PrevBlock string `json:"prev_block"`
+	Number    uint64 `json:"number"`
+	Time      uint64 `json:"time"`
+	Nonce     uint64 `json:"nonce"`
 }
 
 // Block represents a set of transactions grouped together.
 type Block struct {
-	Header       BlockHeader
-	Transactions []Tx
+	Header       BlockHeader `json:"header"`
+	Transactions []Tx        `json:"txs"`
 }
 
 // NewBlock constructs a new BlockFS for persisting.
@@ -54,13 +48,7 @@ func (b Block) Hash() string {
 		return zeroHash
 	}
 
-	blockJson, err := json.Marshal(b)
-	if err != nil {
-		return zeroHash
-	}
-
-	hash := sha256.Sum256(blockJson)
-	return hex.EncodeToString(hash[:])
+	return generateHash(b)
 }
 
 // Converts a Block to a PeerBlock .
@@ -108,15 +96,7 @@ func performPOW(ctx context.Context, b Block) (BlockFS, error) {
 		// Hash the block and check if we have solved the puzzle.
 		hash := b.Hash()
 		if !isHashSolved(hash) {
-
-			// Choose a randon number so we can try again.
-			const max = 1_000_000
-			nBig, err := rand.Int(rand.Reader, big.NewInt(max))
-			if err != nil {
-				return BlockFS{}, err
-			}
-			b.Header.Nonce = nBig.Uint64()
-
+			b.Header.Nonce = generateNonce()
 			continue
 		}
 
