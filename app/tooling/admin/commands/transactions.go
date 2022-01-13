@@ -1,8 +1,10 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/ardanlabs/blockchain/foundation/node"
 )
@@ -16,6 +18,9 @@ func Transactions(args []string, n *node.Node) error {
 
 	switch sub {
 	case "seed":
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
 		var txs []node.Tx
 		txs = append(txs, node.NewTx("bill_kennedy", "bill_kennedy", 3, node.TxDataReward))
 		txs = append(txs, node.NewTx("bill_kennedy", "bill_kennedy", 703, node.TxDataReward))
@@ -26,13 +31,12 @@ func Transactions(args []string, n *node.Node) error {
 			}
 		}
 
-		block, err := n.WriteNewBlockFromMempool()
-		if err != nil {
+		if err := n.PerformWork(ctx); err != nil {
 			return err
 		}
-
-		fmt.Println("Block 0 Persisted")
-		fmt.Printf("BlockHash: %s\n\n", block.Hash())
+		if err := waitForBlock(n, 1, ctx); err != nil {
+			return err
+		}
 
 		txs = []node.Tx{}
 		txs = append(txs, node.NewTx("bill_kennedy", "babayaga", 2000, ""))
@@ -48,15 +52,15 @@ func Transactions(args []string, n *node.Node) error {
 			}
 		}
 
-		block, err = n.WriteNewBlockFromMempool()
-		if err != nil {
+		if err := n.PerformWork(ctx); err != nil {
 			return err
 		}
-		fmt.Println("Block 1 Persisted")
-		fmt.Printf("BlockHash: %s\n\n", block.Hash())
+		if err := waitForBlock(n, 2, ctx); err != nil {
+			return err
+		}
 
 	case "add":
-		fmt.Printf("LastestBlockHash: %s\n\n", n.LatestBlock().Hash())
+		fmt.Printf("LastestBlockHash: %s\n\n", n.CopyLatestBlock().Hash())
 
 		from := args[3]
 		to := args[4]
@@ -68,13 +72,6 @@ func Transactions(args []string, n *node.Node) error {
 		}
 		fmt.Println("Transaction added")
 
-		block, err := n.WriteNewBlockFromMempool()
-		if err != nil {
-			return err
-		}
-		fmt.Println("Transaction persisted")
-		fmt.Printf("LastestBlockHash: %s\n\n", block.Hash())
-
 	default:
 		var acct string
 		if len(args) == 3 {
@@ -82,7 +79,7 @@ func Transactions(args []string, n *node.Node) error {
 		}
 
 		fmt.Println("-----------------------------------------------------------------------------------------")
-		for i, block := range n.BlocksByAccount(acct) {
+		for i, block := range n.QueryBlocksByAccount(acct) {
 			fmt.Println("Block:", i)
 			fmt.Printf("Prev Block: %s\n", block.Header.PrevBlock)
 			fmt.Printf("Block: %s\n", block.Hash())
@@ -95,4 +92,22 @@ func Transactions(args []string, n *node.Node) error {
 	}
 
 	return nil
+}
+
+func waitForBlock(node *node.Node, number uint64, ctx context.Context) error {
+	for {
+		fmt.Printf("waiting for block %d ...\n", number)
+
+		block := node.CopyLatestBlock()
+		if block.Header.Number == number {
+			fmt.Printf("Block %d Persisted\n", number)
+			fmt.Printf("BlockHash: %s\n\n", block.Hash())
+			return nil
+		}
+
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
 }

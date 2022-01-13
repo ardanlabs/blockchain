@@ -37,6 +37,7 @@ func run(log *zap.SugaredLogger) error {
 	node, err := node.New(node.Config{
 		DBPath:          "zblock/blocks.db",
 		PersistInterval: 10 * time.Minute,
+		EvHandler:       func(v string) { log.Infow(v) },
 	})
 	if err != nil {
 		return err

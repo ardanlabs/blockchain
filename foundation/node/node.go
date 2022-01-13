@@ -38,9 +38,9 @@ type Node struct {
 	dbPath      string
 	file        *os.File
 	mu          sync.Mutex
-	blockWriter *blockWriter
 	ipPort      string
 	knownPeers  map[string]struct{}
+	bcWorker    *bcWorker
 }
 
 // New constructs a new blockchain for data management.
@@ -53,38 +53,47 @@ func New(cfg Config) (*Node, error) {
 		return nil, err
 	}
 
-	// Load the current set of recorded transactions.
+	// Load the blockchain from disk. This would not make sense
+	// with the current Ethereum blockchain. Ours is small.
 	blocks, err := loadBlocksFromDisk(cfg.DBPath)
 	if err != nil {
 		return nil, err
 	}
 
-	// Make a copy of the genesis balances for the next step.
-	balances := make(map[string]uint)
-	for key, value := range genesis.Balances {
-		balances[key] = value
-	}
-
-	// Open the transaction database file.
-	file, err := os.OpenFile(cfg.DBPath, os.O_APPEND|os.O_RDWR, 0600)
-	if err != nil {
-		return nil, err
-	}
-
-	// Capture the hash of the latest block.
+	// Keep the latest block from the blockchain.
 	var latestBlock Block
 	if len(blocks) > 0 {
 		latestBlock = blocks[len(blocks)-1]
 	}
 
-	// Convert the list of peers to the internal map.
+	// Save the list of known peers.
 	peers := make(map[string]struct{})
 	for _, peer := range cfg.KnownPeers {
 		peers[peer] = struct{}{}
 	}
 
-	// Create the chain with no transactions currently in memory.
-	n := Node{
+	// Apply the genesis balances to the balance sheet.
+	balances := make(map[string]uint)
+	for key, value := range genesis.Balances {
+		balances[key] = value
+	}
+
+	// Update the balance sheet by processing all the transactions in
+	// the set of blocks.
+	for _, block := range blocks {
+		if err := applyTransToBalances(balances, block.Transactions); err != nil {
+			return nil, err
+		}
+	}
+
+	// Open the blockchain database file for processing.
+	file, err := os.OpenFile(cfg.DBPath, os.O_APPEND|os.O_RDWR, 0600)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create the node to provide support for managing the blockchain.
+	node := Node{
 		genesis:     genesis,
 		latestBlock: latestBlock,
 		balances:    balances,
@@ -94,18 +103,10 @@ func New(cfg Config) (*Node, error) {
 		knownPeers:  peers,
 	}
 
-	// Apply the transactions to the initial genesis balances, adding new
-	// accounts as it is processed.
-	for _, block := range blocks {
-		if err := applyTransToBalances(n.balances, block.Transactions); err != nil {
-			return nil, err
-		}
-	}
+	// Start the blockchain worker.
+	node.bcWorker = newBCWorker(&node, cfg.PersistInterval, cfg.EvHandler)
 
-	// Start the block writer.
-	n.blockWriter = newBlockWriter(&n, cfg.PersistInterval, cfg.EvHandler)
-
-	return &n, nil
+	return &node, nil
 }
 
 // Shutdown cleanly brings the node down.
@@ -116,16 +117,15 @@ func (n *Node) Shutdown() error {
 		n.mu.Unlock()
 	}()
 
-	n.blockWriter.shutdown()
-
-	// Persist the remaining transactions to disk.
-	if _, err := n.writeNewBlockFromMempool(); err != nil {
-		if !errors.Is(err, ErrNoTransactions) {
-			return err
-		}
-	}
+	// Stop all blockchain writing activity.
+	n.bcWorker.shutdown()
 
 	return nil
+}
+
+// PerformWork signals the blockchain worker to perform work.
+func (n *Node) PerformWork(ctx context.Context) error {
+	return n.bcWorker.PerformWork(ctx)
 }
 
 // =============================================================================
@@ -141,16 +141,11 @@ func (n *Node) AddTransaction(tx Tx) error {
 	return nil
 }
 
-// WriteNewBlockFromMempool writes the current transactions from the
-// memory pool to disk.
-func (n *Node) WriteNewBlockFromMempool() (Block, error) {
-	n.mu.Lock()
-	defer n.mu.Unlock()
-
-	return n.writeNewBlockFromMempool()
+// UpdateTransactionStatus changes the status of a transaction
+// in the mempool.
+func (n *Node) UpdateTransactionStatus(tx Tx) error {
+	return nil
 }
-
-// =============================================================================
 
 // AddPeerNode adds an address to the list of peers.
 func (n *Node) AddPeerNode(ipPort string) error {
@@ -169,9 +164,50 @@ func (n *Node) AddPeerNode(ipPort string) error {
 	return nil
 }
 
-// KnownPeersList retrieves information about the peer for updating
+// =============================================================================
+
+// CopyGenesis returns a copy of the genesis information.
+func (n *Node) CopyGenesis() Genesis {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	return n.genesis
+}
+
+// CopyLatestBlock returns the current hash of the latest block.
+func (n *Node) CopyLatestBlock() Block {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	return n.latestBlock
+}
+
+// CopyMempool returns a copy of the mempool.
+func (n *Node) CopyMempool() []Tx {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	cpy := make([]Tx, len(n.txMempool))
+	copy(cpy, n.txMempool)
+	return cpy
+}
+
+// CopyBalances returns a copy of the set of balances by account.
+func (n *Node) CopyBalances() map[string]uint {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	balances := make(map[string]uint)
+	for act, bal := range n.balances {
+		balances[act] = bal
+	}
+
+	return balances
+}
+
+// CopyKnownPeersList retrieves information about the peer for updating
 // the known peer list and their current block number.
-func (n *Node) KnownPeersList() map[string]struct{} {
+func (n *Node) CopyKnownPeersList() map[string]struct{} {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
@@ -187,37 +223,33 @@ func (n *Node) KnownPeersList() map[string]struct{} {
 	return peers
 }
 
+// CopyPublishedTransactions retrieves a copy of transactions from
+// the mempool that match the specified statuses.
+func (n *Node) CopyTransactions(statuses ...string) []Tx {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	var txs []Tx
+	for _, tx := range n.txMempool {
+		for _, status := range statuses {
+			if tx.Status == status {
+				txs = append(txs, tx)
+				break
+			}
+		}
+	}
+
+	return txs
+}
+
 // =============================================================================
 
-// Genesis returns a copy of the genesis information.
-func (n *Node) Genesis() Genesis {
-	n.mu.Lock()
-	defer n.mu.Unlock()
+// QueryLastest represents to query the latest block in the chain.
+const QueryLastest = ^uint64(0) >> 1
 
-	return n.genesis
-}
-
-// LatestBlock returns the current hash of the latest block.
-func (n *Node) LatestBlock() Block {
-	n.mu.Lock()
-	defer n.mu.Unlock()
-
-	return n.latestBlock
-}
-
-// Mempool returns a copy of the mempool.
-func (n *Node) Mempool() []Tx {
-	n.mu.Lock()
-	defer n.mu.Unlock()
-
-	cpy := make([]Tx, len(n.txMempool))
-	copy(cpy, n.txMempool)
-	return cpy
-}
-
-// Balances returns a copy of the set of balances by account.
+// QueryBalances returns a copy of the set of balances by account.
 // If the account parameter is empty, all balances are returned.
-func (n *Node) Balances(account string) map[string]uint {
+func (n *Node) QueryBalances(account string) map[string]uint {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
@@ -231,17 +263,15 @@ func (n *Node) Balances(account string) map[string]uint {
 	return balances
 }
 
-// LastestBlock represents the latest block in the DB.
-const LastestBlock = ^uint64(0) >> 1
-
-// BlocksByNumber returns the set of blocks based on block numbers.
-func (n *Node) BlocksByNumber(from uint64, to uint64) []Block {
+// QueryBlocksByNumber returns the set of blocks based on block numbers. This
+// function reads the blockchain from disk first.
+func (n *Node) QueryBlocksByNumber(from uint64, to uint64) []Block {
 	blocks, err := loadBlocksFromDisk(n.dbPath)
 	if err != nil {
 		return nil
 	}
 
-	if from == LastestBlock {
+	if from == QueryLastest {
 		from = blocks[len(blocks)-1].Header.Number
 		to = from
 	}
@@ -256,9 +286,10 @@ func (n *Node) BlocksByNumber(from uint64, to uint64) []Block {
 	return out
 }
 
-// BlocksByAccount returns the set of blocks by account. If the account
-// is empty, all blocks are returned.
-func (n *Node) BlocksByAccount(account string) []Block {
+// QueryBlocksByAccount returns the set of blocks by account. If the account
+// is empty, all blocks are returned. This function reads the blockchain
+// from disk first.
+func (n *Node) QueryBlocksByAccount(account string) []Block {
 	blocks, err := loadBlocksFromDisk(n.dbPath)
 	if err != nil {
 		return nil
@@ -283,8 +314,9 @@ func (n *Node) BlocksByAccount(account string) []Block {
 // =============================================================================
 
 // writeNewBlockFromPeer writes the specified peer block to disk.
-// It assumes it's always inside a mutex lock.
 func (n *Node) writeNewBlockFromPeer(peerBlock PeerBlock) (Block, error) {
+	n.mu.Lock()
+	defer n.mu.Unlock()
 
 	// Convert the peer block to a block.
 	block := peerBlock.ToBlock()
@@ -307,8 +339,8 @@ func (n *Node) writeNewBlockFromPeer(peerBlock PeerBlock) (Block, error) {
 	}
 
 	// Validate the prev block hash matches our latest node.
-	if peerBlock.Header.PrevBlock != n.LatestBlock().Hash() {
-		return Block{}, fmt.Errorf("prev block doesn't match our latest, got %s, exp %s", peerBlock.Header.PrevBlock, n.LatestBlock().Hash())
+	if peerBlock.Header.PrevBlock != n.latestBlock.Hash() {
+		return Block{}, fmt.Errorf("prev block doesn't match our latest, got %s, exp %s", peerBlock.Header.PrevBlock, n.latestBlock.Hash())
 	}
 
 	// Write the new block to the chain on disk.
@@ -333,15 +365,20 @@ func (n *Node) writeNewBlockFromPeer(peerBlock PeerBlock) (Block, error) {
 	return blockFS.Block, nil
 }
 
-// writeNewBlock writes the current transaction memory pool to disk.
-// It assumes it's always inside a mutex lock.
-func (n *Node) writeNewBlockFromMempool() (Block, error) {
-	if len(n.txMempool) == 0 {
+// writeNewBlockFromTransactions writes the published transaction from the
+// memory pool to disk.
+func (n *Node) writeNewBlockFromTransactions() (Block, error) {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	// Get the set of transactions that have been published.
+	txs := n.CopyTransactions(TxStatusNew, TxStatusPublished)
+	if len(txs) == 0 {
 		return Block{}, ErrNoTransactions
 	}
 
 	// Create a new block.
-	nb := NewBlock(n.latestBlock, n.txMempool)
+	nb := NewBlock(n.latestBlock, txs)
 
 	// Get a copy of the balance sheet.
 	balances := make(map[string]uint)
@@ -350,8 +387,8 @@ func (n *Node) writeNewBlockFromMempool() (Block, error) {
 	}
 
 	// Apply the transactions to that copy, setting status information.
-	for i := range nb.Transactions {
-		if err := applyTranToBalance(balances, nb.Transactions[i]); err != nil {
+	for i, tx := range nb.Transactions {
+		if err := applyTranToBalance(balances, tx); err != nil {
 			nb.Transactions[i].Status = TxStatusError
 			nb.Transactions[i].StatusInfo = err.Error()
 			continue
@@ -384,42 +421,4 @@ func (n *Node) writeNewBlockFromMempool() (Block, error) {
 	n.txMempool = []Tx{}
 
 	return blockFS.Block, nil
-}
-
-// =============================================================================
-
-// applyTransToBalances applies the transactions to the specified
-// balances, adding new accounts as they are found.
-func applyTransToBalances(balances map[string]uint, txs []Tx) error {
-	for _, tx := range txs {
-		applyTranToBalance(balances, tx)
-	}
-
-	return nil
-}
-
-// applyTranToBalance performs the business logic for applying a transaction to
-// the balance sheet.
-func applyTranToBalance(balances map[string]uint, tx Tx) error {
-	if tx.Status == TxStatusError {
-		return nil
-	}
-
-	if tx.Data == TxDataReward {
-		balances[tx.To] += tx.Value
-		return nil
-	}
-
-	if tx.From == tx.To {
-		return fmt.Errorf("invalid transaction, do you mean to give a reward, from %s, to %s", tx.From, tx.To)
-	}
-
-	if tx.Value > balances[tx.From] {
-		return fmt.Errorf("%s has an insufficient balance", tx.From)
-	}
-
-	balances[tx.From] -= tx.Value
-	balances[tx.To] += tx.Value
-
-	return nil
 }

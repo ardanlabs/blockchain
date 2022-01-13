@@ -37,16 +37,13 @@ func NewBlock(prevBlock Block, transactions []Tx) Block {
 		hash = prevBlock.Hash()
 	}
 
-	txs := make([]Tx, len(transactions))
-	copy(txs, transactions)
-
 	return Block{
 		Header: BlockHeader{
 			PrevBlock: hash,
 			Number:    prevBlock.Header.Number + 1,
 			Time:      uint64(time.Now().Unix()),
 		},
-		Transactions: txs,
+		Transactions: transactions,
 	}
 }
 
@@ -191,7 +188,8 @@ func isHashSolved(hash string) bool {
 	return true
 }
 
-// loadBlocksFromDisk the current set of blocks/transactions.
+// loadBlocksFromDisk the current set of blocks/transactions. In a real
+// world situation this would require a lot of memory.
 func loadBlocksFromDisk(dbPath string) ([]Block, error) {
 	dbFile, err := os.Open(dbPath)
 	if err != nil {

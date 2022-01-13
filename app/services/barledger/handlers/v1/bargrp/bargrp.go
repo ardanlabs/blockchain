@@ -22,14 +22,16 @@ type Handlers struct {
 
 // Status returns the current status of the node.
 func (h Handlers) Status(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	latestBlock := h.Node.CopyLatestBlock()
+
 	status := struct {
 		Hash              string              `json:"hash"`
 		LatestBlockNumber uint64              `json:"latest_block_number"`
 		KnownPeers        map[string]struct{} `json:"known_peers"`
 	}{
-		Hash:              h.Node.LatestBlock().Hash(),
-		LatestBlockNumber: h.Node.LatestBlock().Header.Number,
-		KnownPeers:        h.Node.KnownPeersList(),
+		Hash:              latestBlock.Hash(),
+		LatestBlockNumber: latestBlock.Header.Number,
+		KnownPeers:        h.Node.CopyKnownPeersList(),
 	}
 
 	return web.Respond(ctx, w, status, http.StatusOK)
@@ -66,41 +68,15 @@ func (h Handlers) AddTransaction(ctx context.Context, w http.ResponseWriter, r *
 	return web.Respond(ctx, w, resp, http.StatusOK)
 }
 
-// WriteNewBlockFromMempool writes the existing transactions in the mempool to a block on disk.
-func (h Handlers) WriteNewBlockFromMempool(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	dbBlock, err := h.Node.WriteNewBlockFromMempool()
-	if err != nil {
-		switch {
-		case errors.Is(err, node.ErrNoTransactions):
-			return v1.NewRequestError(err, http.StatusBadRequest)
-		default:
-			err = fmt.Errorf("create block failed, %w", err)
-			return v1.NewRequestError(err, http.StatusBadRequest)
-		}
-	}
-
-	resp := struct {
-		Status      string     `json:"status"`
-		NumberTrans int        `json:"num_trans"`
-		Block       node.Block `json:"block"`
-	}{
-		Status:      "new block created",
-		NumberTrans: len(dbBlock.Transactions),
-		Block:       dbBlock,
-	}
-
-	return web.Respond(ctx, w, resp, http.StatusOK)
-}
-
 // Genesis returns the genesis information.
 func (h Handlers) Genesis(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	gen := h.Node.Genesis()
+	gen := h.Node.CopyGenesis()
 	return web.Respond(ctx, w, gen, http.StatusOK)
 }
 
 // Mempool returns the set of uncommitted transactions.
 func (h Handlers) Mempool(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	txs := h.Node.Mempool()
+	txs := h.Node.CopyMempool()
 	return web.Respond(ctx, w, txs, http.StatusOK)
 }
 
@@ -108,7 +84,7 @@ func (h Handlers) Mempool(ctx context.Context, w http.ResponseWriter, r *http.Re
 func (h Handlers) Balances(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	acct := web.Param(r, "acct")
 
-	dbBals := h.Node.Balances(acct)
+	dbBals := h.Node.QueryBalances(acct)
 	bals := make([]balance, 0, len(dbBals))
 
 	for act, dbBal := range dbBals {
@@ -120,8 +96,8 @@ func (h Handlers) Balances(ctx context.Context, w http.ResponseWriter, r *http.R
 	}
 
 	balances := balances{
-		LastestBlock: h.Node.LatestBlock().Hash(),
-		Uncommitted:  len(h.Node.Mempool()),
+		LastestBlock: h.Node.CopyLatestBlock().Hash(),
+		Uncommitted:  len(h.Node.CopyMempool()),
 		Balances:     bals,
 	}
 
@@ -132,12 +108,12 @@ func (h Handlers) Balances(ctx context.Context, w http.ResponseWriter, r *http.R
 func (h Handlers) BlocksByNumber(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	fromStr := web.Param(r, "from")
 	if fromStr == "latest" || fromStr == "" {
-		fromStr = fmt.Sprintf("%d", node.LastestBlock)
+		fromStr = fmt.Sprintf("%d", node.QueryLastest)
 	}
 
 	toStr := web.Param(r, "to")
 	if toStr == "latest" || toStr == "" {
-		toStr = fmt.Sprintf("%d", node.LastestBlock)
+		toStr = fmt.Sprintf("%d", node.QueryLastest)
 	}
 
 	from, err := strconv.ParseUint(fromStr, 10, 64)
@@ -153,7 +129,7 @@ func (h Handlers) BlocksByNumber(ctx context.Context, w http.ResponseWriter, r *
 		return v1.NewRequestError(errors.New("from greater than to"), http.StatusBadRequest)
 	}
 
-	dbBlocks := h.Node.BlocksByNumber(from, to)
+	dbBlocks := h.Node.QueryBlocksByNumber(from, to)
 	if len(dbBlocks) == 0 {
 		return web.Respond(ctx, w, nil, http.StatusNoContent)
 	}
@@ -165,7 +141,7 @@ func (h Handlers) BlocksByNumber(ctx context.Context, w http.ResponseWriter, r *
 func (h Handlers) BlocksByAccount(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	acct := web.Param(r, "acct")
 
-	dbBlocks := h.Node.BlocksByAccount(acct)
+	dbBlocks := h.Node.QueryBlocksByAccount(acct)
 	if len(dbBlocks) == 0 {
 		return web.Respond(ctx, w, nil, http.StatusNoContent)
 	}
