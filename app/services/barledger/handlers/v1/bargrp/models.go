@@ -1,12 +1,5 @@
 package bargrp
 
-type newTx struct {
-	From  string `json:"from" validate:"required"`
-	To    string `json:"to" validate:"required"`
-	Value uint   `json:"value" validate:"required"`
-	Data  string `json:"data"`
-}
-
 type balance struct {
 	Account string `json:"account"`
 	Balance uint   `json:"balance"`

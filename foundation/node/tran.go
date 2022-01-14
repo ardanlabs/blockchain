@@ -32,10 +32,15 @@ type Tx struct {
 	Record     TxRecord `json:"tx"`
 }
 
-// NewTx constructs a new Tx for use.
-func NewTx(from, to string, value uint, data string) Tx {
+// NewTx constructs a new Tx that is received from a peer. Pass a zero
+// nonce to generate a unique one.
+func NewTx(nonce uint64, from, to string, value uint, data string) Tx {
+	if nonce == 0 {
+		nonce = generateNonce()
+	}
+
 	txRecord := TxRecord{
-		Nonce: generateNonce(),
+		Nonce: nonce,
 		From:  from,
 		To:    to,
 		Value: value,

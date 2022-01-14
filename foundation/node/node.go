@@ -137,11 +137,6 @@ func (n *Node) SignalBlockWork(ctx context.Context) error {
 	return n.bcWorker.SignalBlockWork(ctx)
 }
 
-// SignalAddTransaction signals a new transaction to be added to the mempool.
-func (n *Node) SignalAddTransaction(ctx context.Context, tx Tx) error {
-	return n.bcWorker.SignalAddTransaction(ctx, tx)
-}
-
 // SignalAddTransactions signals a new transaction to be added to the mempool.
 func (n *Node) SignalAddTransactions(ctx context.Context, txs []Tx) error {
 	return n.bcWorker.SignalAddTransactions(ctx, txs)
@@ -275,6 +270,21 @@ func (n *Node) QueryBlocksByAccount(account string) []Block {
 	return out
 }
 
+// QueryMempool returns the set of transaction for the specified status.
+func (n *Node) QueryMempool(status string) []Tx {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	var txs []Tx
+	for _, tx := range txs {
+		if tx.Status == status {
+			txs = append(txs, tx)
+		}
+	}
+
+	return txs
+}
+
 // =============================================================================
 
 // addTransactionsUnderLock appends a new transactions to the mempool under a lock.
@@ -283,6 +293,15 @@ func (n *Node) addTransactions(txs []Tx) {
 	defer n.mu.Unlock()
 
 	n.txMempool = append(n.txMempool, txs...)
+}
+
+// addTransactionsUnderLock appends a new transactions to the mempool under a lock.
+func (n *Node) updateTransactions(tx []Tx, status string) {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	// WE NEED TO FIND A TRANSACTION BASED ON THE HASH.
+	// WE NEED A MAP NOW.
 }
 
 // addPeerNode adds an address to the list of peers.

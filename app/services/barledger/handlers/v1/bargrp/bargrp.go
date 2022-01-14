@@ -37,32 +37,37 @@ func (h Handlers) Status(ctx context.Context, w http.ResponseWriter, r *http.Req
 	return web.Respond(ctx, w, status, http.StatusOK)
 }
 
-// AddTransaction adds a new transaction to the mempool.
-func (h Handlers) AddTransaction(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+// AddTransactions adds a new transactions to the mempool.
+func (h Handlers) AddTransactions(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	v, err := web.GetValues(ctx)
 	if err != nil {
 		return web.NewShutdownError("web value missing from context")
 	}
 
-	var tx newTx
-	if err := web.Decode(r, &tx); err != nil {
+	var records []node.TxRecord
+	if err := web.Decode(r, &records); err != nil {
 		return fmt.Errorf("unable to decode payload: %w", err)
 	}
 
-	h.Log.Infow("add tran", "traceid", v.TraceID, "data", tx)
+	txs := make([]node.Tx, len(records))
+	for i, rec := range records {
+		h.Log.Infow("add tran", "traceid", v.TraceID, "tx", rec)
+		if rec.Nonce == 0 {
+			txs[i] = node.NewTx(rec.Nonce, rec.From, rec.To, rec.Value, rec.Data)
+		}
+	}
 
-	dbTx := node.NewTx(tx.From, tx.To, tx.Value, tx.Data)
-	if err := h.Node.SignalAddTransaction(ctx, dbTx); err != nil {
+	if err := h.Node.SignalAddTransactions(ctx, txs); err != nil {
 		err = fmt.Errorf("transaction failed, %w", err)
 		return v1.NewRequestError(err, http.StatusBadRequest)
 	}
 
 	resp := struct {
 		Status string `json:"status"`
-		newTx
+		Total  int
 	}{
-		Status: "transaction added to mempool",
-		newTx:  tx,
+		Status: "transactions added to mempool",
+		Total:  len(txs),
 	}
 
 	return web.Respond(ctx, w, resp, http.StatusOK)

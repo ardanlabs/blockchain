@@ -1,6 +1,7 @@
 package node
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -11,16 +12,6 @@ import (
 	"time"
 )
 
-// peerStatus represents information about the status
-// of any given peer.
-type peerStatus struct {
-	Hash              string              `json:"hash"`
-	LatestBlockNumber uint64              `json:"latest_block_number"`
-	KnownPeers        map[string]struct{} `json:"known_peers"`
-}
-
-// =============================================================================
-
 // Represents the different types of transaction work that can be performed.
 const (
 	twAdd = "add"
@@ -30,6 +21,16 @@ const (
 type tranWork struct {
 	action string
 	txs    []Tx
+}
+
+// =============================================================================
+
+// peerStatus represents information about the status
+// of any given peer.
+type peerStatus struct {
+	Hash              string              `json:"hash"`
+	LatestBlockNumber uint64              `json:"latest_block_number"`
+	KnownPeers        map[string]struct{} `json:"known_peers"`
 }
 
 // =============================================================================
@@ -101,12 +102,6 @@ func (bw *bcWorker) shutdown() {
 
 // =============================================================================
 
-// SignalAddTransaction signals the worker to add the specified transaction
-// to the mempool. It waits for confirmation the signal has been received.
-func (bw *bcWorker) SignalAddTransaction(ctx context.Context, tx Tx) error {
-	return bw.SignalAddTransactions(ctx, []Tx{tx})
-}
-
 // SignalAddTransactions signals the worker to add the specified transactions
 // to the mempool. It waits for confirmation the signal has been received.
 func (bw *bcWorker) SignalAddTransactions(ctx context.Context, txs []Tx) error {
@@ -147,6 +142,63 @@ func (bw *bcWorker) manageTransactions(tw tranWork) {
 		bw.evHandler(fmt.Sprintf("bcWorker: manageTransactions: addTransaction: %v", tw.txs))
 		bw.node.addTransactions(tw.txs)
 	}
+
+	// Publish new transactions to the peer.
+	for ipPort := range bw.node.CopyKnownPeersList() {
+		if err := bw.publishNewTransactions(ipPort); err != nil {
+			bw.evHandler(fmt.Sprintf("bcWorker: manageBlockchain: publishNewTransactions: ERROR %s", err))
+		}
+	}
+}
+
+// publishNewTransactions sends any new transactions to the specified
+// peer for their mempool.
+func (bw *bcWorker) publishNewTransactions(ipPort string) error {
+	bw.evHandler("bcWorker: manageTransactions: publishNewTransactions: started")
+	defer bw.evHandler("bcWorker: manageTransactions: publishNewTransactions: completed")
+
+	// Extract the record part of the tx for delivery.
+	txs := bw.node.QueryMempool(TxStatusNew)
+	records := make([]TxRecord, len(txs))
+	for i, tx := range txs {
+		if tx.Status == TxStatusNew {
+			records[i] = tx.Record
+		}
+	}
+
+	// Marshal the transactions to send.
+	txJson, err := json.Marshal(txs)
+	if err != nil {
+		return err
+	}
+
+	url := fmt.Sprintf("http://%s/v1/tx/add", ipPort)
+	b := bytes.NewReader(txJson)
+
+	var client http.Client
+	req, err := http.NewRequest(http.MethodPost, url, b)
+	if err != nil {
+		return err
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		msg, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+		return errors.New(string(msg))
+	}
+
+	bw.node.updateTransactions(txs, TxStatusPublished)
+	bw.evHandler(fmt.Sprintf("bcWorker: manageTransactions: %d transaction published", len(txs)))
+
+	return nil
 }
 
 // =============================================================================
@@ -177,11 +229,6 @@ func (bw *bcWorker) manageBlockchain() {
 				bw.evHandler(fmt.Sprintf("bcWorker: manageBlockchain: writePeerBlocks: ERROR %s", err))
 			}
 		}
-
-		// Publish new transactions to the peer.
-		if err := bw.publishNewTransactions(ipPort); err != nil {
-			bw.evHandler(fmt.Sprintf("bcWorker: manageBlockchain: publishNewTransactions: ERROR %s", err))
-		}
 	}
 
 	// Mine a new block based on current transactions.
@@ -191,8 +238,8 @@ func (bw *bcWorker) manageBlockchain() {
 // queryPeerStatus looks for new nodes on the blockchain by asking
 // known nodes for their peer list. New nodes are added to the list.
 func (bw *bcWorker) queryPeerStatus(ipPort string) (peerStatus, error) {
-	bw.evHandler("bcWorker: performWork: queryPeerStatus: started")
-	defer bw.evHandler("bcWorker: performWork: queryPeerStatus: cempleted")
+	bw.evHandler("bcWorker: manageBlockchain: queryPeerStatus: started")
+	defer bw.evHandler("bcWorker: manageBlockchain: queryPeerStatus: cempleted")
 
 	url := fmt.Sprintf("http://%s/v1/node/status", ipPort)
 
@@ -221,7 +268,7 @@ func (bw *bcWorker) queryPeerStatus(ipPort string) (peerStatus, error) {
 		return peerStatus{}, err
 	}
 
-	bw.evHandler(fmt.Sprintf("bcWorker: performWork: queryPeerStatus: node[%s]: latest-blknum[%d]: peer-list[%s]", ipPort, peer.LatestBlockNumber, peer.KnownPeers))
+	bw.evHandler(fmt.Sprintf("bcWorker: manageBlockchain: queryPeerStatus: node[%s]: latest-blknum[%d]: peer-list[%s]", ipPort, peer.LatestBlockNumber, peer.KnownPeers))
 
 	return peer, nil
 }
@@ -229,14 +276,14 @@ func (bw *bcWorker) queryPeerStatus(ipPort string) (peerStatus, error) {
 // addNewPeers takes the set of known peers and makes sure they are included
 // in the nodes list of know peers.
 func (bw *bcWorker) addNewPeers(knownPeers map[string]struct{}) error {
-	bw.evHandler("bcWorker: performWork: addNewPeers: started")
-	defer bw.evHandler("bcWorker: performWork: addNewPeers: cempleted")
+	bw.evHandler("bcWorker: manageBlockchain: addNewPeers: started")
+	defer bw.evHandler("bcWorker: manageBlockchain: addNewPeers: cempleted")
 
 	for ipPort := range knownPeers {
 		if err := bw.node.addPeerNode(ipPort); err != nil {
 			return err
 		}
-		bw.evHandler(fmt.Sprintf("bcWorker: performWork: add peer nodes: adding node %s", ipPort))
+		bw.evHandler(fmt.Sprintf("bcWorker: manageBlockchain: add peer nodes: adding node %s", ipPort))
 	}
 
 	return nil
@@ -245,8 +292,8 @@ func (bw *bcWorker) addNewPeers(knownPeers map[string]struct{}) error {
 // writePeerBlocks queries the specified node asking for blocks this
 // node does not have.
 func (bw *bcWorker) writePeerBlocks(ipPort string) error {
-	bw.evHandler("bcWorker: performWork: writePeerBlocks: started")
-	defer bw.evHandler("bcWorker: performWork: writePeerBlocks: cempleted")
+	bw.evHandler("bcWorker: manageBlockchain: writePeerBlocks: started")
+	defer bw.evHandler("bcWorker: manageBlockchain: writePeerBlocks: cempleted")
 
 	from := bw.node.CopyLatestBlock().Header.Number + 1
 	url := fmt.Sprintf("http://%s/v1/blocks/list/%d/latest", ipPort, from)
@@ -264,7 +311,7 @@ func (bw *bcWorker) writePeerBlocks(ipPort string) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusNoContent {
-		bw.evHandler("bcWorker: performWork: writePeerBlocks: no new block")
+		bw.evHandler("bcWorker: manageBlockchain: writePeerBlocks: no new block")
 		return nil
 	}
 
@@ -282,7 +329,7 @@ func (bw *bcWorker) writePeerBlocks(ipPort string) error {
 	}
 
 	for _, pb := range pbs {
-		bw.evHandler(fmt.Sprintf("bcWorker: performWork: writePeerBlocks: prevBlk[%s]: newBlk[%s]: numTrans[%d]", pb.Header.PrevBlock, pb.Header.ThisBlock, len(pb.Transactions)))
+		bw.evHandler(fmt.Sprintf("bcWorker: manageBlockchain: writePeerBlocks: prevBlk[%s]: newBlk[%s]: numTrans[%d]", pb.Header.PrevBlock, pb.Header.ThisBlock, len(pb.Transactions)))
 
 		_, err := bw.node.writeNewBlockFromPeer(pb)
 		if err != nil {
@@ -293,27 +340,21 @@ func (bw *bcWorker) writePeerBlocks(ipPort string) error {
 	return nil
 }
 
-// publishNewTransactions sends any new transactions to the specified
-// peer for their mempool.
-func (bw *bcWorker) publishNewTransactions(ipPort string) error {
-	return nil
-}
-
 // mineNewBlock takes all the transactions from the mempool and writes a
 // new block to the database.
 func (bw *bcWorker) mineNewBlock() {
-	bw.evHandler("bcWorker: performWork: mineNewBlock: started")
-	defer bw.evHandler("bcWorker: performWork: mineNewBlock: cempleted")
+	bw.evHandler("bcWorker: manageBlockchain: mineNewBlock: started")
+	defer bw.evHandler("bcWorker: manageBlockchain: mineNewBlock: cempleted")
 
 	block, err := bw.node.writeNewBlockFromTransactions()
 	if err != nil {
 		if errors.Is(err, ErrNoTransactions) {
-			bw.evHandler("bcWorker: performWork: mineNewBlock: no transactions in mempool")
+			bw.evHandler("bcWorker: manageBlockchain: mineNewBlock: no transactions in mempool")
 			return
 		}
-		bw.evHandler(fmt.Sprintf("bcWorker: mineNewBlock: writeMempoolBlock: ERROR %s", err))
+		bw.evHandler(fmt.Sprintf("bcWorker: manageBlockchain: mineNewBlock: ERROR %s", err))
 		return
 	}
 
-	bw.evHandler(fmt.Sprintf("bcWorker: mineNewBlock: writeMempoolBlock: prevBlk[%x]: newBlk[%x]: numTrans[%d]", block.Header.PrevBlock, block.Hash(), len(block.Transactions)))
+	bw.evHandler(fmt.Sprintf("bcWorker: manageBlockchain: mineNewBlock: prevBlk[%x]: newBlk[%x]: numTrans[%d]", block.Header.PrevBlock, block.Hash(), len(block.Transactions)))
 }
