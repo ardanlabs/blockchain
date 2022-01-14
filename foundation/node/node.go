@@ -130,45 +130,21 @@ func (n *Node) Shutdown() error {
 	return nil
 }
 
-// PerformWork signals the blockchain worker to perform work.
-func (n *Node) PerformWork(ctx context.Context) error {
-	return n.bcWorker.PerformWork(ctx)
-}
-
 // =============================================================================
 
-// AddTransaction appends a new transactions to the mempool.
-func (n *Node) AddTransaction(tx Tx) error {
-	n.mu.Lock()
-	defer n.mu.Unlock()
-
-	// Append the transaction to the in-memory store.
-	n.txMempool = append(n.txMempool, tx)
-
-	return nil
+// SignalBlockWork signals the blockchain worker to perform work.
+func (n *Node) SignalBlockWork(ctx context.Context) error {
+	return n.bcWorker.SignalBlockWork(ctx)
 }
 
-// UpdateTransactionStatus changes the status of a transaction
-// in the mempool.
-func (n *Node) UpdateTransactionStatus(tx Tx) error {
-	return nil
+// SignalAddTransaction signals a new transaction to be added to the mempool.
+func (n *Node) SignalAddTransaction(ctx context.Context, tx Tx) error {
+	return n.bcWorker.SignalAddTransaction(ctx, tx)
 }
 
-// AddPeerNode adds an address to the list of peers.
-func (n *Node) AddPeerNode(ipPort string) error {
-	n.mu.Lock()
-	defer n.mu.Unlock()
-
-	// Don't add this node to the known peer list.
-	if ipPort == n.ipPort {
-		return errors.New("already exists")
-	}
-
-	if _, exists := n.knownPeers[ipPort]; !exists {
-		n.knownPeers[ipPort] = struct{}{}
-	}
-
-	return nil
+// SignalAddTransactions signals a new transaction to be added to the mempool.
+func (n *Node) SignalAddTransactions(ctx context.Context, txs []Tx) error {
+	return n.bcWorker.SignalAddTransactions(ctx, txs)
 }
 
 // =============================================================================
@@ -228,23 +204,6 @@ func (n *Node) CopyKnownPeersList() map[string]struct{} {
 	}
 
 	return peers
-}
-
-// copyTransactions retrieves a copy of transactions from
-// the mempool that match the specified statuses. This is
-// unexported and is called inside of a lock.
-func (n *Node) copyTransactions(statuses ...string) []Tx {
-	var txs []Tx
-	for _, tx := range n.txMempool {
-		for _, status := range statuses {
-			if tx.Status == status {
-				txs = append(txs, tx)
-				break
-			}
-		}
-	}
-
-	return txs
 }
 
 // =============================================================================
@@ -314,6 +273,49 @@ func (n *Node) QueryBlocksByAccount(account string) []Block {
 	}
 
 	return out
+}
+
+// =============================================================================
+
+// addTransactionsUnderLock appends a new transactions to the mempool under a lock.
+func (n *Node) addTransactions(txs []Tx) {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	n.txMempool = append(n.txMempool, txs...)
+}
+
+// addPeerNode adds an address to the list of peers.
+func (n *Node) addPeerNode(ipPort string) error {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	// Don't add this node to the known peer list.
+	if ipPort == n.ipPort {
+		return errors.New("already exists")
+	}
+
+	if _, exists := n.knownPeers[ipPort]; !exists {
+		n.knownPeers[ipPort] = struct{}{}
+	}
+
+	return nil
+}
+
+// copyTransactions retrieves a copy of transactions from the mempool that match
+// the specified statuses. This is unexported and is called inside of a lock.
+func (n *Node) copyTransactions(statuses ...string) []Tx {
+	var txs []Tx
+	for _, tx := range n.txMempool {
+		for _, status := range statuses {
+			if tx.Status == status {
+				txs = append(txs, tx)
+				break
+			}
+		}
+	}
+
+	return txs
 }
 
 // =============================================================================

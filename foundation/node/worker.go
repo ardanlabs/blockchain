@@ -21,6 +21,19 @@ type peerStatus struct {
 
 // =============================================================================
 
+// Represents the different types of transaction work that can be performed.
+const (
+	twAdd = "add"
+)
+
+// tranWork is signaled to the worker goroutine to perform transaction work.
+type tranWork struct {
+	action string
+	txs    []Tx
+}
+
+// =============================================================================
+
 // bcWorker manages a goroutine that executes a write block
 // call on a timer.
 type bcWorker struct {
@@ -30,6 +43,7 @@ type bcWorker struct {
 	ticker    time.Ticker
 	evHandler EventHandler
 	worker    chan bool
+	trans     chan tranWork
 }
 
 // newBCWorker creates a blockWriter for writing transactions
@@ -43,10 +57,11 @@ func newBCWorker(node *Node, interval time.Duration, evHandler EventHandler) *bc
 
 	bw := bcWorker{
 		node:      node,
-		shut:      make(chan struct{}),
 		ticker:    *time.NewTicker(interval),
-		evHandler: ev,
+		shut:      make(chan struct{}),
 		worker:    make(chan bool),
+		trans:     make(chan tranWork),
+		evHandler: ev,
 	}
 
 	// This G allows all work on the blockchain to be single theaded
@@ -58,9 +73,11 @@ func newBCWorker(node *Node, interval time.Duration, evHandler EventHandler) *bc
 		for {
 			select {
 			case <-bw.ticker.C:
-				bw.performWork()
+				bw.manageBlockchain()
 			case <-bw.worker:
-				bw.performWork()
+				bw.manageBlockchain()
+			case tw := <-bw.trans:
+				bw.manageTransactions(tw)
 			case <-bw.shut:
 				break down
 			}
@@ -82,9 +99,33 @@ func (bw *bcWorker) shutdown() {
 	bw.evHandler("bcWorker: shutdown: off")
 }
 
-// PerformWork signals the worker G to perform work and waits to
-// have confirmation from the worker G based on the context.
-func (bw *bcWorker) PerformWork(ctx context.Context) error {
+// =============================================================================
+
+// SignalAddTransaction signals the worker to add the specified transaction
+// to the mempool. It waits for confirmation the signal has been received.
+func (bw *bcWorker) SignalAddTransaction(ctx context.Context, tx Tx) error {
+	return bw.SignalAddTransactions(ctx, []Tx{tx})
+}
+
+// SignalAddTransactions signals the worker to add the specified transactions
+// to the mempool. It waits for confirmation the signal has been received.
+func (bw *bcWorker) SignalAddTransactions(ctx context.Context, txs []Tx) error {
+	tw := tranWork{
+		action: "add",
+		txs:    txs,
+	}
+
+	select {
+	case bw.trans <- tw:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
+// SignalBlockWork signals the worker to perform blockchain work
+// and waits to have confirmation that the worker has started.
+func (bw *bcWorker) SignalBlockWork(ctx context.Context) error {
 	select {
 	case bw.worker <- true:
 		return nil
@@ -93,11 +134,28 @@ func (bw *bcWorker) PerformWork(ctx context.Context) error {
 	}
 }
 
-// performWork performs all the work that needs to be performed against
-// the blockchain.
-func (bw *bcWorker) performWork() {
-	bw.evHandler("bcWorker: performWork: started")
-	defer bw.evHandler("bcWorker: performWork: completed")
+// =============================================================================
+
+// manageTransactions performs all the transaction work that needs
+// to be performed on the node outside of the manageBlockchain code.
+func (bw *bcWorker) manageTransactions(tw tranWork) {
+	bw.evHandler("bcWorker: manageTransactions: started")
+	defer bw.evHandler("bcWorker: manageTransactions: completed")
+
+	switch tw.action {
+	case twAdd:
+		bw.evHandler(fmt.Sprintf("bcWorker: manageTransactions: addTransaction: %v", tw.txs))
+		bw.node.addTransactions(tw.txs)
+	}
+}
+
+// =============================================================================
+
+// manageBlockchain performs all the blockchain work that needs
+// to be performed on the blockchain.
+func (bw *bcWorker) manageBlockchain() {
+	bw.evHandler("bcWorker: manageBlockchain: started")
+	defer bw.evHandler("bcWorker: manageBlockchain: completed")
 
 	// Perform peer related work first.
 	for ipPort := range bw.node.CopyKnownPeersList() {
@@ -105,24 +163,24 @@ func (bw *bcWorker) performWork() {
 		// Retrieve the status of this peer.
 		peer, err := bw.queryPeerStatus(ipPort)
 		if err != nil {
-			bw.evHandler(fmt.Sprintf("bcWorker: performWork: queryPeerStatus: ERROR: %s", err))
+			bw.evHandler(fmt.Sprintf("bcWorker: manageBlockchain: queryPeerStatus: ERROR: %s", err))
 		}
 
 		// Add new peers to this nodes list.
 		if err := bw.addNewPeers(peer.KnownPeers); err != nil {
-			bw.evHandler(fmt.Sprintf("bcWorker: performWork: addNewPeers: ERROR: %s", err))
+			bw.evHandler(fmt.Sprintf("bcWorker: manageBlockchain: addNewPeers: ERROR: %s", err))
 		}
 
 		// If this peer has blocks we don't have, we need to add them.
 		if peer.LatestBlockNumber > bw.node.CopyLatestBlock().Header.Number {
 			if err := bw.writePeerBlocks(ipPort); err != nil {
-				bw.evHandler(fmt.Sprintf("bcWorker: performWork: writePeerBlocks: ERROR %s", err))
+				bw.evHandler(fmt.Sprintf("bcWorker: manageBlockchain: writePeerBlocks: ERROR %s", err))
 			}
 		}
 
 		// Publish new transactions to the peer.
 		if err := bw.publishNewTransactions(ipPort); err != nil {
-			bw.evHandler(fmt.Sprintf("bcWorker: performWork: publishNewTransactions: ERROR %s", err))
+			bw.evHandler(fmt.Sprintf("bcWorker: manageBlockchain: publishNewTransactions: ERROR %s", err))
 		}
 	}
 
@@ -175,7 +233,7 @@ func (bw *bcWorker) addNewPeers(knownPeers map[string]struct{}) error {
 	defer bw.evHandler("bcWorker: performWork: addNewPeers: cempleted")
 
 	for ipPort := range knownPeers {
-		if err := bw.node.AddPeerNode(ipPort); err != nil {
+		if err := bw.node.addPeerNode(ipPort); err != nil {
 			return err
 		}
 		bw.evHandler(fmt.Sprintf("bcWorker: performWork: add peer nodes: adding node %s", ipPort))

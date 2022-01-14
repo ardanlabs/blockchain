@@ -52,7 +52,7 @@ func (h Handlers) AddTransaction(ctx context.Context, w http.ResponseWriter, r *
 	h.Log.Infow("add tran", "traceid", v.TraceID, "data", tx)
 
 	dbTx := node.NewTx(tx.From, tx.To, tx.Value, tx.Data)
-	if err := h.Node.AddTransaction(dbTx); err != nil {
+	if err := h.Node.SignalAddTransaction(ctx, dbTx); err != nil {
 		err = fmt.Errorf("transaction failed, %w", err)
 		return v1.NewRequestError(err, http.StatusBadRequest)
 	}
