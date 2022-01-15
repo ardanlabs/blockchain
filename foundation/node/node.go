@@ -12,15 +12,14 @@ import (
 	"math/big"
 	"os"
 	"sync"
-	"time"
 )
 
 // zeroHash represents a has code of zeros.
 const zeroHash = "00000000000000000000000000000000"
 
-// ErrNoTransactions is returned when a block is requested to be created
-// and there are no transactions.
-var ErrNoTransactions = errors.New("no transactions in mempool")
+// ErrNotEnoughTransactions is returned when a block is requested to be created
+// and there are not enough transactions.
+var ErrNotEnoughTransactions = errors.New("not enough transactions in mempool")
 
 // EventHandler defines a function that is called when events
 // occur in the processing of persisting blocks.
@@ -29,11 +28,10 @@ type EventHandler func(v string)
 // Config represents the configuration required to start
 // the blockchain node.
 type Config struct {
-	IPPort          string
-	DBPath          string
-	PersistInterval time.Duration
-	KnownPeers      []string
-	EvHandler       EventHandler
+	IPPort     string
+	DBPath     string
+	KnownPeers []string
+	EvHandler  EventHandler
 }
 
 // Node manages the blockchain database.
@@ -48,10 +46,18 @@ type Node struct {
 	ipPort      string
 	knownPeers  map[string]struct{}
 	bcWorker    *bcWorker
+	evHandler   EventHandler
 }
 
 // New constructs a new blockchain for data management.
 func New(cfg Config) (*Node, error) {
+
+	// Build a safe event handler function for use.
+	ev := func(v string) {
+		if cfg.EvHandler != nil {
+			cfg.EvHandler(v)
+		}
+	}
 
 	// Load the genesis file to get starting balances for
 	// founders of the block chain.
@@ -108,10 +114,11 @@ func New(cfg Config) (*Node, error) {
 		file:        file,
 		ipPort:      cfg.IPPort,
 		knownPeers:  peers,
+		evHandler:   ev,
 	}
 
 	// Start the blockchain worker.
-	node.bcWorker = newBCWorker(&node, cfg.PersistInterval, cfg.EvHandler)
+	node.bcWorker = newBCWorker(&node, cfg.EvHandler)
 
 	return &node, nil
 }
@@ -132,17 +139,24 @@ func (n *Node) Shutdown() error {
 
 // =============================================================================
 
-// SignalBlockWork signals the blockchain worker to perform work.
-func (n *Node) SignalBlockWork(ctx context.Context) error {
-	return n.bcWorker.SignalBlockWork(ctx)
-}
+// AddTransactions appends a new transactions to the mempool.
+func (n *Node) AddTransactions(txs []Tx) {
+	n.mu.Lock()
+	defer n.mu.Unlock()
 
-// SignalAddTransactions signals a new transaction to be added to the mempool.
-func (n *Node) SignalAddTransactions(ctx context.Context, txs []Tx) error {
-	return n.bcWorker.SignalAddTransactions(ctx, txs)
-}
+	n.evHandler(fmt.Sprintf("node: AddTransactions: started : txs[%d]", len(txs)))
+	defer n.evHandler("node: AddTransactions: completed")
 
-// =============================================================================
+	n.txMempool = append(n.txMempool, txs...)
+	n.evHandler(fmt.Sprintf("node: AddTransactions: mempool[%d]", len(n.txMempool)))
+
+	if len(n.txMempool) >= 2 {
+		n.evHandler("node: AddTransactions: signal mining")
+		if err := n.bcWorker.signalStartMining(); err != nil {
+			n.evHandler(fmt.Sprintf("node: AddTransactions: ERROR : %s", err))
+		}
+	}
+}
 
 // CopyGenesis returns a copy of the genesis information.
 func (n *Node) CopyGenesis() Genesis {
@@ -222,6 +236,14 @@ func (n *Node) QueryBalances(account string) map[string]uint {
 	return balances
 }
 
+// QueryMempoolLength returns the current length of the mempool.
+func (n *Node) QueryMempoolLength() int {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	return len(n.txMempool)
+}
+
 // QueryBlocksByNumber returns the set of blocks based on block numbers. This
 // function reads the blockchain from disk first.
 func (n *Node) QueryBlocksByNumber(from uint64, to uint64) []Block {
@@ -270,39 +292,71 @@ func (n *Node) QueryBlocksByAccount(account string) []Block {
 	return out
 }
 
-// QueryMempool returns the set of transaction for the specified status.
-func (n *Node) QueryMempool(status string) []Tx {
-	n.mu.Lock()
-	defer n.mu.Unlock()
+// =============================================================================
 
-	var txs []Tx
-	for _, tx := range txs {
-		if tx.Status == status {
-			txs = append(txs, tx)
+// MineNewBlock writes the published transaction from the
+// memory pool to disk.
+func (n *Node) MineNewBlock(ctx context.Context) (Block, error) {
+	var nb Block
+	balances := make(map[string]uint)
+	n.mu.Lock()
+	{
+		// Are there enough transactions in the pool.
+		if len(n.txMempool) < 2 {
+			return Block{}, ErrNotEnoughTransactions
+		}
+
+		// Create a new block which owns it's own copy of the transactions.
+		nb = NewBlock(n.latestBlock, n.txMempool)
+
+		// Get a copy of the balance sheet.
+		for act, bal := range n.balances {
+			balances[act] = bal
 		}
 	}
+	n.mu.Unlock()
 
-	return txs
+	// Apply the transactions to that copy, setting status information.
+	for i, tx := range nb.Transactions {
+		if err := applyTranToBalance(balances, tx); err != nil {
+			nb.Transactions[i].Status = TxStatusError
+			nb.Transactions[i].StatusInfo = err.Error()
+			continue
+		}
+		nb.Transactions[i].Status = TxStatusAccepted
+	}
+
+	// Attempt to create a new BlockFS by solving the POW puzzle.
+	// This can be cancelled by the caller.
+	blockFS, err := performPOW(ctx, nb)
+	if err != nil {
+		return Block{}, err
+	}
+
+	// Write the new block to the chain on disk.
+	blockFSJson, err := json.Marshal(blockFS)
+	if err != nil {
+		return Block{}, err
+	}
+	if _, err := n.file.Write(append(blockFSJson, '\n')); err != nil {
+		return Block{}, err
+	}
+
+	// Update the state of the node.
+	n.mu.Lock()
+	{
+		n.balances = balances
+		n.latestBlock = blockFS.Block
+
+		// TODO: REMOVE ONLY TRANSACTIONS IN BLOCK.
+		n.txMempool = []Tx{}
+	}
+	n.mu.Unlock()
+
+	return blockFS.Block, nil
 }
 
 // =============================================================================
-
-// addTransactionsUnderLock appends a new transactions to the mempool under a lock.
-func (n *Node) addTransactions(txs []Tx) {
-	n.mu.Lock()
-	defer n.mu.Unlock()
-
-	n.txMempool = append(n.txMempool, txs...)
-}
-
-// addTransactionsUnderLock appends a new transactions to the mempool under a lock.
-func (n *Node) updateTransactions(tx []Tx, status string) {
-	n.mu.Lock()
-	defer n.mu.Unlock()
-
-	// WE NEED TO FIND A TRANSACTION BASED ON THE HASH.
-	// WE NEED A MAP NOW.
-}
 
 // addPeerNode adds an address to the list of peers.
 func (n *Node) addPeerNode(ipPort string) error {
@@ -319,22 +373,6 @@ func (n *Node) addPeerNode(ipPort string) error {
 	}
 
 	return nil
-}
-
-// copyTransactions retrieves a copy of transactions from the mempool that match
-// the specified statuses. This is unexported and is called inside of a lock.
-func (n *Node) copyTransactions(statuses ...string) []Tx {
-	var txs []Tx
-	for _, tx := range n.txMempool {
-		for _, status := range statuses {
-			if tx.Status == status {
-				txs = append(txs, tx)
-				break
-			}
-		}
-	}
-
-	return txs
 }
 
 // =============================================================================
@@ -387,64 +425,6 @@ func (n *Node) writeNewBlockFromPeer(peerBlock PeerBlock) (Block, error) {
 	if err := applyTransToBalances(n.balances, block.Transactions); err != nil {
 		return blockFS.Block, err
 	}
-
-	return blockFS.Block, nil
-}
-
-// writeNewBlockFromTransactions writes the published transaction from the
-// memory pool to disk.
-func (n *Node) writeNewBlockFromTransactions() (Block, error) {
-	n.mu.Lock()
-	defer n.mu.Unlock()
-
-	// Get the set of new and published transactions.
-	txs := n.copyTransactions(TxStatusNew, TxStatusPublished)
-	if len(txs) == 0 {
-		return Block{}, ErrNoTransactions
-	}
-
-	// Create a new block.
-	nb := NewBlock(n.latestBlock, txs)
-
-	// Get a copy of the balance sheet.
-	balances := make(map[string]uint)
-	for act, bal := range n.balances {
-		balances[act] = bal
-	}
-
-	// Apply the transactions to that copy, setting status information.
-	for i, tx := range nb.Transactions {
-		if err := applyTranToBalance(balances, tx); err != nil {
-			nb.Transactions[i].Status = TxStatusError
-			nb.Transactions[i].StatusInfo = err.Error()
-			continue
-		}
-		nb.Transactions[i].Status = TxStatusAccepted
-	}
-
-	// Give ourselves 10 seconds to perform the POW.
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	// Attempt to create a new BlockFS by solving the POW puzzle.
-	blockFS, err := performPOW(ctx, nb)
-	if err != nil {
-		return Block{}, err
-	}
-
-	// Write the new block to the chain on disk.
-	blockFSJson, err := json.Marshal(blockFS)
-	if err != nil {
-		return Block{}, err
-	}
-	if _, err := n.file.Write(append(blockFSJson, '\n')); err != nil {
-		return Block{}, err
-	}
-
-	// Update the state of the node.
-	n.balances = balances
-	n.latestBlock = blockFS.Block
-	n.txMempool = []Tx{}
 
 	return blockFS.Block, nil
 }

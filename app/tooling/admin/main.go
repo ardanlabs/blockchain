@@ -4,7 +4,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/ardanlabs/blockchain/app/tooling/admin/commands"
 	"github.com/ardanlabs/blockchain/foundation/logger"
@@ -35,9 +34,8 @@ func main() {
 
 func run(log *zap.SugaredLogger) error {
 	node, err := node.New(node.Config{
-		DBPath:          "zblock/blocks.db",
-		PersistInterval: 10 * time.Minute,
-		EvHandler:       func(v string) { log.Infow(v) },
+		DBPath:    "zblock/blocks.db",
+		EvHandler: func(v string) { log.Infow(v) },
 	})
 	if err != nil {
 		return err
@@ -53,11 +51,11 @@ func processCommands(args []string, node *node.Node) error {
 	switch args[1] {
 	case "bals":
 		if err := commands.Balances(args, node); err != nil {
-			return fmt.Errorf("getting balances: %w", err)
+			return fmt.Errorf("balances command: %w", err)
 		}
 	case "trans":
 		if err := commands.Transactions(args, node); err != nil {
-			return fmt.Errorf("getting transaction: %w", err)
+			return fmt.Errorf("transaction command: %w", err)
 		}
 	}
 

@@ -25,11 +25,16 @@ type Block struct {
 }
 
 // NewBlock constructs a new BlockFS for persisting.
-func NewBlock(prevBlock Block, transactions []Tx) Block {
+func NewBlock(prevBlock Block, txs []Tx) Block {
 	hash := zeroHash
 	if prevBlock.Header.Number > 0 {
 		hash = prevBlock.Hash()
 	}
+
+	// Store a copy of the transaction to support
+	// state changes that don't get written to the mempool.
+	cpy := make([]Tx, len(txs))
+	copy(cpy, txs)
 
 	return Block{
 		Header: BlockHeader{
@@ -37,7 +42,7 @@ func NewBlock(prevBlock Block, transactions []Tx) Block {
 			Number:    prevBlock.Header.Number + 1,
 			Time:      uint64(time.Now().Unix()),
 		},
-		Transactions: transactions,
+		Transactions: cpy,
 	}
 }
 
@@ -100,6 +105,11 @@ func performPOW(ctx context.Context, b Block) (BlockFS, error) {
 			continue
 		}
 
+		// Did we timeout trying to solve the problem.
+		if ctx.Err() != nil {
+			return BlockFS{}, ctx.Err()
+		}
+
 		// We found a solution to the POW.
 		bfs := BlockFS{
 			Hash:  hash,
@@ -107,6 +117,17 @@ func performPOW(ctx context.Context, b Block) (BlockFS, error) {
 		}
 		return bfs, nil
 	}
+}
+
+// isHashSolved checks the hash to make sure it complies with
+// the POW rules. Currently two leading 0's.
+func isHashSolved(hash string) bool {
+	if len(hash) != 64 {
+		return false
+	}
+
+	match := "00000"
+	return hash[:len(match)] == match
 }
 
 // =============================================================================
@@ -153,20 +174,6 @@ func PeerBlocksToBlocks(pbs []PeerBlock) []Block {
 }
 
 // =============================================================================
-
-// isHashSolved checks the hash to make sure it complies with
-// the POW rules. Currently two leading 0's.
-func isHashSolved(hash string) bool {
-	if len(hash) != 64 {
-		return false
-	}
-
-	if hash[:2] != "00" {
-		return false
-	}
-
-	return true
-}
 
 // loadBlocksFromDisk the current set of blocks/transactions. In a real
 // world situation this would require a lot of memory.

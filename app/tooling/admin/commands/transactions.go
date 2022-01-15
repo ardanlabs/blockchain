@@ -17,37 +17,25 @@ func Transactions(args []string, n *node.Node) error {
 
 	switch sub {
 	case "seed":
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 
 		var txs []node.Tx
-		txs = append(txs, node.NewTx(0, "bill_kennedy", "bill_kennedy", 3, node.TxDataReward))
-		txs = append(txs, node.NewTx(0, "bill_kennedy", "bill_kennedy", 703, node.TxDataReward))
-
-		if err := n.SignalAddTransactions(ctx, txs); err != nil {
-			return err
-		}
-		if err := n.SignalBlockWork(ctx); err != nil {
-			return err
-		}
+		txs = append(txs, node.NewTx("bill_kennedy", "bill_kennedy", 3, node.TxDataReward))
+		txs = append(txs, node.NewTx("bill_kennedy", "bill_kennedy", 703, node.TxDataReward))
+		n.AddTransactions(txs)
 		if err := waitForBlock(n, 1, ctx); err != nil {
 			return err
 		}
 
 		txs = []node.Tx{}
-		txs = append(txs, node.NewTx(0, "bill_kennedy", "babayaga", 2000, ""))
-		txs = append(txs, node.NewTx(0, "bill_kennedy", "bill_kennedy", 100, node.TxDataReward))
-		txs = append(txs, node.NewTx(0, "babayaga", "bill_kennedy", 1, ""))
-		txs = append(txs, node.NewTx(0, "babayaga", "ceasar", 1000, ""))
-		txs = append(txs, node.NewTx(0, "babayaga", "bill_kennedy", 50, ""))
-		txs = append(txs, node.NewTx(0, "bill_kennedy", "bill_kennedy", 600, node.TxDataReward))
-
-		if err := n.SignalAddTransactions(ctx, txs); err != nil {
-			return err
-		}
-		if err := n.SignalBlockWork(ctx); err != nil {
-			return err
-		}
+		txs = append(txs, node.NewTx("bill_kennedy", "babayaga", 2000, ""))
+		txs = append(txs, node.NewTx("bill_kennedy", "bill_kennedy", 100, node.TxDataReward))
+		txs = append(txs, node.NewTx("babayaga", "bill_kennedy", 1, ""))
+		txs = append(txs, node.NewTx("babayaga", "ceasar", 1000, ""))
+		txs = append(txs, node.NewTx("babayaga", "bill_kennedy", 50, ""))
+		txs = append(txs, node.NewTx("bill_kennedy", "bill_kennedy", 600, node.TxDataReward))
+		n.AddTransactions(txs)
 		if err := waitForBlock(n, 2, ctx); err != nil {
 			return err
 		}

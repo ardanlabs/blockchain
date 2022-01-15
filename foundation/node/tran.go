@@ -34,11 +34,25 @@ type Tx struct {
 
 // NewTx constructs a new Tx that is received from a peer. Pass a zero
 // nonce to generate a unique one.
-func NewTx(nonce uint64, from, to string, value uint, data string) Tx {
-	if nonce == 0 {
-		nonce = generateNonce()
+func NewTx(from, to string, value uint, data string) Tx {
+	txRecord := TxRecord{
+		Nonce: generateNonce(),
+		From:  from,
+		To:    to,
+		Value: value,
+		Data:  data,
 	}
 
+	return Tx{
+		Hash:   generateHash(txRecord),
+		Status: TxStatusNew,
+		Record: txRecord,
+	}
+}
+
+// PeerTx constructs a new Tx that is received from a peer. Pass a zero
+// nonce to generate a unique one.
+func PeerTx(nonce uint64, from, to string, value uint, data string) Tx {
 	txRecord := TxRecord{
 		Nonce: nonce,
 		From:  from,
@@ -49,7 +63,7 @@ func NewTx(nonce uint64, from, to string, value uint, data string) Tx {
 
 	return Tx{
 		Hash:   generateHash(txRecord),
-		Status: TxStatusNew,
+		Status: TxStatusPublished,
 		Record: txRecord,
 	}
 }

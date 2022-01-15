@@ -53,14 +53,11 @@ func (h Handlers) AddTransactions(ctx context.Context, w http.ResponseWriter, r 
 	for i, rec := range records {
 		h.Log.Infow("add tran", "traceid", v.TraceID, "tx", rec)
 		if rec.Nonce == 0 {
-			txs[i] = node.NewTx(rec.Nonce, rec.From, rec.To, rec.Value, rec.Data)
+			txs[i] = node.NewTx(rec.From, rec.To, rec.Value, rec.Data)
 		}
 	}
 
-	if err := h.Node.SignalAddTransactions(ctx, txs); err != nil {
-		err = fmt.Errorf("transaction failed, %w", err)
-		return v1.NewRequestError(err, http.StatusBadRequest)
-	}
+	h.Node.AddTransactions(txs)
 
 	resp := struct {
 		Status string `json:"status"`
