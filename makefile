@@ -1,8 +1,9 @@
 SHELL := /bin/bash
 
 # Seed transactions
-# curl -X POST http:/localhost:8080/v1/tx/add --header 'Content-Type: application/json' --data-raw '[{"from": "bill_kennedy", "to": "bill_kennedy", "value": 3, "data": "reward"},{"from": "bill_kennedy", "to": "bill_kennedy", "value": 703, "data": "reward"}]'
-# curl -X POST http:/localhost:8080/v1/tx/add --header 'Content-Type: application/json' --data-raw '[{"from": "bill_kennedy", "to": "babayaga", "value": 2000, "data": ""},{"from": "bill_kennedy", "to": "bill_kennedy", "value": 100, "data": "reward"},{"from": "babayaga", "to": "bill_kennedy", "value": 1, "data": ""},{"from": "babayaga", "to": "ceasar", "value": 1000, "data": ""},{"from": "babayaga", "to": "bill_kennedy", "value": 50, "data": ""},{"from": "bill_kennedy", "to": "bill_kennedy", "value": 600, "data": "reward"}]'
+# 
+# curl -X POST http:/localhost:8080/v1/tx/add --header 'Content-Type: application/json' --data-binary "@app/tooling/curl/seed.json" 
+# curl -X POST http:/localhost:8080/v1/tx/add --header 'Content-Type: application/json' --data-binary "@app/tooling/curl/trans1.json" 
 #
 # Extra transactions
 # curl -X POST http:/localhost:8080/v1/tx/add --header 'Content-Type: application/json' --data-raw '[{"from": "bill_kennedy","to": "bill_kennedy","value": 10, "data": "reward"}]'

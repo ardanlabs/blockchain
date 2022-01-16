@@ -24,7 +24,7 @@ var ErrNotEnoughTransactions = errors.New("not enough transactions in mempool")
 
 // EventHandler defines a function that is called when events
 // occur in the processing of persisting blocks.
-type EventHandler func(v string)
+type EventHandler func(v string, args ...interface{})
 
 // Config represents the configuration required to start
 // the blockchain node.
@@ -54,9 +54,9 @@ type Node struct {
 func New(cfg Config) (*Node, error) {
 
 	// Build a safe event handler function for use.
-	ev := func(v string) {
+	ev := func(v string, args ...interface{}) {
 		if cfg.EvHandler != nil {
-			cfg.EvHandler(v)
+			cfg.EvHandler(v, args...)
 		}
 	}
 
@@ -119,7 +119,7 @@ func New(cfg Config) (*Node, error) {
 		evHandler:   ev,
 	}
 
-	ev(fmt.Sprintf("node: Started: blocks[%d]", latestBlock.Header.Number))
+	ev("node: Started: blocks[%d]", latestBlock.Header.Number)
 
 	// Start the blockchain worker.
 	node.bcWorker = newBCWorker(&node, cfg.EvHandler)
@@ -153,13 +153,13 @@ func (n *Node) AddTransactions(txs []Tx) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-	n.evHandler(fmt.Sprintf("node: AddTransactions: started : txrs[%d]", len(txs)))
+	n.evHandler("node: AddTransactions: started : txrs[%d]", len(txs))
 	defer n.evHandler("node: AddTransactions: completed")
 
 	for _, tx := range txs {
 		n.txMempool[tx.ID] = tx
 	}
-	n.evHandler(fmt.Sprintf("node: AddTransactions: mempool[%d]", len(n.txMempool)))
+	n.evHandler("node: AddTransactions: mempool[%d]", len(n.txMempool))
 
 	// TODO: Share these transactions with other nodes.
 
@@ -340,10 +340,15 @@ func (n *Node) MineNewBlock(ctx context.Context) (Block, time.Duration, error) {
 	}
 
 	// Attempt to create a new BlockFS by solving the POW puzzle.
-	// This can be cancelled by the caller.
-	blockFS, duration, err := performPOW(ctx, nb)
+	// This can be cancelled.
+	blockFS, duration, err := performPOW(ctx, nb, n.evHandler)
 	if err != nil {
 		return Block{}, duration, err
+	}
+
+	// Just check one more time we were not cancelled.
+	if ctx.Err() != nil {
+		return Block{}, duration, ctx.Err()
 	}
 
 	// Write the new block to the chain on disk.

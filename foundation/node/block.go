@@ -93,10 +93,16 @@ type BlockFS struct {
 
 // performPOW does the work to find a valid hash for
 // this block.
-func performPOW(ctx context.Context, b Block) (BlockFS, time.Duration, error) {
+func performPOW(ctx context.Context, b Block, ev EventHandler) (BlockFS, time.Duration, error) {
 	t := time.Now()
 
+	var attempts uint64
 	for {
+		attempts++
+		if attempts%1_000_000 == 0 {
+			ev("bcWorker: runMiningOperation: miningG: mining attempts[%d]", attempts)
+		}
+
 		// Did we timeout trying to solve the problem.
 		if ctx.Err() != nil {
 			return BlockFS{}, time.Since(t), ctx.Err()
@@ -113,6 +119,8 @@ func performPOW(ctx context.Context, b Block) (BlockFS, time.Duration, error) {
 		if ctx.Err() != nil {
 			return BlockFS{}, time.Since(t), ctx.Err()
 		}
+
+		ev("bcWorker: runMiningOperation: miningG: mining final attempts[%d]", attempts)
 
 		// We found a solution to the POW.
 		bfs := BlockFS{

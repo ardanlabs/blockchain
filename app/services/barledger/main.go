@@ -93,7 +93,10 @@ func run(log *zap.SugaredLogger) error {
 		DBPath:     cfg.Node.DBPath,
 		IPPort:     cfg.Web.APIHost,
 		KnownPeers: cfg.Node.KnownPeers,
-		EvHandler:  func(v string) { log.Infow(v) },
+		EvHandler: func(v string, args ...interface{}) {
+			s := fmt.Sprintf(v, args...)
+			log.Infow(s, "traceid", "11111111-1111-1111-1111-111111111111")
+		},
 	})
 	if err != nil {
 		return err

@@ -1,0 +1,8 @@
+[
+    {"from": "bill_kennedy", "to": "babayaga", "value": 2000, "data": ""},
+    {"from": "bill_kennedy", "to": "bill_kennedy", "value": 100, "data": "reward"},
+    {"from": "babayaga", "to": "bill_kennedy", "value": 1, "data": ""},
+    {"from": "babayaga", "to": "ceasar", "value": 1000, "data": ""},
+    {"from": "babayaga", "to": "bill_kennedy", "value": 50, "data": ""},
+    {"from": "bill_kennedy", "to": "bill_kennedy", "value": 600, "data": "reward"}
+]

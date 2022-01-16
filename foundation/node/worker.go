@@ -49,19 +49,13 @@ type bcWorker struct {
 // newBCWorker creates a blockWriter for writing transactions
 // from the mempool to a new block.
 func newBCWorker(node *Node, evHandler EventHandler) *bcWorker {
-	ev := func(v string) {
-		if evHandler != nil {
-			evHandler(v)
-		}
-	}
-
 	bw := bcWorker{
 		node:         node,
 		ticker:       *time.NewTicker(10 * time.Second),
 		shut:         make(chan struct{}),
 		startMining:  make(chan bool, 1),
 		cancelMining: make(chan bool, 1),
-		evHandler:    ev,
+		evHandler:    evHandler,
 	}
 
 	// Let's update the peer list and blocks.
@@ -76,6 +70,7 @@ func newBCWorker(node *Node, evHandler EventHandler) *bcWorker {
 	go func() {
 		bw.evHandler("bcWorker: runPeerOperation: G started")
 		started <- true
+
 		defer func() {
 			bw.evHandler("bcWorker: runPeerOperation: G completed")
 			bw.wg.Done()
@@ -96,6 +91,7 @@ func newBCWorker(node *Node, evHandler EventHandler) *bcWorker {
 	go func() {
 		bw.evHandler("bcWorker: runMiningOperation: G started")
 		started <- true
+
 		defer func() {
 			bw.evHandler("bcWorker: runMiningOperation: G completed")
 			bw.wg.Done()
@@ -174,7 +170,7 @@ func (bw *bcWorker) runMiningOperation() {
 	// Make sure there are at least 2 transactions in the mempool.
 	length := bw.node.QueryMempoolLength()
 	if length < 2 {
-		bw.evHandler(fmt.Sprintf("bcWorker: runMiningOperation: not enough transactions to mine: %d", length))
+		bw.evHandler("bcWorker: runMiningOperation: not enough transactions to mine: %d", length)
 		return
 	}
 
@@ -209,7 +205,7 @@ func (bw *bcWorker) runMiningOperation() {
 		}()
 
 		block, duration, err := bw.node.MineNewBlock(ctx)
-		bw.evHandler(fmt.Sprintf("bcWorker: runMiningOperation: miningG: mining duration[%v]", duration))
+		bw.evHandler("bcWorker: runMiningOperation: miningG: mining duration[%v]", duration)
 
 		if err != nil {
 			switch {
@@ -218,13 +214,13 @@ func (bw *bcWorker) runMiningOperation() {
 			case ctx.Err() != nil:
 				bw.evHandler("bcWorker: runMiningOperation: miningG: WARNING: mining cancelled")
 			default:
-				bw.evHandler(fmt.Sprintf("bcWorker: runMiningOperation: miningG: ERROR: %s", err))
+				bw.evHandler("bcWorker: runMiningOperation: miningG: ERROR: %s", err)
 			}
 			return
 		}
 
 		// WOW, we mined a block.
-		bw.evHandler(fmt.Sprintf("bcWorker: runMiningOperation: miningG: prevBlk[%s]: newBlk[%s]: numTrans[%d]", block.Header.PrevBlock, block.Hash(), len(block.Transactions)))
+		bw.evHandler("bcWorker: runMiningOperation: miningG: prevBlk[%s]: newBlk[%s]: numTrans[%d]", block.Header.PrevBlock, block.Hash(), len(block.Transactions))
 
 		// TODO: SEND NEW BLOCK TO THE CHAIN!!!!
 	}()
@@ -245,19 +241,19 @@ func (bw *bcWorker) runPeerOperation() {
 		// Retrieve the status of this peer.
 		peer, err := bw.queryPeerStatus(ipPort)
 		if err != nil {
-			bw.evHandler(fmt.Sprintf("bcWorker: runPeerOperation: queryPeerStatus: ERROR: %s", err))
+			bw.evHandler("bcWorker: runPeerOperation: queryPeerStatus: ERROR: %s", err)
 		}
 
 		// Add new peers to this nodes list.
 		if err := bw.addNewPeers(peer.KnownPeers); err != nil {
-			bw.evHandler(fmt.Sprintf("bcWorker: runPeerOperation: addNewPeers: ERROR: %s", err))
+			bw.evHandler("bcWorker: runPeerOperation: addNewPeers: ERROR: %s", err)
 		}
 
 		// If this peer has blocks we don't have, we need to add them.
 		if peer.LatestBlockNumber > bw.node.CopyLatestBlock().Header.Number {
-			bw.evHandler(fmt.Sprintf("bcWorker: runPeerOperation: writePeerBlocks: latestBlockNumber[%d]", peer.LatestBlockNumber))
+			bw.evHandler("bcWorker: runPeerOperation: writePeerBlocks: latestBlockNumber[%d]", peer.LatestBlockNumber)
 			if err := bw.writePeerBlocks(ipPort); err != nil {
-				bw.evHandler(fmt.Sprintf("bcWorker: runPeerOperation: writePeerBlocks: ERROR %s", err))
+				bw.evHandler("bcWorker: runPeerOperation: writePeerBlocks: ERROR %s", err)
 			}
 		}
 	}
@@ -296,7 +292,7 @@ func (bw *bcWorker) queryPeerStatus(ipPort string) (peerStatus, error) {
 		return peerStatus{}, err
 	}
 
-	bw.evHandler(fmt.Sprintf("bcWorker: runPeerOperation: queryPeerStatus: node[%s]: latest-blknum[%d]: peer-list[%s]", ipPort, peer.LatestBlockNumber, peer.KnownPeers))
+	bw.evHandler("bcWorker: runPeerOperation: queryPeerStatus: node[%s]: latest-blknum[%d]: peer-list[%s]", ipPort, peer.LatestBlockNumber, peer.KnownPeers)
 
 	return peer, nil
 }
@@ -311,7 +307,7 @@ func (bw *bcWorker) addNewPeers(knownPeers map[string]struct{}) error {
 		if err := bw.node.addPeerNode(ipPort); err != nil {
 			return err
 		}
-		bw.evHandler(fmt.Sprintf("bcWorker: runPeerOperation: addNewPeers: add peer nodes: adding node %s", ipPort))
+		bw.evHandler("bcWorker: runPeerOperation: addNewPeers: add peer nodes: adding node %s", ipPort)
 	}
 
 	return nil
@@ -357,7 +353,7 @@ func (bw *bcWorker) writePeerBlocks(ipPort string) error {
 	}
 
 	for _, pb := range pbs {
-		bw.evHandler(fmt.Sprintf("bcWorker: runPeerOperation: writePeerBlocks: prevBlk[%s]: newBlk[%s]: numTrans[%d]", pb.Header.PrevBlock, pb.Header.ThisBlock, len(pb.Transactions)))
+		bw.evHandler("bcWorker: runPeerOperation: writePeerBlocks: prevBlk[%s]: newBlk[%s]: numTrans[%d]", pb.Header.PrevBlock, pb.Header.ThisBlock, len(pb.Transactions))
 
 		_, err := bw.node.writeNewBlockFromPeer(pb)
 		if err != nil {
