@@ -152,9 +152,7 @@ func (n *Node) AddTransactions(txs []Tx) {
 
 	if len(n.txMempool) >= 2 {
 		n.evHandler("node: AddTransactions: signal mining")
-		if err := n.bcWorker.signalStartMining(); err != nil {
-			n.evHandler(fmt.Sprintf("node: AddTransactions: ERROR : %s", err))
-		}
+		n.bcWorker.signalStartMining()
 	}
 }
 
