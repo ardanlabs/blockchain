@@ -12,6 +12,7 @@ import (
 	"math/big"
 	"os"
 	"sync"
+	"time"
 )
 
 // zeroHash represents a has code of zeros.
@@ -37,7 +38,7 @@ type Config struct {
 // Node manages the blockchain database.
 type Node struct {
 	genesis     Genesis
-	txMempool   []Tx
+	txMempool   map[string]Tx
 	latestBlock Block
 	balances    map[string]uint
 	dbPath      string
@@ -94,7 +95,7 @@ func New(cfg Config) (*Node, error) {
 	// Update the balance sheet by processing all the transactions in
 	// the set of blocks.
 	for _, block := range blocks {
-		if err := applyTransToBalances(balances, block.Transactions); err != nil {
+		if err := applyTransactionsToBalances(balances, block.Transactions); err != nil {
 			return nil, err
 		}
 	}
@@ -108,6 +109,7 @@ func New(cfg Config) (*Node, error) {
 	// Create the node to provide support for managing the blockchain.
 	node := Node{
 		genesis:     genesis,
+		txMempool:   make(map[string]Tx),
 		latestBlock: latestBlock,
 		balances:    balances,
 		dbPath:      cfg.DBPath,
@@ -116,6 +118,8 @@ func New(cfg Config) (*Node, error) {
 		knownPeers:  peers,
 		evHandler:   ev,
 	}
+
+	ev(fmt.Sprintf("node: Started: blocks[%d]", latestBlock.Header.Number))
 
 	// Start the blockchain worker.
 	node.bcWorker = newBCWorker(&node, cfg.EvHandler)
@@ -137,6 +141,11 @@ func (n *Node) Shutdown() error {
 	return nil
 }
 
+// SignalMining sends a signal to the mining G to start.
+func (n *Node) SignalMining() {
+	n.bcWorker.signalStartMining()
+}
+
 // =============================================================================
 
 // AddTransactions appends a new transactions to the mempool.
@@ -144,11 +153,15 @@ func (n *Node) AddTransactions(txs []Tx) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-	n.evHandler(fmt.Sprintf("node: AddTransactions: started : txs[%d]", len(txs)))
+	n.evHandler(fmt.Sprintf("node: AddTransactions: started : txrs[%d]", len(txs)))
 	defer n.evHandler("node: AddTransactions: completed")
 
-	n.txMempool = append(n.txMempool, txs...)
+	for _, tx := range txs {
+		n.txMempool[tx.ID] = tx
+	}
 	n.evHandler(fmt.Sprintf("node: AddTransactions: mempool[%d]", len(n.txMempool)))
+
+	// TODO: Share these transactions with other nodes.
 
 	if len(n.txMempool) >= 2 {
 		n.evHandler("node: AddTransactions: signal mining")
@@ -177,8 +190,10 @@ func (n *Node) CopyMempool() []Tx {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-	cpy := make([]Tx, len(n.txMempool))
-	copy(cpy, n.txMempool)
+	cpy := make([]Tx, 0, len(n.txMempool))
+	for _, tx := range n.txMempool {
+		cpy = append(cpy, tx)
+	}
 	return cpy
 }
 
@@ -281,7 +296,7 @@ func (n *Node) QueryBlocksByAccount(account string) []Block {
 	var out []Block
 	for _, block := range blocks {
 		for _, tran := range block.Transactions {
-			if tran.Record.From == account || tran.Record.To == account {
+			if tran.From == account || tran.To == account {
 				out = append(out, block)
 			}
 		}
@@ -294,14 +309,14 @@ func (n *Node) QueryBlocksByAccount(account string) []Block {
 
 // MineNewBlock writes the published transaction from the
 // memory pool to disk.
-func (n *Node) MineNewBlock(ctx context.Context) (Block, error) {
+func (n *Node) MineNewBlock(ctx context.Context) (Block, time.Duration, error) {
 	var nb Block
 	balances := make(map[string]uint)
 	n.mu.Lock()
 	{
 		// Are there enough transactions in the pool.
 		if len(n.txMempool) < 2 {
-			return Block{}, ErrNotEnoughTransactions
+			return Block{}, 0, ErrNotEnoughTransactions
 		}
 
 		// Create a new block which owns it's own copy of the transactions.
@@ -316,7 +331,7 @@ func (n *Node) MineNewBlock(ctx context.Context) (Block, error) {
 
 	// Apply the transactions to that copy, setting status information.
 	for i, tx := range nb.Transactions {
-		if err := applyTranToBalance(balances, tx); err != nil {
+		if err := applyTransactionToBalance(balances, tx); err != nil {
 			nb.Transactions[i].Status = TxStatusError
 			nb.Transactions[i].StatusInfo = err.Error()
 			continue
@@ -326,18 +341,18 @@ func (n *Node) MineNewBlock(ctx context.Context) (Block, error) {
 
 	// Attempt to create a new BlockFS by solving the POW puzzle.
 	// This can be cancelled by the caller.
-	blockFS, err := performPOW(ctx, nb)
+	blockFS, duration, err := performPOW(ctx, nb)
 	if err != nil {
-		return Block{}, err
+		return Block{}, duration, err
 	}
 
 	// Write the new block to the chain on disk.
 	blockFSJson, err := json.Marshal(blockFS)
 	if err != nil {
-		return Block{}, err
+		return Block{}, duration, err
 	}
 	if _, err := n.file.Write(append(blockFSJson, '\n')); err != nil {
-		return Block{}, err
+		return Block{}, duration, err
 	}
 
 	// Update the state of the node.
@@ -346,12 +361,14 @@ func (n *Node) MineNewBlock(ctx context.Context) (Block, error) {
 		n.balances = balances
 		n.latestBlock = blockFS.Block
 
-		// TODO: REMOVE ONLY TRANSACTIONS IN BLOCK.
-		n.txMempool = []Tx{}
+		// Remove the transactions from this block.
+		for _, tx := range nb.Transactions {
+			delete(n.txMempool, tx.ID)
+		}
 	}
 	n.mu.Unlock()
 
-	return blockFS.Block, nil
+	return blockFS.Block, duration, nil
 }
 
 // =============================================================================
@@ -420,7 +437,7 @@ func (n *Node) writeNewBlockFromPeer(peerBlock PeerBlock) (Block, error) {
 
 	// Update the state of the node.
 	n.latestBlock = blockFS.Block
-	if err := applyTransToBalances(n.balances, block.Transactions); err != nil {
+	if err := applyTransactionsToBalances(n.balances, block.Transactions); err != nil {
 		return blockFS.Block, err
 	}
 

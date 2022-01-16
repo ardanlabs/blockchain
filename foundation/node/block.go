@@ -25,7 +25,7 @@ type Block struct {
 }
 
 // NewBlock constructs a new BlockFS for persisting.
-func NewBlock(prevBlock Block, txs []Tx) Block {
+func NewBlock(prevBlock Block, txs map[string]Tx) Block {
 	hash := zeroHash
 	if prevBlock.Header.Number > 0 {
 		hash = prevBlock.Hash()
@@ -33,8 +33,10 @@ func NewBlock(prevBlock Block, txs []Tx) Block {
 
 	// Store a copy of the transaction to support
 	// state changes that don't get written to the mempool.
-	cpy := make([]Tx, len(txs))
-	copy(cpy, txs)
+	cpy := make([]Tx, 0, len(txs))
+	for _, tx := range txs {
+		cpy = append(cpy, tx)
+	}
 
 	return Block{
 		Header: BlockHeader{
@@ -91,11 +93,13 @@ type BlockFS struct {
 
 // performPOW does the work to find a valid hash for
 // this block.
-func performPOW(ctx context.Context, b Block) (BlockFS, error) {
+func performPOW(ctx context.Context, b Block) (BlockFS, time.Duration, error) {
+	t := time.Now()
+
 	for {
 		// Did we timeout trying to solve the problem.
 		if ctx.Err() != nil {
-			return BlockFS{}, ctx.Err()
+			return BlockFS{}, time.Since(t), ctx.Err()
 		}
 
 		// Hash the block and check if we have solved the puzzle.
@@ -107,7 +111,7 @@ func performPOW(ctx context.Context, b Block) (BlockFS, error) {
 
 		// Did we timeout trying to solve the problem.
 		if ctx.Err() != nil {
-			return BlockFS{}, ctx.Err()
+			return BlockFS{}, time.Since(t), ctx.Err()
 		}
 
 		// We found a solution to the POW.
@@ -115,7 +119,7 @@ func performPOW(ctx context.Context, b Block) (BlockFS, error) {
 			Hash:  hash,
 			Block: b,
 		}
-		return bfs, nil
+		return bfs, time.Since(t), nil
 	}
 }
 

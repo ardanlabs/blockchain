@@ -44,17 +44,15 @@ func (h Handlers) AddTransactions(ctx context.Context, w http.ResponseWriter, r 
 		return web.NewShutdownError("web value missing from context")
 	}
 
-	var records []node.TxRecord
-	if err := web.Decode(r, &records); err != nil {
+	var userTxs []tx
+	if err := web.Decode(r, &userTxs); err != nil {
 		return fmt.Errorf("unable to decode payload: %w", err)
 	}
 
-	txs := make([]node.Tx, len(records))
-	for i, rec := range records {
-		h.Log.Infow("add tran", "traceid", v.TraceID, "tx", rec)
-		if rec.Nonce == 0 {
-			txs[i] = node.NewTx(rec.From, rec.To, rec.Value, rec.Data)
-		}
+	txs := make([]node.Tx, len(userTxs))
+	for i, tx := range userTxs {
+		h.Log.Infow("add tran", "traceid", v.TraceID, "tx", tx)
+		txs[i] = node.NewTx(tx.From, tx.To, tx.Value, tx.Data)
 	}
 
 	h.Node.AddTransactions(txs)
@@ -149,4 +147,17 @@ func (h Handlers) BlocksByAccount(ctx context.Context, w http.ResponseWriter, r 
 	}
 
 	return web.Respond(ctx, w, node.BlocksToPeerBlocks(dbBlocks), http.StatusOK)
+}
+
+// SignalMining signals to start a mining operation.
+func (h Handlers) SignalMining(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	h.Node.SignalMining()
+
+	resp := struct {
+		Status string `json:"status"`
+	}{
+		Status: "mining signalled",
+	}
+
+	return web.Respond(ctx, w, resp, http.StatusOK)
 }

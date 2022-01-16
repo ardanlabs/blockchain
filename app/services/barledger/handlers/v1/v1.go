@@ -41,4 +41,6 @@ func Routes(app *web.App, cfg Config) {
 
 	app.Handle(http.MethodPost, version, "/tx/add", bgh.AddTransactions)
 	app.Handle(http.MethodGet, version, "/tx/uncommitted/list", bgh.Mempool)
+
+	app.Handle(http.MethodGet, version, "/mining/signal", bgh.SignalMining)
 }

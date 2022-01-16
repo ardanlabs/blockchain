@@ -10,3 +10,10 @@ type balances struct {
 	Uncommitted  int       `json:"uncommitted"`
 	Balances     []balance `json:"balances"`
 }
+
+type tx struct {
+	From  string `json:"from"`
+	To    string `json:"to"`
+	Value uint   `json:"value"`
+	Data  string `json:"data"`
+}
