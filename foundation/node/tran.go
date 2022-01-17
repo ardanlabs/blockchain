@@ -6,10 +6,12 @@ import (
 	"github.com/google/uuid"
 )
 
+// Set of transaction data types.
 const (
 	TxDataReward = "reward"
 )
 
+// Set of transaction status types.
 const (
 	TxStatusAccepted  = "accepted"
 	TxStatusError     = "error"

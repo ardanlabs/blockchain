@@ -14,7 +14,7 @@ import (
 
 // maxTxShareRequests represents the max number of pending tx network share
 // requests that can be outstanding before share requests are dropped. To keep
-// this simple, a buffered channel of this arbitary number is being used. If
+// this simple, a buffered channel of this arbitrary number is being used. If
 // the channel does become full, requests for new transactions to be shared
 // will not be accepted.
 const maxTxShareRequests = 100

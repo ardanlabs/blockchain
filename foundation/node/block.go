@@ -58,7 +58,7 @@ func (b Block) Hash() string {
 	return generateHash(b)
 }
 
-// Converts a Block to a PeerBlock .
+// ToPeerBlock converts a Block to a PeerBlock .
 func (b Block) ToPeerBlock() PeerBlock {
 	pb := PeerBlock{
 		Header: PeerBlockHeader{
@@ -155,14 +155,14 @@ type PeerBlockHeader struct {
 	Nonce     uint64 `json:"nonce"`
 }
 
-// peerTx represents what a block looks like from any
+// PeerBlock represents what a block looks like from any
 // request to a node.
 type PeerBlock struct {
 	Header       PeerBlockHeader `json:"header"`
 	Transactions []Tx            `json:"transactions"`
 }
 
-// Converts a PeerBlock to a Block.
+// ToBlock converts a PeerBlock to a Block.
 func (pb PeerBlock) ToBlock() Block {
 	b := Block{
 		Header: BlockHeader{
