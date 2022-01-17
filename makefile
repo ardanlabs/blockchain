@@ -5,7 +5,7 @@ SHELL := /bin/bash
 # curl -X POST http:/localhost:8080/v1/tx/add --header 'Content-Type: application/json' --data-binary "@app/tooling/curl/seed.json" 
 # curl -X POST http:/localhost:8080/v1/tx/add --header 'Content-Type: application/json' --data-binary "@app/tooling/curl/trans1.json" 
 #
-# Extra transactions
+# Add User transactions
 # curl -X POST http:/localhost:8080/v1/tx/add --header 'Content-Type: application/json' --data-raw '[{"from": "bill_kennedy","to": "bill_kennedy","value": 10, "data": "reward"}]'
 # curl -X POST http:/localhost:8080/v1/tx/add --header 'Content-Type: application/json' --data-raw '[{"from": "ceasar","to": "babayaga","value": 10}]'
 #
