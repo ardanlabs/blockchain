@@ -163,7 +163,8 @@ func (bw *bcWorker) shareTxOperations() {
 
 // =============================================================================
 
-// signalStartMining starts a mining operation.
+// signalStartMining starts a mining operation. If there is already a signal
+// pending in the channel, just return since a mining operation will start.
 func (bw *bcWorker) signalStartMining() {
 	select {
 	case bw.startMining <- true:
@@ -172,7 +173,8 @@ func (bw *bcWorker) signalStartMining() {
 	bw.evHandler("bcWorker: signalStartMining: mining signaled")
 }
 
-// signalCancelMining cancels a mining operation.
+// signalCancelMining cancels a mining operation. If there is already a signal
+// pending in the channel, just return since a mining operation will cancel.
 func (bw *bcWorker) signalCancelMining() {
 	select {
 	case bw.cancelMining <- true:
@@ -181,7 +183,8 @@ func (bw *bcWorker) signalCancelMining() {
 	bw.evHandler("bcWorker: signalCancelMining: cancel signaled")
 }
 
-// signalShareTransactions queues up a share transaction operation.
+// signalShareTransactions queues up a share transaction operation. If
+// maxTxShareRequests signals exist in the channel, we won't send these.
 func (bw *bcWorker) signalShareTransactions(txs []Tx) {
 	select {
 	case bw.txSharing <- txs:
