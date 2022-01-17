@@ -19,12 +19,6 @@ import (
 // will not be accepted.
 const maxTxShareRequests = 100
 
-// tranWork is signaled to the worker goroutine to perform transaction work.
-type tranWork struct {
-	action string
-	txs    []Tx
-}
-
 // =============================================================================
 
 // peerStatus represents information about the status

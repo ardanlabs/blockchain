@@ -43,3 +43,10 @@ deps-reset:
 tidy:
 	go mod tidy
 	go mod vendor
+
+# ==============================================================================
+# Running tests within the local computer
+
+test:
+	go test ./... -count=1
+	staticcheck -checks=all ./...

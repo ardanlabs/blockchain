@@ -459,12 +459,12 @@ func (n *Node) writeNewBlockFromPeer(peerBlock PeerBlock) (Block, error) {
 
 // generateHash takes a value and produces a 32 byte hash.
 func generateHash(v interface{}) string {
-	blockJson, err := json.Marshal(v)
+	data, err := json.Marshal(v)
 	if err != nil {
 		return zeroHash
 	}
 
-	hash := sha256.Sum256(blockJson)
+	hash := sha256.Sum256(data)
 	return hex.EncodeToString(hash[:])
 }
 

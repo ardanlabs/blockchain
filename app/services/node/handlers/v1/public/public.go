@@ -85,7 +85,7 @@ func (h Handlers) Balances(ctx context.Context, w http.ResponseWriter, r *http.R
 	return web.Respond(ctx, w, balances, http.StatusOK)
 }
 
-// BlocksAcct returns all the blocks and their details.
+// BlocksByAccount returns all the blocks and their details.
 func (h Handlers) BlocksByAccount(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	acct := web.Param(r, "acct")
 
