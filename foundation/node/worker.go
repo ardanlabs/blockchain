@@ -118,14 +118,13 @@ func (bw *bcWorker) peerOperations() {
 	bw.evHandler("bcWorker: peerOperations: G started")
 	defer bw.evHandler("bcWorker: peerOperations: G completed")
 
-down:
 	for {
 		select {
 		case <-bw.ticker.C:
 			bw.runPeerOperation()
 		case <-bw.shut:
 			bw.evHandler("bcWorker: peerOperations: received shut signal")
-			break down
+			return
 		}
 	}
 }
@@ -135,14 +134,13 @@ func (bw *bcWorker) miningOperations() {
 	bw.evHandler("bcWorker: miningOperations: G started")
 	defer bw.evHandler("bcWorker: miningOperations: G completed")
 
-down:
 	for {
 		select {
 		case <-bw.startMining:
 			bw.runMiningOperation()
 		case <-bw.shut:
 			bw.evHandler("bcWorker: miningOperations: received shut signal")
-			break down
+			return
 		}
 	}
 }
@@ -152,14 +150,13 @@ func (bw *bcWorker) shareTxOperations() {
 	bw.evHandler("bcWorker: shareTxOperations: G started")
 	defer bw.evHandler("bcWorker: shareTxOperations: G completed")
 
-down:
 	for {
 		select {
 		case txs := <-bw.txSharing:
 			bw.runShareTxOperation(txs)
 		case <-bw.shut:
 			bw.evHandler("bcWorker: shareTxOperations: received shut signal")
-			break down
+			return
 		}
 	}
 }
