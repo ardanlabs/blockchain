@@ -44,6 +44,7 @@ type bcWorker struct {
 	startMining  chan bool
 	cancelMining chan bool
 	evHandler    EventHandler
+	baseURL      string
 }
 
 // newBCWorker creates a blockWriter for writing transactions
@@ -56,6 +57,7 @@ func newBCWorker(node *Node, evHandler EventHandler) *bcWorker {
 		startMining:  make(chan bool, 1),
 		cancelMining: make(chan bool, 1),
 		evHandler:    evHandler,
+		baseURL:      "http://%s/v1/node",
 	}
 
 	// Let's update the peer list and blocks.
@@ -265,7 +267,7 @@ func (bw *bcWorker) queryPeerStatus(ipPort string) (peerStatus, error) {
 	bw.evHandler("bcWorker: runPeerOperation: queryPeerStatus: started")
 	defer bw.evHandler("bcWorker: runPeerOperation: queryPeerStatus: completed")
 
-	url := fmt.Sprintf("http://%s/v1/node/status", ipPort)
+	url := fmt.Sprintf("%s/status", fmt.Sprintf(bw.baseURL, ipPort))
 
 	var client http.Client
 	req, err := http.NewRequest(http.MethodGet, url, nil)
@@ -305,7 +307,9 @@ func (bw *bcWorker) addNewPeers(knownPeers map[string]struct{}) error {
 
 	for ipPort := range knownPeers {
 		if err := bw.node.addPeerNode(ipPort); err != nil {
-			return err
+
+			// It already exists, nothing to report.
+			return nil
 		}
 		bw.evHandler("bcWorker: runPeerOperation: addNewPeers: add peer nodes: adding node %s", ipPort)
 	}
@@ -320,7 +324,7 @@ func (bw *bcWorker) writePeerBlocks(ipPort string) error {
 	defer bw.evHandler("bcWorker: runPeerOperation: writePeerBlocks: completed")
 
 	from := bw.node.CopyLatestBlock().Header.Number + 1
-	url := fmt.Sprintf("http://%s/v1/blocks/list/%d/latest", ipPort, from)
+	url := fmt.Sprintf("%s/blocks/list/%d/latest", fmt.Sprintf(bw.baseURL, ipPort), from)
 
 	var client http.Client
 	req, err := http.NewRequest(http.MethodGet, url, nil)
@@ -351,6 +355,8 @@ func (bw *bcWorker) writePeerBlocks(ipPort string) error {
 	if err := json.NewDecoder(resp.Body).Decode(&pbs); err != nil {
 		return err
 	}
+
+	bw.evHandler("bcWorker: runPeerOperation: writePeerBlocks: found blocks[%d]", len(pbs))
 
 	for _, pb := range pbs {
 		bw.evHandler("bcWorker: runPeerOperation: writePeerBlocks: prevBlk[%s]: newBlk[%s]: numTrans[%d]", pb.Header.PrevBlock, pb.Header.ThisBlock, len(pb.Transactions))

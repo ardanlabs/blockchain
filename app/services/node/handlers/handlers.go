@@ -7,23 +7,23 @@ import (
 	"net/http/pprof"
 	"os"
 
-	"github.com/ardanlabs/blockchain/app/services/barledger/handlers/debug/checkgrp"
-	v1 "github.com/ardanlabs/blockchain/app/services/barledger/handlers/v1"
+	"github.com/ardanlabs/blockchain/app/services/node/handlers/debug/checkgrp"
+	v1 "github.com/ardanlabs/blockchain/app/services/node/handlers/v1"
 	"github.com/ardanlabs/blockchain/business/web/v1/mid"
 	"github.com/ardanlabs/blockchain/foundation/node"
 	"github.com/ardanlabs/blockchain/foundation/web"
 	"go.uber.org/zap"
 )
 
-// APIMuxConfig contains all the mandatory systems required by handlers.
-type APIMuxConfig struct {
+// MuxConfig contains all the mandatory systems required by handlers.
+type MuxConfig struct {
 	Shutdown chan os.Signal
 	Log      *zap.SugaredLogger
 	Node     *node.Node
 }
 
-// APIMux constructs a http.Handler with all application routes defined.
-func APIMux(cfg APIMuxConfig) http.Handler {
+// PublicMux constructs a http.Handler with all application routes defined.
+func PublicMux(cfg MuxConfig) http.Handler {
 
 	// Construct the web.App which holds all routes as well as common Middleware.
 	app := web.NewApp(
@@ -35,7 +35,28 @@ func APIMux(cfg APIMuxConfig) http.Handler {
 	)
 
 	// Load the v1 routes.
-	v1.Routes(app, v1.Config{
+	v1.PublicRoutes(app, v1.Config{
+		Log:  cfg.Log,
+		Node: cfg.Node,
+	})
+
+	return app
+}
+
+// PrivateMux constructs a http.Handler with all application routes defined.
+func PrivateMux(cfg MuxConfig) http.Handler {
+
+	// Construct the web.App which holds all routes as well as common Middleware.
+	app := web.NewApp(
+		cfg.Shutdown,
+		mid.Logger(cfg.Log),
+		mid.Errors(cfg.Log),
+		mid.Metrics(),
+		mid.Panics(),
+	)
+
+	// Load the v1 routes.
+	v1.PrivateRoutes(app, v1.Config{
 		Log:  cfg.Log,
 		Node: cfg.Node,
 	})

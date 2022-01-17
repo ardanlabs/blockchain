@@ -66,6 +66,7 @@ func (b Block) ToPeerBlock() PeerBlock {
 			ThisBlock: b.Hash(),
 			Number:    b.Header.Number,
 			Time:      b.Header.Time,
+			Nonce:     b.Header.Nonce,
 		},
 		Transactions: b.Transactions,
 	}
@@ -151,7 +152,7 @@ type PeerBlockHeader struct {
 	ThisBlock string `json:"this_block"`
 	Number    uint64 `json:"number"`
 	Time      uint64 `json:"time"`
-	Nonce     uint32 `json:"nonce"`
+	Nonce     uint64 `json:"nonce"`
 }
 
 // peerTx represents what a block looks like from any
@@ -168,6 +169,7 @@ func (pb PeerBlock) ToBlock() Block {
 			PrevBlock: pb.Header.PrevBlock,
 			Number:    pb.Header.Number,
 			Time:      pb.Header.Time,
+			Nonce:     pb.Header.Nonce,
 		},
 		Transactions: pb.Transactions,
 	}

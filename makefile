@@ -23,23 +23,14 @@ SHELL := /bin/bash
 # ==============================================================================
 # Local support
 
-up1:
-	go run app/services/barledger/main.go | go run app/tooling/logfmt/main.go
+up:
+	go run app/services/node/main.go | go run app/tooling/logfmt/main.go
 
 up2:
-	go run app/services/barledger/main.go --web-api-host 0.0.0.0:8180 --web-debug-host 0.0.0.0:8181 --node-db-path zblock/blocks2.db | go run app/tooling/logfmt/main.go
+	go run app/services/node/main.go --web-debug-host 0.0.0.0:7181 --web-public-host 0.0.0.0:8180 --web-private-host 0.0.0.0:9180  --node-db-path zblock/blocks2.db | go run app/tooling/logfmt/main.go
 
 down:
 	kill -INT $(shell ps | grep go-build | grep -v grep | sed -n 2,2p | cut -c1-5)
-
-seed:
-	go run app/tooling/admin/main.go trans seed
-
-bals:
-	go run app/tooling/admin/main.go bals
-
-trans:
-	go run app/tooling/admin/main.go trans
 
 # ==============================================================================
 # Modules support

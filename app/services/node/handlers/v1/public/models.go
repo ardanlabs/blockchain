@@ -1,4 +1,4 @@
-package bargrp
+package public
 
 type balance struct {
 	Account string `json:"account"`
