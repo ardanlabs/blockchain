@@ -211,19 +211,11 @@ func (bw *bcWorker) runShareTxOperation(txs []Tx) {
 	defer bw.evHandler("bcWorker: runShareTxOperation: completed")
 
 	for ipPort := range bw.node.CopyKnownPeersList() {
-		if err := bw.shareTransactions(ipPort, txs); err != nil {
+		url := fmt.Sprintf("%s/tx/add", fmt.Sprintf(bw.baseURL, ipPort))
+		if err := send(http.MethodPost, url, txs, nil); err != nil {
 			bw.evHandler("bcWorker: runShareTxOperation: ERROR: %s", err)
 		}
 	}
-}
-
-// shareTransactions sends the specified transactions to the known peer list.
-func (bw *bcWorker) shareTransactions(ipPort string, txs []Tx) error {
-	bw.evHandler("bcWorker: runShareTxOperation: shareTransactions: started: %s", ipPort)
-	defer bw.evHandler("bcWorker: runShareTxOperation: shareTransactions: completed: %s", ipPort)
-
-	url := fmt.Sprintf("%s/tx/add", fmt.Sprintf(bw.baseURL, ipPort))
-	return send(http.MethodPost, url, txs, nil)
 }
 
 // =============================================================================
