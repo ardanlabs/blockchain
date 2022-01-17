@@ -59,18 +59,33 @@ func newBCWorker(node *Node, evHandler EventHandler) *bcWorker {
 		baseURL:      "http://%s/v1/node",
 	}
 
-	// Let's update the peer list and blocks.
+	// Before anything, update the peer list and make/ sure this
+	// node's blockchain is up to date.
 	bw.runPeerOperation()
 
-	// Set waitgroup to match the number of G's we are going to create.
-	g := 3
+	// Load the set of operations we need to run.
+	operations := []func(){
+		bw.peerOperations,
+		bw.miningOperations,
+		bw.shareTxOperations,
+	}
+
+	// Set waitgroup to match the number of G's we need for the set
+	// of operations we have.
+	g := len(operations)
 	bw.wg.Add(g)
+
+	// We don't want to return until we know all the G's are up and running.
 	hasStarted := make(chan bool)
 
-	// Start all the worker G's
-	bw.startRunPeerOperation(hasStarted)
-	bw.startRunMiningOperation(hasStarted)
-	bw.startRunShareTxOperation(hasStarted)
+	// Start all the operational G's.
+	for _, op := range operations {
+		go func(op func()) {
+			defer bw.wg.Done()
+			hasStarted <- true
+			op()
+		}(op)
+	}
 
 	// Wait for the G's to report they are running.
 	for i := 0; i < g; i++ {
@@ -98,73 +113,55 @@ func (bw *bcWorker) shutdown() {
 
 // =============================================================================
 
-// startRunPeerOperation handles finding new peers.
-func (bw *bcWorker) startRunPeerOperation(hasStarted chan bool) {
-	go func() {
-		bw.evHandler("bcWorker: runPeerOperation: G started")
-		hasStarted <- true
+// peerOperations handles finding new peers.
+func (bw *bcWorker) peerOperations() {
+	bw.evHandler("bcWorker: peerOperations: G started")
+	defer bw.evHandler("bcWorker: peerOperations: G completed")
 
-		defer func() {
-			bw.evHandler("bcWorker: runPeerOperation: G completed")
-			bw.wg.Done()
-		}()
-	down:
-		for {
-			select {
-			case <-bw.ticker.C:
-				bw.runPeerOperation()
-			case <-bw.shut:
-				bw.evHandler("bcWorker: runPeerOperation: received shut signal")
-				break down
-			}
+down:
+	for {
+		select {
+		case <-bw.ticker.C:
+			bw.runPeerOperation()
+		case <-bw.shut:
+			bw.evHandler("bcWorker: peerOperations: received shut signal")
+			break down
 		}
-	}()
+	}
 }
 
-// startRunMiningOperation handles mining.
-func (bw *bcWorker) startRunMiningOperation(hasStarted chan bool) {
-	go func() {
-		bw.evHandler("bcWorker: runMiningOperation: G started")
-		hasStarted <- true
+// miningOperations handles mining.
+func (bw *bcWorker) miningOperations() {
+	bw.evHandler("bcWorker: miningOperations: G started")
+	defer bw.evHandler("bcWorker: miningOperations: G completed")
 
-		defer func() {
-			bw.evHandler("bcWorker: runMiningOperation: G completed")
-			bw.wg.Done()
-		}()
-	down:
-		for {
-			select {
-			case <-bw.startMining:
-				bw.runMiningOperation()
-			case <-bw.shut:
-				bw.evHandler("bcWorker: runMiningOperation: received shut signal")
-				break down
-			}
+down:
+	for {
+		select {
+		case <-bw.startMining:
+			bw.runMiningOperation()
+		case <-bw.shut:
+			bw.evHandler("bcWorker: miningOperations: received shut signal")
+			break down
 		}
-	}()
+	}
 }
 
-// startRunShareTxOperation handles sharing new user transactions.
-func (bw *bcWorker) startRunShareTxOperation(hasStarted chan bool) {
-	go func() {
-		bw.evHandler("bcWorker: runShareTxOperation: G started")
-		hasStarted <- true
+// shareTxOperations handles sharing new user transactions.
+func (bw *bcWorker) shareTxOperations() {
+	bw.evHandler("bcWorker: shareTxOperations: G started")
+	defer bw.evHandler("bcWorker: shareTxOperations: G completed")
 
-		defer func() {
-			bw.evHandler("bcWorker: runShareTxOperation: G completed")
-			bw.wg.Done()
-		}()
-	down:
-		for {
-			select {
-			case txs := <-bw.txSharing:
-				bw.runShareTxOperation(txs)
-			case <-bw.shut:
-				bw.evHandler("bcWorker: runShareTxOperation: received shut signal")
-				break down
-			}
+down:
+	for {
+		select {
+		case txs := <-bw.txSharing:
+			bw.runShareTxOperation(txs)
+		case <-bw.shut:
+			bw.evHandler("bcWorker: shareTxOperations: received shut signal")
+			break down
 		}
-	}()
+	}
 }
 
 // =============================================================================
