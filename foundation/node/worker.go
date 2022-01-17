@@ -59,7 +59,7 @@ func newBCWorker(node *Node, evHandler EventHandler) *bcWorker {
 		baseURL:      "http://%s/v1/node",
 	}
 
-	// Before anything, update the peer list and make/ sure this
+	// Before anything, update the peer list and make sure this
 	// node's blockchain is up to date.
 	bw.runPeerOperation()
 
