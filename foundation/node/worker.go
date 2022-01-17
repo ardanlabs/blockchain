@@ -1,6 +1,7 @@
 package node
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -11,10 +12,12 @@ import (
 	"time"
 )
 
-// Represents the different types of transaction work that can be performed.
-const (
-	twAdd = "add"
-)
+// maxTxShareRequests represents the max number of pending tx network share
+// requests that can be outstanding before share requests are dropped. To keep
+// this simple, a buffered channel of this arbitary number is being used. If
+// the channel does become full, requests for new transactions to be shared
+// will not be accepted.
+const maxTxShareRequests = 100
 
 // tranWork is signaled to the worker goroutine to perform transaction work.
 type tranWork struct {
@@ -43,6 +46,7 @@ type bcWorker struct {
 	shut         chan struct{}
 	startMining  chan bool
 	cancelMining chan bool
+	txSharing    chan []Tx
 	evHandler    EventHandler
 	baseURL      string
 }
@@ -56,6 +60,7 @@ func newBCWorker(node *Node, evHandler EventHandler) *bcWorker {
 		shut:         make(chan struct{}),
 		startMining:  make(chan bool, 1),
 		cancelMining: make(chan bool, 1),
+		txSharing:    make(chan []Tx, maxTxShareRequests),
 		evHandler:    evHandler,
 		baseURL:      "http://%s/v1/node",
 	}
@@ -63,56 +68,19 @@ func newBCWorker(node *Node, evHandler EventHandler) *bcWorker {
 	// Let's update the peer list and blocks.
 	bw.runPeerOperation()
 
-	// Add the two G's we are about to create.
-	g := 2
+	// Set waitgroup to match the number of G's we are going to create.
+	g := 3
 	bw.wg.Add(g)
-	started := make(chan bool)
+	hasStarted := make(chan bool)
 
-	// This G handles finding new peers.
-	go func() {
-		bw.evHandler("bcWorker: runPeerOperation: G started")
-		started <- true
+	// Start all the worker G's
+	bw.startRunPeerOperation(hasStarted)
+	bw.startRunMiningOperation(hasStarted)
+	bw.startRunShareTxOperation(hasStarted)
 
-		defer func() {
-			bw.evHandler("bcWorker: runPeerOperation: G completed")
-			bw.wg.Done()
-		}()
-	down:
-		for {
-			select {
-			case <-bw.ticker.C:
-				bw.runPeerOperation()
-			case <-bw.shut:
-				bw.evHandler("bcWorker: runPeerOperation: received shut signal")
-				break down
-			}
-		}
-	}()
-
-	// This G handles mining.
-	go func() {
-		bw.evHandler("bcWorker: runMiningOperation: G started")
-		started <- true
-
-		defer func() {
-			bw.evHandler("bcWorker: runMiningOperation: G completed")
-			bw.wg.Done()
-		}()
-	down:
-		for {
-			select {
-			case <-bw.startMining:
-				bw.runMiningOperation()
-			case <-bw.shut:
-				bw.evHandler("bcWorker: runMiningOperation: received shut signal")
-				break down
-			}
-		}
-	}()
-
-	// Wait for the two G's to report they are running.
+	// Wait for the G's to report they are running.
 	for i := 0; i < g; i++ {
-		<-started
+		<-hasStarted
 	}
 
 	return &bw
@@ -136,6 +104,77 @@ func (bw *bcWorker) shutdown() {
 
 // =============================================================================
 
+// startRunPeerOperation handles finding new peers.
+func (bw *bcWorker) startRunPeerOperation(hasStarted chan bool) {
+	go func() {
+		bw.evHandler("bcWorker: runPeerOperation: G started")
+		hasStarted <- true
+
+		defer func() {
+			bw.evHandler("bcWorker: runPeerOperation: G completed")
+			bw.wg.Done()
+		}()
+	down:
+		for {
+			select {
+			case <-bw.ticker.C:
+				bw.runPeerOperation()
+			case <-bw.shut:
+				bw.evHandler("bcWorker: runPeerOperation: received shut signal")
+				break down
+			}
+		}
+	}()
+}
+
+// startRunMiningOperation handles mining.
+func (bw *bcWorker) startRunMiningOperation(hasStarted chan bool) {
+	go func() {
+		bw.evHandler("bcWorker: runMiningOperation: G started")
+		hasStarted <- true
+
+		defer func() {
+			bw.evHandler("bcWorker: runMiningOperation: G completed")
+			bw.wg.Done()
+		}()
+	down:
+		for {
+			select {
+			case <-bw.startMining:
+				bw.runMiningOperation()
+			case <-bw.shut:
+				bw.evHandler("bcWorker: runMiningOperation: received shut signal")
+				break down
+			}
+		}
+	}()
+}
+
+// startRunShareTxOperation handles sharing new user transactions.
+func (bw *bcWorker) startRunShareTxOperation(hasStarted chan bool) {
+	go func() {
+		bw.evHandler("bcWorker: runShareTxOperation: G started")
+		hasStarted <- true
+
+		defer func() {
+			bw.evHandler("bcWorker: runShareTxOperation: G completed")
+			bw.wg.Done()
+		}()
+	down:
+		for {
+			select {
+			case txs := <-bw.txSharing:
+				bw.runShareTxOperation(txs)
+			case <-bw.shut:
+				bw.evHandler("bcWorker: runShareTxOperation: received shut signal")
+				break down
+			}
+		}
+	}()
+}
+
+// =============================================================================
+
 // signalStartMining starts a mining operation.
 func (bw *bcWorker) signalStartMining() {
 	select {
@@ -152,6 +191,39 @@ func (bw *bcWorker) signalCancelMining() {
 	default:
 	}
 	bw.evHandler("bcWorker: signalCancelMining: cancel signaled")
+}
+
+// signalShareTransactions queues up a share transaction operation.
+func (bw *bcWorker) signalShareTransactions(txs []Tx) {
+	select {
+	case bw.txSharing <- txs:
+		bw.evHandler("bcWorker: signalShareTransactions: share signaled")
+	default:
+		bw.evHandler("bcWorker: signalShareTransactions: queue full, transactions won't be shared.")
+	}
+}
+
+// =============================================================================
+
+// runShareTxOperation updates the peer list and sync's up the database.
+func (bw *bcWorker) runShareTxOperation(txs []Tx) {
+	bw.evHandler("bcWorker: runShareTxOperation: started")
+	defer bw.evHandler("bcWorker: runShareTxOperation: completed")
+
+	for ipPort := range bw.node.CopyKnownPeersList() {
+		if err := bw.shareTransactions(ipPort, txs); err != nil {
+			bw.evHandler("bcWorker: runShareTxOperation: ERROR: %s", err)
+		}
+	}
+}
+
+// shareTransactions sends the specified transactions to the known peer list.
+func (bw *bcWorker) shareTransactions(ipPort string, txs []Tx) error {
+	bw.evHandler("bcWorker: runShareTxOperation: shareTransactions: started: %s", ipPort)
+	defer bw.evHandler("bcWorker: runShareTxOperation: shareTransactions: completed: %s", ipPort)
+
+	url := fmt.Sprintf("%s/tx/add", fmt.Sprintf(bw.baseURL, ipPort))
+	return send(http.MethodPost, url, txs, nil)
 }
 
 // =============================================================================
@@ -264,33 +336,13 @@ func (bw *bcWorker) runPeerOperation() {
 // queryPeerStatus looks for new nodes on the blockchain by asking
 // known nodes for their peer list. New nodes are added to the list.
 func (bw *bcWorker) queryPeerStatus(ipPort string) (peerStatus, error) {
-	bw.evHandler("bcWorker: runPeerOperation: queryPeerStatus: started")
-	defer bw.evHandler("bcWorker: runPeerOperation: queryPeerStatus: completed")
+	bw.evHandler("bcWorker: runPeerOperation: queryPeerStatus: started: %s", ipPort)
+	defer bw.evHandler("bcWorker: runPeerOperation: queryPeerStatus: completed: %s", ipPort)
 
 	url := fmt.Sprintf("%s/status", fmt.Sprintf(bw.baseURL, ipPort))
 
-	var client http.Client
-	req, err := http.NewRequest(http.MethodGet, url, nil)
-	if err != nil {
-		return peerStatus{}, err
-	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return peerStatus{}, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		msg, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return peerStatus{}, err
-		}
-		return peerStatus{}, errors.New(string(msg))
-	}
-
 	var peer peerStatus
-	if err := json.NewDecoder(resp.Body).Decode(&peer); err != nil {
+	if err := send(http.MethodGet, url, nil, &peer); err != nil {
 		return peerStatus{}, err
 	}
 
@@ -320,18 +372,57 @@ func (bw *bcWorker) addNewPeers(knownPeers map[string]struct{}) error {
 // writePeerBlocks queries the specified node asking for blocks this
 // node does not have.
 func (bw *bcWorker) writePeerBlocks(ipPort string) error {
-	bw.evHandler("bcWorker: runPeerOperation: writePeerBlocks: started")
-	defer bw.evHandler("bcWorker: runPeerOperation: writePeerBlocks: completed")
+	bw.evHandler("bcWorker: runPeerOperation: writePeerBlocks: started: %s", ipPort)
+	defer bw.evHandler("bcWorker: runPeerOperation: writePeerBlocks: completed: %s", ipPort)
 
 	from := bw.node.CopyLatestBlock().Header.Number + 1
 	url := fmt.Sprintf("%s/blocks/list/%d/latest", fmt.Sprintf(bw.baseURL, ipPort), from)
 
-	var client http.Client
-	req, err := http.NewRequest(http.MethodGet, url, nil)
-	if err != nil {
+	var pbs []PeerBlock
+	if err := send(http.MethodGet, url, nil, &pbs); err != nil {
 		return err
 	}
 
+	bw.evHandler("bcWorker: runPeerOperation: writePeerBlocks: found blocks[%d]", len(pbs))
+
+	for _, pb := range pbs {
+		bw.evHandler("bcWorker: runPeerOperation: writePeerBlocks: prevBlk[%s]: newBlk[%s]: numTrans[%d]", pb.Header.PrevBlock, pb.Header.ThisBlock, len(pb.Transactions))
+
+		_, err := bw.node.writeNewBlockFromPeer(pb)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// =============================================================================
+
+// send is a helper function to send an HTTP request to a node.
+func send(method string, url string, input interface{}, output interface{}) error {
+	var req *http.Request
+
+	switch {
+	case input != nil:
+		data, err := json.Marshal(input)
+		if err != nil {
+			return err
+		}
+		req, err = http.NewRequest(method, url, bytes.NewReader(data))
+		if err != nil {
+			return err
+		}
+
+	default:
+		var err error
+		req, err = http.NewRequest(method, url, nil)
+		if err != nil {
+			return err
+		}
+	}
+
+	var client http.Client
 	resp, err := client.Do(req)
 	if err != nil {
 		return err
@@ -339,7 +430,6 @@ func (bw *bcWorker) writePeerBlocks(ipPort string) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusNoContent {
-		bw.evHandler("bcWorker: runPeerOperation: writePeerBlocks: no new block")
 		return nil
 	}
 
@@ -351,18 +441,8 @@ func (bw *bcWorker) writePeerBlocks(ipPort string) error {
 		return errors.New(string(msg))
 	}
 
-	var pbs []PeerBlock
-	if err := json.NewDecoder(resp.Body).Decode(&pbs); err != nil {
-		return err
-	}
-
-	bw.evHandler("bcWorker: runPeerOperation: writePeerBlocks: found blocks[%d]", len(pbs))
-
-	for _, pb := range pbs {
-		bw.evHandler("bcWorker: runPeerOperation: writePeerBlocks: prevBlk[%s]: newBlk[%s]: numTrans[%d]", pb.Header.PrevBlock, pb.Header.ThisBlock, len(pb.Transactions))
-
-		_, err := bw.node.writeNewBlockFromPeer(pb)
-		if err != nil {
+	if output != nil {
+		if err := json.NewDecoder(resp.Body).Decode(output); err != nil {
 			return err
 		}
 	}

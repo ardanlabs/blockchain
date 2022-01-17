@@ -149,19 +149,25 @@ func (n *Node) SignalMining() {
 // =============================================================================
 
 // AddTransactions appends a new transactions to the mempool.
-func (n *Node) AddTransactions(txs []Tx) {
+func (n *Node) AddTransactions(txs []Tx, share bool) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
 	n.evHandler("node: AddTransactions: started : txrs[%d]", len(txs))
 	defer n.evHandler("node: AddTransactions: completed")
 
+	n.evHandler("node: AddTransactions: before: mempool[%d]", len(n.txMempool))
 	for _, tx := range txs {
-		n.txMempool[tx.ID] = tx
+		if _, exists := n.txMempool[tx.ID]; !exists {
+			n.txMempool[tx.ID] = tx
+		}
 	}
-	n.evHandler("node: AddTransactions: mempool[%d]", len(n.txMempool))
+	n.evHandler("node: AddTransactions: after: mempool[%d]", len(n.txMempool))
 
-	// TODO: Share these transactions with other nodes.
+	if share {
+		n.evHandler("node: AddTransactions: signal tx sharing")
+		n.bcWorker.signalShareTransactions(txs)
+	}
 
 	if len(n.txMempool) >= 2 {
 		n.evHandler("node: AddTransactions: signal mining")

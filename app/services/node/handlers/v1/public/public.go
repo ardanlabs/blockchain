@@ -17,7 +17,7 @@ type Handlers struct {
 	Node *node.Node
 }
 
-// AddTransactions adds a new transactions to the mempool.
+// AddTransactions adds new user transactions to the mempool.
 func (h Handlers) AddTransactions(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	v, err := web.GetValues(ctx)
 	if err != nil {
@@ -31,11 +31,12 @@ func (h Handlers) AddTransactions(ctx context.Context, w http.ResponseWriter, r 
 
 	txs := make([]node.Tx, len(userTxs))
 	for i, tx := range userTxs {
-		h.Log.Infow("add tran", "traceid", v.TraceID, "tx", tx)
+		h.Log.Infow("add user tran", "traceid", v.TraceID, "tx", tx)
 		txs[i] = node.NewTx(tx.From, tx.To, tx.Value, tx.Data)
 	}
 
-	h.Node.AddTransactions(txs)
+	// Add these transaction and share them with the network.
+	h.Node.AddTransactions(txs, true)
 
 	resp := struct {
 		Status string `json:"status"`

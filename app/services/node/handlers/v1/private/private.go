@@ -20,6 +20,37 @@ type Handlers struct {
 	Node *node.Node
 }
 
+// AddTransactions adds new node transactions to the mempool.
+func (h Handlers) AddTransactions(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	v, err := web.GetValues(ctx)
+	if err != nil {
+		return web.NewShutdownError("web value missing from context")
+	}
+
+	var txs []node.Tx
+	if err := web.Decode(r, &txs); err != nil {
+		return fmt.Errorf("unable to decode payload: %w", err)
+	}
+
+	for _, tx := range txs {
+		h.Log.Infow("add node tran", "traceid", v.TraceID, "tx", tx)
+	}
+
+	// Add these transaction but don't share them, since they were
+	// shared with us already.
+	h.Node.AddTransactions(txs, false)
+
+	resp := struct {
+		Status string `json:"status"`
+		Total  int
+	}{
+		Status: "transactions added to mempool",
+		Total:  len(txs),
+	}
+
+	return web.Respond(ctx, w, resp, http.StatusOK)
+}
+
 // Status returns the current status of the node.
 func (h Handlers) Status(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	latestBlock := h.Node.CopyLatestBlock()
