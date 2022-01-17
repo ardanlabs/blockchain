@@ -210,7 +210,7 @@ func run(log *zap.SugaredLogger) error {
 		// Asking listener to shut down and shed load.
 		log.Infow("shutdown", "status", "shutdown private API started")
 		if err := private.Shutdown(ctx); err != nil {
-			public.Close()
+			private.Close()
 			return fmt.Errorf("could not stop private service gracefully: %w", err)
 		}
 
