@@ -22,7 +22,6 @@ const (
 // Tx represents a transaction in the block.
 type Tx struct {
 	ID         string `json:"id"`
-	Nonce      uint64 `json:"nonce"`
 	From       string `json:"from"`
 	To         string `json:"to"`
 	Value      uint   `json:"value"`
@@ -35,7 +34,6 @@ type Tx struct {
 func NewTx(from, to string, value uint, data string) Tx {
 	return Tx{
 		ID:     uuid.New().String(),
-		Nonce:  generateNonce(),
 		From:   from,
 		To:     to,
 		Value:  value,

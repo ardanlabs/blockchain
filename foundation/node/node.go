@@ -3,13 +3,11 @@ package node
 
 import (
 	"context"
-	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"math/big"
 	"os"
 	"sync"
 	"time"
@@ -466,16 +464,4 @@ func generateHash(v interface{}) string {
 
 	hash := sha256.Sum256(data)
 	return hex.EncodeToString(hash[:])
-}
-
-// generateNonce generates a new nonce (number once).
-func generateNonce() uint64 {
-	const max = 1_000_000
-
-	nBig, err := rand.Int(rand.Reader, big.NewInt(max))
-	if err != nil {
-		return 0
-	}
-
-	return nBig.Uint64()
 }

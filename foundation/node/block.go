@@ -3,8 +3,11 @@ package node
 import (
 	"bufio"
 	"context"
+	"crypto/rand"
 	"encoding/json"
 	"fmt"
+	"math"
+	"math/big"
 	"os"
 	"time"
 )
@@ -97,6 +100,13 @@ type BlockFS struct {
 func performPOW(ctx context.Context, b Block, ev EventHandler) (BlockFS, time.Duration, error) {
 	t := time.Now()
 
+	// Choose a random starting point for the nonce.
+	nBig, err := rand.Int(rand.Reader, big.NewInt(math.MaxInt64))
+	if err != nil {
+		return BlockFS{}, time.Since(t), ctx.Err()
+	}
+	nonce := nBig.Uint64()
+
 	var attempts uint64
 	for {
 		attempts++
@@ -112,7 +122,11 @@ func performPOW(ctx context.Context, b Block, ev EventHandler) (BlockFS, time.Du
 		// Hash the block and check if we have solved the puzzle.
 		hash := b.Hash()
 		if !isHashSolved(hash) {
-			b.Header.Nonce = generateNonce()
+
+			// I may want to track these nonce's to make sure I
+			// don't try the same one twice.
+			nonce++
+			b.Header.Nonce = nonce
 			continue
 		}
 
@@ -133,13 +147,13 @@ func performPOW(ctx context.Context, b Block, ev EventHandler) (BlockFS, time.Du
 }
 
 // isHashSolved checks the hash to make sure it complies with
-// the POW rules. Currently two leading 0's.
+// the POW rules. Currently six leading 0's.
 func isHashSolved(hash string) bool {
 	if len(hash) != 64 {
 		return false
 	}
 
-	match := "00000"
+	match := "000000"
 	return hash[:len(match)] == match
 }
 
