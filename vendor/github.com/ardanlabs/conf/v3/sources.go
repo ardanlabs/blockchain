@@ -77,9 +77,14 @@ func envUsage(namespace string, fld Field) string {
 // =============================================================================
 // Command Line Flag Sourcer
 
+type flagValue struct {
+	HasValue bool
+	Value    string
+}
+
 // flag is a source for command line arguments.
 type flag struct {
-	m    map[string]string
+	m    map[string]flagValue
 	args []string
 }
 
@@ -87,7 +92,7 @@ type flag struct {
 // errHelpWanted, if the help flag is identifyed. This code is adapted
 // from the Go standard library flag package.
 func newSourceFlag(args []string) (*flag, error) {
-	m := make(map[string]string)
+	m := make(map[string]flagValue)
 
 	if len(args) != 0 {
 		for {
@@ -144,38 +149,53 @@ func newSourceFlag(args []string) (*flag, error) {
 			// the next argument, provided the next argument isn't a flag.
 			if !hasValue {
 				if len(args) > 0 && len(args[0]) > 0 && args[0][0] != '-' {
-
 					// Doesn't look like a flag. Must be a value.
 					value, args = args[0], args[1:]
-				} else {
-
-					// We assume this is a boolean flag.
-					value = "true"
 				}
 			}
 
 			// Store the flag/value pair.
-			m[name] = value
+			m[name] = flagValue{
+				HasValue: hasValue,
+				Value:    value,
+			}
 		}
 	}
 
 	return &flag{m: m, args: args}, nil
 }
 
+// source returns the stringfied value stored at the specified key with special handling for bool flags.
+func (f *flag) source(key string, isBool bool) (string, bool) {
+	k := strings.ToLower(key)
+
+	val, found := f.m[k]
+	if !found || !isBool {
+		return val.Value, found
+	}
+
+	if val.HasValue {
+		return val.Value, found
+	}
+
+	// bools are defaulted to true if the flag was present.
+	if val.Value != "" {
+		f.args = append([]string{val.Value}, f.args...)
+	}
+
+	return "true", found
+}
+
 // Source implements the confg.Sourcer interface. Returns the stringfied value
 // stored at the specified key from the flag source.
 func (f *flag) Source(fld Field) (string, bool) {
 	if fld.Options.ShortFlagChar != 0 {
-		flagKey := fld.Options.ShortFlagChar
-		k := strings.ToLower(string(flagKey))
-		if val, found := f.m[k]; found {
+		if val, found := f.source(string(fld.Options.ShortFlagChar), fld.BoolField); found {
 			return val, found
 		}
 	}
 
-	k := strings.ToLower(strings.Join(fld.FlagKey, `-`))
-	val, found := f.m[k]
-	return val, found
+	return f.source(strings.Join(fld.FlagKey, `-`), fld.BoolField)
 }
 
 // flagUsage constructs a usage string for the flag argument.

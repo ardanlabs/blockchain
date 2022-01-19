@@ -13,7 +13,7 @@ import (
 	"github.com/ardanlabs/blockchain/app/services/node/handlers"
 	"github.com/ardanlabs/blockchain/foundation/logger"
 	"github.com/ardanlabs/blockchain/foundation/node"
-	"github.com/ardanlabs/conf/v2"
+	"github.com/ardanlabs/conf/v3"
 	"go.uber.org/zap"
 )
 

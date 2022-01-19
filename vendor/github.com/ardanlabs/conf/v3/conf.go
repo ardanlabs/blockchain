@@ -148,7 +148,6 @@ func VersionInfo(namespace string, v interface{}) (string, error) {
 
 // parse parses configuration into the provided struct.
 func parse(args []string, namespace string, cfgStruct interface{}) error {
-
 	// Create the flag and env sources.
 	flag, err := newSourceFlag(args)
 	if err != nil {
@@ -165,14 +164,15 @@ func parse(args []string, namespace string, cfgStruct interface{}) error {
 		return errors.New("no fields identified in config struct")
 	}
 
+	// Hold the field the is supposed to hold the leftover args.
+	var argsF *Field
+
 	// Process all fields found in the config struct provided.
 	for _, field := range fields {
 
-		// If the field is supposed to hold the leftover args then copy them in
-		// from the flags source.
+		// If the field is supposed to hold the leftover args then hold a reference for later.
 		if field.Field.Type() == argsT {
-			args := reflect.ValueOf(Args(flag.args))
-			field.Field.Set(args)
+			argsF = &field
 			continue
 		}
 
@@ -217,6 +217,13 @@ func parse(args []string, namespace string, cfgStruct interface{}) error {
 		if !everProvided && field.Options.Required {
 			return fmt.Errorf("required field %s is missing value", field.Name)
 		}
+	}
+
+	// If there is a field that is supposed to hold the leftover args then copy them in
+	// from the flags source.
+	if argsF != nil {
+		args := reflect.ValueOf(Args(flag.args))
+		argsF.Field.Set(args)
 	}
 
 	return nil
