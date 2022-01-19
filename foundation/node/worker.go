@@ -19,6 +19,10 @@ import (
 // will not be accepted.
 const maxTxShareRequests = 100
 
+// peerUpdateInterval represents the interval of finding new peer nodes
+// and updating the blockchain on disk with missing blocks.
+const peerUpdateInterval = time.Minute
+
 // =============================================================================
 
 // peerStatus represents information about the status
@@ -50,7 +54,7 @@ type bcWorker struct {
 func newBCWorker(node *Node, evHandler EventHandler) *bcWorker {
 	bw := bcWorker{
 		node:         node,
-		ticker:       *time.NewTicker(time.Minute),
+		ticker:       *time.NewTicker(peerUpdateInterval),
 		shut:         make(chan struct{}),
 		startMining:  make(chan bool, 1),
 		cancelMining: make(chan bool, 1),
@@ -289,8 +293,6 @@ func (bw *bcWorker) runMiningOperation() {
 	wg.Wait()
 }
 
-// =============================================================================
-
 // sendBlockToPeers takes the new mined block and sends it to all know peers.
 func (bw *bcWorker) sendBlockToPeers(block Block) error {
 	bw.evHandler("bcWorker: sendBlockToPeers: started")
@@ -315,6 +317,8 @@ func (bw *bcWorker) sendBlockToPeers(block Block) error {
 	return nil
 }
 
+// =============================================================================
+
 // runPeerOperation updates the peer list and sync's up the database.
 func (bw *bcWorker) runPeerOperation() {
 	bw.evHandler("bcWorker: runPeerOperation: started")
@@ -336,7 +340,7 @@ func (bw *bcWorker) runPeerOperation() {
 		// If this peer has blocks we don't have, we need to add them.
 		if peer.LatestBlockNumber > bw.node.CopyLatestBlock().Header.Number {
 			bw.evHandler("bcWorker: runPeerOperation: writePeerBlocks: %s: latestBlockNumber[%d]", ipPort, peer.LatestBlockNumber)
-			if err := bw.writeNextBlocks(ipPort); err != nil {
+			if err := bw.writePeerBlocks(ipPort); err != nil {
 				bw.evHandler("bcWorker: runPeerOperation: writePeerBlocks: %s: ERROR %s", ipPort, err)
 			}
 		}
@@ -379,9 +383,9 @@ func (bw *bcWorker) addNewPeers(knownPeers map[string]struct{}) error {
 	return nil
 }
 
-// writeNextBlocks queries the specified node asking for blocks this
-// node does not have.
-func (bw *bcWorker) writeNextBlocks(ipPort string) error {
+// writePeerBlocks queries the specified node asking for blocks this
+// node does not have, then writes them to disk.
+func (bw *bcWorker) writePeerBlocks(ipPort string) error {
 	bw.evHandler("bcWorker: runPeerOperation: writePeerBlocks: started: %s", ipPort)
 	defer bw.evHandler("bcWorker: runPeerOperation: writePeerBlocks: completed: %s", ipPort)
 

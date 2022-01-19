@@ -23,11 +23,6 @@ type Handlers struct {
 // AddNextBlock accepts a new mined block from a peer, validates it, then adds it
 // to the block chain.
 func (h Handlers) AddNextBlock(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	v, err := web.GetValues(ctx)
-	if err != nil {
-		return web.NewShutdownError("web value missing from context")
-	}
-
 	// If the node is mining, it needs to stop immediately.
 	h.Node.SignalCancelMining()
 
@@ -39,8 +34,6 @@ func (h Handlers) AddNextBlock(ctx context.Context, w http.ResponseWriter, r *ht
 	if err := h.Node.WriteNextBlock(block); err != nil {
 		return v1.NewRequestError(errors.New("unable to validate block"), http.StatusNotAcceptable)
 	}
-
-	h.Log.Infow("add next block", "traceid", v.TraceID, "block", block.Hash())
 
 	resp := struct {
 		Status string     `json:"status"`

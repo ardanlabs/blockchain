@@ -317,6 +317,9 @@ func (n *Node) QueryBlocksByAccount(account string) []Block {
 // WriteNextBlock takes a block received from a peer, validates it and
 // if that passes, writes the block to disk.
 func (n *Node) WriteNextBlock(block Block) error {
+	n.evHandler("node: WriteNextBlock: started : block[%s]", block.Hash())
+	defer n.evHandler("node: WriteNextBlock: completed")
+
 	hash, err := n.validateNextBlock(block)
 	if err != nil {
 		return err
@@ -377,6 +380,8 @@ func (n *Node) validateNextBlock(block Block) (string, error) {
 	return hash, nil
 }
 
+// =============================================================================
+
 // addPeerNode adds an address to the list of peers.
 func (n *Node) addPeerNode(ipPort string) error {
 	n.mu.Lock()
@@ -396,11 +401,11 @@ func (n *Node) addPeerNode(ipPort string) error {
 
 // =============================================================================
 
-// MineNewBlock writes the published transaction from the
-// memory pool to disk.
+// MineNewBlock writes the published transaction from the memory pool to disk.
 func (n *Node) MineNewBlock(ctx context.Context) (Block, time.Duration, error) {
 	var nb Block
 	balances := make(map[string]uint)
+
 	n.mu.Lock()
 	{
 		// Are there enough transactions in the pool.

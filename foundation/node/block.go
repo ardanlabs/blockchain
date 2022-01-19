@@ -77,8 +77,8 @@ type BlockFS struct {
 	Block Block
 }
 
-// performPOW does the work to find a valid hash for
-// this block.
+// performPOW does the work of mining to find a valid hash for a specified
+// block and returns a BlockFS ready to be written to disk.
 func performPOW(ctx context.Context, b Block, ev EventHandler) (BlockFS, time.Duration, error) {
 	t := time.Now()
 
