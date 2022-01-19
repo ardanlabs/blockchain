@@ -308,6 +308,8 @@ func (bw *bcWorker) sendBlockToPeers(block Block) error {
 
 		if err := send(http.MethodPost, url, block, &status); err != nil {
 			bw.evHandler("bcWorker: sendBlockToPeers: %s: ERROR: %s", ipPort, err)
+
+			// TODO: I need to potentially re-sync my blockchain on disk.
 			return err
 		}
 
