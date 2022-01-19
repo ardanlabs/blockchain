@@ -50,7 +50,7 @@ type bcWorker struct {
 func newBCWorker(node *Node, evHandler EventHandler) *bcWorker {
 	bw := bcWorker{
 		node:         node,
-		ticker:       *time.NewTicker(10 * time.Second),
+		ticker:       *time.NewTicker(time.Minute),
 		shut:         make(chan struct{}),
 		startMining:  make(chan bool, 1),
 		cancelMining: make(chan bool, 1),
@@ -277,9 +277,12 @@ func (bw *bcWorker) runMiningOperation() {
 		}
 
 		// WOW, we mined a block.
-		bw.evHandler("bcWorker: runMiningOperation: miningG: prevBlk[%s]: newBlk[%s]: numTrans[%d]", block.Header.PrevBlock, block.Hash(), len(block.Transactions))
+		bw.evHandler("bcWorker: runMiningOperation: miningG: ***MINED BLOCK***: prevBlk[%s]: newBlk[%s]: numTrans[%d]", block.Header.PrevBlock, block.Hash(), len(block.Transactions))
 
-		// TODO: SEND NEW BLOCK TO THE CHAIN!!!!
+		// Send the new block to the network.
+		if err := bw.sendBlockToPeers(block); err != nil {
+			bw.evHandler("bcWorker: runMiningOperation: miningG: sendBlockToPeers: ERROR %s", err)
+		}
 	}()
 
 	// Wait for both G's to terminate.
@@ -287,6 +290,30 @@ func (bw *bcWorker) runMiningOperation() {
 }
 
 // =============================================================================
+
+// sendBlockToPeers takes the new mined block and sends it to all know peers.
+func (bw *bcWorker) sendBlockToPeers(block Block) error {
+	bw.evHandler("bcWorker: sendBlockToPeers: started")
+	defer bw.evHandler("bcWorker: sendBlockToPeers: completed")
+
+	for ipPort := range bw.node.CopyKnownPeersList() {
+		url := fmt.Sprintf("%s/block/next", fmt.Sprintf(bw.baseURL, ipPort))
+
+		var status struct {
+			Status string `json:"status"`
+			Block  Block  `json:"block"`
+		}
+
+		if err := send(http.MethodPost, url, block, &status); err != nil {
+			bw.evHandler("bcWorker: sendBlockToPeers: %s: ERROR: %s", ipPort, err)
+			return err
+		}
+
+		bw.evHandler("bcWorker: sendBlockToPeers: %s: SENT", ipPort)
+	}
+
+	return nil
+}
 
 // runPeerOperation updates the peer list and sync's up the database.
 func (bw *bcWorker) runPeerOperation() {
@@ -298,19 +325,19 @@ func (bw *bcWorker) runPeerOperation() {
 		// Retrieve the status of this peer.
 		peer, err := bw.queryPeerStatus(ipPort)
 		if err != nil {
-			bw.evHandler("bcWorker: runPeerOperation: queryPeerStatus: ERROR: %s", err)
+			bw.evHandler("bcWorker: runPeerOperation: queryPeerStatus: %s: ERROR: %s", ipPort, err)
 		}
 
 		// Add new peers to this nodes list.
 		if err := bw.addNewPeers(peer.KnownPeers); err != nil {
-			bw.evHandler("bcWorker: runPeerOperation: addNewPeers: ERROR: %s", err)
+			bw.evHandler("bcWorker: runPeerOperation: addNewPeers: %s: ERROR: %s", ipPort, err)
 		}
 
 		// If this peer has blocks we don't have, we need to add them.
 		if peer.LatestBlockNumber > bw.node.CopyLatestBlock().Header.Number {
-			bw.evHandler("bcWorker: runPeerOperation: writePeerBlocks: latestBlockNumber[%d]", peer.LatestBlockNumber)
-			if err := bw.writePeerBlocks(ipPort); err != nil {
-				bw.evHandler("bcWorker: runPeerOperation: writePeerBlocks: ERROR %s", err)
+			bw.evHandler("bcWorker: runPeerOperation: writePeerBlocks: %s: latestBlockNumber[%d]", ipPort, peer.LatestBlockNumber)
+			if err := bw.writeNextBlocks(ipPort); err != nil {
+				bw.evHandler("bcWorker: runPeerOperation: writePeerBlocks: %s: ERROR %s", ipPort, err)
 			}
 		}
 	}
@@ -352,27 +379,26 @@ func (bw *bcWorker) addNewPeers(knownPeers map[string]struct{}) error {
 	return nil
 }
 
-// writePeerBlocks queries the specified node asking for blocks this
+// writeNextBlocks queries the specified node asking for blocks this
 // node does not have.
-func (bw *bcWorker) writePeerBlocks(ipPort string) error {
+func (bw *bcWorker) writeNextBlocks(ipPort string) error {
 	bw.evHandler("bcWorker: runPeerOperation: writePeerBlocks: started: %s", ipPort)
 	defer bw.evHandler("bcWorker: runPeerOperation: writePeerBlocks: completed: %s", ipPort)
 
 	from := bw.node.CopyLatestBlock().Header.Number + 1
-	url := fmt.Sprintf("%s/blocks/list/%d/latest", fmt.Sprintf(bw.baseURL, ipPort), from)
+	url := fmt.Sprintf("%s/block/list/%d/latest", fmt.Sprintf(bw.baseURL, ipPort), from)
 
-	var pbs []PeerBlock
-	if err := send(http.MethodGet, url, nil, &pbs); err != nil {
+	var blocks []Block
+	if err := send(http.MethodGet, url, nil, &blocks); err != nil {
 		return err
 	}
 
-	bw.evHandler("bcWorker: runPeerOperation: writePeerBlocks: found blocks[%d]", len(pbs))
+	bw.evHandler("bcWorker: runPeerOperation: writePeerBlocks: found blocks[%d]", len(blocks))
 
-	for _, pb := range pbs {
-		bw.evHandler("bcWorker: runPeerOperation: writePeerBlocks: prevBlk[%s]: newBlk[%s]: numTrans[%d]", pb.Header.PrevBlock, pb.Header.ThisBlock, len(pb.Transactions))
+	for _, block := range blocks {
+		bw.evHandler("bcWorker: runPeerOperation: writePeerBlocks: prevBlk[%s]: newBlk[%s]: numTrans[%d]", block.Header.PrevBlock, block.Hash(), len(block.Transactions))
 
-		_, err := bw.node.writeNewBlockFromPeer(pb)
-		if err != nil {
+		if err := bw.node.WriteNextBlock(block); err != nil {
 			return err
 		}
 	}
@@ -383,12 +409,12 @@ func (bw *bcWorker) writePeerBlocks(ipPort string) error {
 // =============================================================================
 
 // send is a helper function to send an HTTP request to a node.
-func send(method string, url string, input interface{}, output interface{}) error {
+func send(method string, url string, dataSend interface{}, dataRecv interface{}) error {
 	var req *http.Request
 
 	switch {
-	case input != nil:
-		data, err := json.Marshal(input)
+	case dataSend != nil:
+		data, err := json.Marshal(dataSend)
 		if err != nil {
 			return err
 		}
@@ -424,8 +450,8 @@ func send(method string, url string, input interface{}, output interface{}) erro
 		return errors.New(string(msg))
 	}
 
-	if output != nil {
-		if err := json.NewDecoder(resp.Body).Decode(output); err != nil {
+	if dataRecv != nil {
+		if err := json.NewDecoder(resp.Body).Decode(dataRecv); err != nil {
 			return err
 		}
 	}

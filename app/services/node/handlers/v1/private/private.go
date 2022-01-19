@@ -20,6 +20,39 @@ type Handlers struct {
 	Node *node.Node
 }
 
+// AddNextBlock accepts a new mined block from a peer, validates it, then adds it
+// to the block chain.
+func (h Handlers) AddNextBlock(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	v, err := web.GetValues(ctx)
+	if err != nil {
+		return web.NewShutdownError("web value missing from context")
+	}
+
+	// If the node is mining, it needs to stop immediately.
+	h.Node.SignalCancelMining()
+
+	var block node.Block
+	if err := web.Decode(r, &block); err != nil {
+		return fmt.Errorf("unable to decode payload: %w", err)
+	}
+
+	if err := h.Node.WriteNextBlock(block); err != nil {
+		return v1.NewRequestError(errors.New("unable to validate block"), http.StatusNotAcceptable)
+	}
+
+	h.Log.Infow("add next block", "traceid", v.TraceID, "block", block.Hash())
+
+	resp := struct {
+		Status string     `json:"status"`
+		Block  node.Block `json:"block"`
+	}{
+		Status: "accepted",
+		Block:  block,
+	}
+
+	return web.Respond(ctx, w, resp, http.StatusOK)
+}
+
 // AddTransactions adds new node transactions to the mempool.
 func (h Handlers) AddTransactions(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	v, err := web.GetValues(ctx)
@@ -44,7 +77,7 @@ func (h Handlers) AddTransactions(ctx context.Context, w http.ResponseWriter, r 
 		Status string `json:"status"`
 		Total  int
 	}{
-		Status: "transactions added to mempool",
+		Status: "added",
 		Total:  len(txs),
 	}
 
@@ -98,5 +131,5 @@ func (h Handlers) BlocksByNumber(ctx context.Context, w http.ResponseWriter, r *
 		return web.Respond(ctx, w, nil, http.StatusNoContent)
 	}
 
-	return web.Respond(ctx, w, node.BlocksToPeerBlocks(dbBlocks), http.StatusOK)
+	return web.Respond(ctx, w, dbBlocks, http.StatusOK)
 }

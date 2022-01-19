@@ -94,7 +94,7 @@ func (h Handlers) BlocksByAccount(ctx context.Context, w http.ResponseWriter, r 
 		return web.Respond(ctx, w, nil, http.StatusNoContent)
 	}
 
-	return web.Respond(ctx, w, node.BlocksToPeerBlocks(dbBlocks), http.StatusOK)
+	return web.Respond(ctx, w, dbBlocks, http.StatusOK)
 }
 
 // SignalMining signals to start a mining operation.

@@ -32,8 +32,8 @@ func PublicRoutes(app *web.App, cfg Config) {
 	app.Handle(http.MethodGet, version, "/balances/list/:acct", pbl.Balances)
 	app.Handle(http.MethodGet, version, "/blocks/list", pbl.BlocksByAccount)
 	app.Handle(http.MethodGet, version, "/blocks/list/:acct", pbl.BlocksByAccount)
-	app.Handle(http.MethodGet, version, "/tx/uncommitted/list", pbl.Mempool)
 	app.Handle(http.MethodGet, version, "/mining/signal", pbl.SignalMining)
+	app.Handle(http.MethodGet, version, "/tx/uncommitted/list", pbl.Mempool)
 	app.Handle(http.MethodPost, version, "/tx/add", pbl.AddTransactions)
 }
 
@@ -45,6 +45,7 @@ func PrivateRoutes(app *web.App, cfg Config) {
 	}
 
 	app.Handle(http.MethodGet, version, "/node/status", prv.Status)
-	app.Handle(http.MethodGet, version, "/node/blocks/list/:from/:to", prv.BlocksByNumber)
+	app.Handle(http.MethodGet, version, "/node/block/list/:from/:to", prv.BlocksByNumber)
+	app.Handle(http.MethodPost, version, "/node/block/next", prv.AddNextBlock)
 	app.Handle(http.MethodPost, version, "/node/tx/add", prv.AddTransactions)
 }

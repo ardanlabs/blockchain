@@ -3,8 +3,6 @@ package node
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -142,6 +140,11 @@ func (n *Node) Shutdown() error {
 // SignalMining sends a signal to the mining G to start.
 func (n *Node) SignalMining() {
 	n.bcWorker.signalStartMining()
+}
+
+// SignalCancelMining sends a signal to the mining G to stop.
+func (n *Node) SignalCancelMining() {
+	n.bcWorker.signalCancelMining()
 }
 
 // =============================================================================
@@ -311,6 +314,88 @@ func (n *Node) QueryBlocksByAccount(account string) []Block {
 
 // =============================================================================
 
+// WriteNextBlock takes a block received from a peer, validates it and
+// if that passes, writes the block to disk.
+func (n *Node) WriteNextBlock(block Block) error {
+	hash, err := n.validateNextBlock(block)
+	if err != nil {
+		return err
+	}
+
+	blockFS := BlockFS{
+		Hash:  hash,
+		Block: block,
+	}
+
+	// Marshal the block for writing to disk.
+	blockFSJson, err := json.Marshal(blockFS)
+	if err != nil {
+		return err
+	}
+
+	n.mu.Lock()
+	{
+		// Write the new block to the chain on disk.
+		if _, err := n.file.Write(append(blockFSJson, '\n')); err != nil {
+			return err
+		}
+
+		// Apply the transactions to the balance sheet and remove
+		// from the mempool.
+		for _, tx := range block.Transactions {
+			applyTransactionToBalance(n.balances, tx)
+			delete(n.txMempool, tx.ID)
+		}
+
+		// Save this as the latest block.
+		n.latestBlock = block
+	}
+	n.mu.Unlock()
+
+	return nil
+}
+
+// validateNextBlock takes a block and validates it to be included into
+// the blockchain.
+func (n *Node) validateNextBlock(block Block) (string, error) {
+	hash := block.Hash()
+	if !isHashSolved(hash) {
+		return zeroHash, fmt.Errorf("%s invalid hash", hash)
+	}
+
+	latestBlock := n.CopyLatestBlock()
+	nextNumber := latestBlock.Header.Number + 1
+
+	if block.Header.Number != nextNumber {
+		return zeroHash, fmt.Errorf("this block is not the next number, got %d, exp %d", block.Header.Number, nextNumber)
+	}
+
+	if block.Header.PrevBlock != latestBlock.Hash() {
+		return zeroHash, fmt.Errorf("prev block doesn't match our latest, got %s, exp %s", block.Header.PrevBlock, latestBlock.Hash())
+	}
+
+	return hash, nil
+}
+
+// addPeerNode adds an address to the list of peers.
+func (n *Node) addPeerNode(ipPort string) error {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	// Don't add this node to the known peer list.
+	if ipPort == n.ipPort {
+		return errors.New("already exists")
+	}
+
+	if _, exists := n.knownPeers[ipPort]; !exists {
+		n.knownPeers[ipPort] = struct{}{}
+	}
+
+	return nil
+}
+
+// =============================================================================
+
 // MineNewBlock writes the published transaction from the
 // memory pool to disk.
 func (n *Node) MineNewBlock(ctx context.Context) (Block, time.Duration, error) {
@@ -355,18 +440,20 @@ func (n *Node) MineNewBlock(ctx context.Context) (Block, time.Duration, error) {
 		return Block{}, duration, ctx.Err()
 	}
 
-	// Write the new block to the chain on disk.
+	// Marshal the block for writing to disk.
 	blockFSJson, err := json.Marshal(blockFS)
 	if err != nil {
-		return Block{}, duration, err
-	}
-	if _, err := n.file.Write(append(blockFSJson, '\n')); err != nil {
 		return Block{}, duration, err
 	}
 
 	// Update the state of the node.
 	n.mu.Lock()
 	{
+		// Write the new block to the chain on disk.
+		if _, err := n.file.Write(append(blockFSJson, '\n')); err != nil {
+			return Block{}, duration, err
+		}
+
 		n.balances = balances
 		n.latestBlock = blockFS.Block
 
@@ -378,90 +465,4 @@ func (n *Node) MineNewBlock(ctx context.Context) (Block, time.Duration, error) {
 	n.mu.Unlock()
 
 	return blockFS.Block, duration, nil
-}
-
-// =============================================================================
-
-// addPeerNode adds an address to the list of peers.
-func (n *Node) addPeerNode(ipPort string) error {
-	n.mu.Lock()
-	defer n.mu.Unlock()
-
-	// Don't add this node to the known peer list.
-	if ipPort == n.ipPort {
-		return errors.New("already exists")
-	}
-
-	if _, exists := n.knownPeers[ipPort]; !exists {
-		n.knownPeers[ipPort] = struct{}{}
-	}
-
-	return nil
-}
-
-// =============================================================================
-
-// writeNewBlockFromPeer writes the specified peer block to disk.
-func (n *Node) writeNewBlockFromPeer(peerBlock PeerBlock) (Block, error) {
-	n.mu.Lock()
-	defer n.mu.Unlock()
-
-	// Convert the peer block to a block.
-	block := peerBlock.ToBlock()
-
-	// Validate the hash is correct.
-	hash := peerBlock.Header.ThisBlock
-	if block.Hash() != hash {
-		return Block{}, errors.New("generated hash does not match peer")
-	}
-
-	// Validate the hash matches the POW puzzle.
-	if !isHashSolved(hash) {
-		return Block{}, errors.New("hash does not match POW")
-	}
-
-	// Validate the block number is the next in sequence.
-	nextNumber := n.latestBlock.Header.Number + 1
-	if block.Header.Number != nextNumber {
-		return Block{}, fmt.Errorf("wrong block number, got %d, exp %d", peerBlock.Header.Number, nextNumber)
-	}
-
-	// Validate the prev block hash matches our latest node.
-	if peerBlock.Header.PrevBlock != n.latestBlock.Hash() {
-		return Block{}, fmt.Errorf("prev block doesn't match our latest, got %s, exp %s", peerBlock.Header.PrevBlock, n.latestBlock.Hash())
-	}
-
-	// Write the new block to the chain on disk.
-	blockFS := BlockFS{
-		Hash:  hash,
-		Block: block,
-	}
-	blockFSJson, err := json.Marshal(blockFS)
-	if err != nil {
-		return Block{}, err
-	}
-	if _, err := n.file.Write(append(blockFSJson, '\n')); err != nil {
-		return Block{}, err
-	}
-
-	// Update the state of the node.
-	n.latestBlock = blockFS.Block
-	if err := applyTransactionsToBalances(n.balances, block.Transactions); err != nil {
-		return blockFS.Block, err
-	}
-
-	return blockFS.Block, nil
-}
-
-// =============================================================================
-
-// generateHash takes a value and produces a 32 byte hash.
-func generateHash(v interface{}) string {
-	data, err := json.Marshal(v)
-	if err != nil {
-		return zeroHash
-	}
-
-	hash := sha256.Sum256(data)
-	return hex.EncodeToString(hash[:])
 }
