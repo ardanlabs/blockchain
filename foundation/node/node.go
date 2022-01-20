@@ -17,7 +17,7 @@ import (
 	Maybe adjust difficulty based on time to mine. Currently hardcoded to 6 zeros.
 	Add transaction for the reward in the block being mined.
 	Add fees to transactions.
-	Add difficulty level for the n 0's
+	Add difficulty level for the n 0's.
 */
 
 // zeroHash represents a has code of zeros.
@@ -126,8 +126,8 @@ func New(cfg Config) (*Node, error) {
 
 	ev("node: Started: blocks[%d]", latestBlock.Header.Number)
 
-	// Start the blockchain worker.
-	node.bcWorker = newBCWorker(&node, cfg.EvHandler)
+	// Run the blockchain workers.
+	node.bcWorker = runBCWorker(&node, cfg.EvHandler)
 
 	return &node, nil
 }

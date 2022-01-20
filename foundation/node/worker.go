@@ -49,9 +49,9 @@ type bcWorker struct {
 	baseURL      string
 }
 
-// newBCWorker creates a blockWriter for writing transactions
+// runBCWorker creates a blockWriter for writing transactions
 // from the mempool to a new block.
-func newBCWorker(node *Node, evHandler EventHandler) *bcWorker {
+func runBCWorker(node *Node, evHandler EventHandler) *bcWorker {
 	bw := bcWorker{
 		node:         node,
 		ticker:       *time.NewTicker(peerUpdateInterval),
