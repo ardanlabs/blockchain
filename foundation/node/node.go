@@ -14,6 +14,7 @@ import (
 	Need a way to identify my chain is no longer the valid chain, re-sync.
 	Need a way to validate a new block against the entire known blockchain.
 	Need a wallet to sign transactions properly.
+	Maybe adjust difficulty based on time to mine. Currently hardcoded to 6 zeros.
 */
 
 // zeroHash represents a has code of zeros.
