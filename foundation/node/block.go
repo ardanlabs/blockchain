@@ -87,7 +87,7 @@ func performPOW(ctx context.Context, b Block, ev EventHandler) (BlockFS, time.Du
 	if err != nil {
 		return BlockFS{}, time.Since(t), ctx.Err()
 	}
-	nonce := nBig.Uint64()
+	b.Header.Nonce = nBig.Uint64()
 
 	var attempts uint64
 	for {
@@ -107,8 +107,7 @@ func performPOW(ctx context.Context, b Block, ev EventHandler) (BlockFS, time.Du
 
 			// I may want to track these nonce's to make sure I
 			// don't try the same one twice.
-			nonce++
-			b.Header.Nonce = nonce
+			b.Header.Nonce++
 			continue
 		}
 

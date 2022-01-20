@@ -15,6 +15,7 @@ import (
 	Need a way to validate a new block against the entire known blockchain.
 	Need a wallet to sign transactions properly.
 	Maybe adjust difficulty based on time to mine. Currently hardcoded to 6 zeros.
+	Add transaction for the reward in the block being mined.
 */
 
 // zeroHash represents a has code of zeros.
