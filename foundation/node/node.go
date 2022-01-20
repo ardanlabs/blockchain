@@ -16,6 +16,7 @@ import (
 	Need a wallet to sign transactions properly.
 	Maybe adjust difficulty based on time to mine. Currently hardcoded to 6 zeros.
 	Add transaction for the reward in the block being mined.
+	Add fees to transactions.
 */
 
 // zeroHash represents a has code of zeros.
