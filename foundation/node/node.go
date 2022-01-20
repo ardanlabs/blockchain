@@ -1,4 +1,3 @@
-// Package node is the implementation of our blockchain DB.
 package node
 
 import (

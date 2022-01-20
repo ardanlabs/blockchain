@@ -1,8 +1,11 @@
 /*
+Package node is the implementation of a blockchain DB.
+
 READING AND NOTES
 
 - Articles
 [Transparent Logs for Skeptical Clients](https://research.swtch.com/tlog) - Russ Cox
+[Ethereum Mining](https://ethereum.org/en/developers/docs/consensus-mechanisms/pow/mining/) - Ethereum Website
 
 - Books
 [Build a blockchain from scratch](https://web3.coach/) - Lukas Lukae
