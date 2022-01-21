@@ -18,6 +18,10 @@ Package node is the implementation of a blockchain DB.
 
 **NOTES**
 
+Blockchain is an immutable, transparent database. The token supply,
+initial user balances, and global blockchain settings you define
+in a Genesis file.
+
 Block time refers to the time it takes to mine a new block. In Ethereum, the
 average block time is between 12 to 14 seconds and is evaluated after each block.
 The expected block time is set as a constant at the protocol level and is used to

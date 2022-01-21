@@ -11,11 +11,14 @@ import (
 )
 
 /*
+	Set a maximum number of transactions per block.
+	Choose the best transactions based on fees.
 	Need a way to identify my chain is no longer the valid chain, re-sync.
 	Need a way to validate a new block against the entire known blockchain.
 	Need a wallet to sign transactions properly.
 	Maybe adjust difficulty based on time to mine. Currently hardcoded to 6 zeros.
 	Add fees to transactions.
+	Add the token supply and global blockchain settings in the genesis file.
 */
 
 // =============================================================================
