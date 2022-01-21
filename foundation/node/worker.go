@@ -25,16 +25,6 @@ const peerUpdateInterval = time.Minute
 
 // =============================================================================
 
-// peerStatus represents information about the status
-// of any given peer.
-type peerStatus struct {
-	Hash              string  `json:"hash"`
-	LatestBlockNumber uint64  `json:"latest_block_number"`
-	KnownPeers        PeerSet `json:"known_peers"`
-}
-
-// =============================================================================
-
 // bcWorker manages a goroutine that executes a write block
 // call on a timer.
 type bcWorker struct {
@@ -205,8 +195,8 @@ func (bw *bcWorker) runShareTxOperation(txs []Tx) {
 	bw.evHandler("bcWorker: runShareTxOperation: started")
 	defer bw.evHandler("bcWorker: runShareTxOperation: completed")
 
-	for peer := range bw.node.CopyKnownPeerSet() {
-		url := fmt.Sprintf("%s/tx/add", fmt.Sprintf(bw.baseURL, peer))
+	for _, peer := range bw.node.CopyKnownPeers() {
+		url := fmt.Sprintf("%s/tx/add", fmt.Sprintf(bw.baseURL, peer.Host))
 		if err := send(http.MethodPost, url, txs, nil); err != nil {
 			bw.evHandler("bcWorker: runShareTxOperation: ERROR: %s", err)
 		}
@@ -298,8 +288,8 @@ func (bw *bcWorker) sendBlockToPeers(block Block) error {
 	bw.evHandler("bcWorker: sendBlockToPeers: **********: started")
 	defer bw.evHandler("bcWorker: sendBlockToPeers: **********: completed")
 
-	for peer := range bw.node.CopyKnownPeerSet() {
-		url := fmt.Sprintf("%s/block/next", fmt.Sprintf(bw.baseURL, peer))
+	for _, peer := range bw.node.CopyKnownPeers() {
+		url := fmt.Sprintf("%s/block/next", fmt.Sprintf(bw.baseURL, peer.Host))
 
 		var status struct {
 			Status string `json:"status"`
@@ -326,24 +316,24 @@ func (bw *bcWorker) runPeerOperation() {
 	bw.evHandler("bcWorker: runPeerOperation: started")
 	defer bw.evHandler("bcWorker: runPeerOperation: completed")
 
-	for peer := range bw.node.CopyKnownPeerSet() {
+	for _, peer := range bw.node.CopyKnownPeers() {
 
 		// Retrieve the status of this peer.
 		peerStatus, err := bw.queryPeerStatus(peer)
 		if err != nil {
-			bw.evHandler("bcWorker: runPeerOperation: queryPeerStatus: %s: ERROR: %s", peer, err)
+			bw.evHandler("bcWorker: runPeerOperation: queryPeerStatus: %s: ERROR: %s", peer.Host, err)
 		}
 
 		// Add new peers to this nodes list.
 		if err := bw.addNewPeers(peerStatus.KnownPeers); err != nil {
-			bw.evHandler("bcWorker: runPeerOperation: addNewPeers: %s: ERROR: %s", peer, err)
+			bw.evHandler("bcWorker: runPeerOperation: addNewPeers: %s: ERROR: %s", peer.Host, err)
 		}
 
 		// If this peer has blocks we don't have, we need to add them.
 		if peerStatus.LatestBlockNumber > bw.node.CopyLatestBlock().Header.Number {
-			bw.evHandler("bcWorker: runPeerOperation: writePeerBlocks: %s: latestBlockNumber[%d]", peer, peerStatus.LatestBlockNumber)
+			bw.evHandler("bcWorker: runPeerOperation: writePeerBlocks: %s: latestBlockNumber[%d]", peer.Host, peerStatus.LatestBlockNumber)
 			if err := bw.writePeerBlocks(peer); err != nil {
-				bw.evHandler("bcWorker: runPeerOperation: writePeerBlocks: %s: ERROR %s", peer, err)
+				bw.evHandler("bcWorker: runPeerOperation: writePeerBlocks: %s: ERROR %s", peer.Host, err)
 			}
 		}
 	}
@@ -351,15 +341,15 @@ func (bw *bcWorker) runPeerOperation() {
 
 // queryPeerStatus looks for new nodes on the blockchain by asking
 // known nodes for their peer list. New nodes are added to the list.
-func (bw *bcWorker) queryPeerStatus(peer Info) (peerStatus, error) {
+func (bw *bcWorker) queryPeerStatus(peer Peer) (PeerStatus, error) {
 	bw.evHandler("bcWorker: runPeerOperation: queryPeerStatus: started: %s", peer)
 	defer bw.evHandler("bcWorker: runPeerOperation: queryPeerStatus: completed: %s", peer)
 
-	url := fmt.Sprintf("%s/status", fmt.Sprintf(bw.baseURL, peer))
+	url := fmt.Sprintf("%s/status", fmt.Sprintf(bw.baseURL, peer.Host))
 
-	var ps peerStatus
+	var ps PeerStatus
 	if err := send(http.MethodGet, url, nil, &ps); err != nil {
-		return peerStatus{}, err
+		return PeerStatus{}, err
 	}
 
 	bw.evHandler("bcWorker: runPeerOperation: queryPeerStatus: peer-node[%s]: latest-blknum[%d]: peer-list[%s]", peer, ps.LatestBlockNumber, ps.KnownPeers)
@@ -367,13 +357,13 @@ func (bw *bcWorker) queryPeerStatus(peer Info) (peerStatus, error) {
 	return ps, nil
 }
 
-// addNewPeers takes the set of known peers and makes sure they are included
+// addNewPeers takes the list of known peers and makes sure they are included
 // in the nodes list of know peers.
-func (bw *bcWorker) addNewPeers(knownPeers PeerSet) error {
+func (bw *bcWorker) addNewPeers(knownPeers []Peer) error {
 	bw.evHandler("bcWorker: runPeerOperation: addNewPeers: started")
 	defer bw.evHandler("bcWorker: runPeerOperation: addNewPeers: completed")
 
-	for peer := range knownPeers {
+	for _, peer := range knownPeers {
 		if err := bw.node.addPeerNode(peer); err != nil {
 
 			// It already exists, nothing to report.
@@ -387,12 +377,12 @@ func (bw *bcWorker) addNewPeers(knownPeers PeerSet) error {
 
 // writePeerBlocks queries the specified node asking for blocks this
 // node does not have, then writes them to disk.
-func (bw *bcWorker) writePeerBlocks(peer Info) error {
+func (bw *bcWorker) writePeerBlocks(peer Peer) error {
 	bw.evHandler("bcWorker: runPeerOperation: writePeerBlocks: **********: started: %s", peer)
 	defer bw.evHandler("bcWorker: runPeerOperation: writePeerBlocks: **********: completed: %s", peer)
 
 	from := bw.node.CopyLatestBlock().Header.Number + 1
-	url := fmt.Sprintf("%s/block/list/%d/latest", fmt.Sprintf(bw.baseURL, peer), from)
+	url := fmt.Sprintf("%s/block/list/%d/latest", fmt.Sprintf(bw.baseURL, peer.Host), from)
 
 	var blocks []Block
 	if err := send(http.MethodGet, url, nil, &blocks); err != nil {

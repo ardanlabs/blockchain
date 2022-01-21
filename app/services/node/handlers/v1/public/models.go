@@ -3,8 +3,8 @@ package public
 import "github.com/ardanlabs/blockchain/foundation/node"
 
 type balance struct {
-	Account node.Account `json:"account"`
-	Balance uint         `json:"balance"`
+	Account string `json:"account"`
+	Balance uint   `json:"balance"`
 }
 
 type balances struct {
@@ -14,8 +14,8 @@ type balances struct {
 }
 
 type tx struct {
-	From  node.Account `json:"from"`
-	To    node.Account `json:"to"`
-	Value uint         `json:"value"`
-	Data  string       `json:"data"`
+	From  string `json:"from"`
+	To    string `json:"to"`
+	Value uint   `json:"value"`
+	Data  string `json:"data"`
 }

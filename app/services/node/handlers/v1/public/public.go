@@ -63,12 +63,17 @@ func (h Handlers) Mempool(ctx context.Context, w http.ResponseWriter, r *http.Re
 
 // Balances returns the current balances for all users.
 func (h Handlers) Balances(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	acct := web.Param(r, "acct")
+	account := web.Param(r, "account")
+	var balanceSheet node.BalanceSheet
 
-	dbBals := h.Node.QueryBalances(node.Account(acct))
-	bals := make([]balance, 0, len(dbBals))
+	if account == "" {
+		balanceSheet = h.Node.CopyBalanceSheet()
+	} else {
+		balanceSheet = h.Node.QueryBalances(account)
+	}
 
-	for act, dbBal := range dbBals {
+	bals := make([]balance, 0, len(balanceSheet))
+	for act, dbBal := range balanceSheet {
 		bal := balance{
 			Account: act,
 			Balance: dbBal,
@@ -87,9 +92,9 @@ func (h Handlers) Balances(ctx context.Context, w http.ResponseWriter, r *http.R
 
 // BlocksByAccount returns all the blocks and their details.
 func (h Handlers) BlocksByAccount(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	acct := web.Param(r, "acct")
+	account := web.Param(r, "account")
 
-	dbBlocks := h.Node.QueryBlocksByAccount(node.Account(acct))
+	dbBlocks := h.Node.QueryBlocksByAccount(account)
 	if len(dbBlocks) == 0 {
 		return web.Respond(ctx, w, nil, http.StatusNoContent)
 	}

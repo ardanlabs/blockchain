@@ -33,7 +33,7 @@ func (h Handlers) AddNextBlock(ctx context.Context, w http.ResponseWriter, r *ht
 	}
 
 	if err := h.Node.WriteNextBlock(block); err != nil {
-		return v1.NewRequestError(errors.New("unable to validate block"), http.StatusNotAcceptable)
+		return v1.NewRequestError(err, http.StatusNotAcceptable)
 	}
 
 	resp := struct {
@@ -82,14 +82,10 @@ func (h Handlers) AddTransactions(ctx context.Context, w http.ResponseWriter, r 
 func (h Handlers) Status(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	latestBlock := h.Node.CopyLatestBlock()
 
-	status := struct {
-		Hash              node.Hash    `json:"hash"`
-		LatestBlockNumber uint64       `json:"latest_block_number"`
-		KnownPeers        node.PeerSet `json:"known_peers"`
-	}{
-		Hash:              latestBlock.Hash(),
+	status := node.PeerStatus{
+		LatestBlockHash:   latestBlock.Hash(),
 		LatestBlockNumber: latestBlock.Header.Number,
-		KnownPeers:        h.Node.CopyKnownPeerSet(),
+		KnownPeers:        h.Node.CopyKnownPeers(),
 	}
 
 	return web.Respond(ctx, w, status, http.StatusOK)

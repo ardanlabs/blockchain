@@ -15,7 +15,6 @@ import (
 	Need a way to validate a new block against the entire known blockchain.
 	Need a wallet to sign transactions properly.
 	Maybe adjust difficulty based on time to mine. Currently hardcoded to 6 zeros.
-	Add transaction for the reward in the block being mined.
 	Add fees to transactions.
 	Add difficulty level for the n 0's.
 */
@@ -35,25 +34,31 @@ type EventHandler func(v string, args ...interface{})
 // Config represents the configuration required to start
 // the blockchain node.
 type Config struct {
-	Me         Info
+	Account    string
+	Host       string
 	DBPath     string
 	KnownPeers PeerSet
+	Reward     uint
 	EvHandler  EventHandler
 }
 
 // Node manages the blockchain database.
 type Node struct {
-	me           Info
+	account    string
+	host       string
+	dbPath     string
+	knownPeers PeerSet
+	reward     uint
+	evHandler  EventHandler
+
 	genesis      Genesis
 	txMempool    map[ID]Tx
 	latestBlock  Block
 	balanceSheet BalanceSheet
-	dbPath       string
 	file         *os.File
 	mu           sync.Mutex
-	knownPeers   PeerSet
-	bcWorker     *bcWorker
-	evHandler    EventHandler
+
+	bcWorker *bcWorker
 }
 
 // New constructs a new blockchain for data management.
@@ -105,15 +110,18 @@ func New(cfg Config) (*Node, error) {
 
 	// Create the node to provide support for managing the blockchain.
 	node := Node{
-		me:           cfg.Me,
+		account:    cfg.Account,
+		host:       cfg.Host,
+		dbPath:     cfg.DBPath,
+		knownPeers: cfg.KnownPeers,
+		reward:     cfg.Reward,
+		evHandler:  ev,
+
 		genesis:      genesis,
 		txMempool:    make(map[ID]Tx),
 		latestBlock:  latestBlock,
 		balanceSheet: balanceSheet,
-		dbPath:       cfg.DBPath,
 		file:         file,
-		knownPeers:   cfg.KnownPeers,
-		evHandler:    ev,
 	}
 
 	ev("node: Started: blocks[%d]", latestBlock.Header.Number)
@@ -215,15 +223,15 @@ func (n *Node) CopyBalanceSheet() BalanceSheet {
 
 // CopyKnownPeerSet retrieves information about the peer for updating
 // the known peer list and their current block number.
-func (n *Node) CopyKnownPeerSet() PeerSet {
+func (n *Node) CopyKnownPeers() []Peer {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-	// Return a copy of the list and remove this node from the list.
-	peers := NewPeerSet()
-	for node := range n.knownPeers {
-		if !node.match(n.me) {
-			peers.Add(node)
+	// Can't include ourselves in this list.
+	peers := make([]Peer, 0, len(n.knownPeers)-1)
+	for peer := range n.knownPeers {
+		if !peer.match(n.host) {
+			peers = append(peers, peer)
 		}
 	}
 
@@ -236,15 +244,14 @@ func (n *Node) CopyKnownPeerSet() PeerSet {
 const QueryLastest = ^uint64(0) >> 1
 
 // QueryBalances returns a copy of the set of balances by account.
-// If the account parameter is empty, all balances are returned.
-func (n *Node) QueryBalances(account Account) BalanceSheet {
+func (n *Node) QueryBalances(account string) BalanceSheet {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
 	balanceSheet := newBalanceSheet()
 	for acct, value := range n.balanceSheet {
-		if account == "" || account == acct {
-			balanceSheet.update(acct, value)
+		if account == acct {
+			balanceSheet.replace(acct, value)
 		}
 	}
 
@@ -285,20 +292,16 @@ func (n *Node) QueryBlocksByNumber(from uint64, to uint64) []Block {
 // QueryBlocksByAccount returns the set of blocks by account. If the account
 // is empty, all blocks are returned. This function reads the blockchain
 // from disk first.
-func (n *Node) QueryBlocksByAccount(account Account) []Block {
+func (n *Node) QueryBlocksByAccount(account string) []Block {
 	blocks, err := loadBlocksFromDisk(n.dbPath)
 	if err != nil {
 		return nil
 	}
 
-	if account == "" {
-		return blocks
-	}
-
 	var out []Block
 	for _, block := range blocks {
 		for _, tran := range block.Transactions {
-			if tran.From == account || tran.To == account {
+			if tran.FromAccount == account || tran.ToAccount == account {
 				out = append(out, block)
 			}
 		}
@@ -378,12 +381,12 @@ func (n *Node) validateNextBlock(block Block) (Hash, error) {
 // =============================================================================
 
 // addPeerNode adds an address to the list of peers.
-func (n *Node) addPeerNode(peer Info) error {
+func (n *Node) addPeerNode(peer Peer) error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
 	// Don't add this node to the known peer list.
-	if peer.match(n.me) {
+	if peer.match(n.host) {
 		return errors.New("already exists")
 	}
 
@@ -406,14 +409,19 @@ func (n *Node) MineNewBlock(ctx context.Context) (Block, time.Duration, error) {
 		}
 
 		// Create a new block which owns it's own copy of the transactions.
-		nb = NewBlock(n.latestBlock, n.txMempool)
+		nb = NewBlock(n.account, n.latestBlock, n.txMempool)
 
 		// Get a copy of the balance sheet.
 		balanceSheet = copyBalanceSheet(n.balanceSheet)
 	}
 	n.mu.Unlock()
 
-	// Apply the transactions to that copy, setting status information.
+	// Add the reward transaction to the block.
+	rewardTx := NewTx(n.account, n.account, n.reward, TxDataReward)
+	nb.Transactions = append(nb.Transactions, rewardTx)
+
+	// Apply the transactions to the copy of the balance sheet and
+	// set the status information.
 	for i, tx := range nb.Transactions {
 		if err := applyTransactionToBalance(balanceSheet, tx); err != nil {
 			nb.Transactions[i].Status = TxStatusError

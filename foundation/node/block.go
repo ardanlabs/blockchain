@@ -22,14 +22,13 @@ const zeroHash Hash = "00000000000000000000000000000000"
 
 // =============================================================================
 
-// BlockHeader represents common information required for
-// each block.
+// BlockHeader represents common information required for each block.
 type BlockHeader struct {
-	PrevBlock Hash    `json:"prev_block"`
-	Number    uint64  `json:"number"`
-	Time      uint64  `json:"time"`
-	Nonce     uint64  `json:"nonce"`
-	Miner     Account `json:"acccount"`
+	MinerAccount string `json:"miner"`
+	PrevBlock    Hash   `json:"prev_block"`
+	Number       uint64 `json:"number"`
+	Time         uint64 `json:"time"`
+	Nonce        uint64 `json:"nonce"`
 }
 
 // Block represents a set of transactions grouped together.
@@ -39,7 +38,7 @@ type Block struct {
 }
 
 // NewBlock constructs a new BlockFS for persisting.
-func NewBlock(prevBlock Block, txs map[ID]Tx) Block {
+func NewBlock(minerAccount string, prevBlock Block, txs map[ID]Tx) Block {
 	hash := zeroHash
 	if prevBlock.Header.Number > 0 {
 		hash = prevBlock.Hash()
@@ -54,9 +53,10 @@ func NewBlock(prevBlock Block, txs map[ID]Tx) Block {
 
 	return Block{
 		Header: BlockHeader{
-			PrevBlock: hash,
-			Number:    prevBlock.Header.Number + 1,
-			Time:      uint64(time.Now().Unix()),
+			MinerAccount: minerAccount,
+			PrevBlock:    hash,
+			Number:       prevBlock.Header.Number + 1,
+			Time:         uint64(time.Now().Unix()),
 		},
 		Transactions: cpy,
 	}

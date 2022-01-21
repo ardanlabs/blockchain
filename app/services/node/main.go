@@ -55,8 +55,10 @@ func run(log *zap.SugaredLogger) error {
 			PrivateHost     string        `conf:"default:0.0.0.0:9080"`
 		}
 		Node struct {
+			Account    string   `conf:"default:miner1"`
 			DBPath     string   `conf:"default:zblock/blocks.db"`
 			KnownPeers []string `conf:"default:0.0.0.0:9080;0.0.0.0:9180"`
+			Reward     uint     `conf:"default:700"`
 		}
 	}{
 		Version: conf.Version{
@@ -91,18 +93,22 @@ func run(log *zap.SugaredLogger) error {
 	// Node Support
 
 	peerSet := node.NewPeerSet()
-	for _, peer := range cfg.Node.KnownPeers {
-		peerSet.Add(node.NewInfo(peer))
+	for _, host := range cfg.Node.KnownPeers {
+		peerSet.Add(node.NewPeer(host))
+	}
+
+	ev := func(v string, args ...interface{}) {
+		s := fmt.Sprintf(v, args...)
+		log.Infow(s, "traceid", "11111111-1111-1111-1111-111111111111")
 	}
 
 	node, err := node.New(node.Config{
-		Me:         node.Info(cfg.Web.PrivateHost),
+		Account:    cfg.Node.Account,
+		Host:       cfg.Web.PrivateHost,
 		DBPath:     cfg.Node.DBPath,
 		KnownPeers: peerSet,
-		EvHandler: func(v string, args ...interface{}) {
-			s := fmt.Sprintf(v, args...)
-			log.Infow(s, "traceid", "11111111-1111-1111-1111-111111111111")
-		},
+		Reward:     cfg.Node.Reward,
+		EvHandler:  ev,
 	})
 	if err != nil {
 		return err
