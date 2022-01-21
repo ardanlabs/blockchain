@@ -59,6 +59,7 @@ func run(log *zap.SugaredLogger) error {
 			DBPath     string   `conf:"default:zblock/blocks.db"`
 			KnownPeers []string `conf:"default:0.0.0.0:9080;0.0.0.0:9180"`
 			Reward     uint     `conf:"default:700"`
+			Difficulty int      `conf:"default:6"`
 		}
 	}{
 		Version: conf.Version{
@@ -108,6 +109,7 @@ func run(log *zap.SugaredLogger) error {
 		DBPath:     cfg.Node.DBPath,
 		KnownPeers: peerSet,
 		Reward:     cfg.Node.Reward,
+		Difficulty: cfg.Node.Difficulty,
 		EvHandler:  ev,
 	})
 	if err != nil {

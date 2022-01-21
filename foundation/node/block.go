@@ -88,7 +88,7 @@ type BlockFS struct {
 
 // performPOW does the work of mining to find a valid hash for a specified
 // block and returns a BlockFS ready to be written to disk.
-func performPOW(ctx context.Context, b Block, ev EventHandler) (BlockFS, time.Duration, error) {
+func performPOW(ctx context.Context, difficulty int, b Block, ev EventHandler) (BlockFS, time.Duration, error) {
 	t := time.Now()
 
 	// Choose a random starting point for the nonce.
@@ -112,7 +112,7 @@ func performPOW(ctx context.Context, b Block, ev EventHandler) (BlockFS, time.Du
 
 		// Hash the block and check if we have solved the puzzle.
 		hash := b.Hash()
-		if !isHashSolved(hash) {
+		if !isHashSolved(difficulty, hash) {
 
 			// I may want to track these nonce's to make sure I
 			// don't try the same one twice.
@@ -137,14 +137,15 @@ func performPOW(ctx context.Context, b Block, ev EventHandler) (BlockFS, time.Du
 }
 
 // isHashSolved checks the hash to make sure it complies with
-// the POW rules. Currently six leading 0's.
-func isHashSolved(hash Hash) bool {
+// the POW rules. We need to match a difficulty number of 0's.
+func isHashSolved(difficulty int, hash Hash) bool {
+	const match = Hash("00000000000000000")
+
 	if len(hash) != 64 {
 		return false
 	}
 
-	match := Hash("000000")
-	return hash[:len(match)] == match
+	return hash[:difficulty] == match[:difficulty]
 }
 
 // =============================================================================

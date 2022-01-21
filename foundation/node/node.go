@@ -16,7 +16,6 @@ import (
 	Need a wallet to sign transactions properly.
 	Maybe adjust difficulty based on time to mine. Currently hardcoded to 6 zeros.
 	Add fees to transactions.
-	Add difficulty level for the n 0's.
 */
 
 // =============================================================================
@@ -39,6 +38,7 @@ type Config struct {
 	DBPath     string
 	KnownPeers PeerSet
 	Reward     uint
+	Difficulty int
 	EvHandler  EventHandler
 }
 
@@ -49,6 +49,7 @@ type Node struct {
 	dbPath     string
 	knownPeers PeerSet
 	reward     uint
+	difficulty int
 	evHandler  EventHandler
 
 	genesis      Genesis
@@ -115,6 +116,7 @@ func New(cfg Config) (*Node, error) {
 		dbPath:     cfg.DBPath,
 		knownPeers: cfg.KnownPeers,
 		reward:     cfg.Reward,
+		difficulty: cfg.Difficulty,
 		evHandler:  ev,
 
 		genesis:      genesis,
@@ -360,7 +362,7 @@ func (n *Node) WriteNextBlock(block Block) error {
 // the blockchain.
 func (n *Node) validateNextBlock(block Block) (Hash, error) {
 	hash := block.Hash()
-	if !isHashSolved(hash) {
+	if !isHashSolved(n.difficulty, hash) {
 		return zeroHash, fmt.Errorf("%s invalid hash", hash)
 	}
 
@@ -433,7 +435,7 @@ func (n *Node) MineNewBlock(ctx context.Context) (Block, time.Duration, error) {
 
 	// Attempt to create a new BlockFS by solving the POW puzzle.
 	// This can be cancelled.
-	blockFS, duration, err := performPOW(ctx, nb, n.evHandler)
+	blockFS, duration, err := performPOW(ctx, n.difficulty, nb, n.evHandler)
 	if err != nil {
 		return Block{}, duration, err
 	}
