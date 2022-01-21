@@ -90,10 +90,15 @@ func run(log *zap.SugaredLogger) error {
 	// =========================================================================
 	// Node Support
 
+	peerSet := node.NewPeerSet()
+	for _, peer := range cfg.Node.KnownPeers {
+		peerSet.Add(node.NewInfo(peer))
+	}
+
 	node, err := node.New(node.Config{
+		Me:         node.Info(cfg.Web.PrivateHost),
 		DBPath:     cfg.Node.DBPath,
-		IPPort:     cfg.Web.PrivateHost,
-		KnownPeers: cfg.Node.KnownPeers,
+		KnownPeers: peerSet,
 		EvHandler: func(v string, args ...interface{}) {
 			s := fmt.Sprintf(v, args...)
 			log.Infow(s, "traceid", "11111111-1111-1111-1111-111111111111")

@@ -65,7 +65,7 @@ func (h Handlers) Mempool(ctx context.Context, w http.ResponseWriter, r *http.Re
 func (h Handlers) Balances(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	acct := web.Param(r, "acct")
 
-	dbBals := h.Node.QueryBalances(acct)
+	dbBals := h.Node.QueryBalances(node.Account(acct))
 	bals := make([]balance, 0, len(dbBals))
 
 	for act, dbBal := range dbBals {
@@ -89,7 +89,7 @@ func (h Handlers) Balances(ctx context.Context, w http.ResponseWriter, r *http.R
 func (h Handlers) BlocksByAccount(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	acct := web.Param(r, "acct")
 
-	dbBlocks := h.Node.QueryBlocksByAccount(acct)
+	dbBlocks := h.Node.QueryBlocksByAccount(node.Account(acct))
 	if len(dbBlocks) == 0 {
 		return web.Respond(ctx, w, nil, http.StatusNoContent)
 	}

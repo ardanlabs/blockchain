@@ -14,13 +14,22 @@ import (
 	"time"
 )
 
+// Hash represents the data representation for a hash value.
+type Hash string
+
+// zeroHash represents a has code of zeros.
+const zeroHash Hash = "00000000000000000000000000000000"
+
+// =============================================================================
+
 // BlockHeader represents common information required for
 // each block.
 type BlockHeader struct {
-	PrevBlock string `json:"prev_block"`
-	Number    uint64 `json:"number"`
-	Time      uint64 `json:"time"`
-	Nonce     uint64 `json:"nonce"`
+	PrevBlock Hash    `json:"prev_block"`
+	Number    uint64  `json:"number"`
+	Time      uint64  `json:"time"`
+	Nonce     uint64  `json:"nonce"`
+	Miner     Account `json:"acccount"`
 }
 
 // Block represents a set of transactions grouped together.
@@ -30,7 +39,7 @@ type Block struct {
 }
 
 // NewBlock constructs a new BlockFS for persisting.
-func NewBlock(prevBlock Block, txs map[string]Tx) Block {
+func NewBlock(prevBlock Block, txs map[ID]Tx) Block {
 	hash := zeroHash
 	if prevBlock.Header.Number > 0 {
 		hash = prevBlock.Hash()
@@ -55,7 +64,7 @@ func NewBlock(prevBlock Block, txs map[string]Tx) Block {
 
 // Hash returns the unique hash for the block by marshaling
 // the block into JSON and performing a hashing operation.
-func (b Block) Hash() string {
+func (b Block) Hash() Hash {
 	if b.Header.Number == 0 {
 		return zeroHash
 	}
@@ -66,14 +75,14 @@ func (b Block) Hash() string {
 	}
 
 	hash := sha256.Sum256(data)
-	return hex.EncodeToString(hash[:])
+	return Hash(hex.EncodeToString(hash[:]))
 }
 
 // =============================================================================
 
 // BlockFS represents what is written to the DB file.
 type BlockFS struct {
-	Hash  string
+	Hash  Hash
 	Block Block
 }
 
@@ -93,7 +102,7 @@ func performPOW(ctx context.Context, b Block, ev EventHandler) (BlockFS, time.Du
 	for {
 		attempts++
 		if attempts%1_000_000 == 0 {
-			ev("bcWorker: runMiningOperation: miningG: mining attempts[%d]", attempts)
+			ev("bcWorker: runMiningOperation: **********: miningG: mining attempts[%d]", attempts)
 		}
 
 		// Did we timeout trying to solve the problem.
@@ -116,7 +125,7 @@ func performPOW(ctx context.Context, b Block, ev EventHandler) (BlockFS, time.Du
 			return BlockFS{}, time.Since(t), ctx.Err()
 		}
 
-		ev("bcWorker: runMiningOperation: miningG: mining final attempts[%d]", attempts)
+		ev("bcWorker: runMiningOperation: **********: miningG: mining final attempts[%d]", attempts)
 
 		// We found a solution to the POW.
 		bfs := BlockFS{
@@ -129,12 +138,12 @@ func performPOW(ctx context.Context, b Block, ev EventHandler) (BlockFS, time.Du
 
 // isHashSolved checks the hash to make sure it complies with
 // the POW rules. Currently six leading 0's.
-func isHashSolved(hash string) bool {
+func isHashSolved(hash Hash) bool {
 	if len(hash) != 64 {
 		return false
 	}
 
-	match := "000000"
+	match := Hash("000000")
 	return hash[:len(match)] == match
 }
 

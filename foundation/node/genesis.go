@@ -8,9 +8,9 @@ import (
 
 // Genesis represents the genesis file.
 type Genesis struct {
-	Date     time.Time       `json:"date"`
-	ChainID  string          `json:"chain_id"`
-	Balances map[string]uint `json:"balances"`
+	Date     time.Time    `json:"date"`
+	ChainID  string       `json:"chain_id"`
+	Balances BalanceSheet `json:"balance_sheet"`
 }
 
 // =============================================================================

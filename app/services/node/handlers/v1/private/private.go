@@ -83,13 +83,13 @@ func (h Handlers) Status(ctx context.Context, w http.ResponseWriter, r *http.Req
 	latestBlock := h.Node.CopyLatestBlock()
 
 	status := struct {
-		Hash              string              `json:"hash"`
-		LatestBlockNumber uint64              `json:"latest_block_number"`
-		KnownPeers        map[string]struct{} `json:"known_peers"`
+		Hash              node.Hash    `json:"hash"`
+		LatestBlockNumber uint64       `json:"latest_block_number"`
+		KnownPeers        node.PeerSet `json:"known_peers"`
 	}{
 		Hash:              latestBlock.Hash(),
 		LatestBlockNumber: latestBlock.Header.Number,
-		KnownPeers:        h.Node.CopyKnownPeersList(),
+		KnownPeers:        h.Node.CopyKnownPeerSet(),
 	}
 
 	return web.Respond(ctx, w, status, http.StatusOK)
