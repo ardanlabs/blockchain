@@ -198,7 +198,7 @@ func (bw *bcWorker) runShareTxOperation(txs []Tx) {
 	for _, peer := range bw.node.CopyKnownPeers() {
 		url := fmt.Sprintf("%s/tx/add", fmt.Sprintf(bw.baseURL, peer.Host))
 		if err := send(http.MethodPost, url, txs, nil); err != nil {
-			bw.evHandler("bcWorker: runShareTxOperation: ERROR: %s", err)
+			bw.evHandler("bcWorker: runShareTxOperation: WARNING: %s", err)
 		}
 	}
 }
@@ -275,7 +275,9 @@ func (bw *bcWorker) runMiningOperation() {
 
 		// Send the new block to the network.
 		if err := bw.sendBlockToPeers(block); err != nil {
-			bw.evHandler("bcWorker: runMiningOperation: **********: miningG: sendBlockToPeers: ERROR %s", err)
+			bw.evHandler("bcWorker: runMiningOperation: **********: miningG: sendBlockToPeers: WARNING %s", err)
+
+			// TODO: I need to potentially re-sync my blockchain on disk.
 		}
 	}()
 
@@ -297,10 +299,7 @@ func (bw *bcWorker) sendBlockToPeers(block Block) error {
 		}
 
 		if err := send(http.MethodPost, url, block, &status); err != nil {
-			bw.evHandler("bcWorker: sendBlockToPeers: **********: %s: ERROR: %s", peer, err)
-
-			// TODO: I need to potentially re-sync my blockchain on disk.
-			return err
+			return fmt.Errorf("%s: %s", peer.Host, err)
 		}
 
 		bw.evHandler("bcWorker: sendBlockToPeers: **********: %s: SENT", peer)

@@ -121,8 +121,11 @@ Occasionally we run into material that we feel is important. This is a section p
 [Girls Who Code](https://girlswhocode.com/crypto)  
 
 
-## Parachains
+## Other Chains
+[Parachains](https://parachains.info)  
 [Polkadot](https://polkadot.network)  
+[Kusama](https://kusama.network)  
+[Avalanche: Smart Contracts Platform](https://www.avax.network/)  
 
 
 ## Research Papers

@@ -11,7 +11,6 @@ import (
 )
 
 /*
-	Remove the extra transaction for the reward, this can be done outside when writing the block.
 	Set a maximum number of transactions per block.
 	Choose the best transactions based on fees.
 	Need a way to identify my chain is no longer the valid chain, re-sync.
@@ -105,6 +104,9 @@ func New(cfg Config) (*Node, error) {
 		if err := applyTransactionsToBalances(balanceSheet, block.Transactions); err != nil {
 			return nil, err
 		}
+
+		// Add the miner reward to the balance sheet.
+		applyMiningRewardToBalance(balanceSheet, block.Header.MinerAccount, cfg.Reward)
 	}
 
 	// Open the blockchain database file for processing.
@@ -340,8 +342,11 @@ func (n *Node) WriteNextBlock(block Block) error {
 		return err
 	}
 
-	n.mu.Lock()
-	{
+	// Execute this code inside a lock.
+	if err := func() error {
+		n.mu.Lock()
+		defer n.mu.Unlock()
+
 		// Write the new block to the chain on disk.
 		if _, err := n.file.Write(append(blockFSJson, '\n')); err != nil {
 			return err
@@ -354,10 +359,16 @@ func (n *Node) WriteNextBlock(block Block) error {
 			delete(n.txMempool, tx.ID)
 		}
 
+		// Add the miner reward to the balance sheet.
+		applyMiningRewardToBalance(n.balanceSheet, block.Header.MinerAccount, n.reward)
+
 		// Save this as the latest block.
 		n.latestBlock = block
+
+		return nil
+	}(); err != nil {
+		return err
 	}
-	n.mu.Unlock()
 
 	return nil
 }
@@ -407,11 +418,15 @@ func (n *Node) MineNewBlock(ctx context.Context) (Block, time.Duration, error) {
 	var nb Block
 	var balanceSheet BalanceSheet
 
-	n.mu.Lock()
-	{
+	// Execute this code inside a lock.
+	if err := func() error {
+		n.mu.Lock()
+		defer n.mu.Unlock()
+
 		// Are there enough transactions in the pool.
 		if len(n.txMempool) < 2 {
-			return Block{}, 0, ErrNotEnoughTransactions
+			n.mu.Unlock()
+			return ErrNotEnoughTransactions
 		}
 
 		// Create a new block which owns it's own copy of the transactions.
@@ -419,12 +434,11 @@ func (n *Node) MineNewBlock(ctx context.Context) (Block, time.Duration, error) {
 
 		// Get a copy of the balance sheet.
 		balanceSheet = copyBalanceSheet(n.balanceSheet)
-	}
-	n.mu.Unlock()
 
-	// Add the reward transaction to the block.
-	rewardTx := NewTx(n.account, n.account, n.reward, TxDataReward)
-	nb.Transactions = append(nb.Transactions, rewardTx)
+		return nil
+	}(); err != nil {
+		return Block{}, 0, ErrNotEnoughTransactions
+	}
 
 	// Apply the transactions to the copy of the balance sheet and
 	// set the status information.
@@ -436,6 +450,9 @@ func (n *Node) MineNewBlock(ctx context.Context) (Block, time.Duration, error) {
 		}
 		nb.Transactions[i].Status = TxStatusAccepted
 	}
+
+	// Add the miner reward to the balance sheet.
+	applyMiningRewardToBalance(balanceSheet, n.account, n.reward)
 
 	// Attempt to create a new BlockFS by solving the POW puzzle.
 	// This can be cancelled.
@@ -455,12 +472,15 @@ func (n *Node) MineNewBlock(ctx context.Context) (Block, time.Duration, error) {
 		return Block{}, duration, err
 	}
 
-	// Update the state of the node.
-	n.mu.Lock()
-	{
+	// Execute this code inside a lock.
+	if err := func() error {
+		n.mu.Lock()
+		defer n.mu.Unlock()
+
 		// Write the new block to the chain on disk.
 		if _, err := n.file.Write(append(blockFSJson, '\n')); err != nil {
-			return Block{}, duration, err
+			n.mu.Unlock()
+			return err
 		}
 
 		n.balanceSheet = balanceSheet
@@ -470,8 +490,11 @@ func (n *Node) MineNewBlock(ctx context.Context) (Block, time.Duration, error) {
 		for _, tx := range nb.Transactions {
 			delete(n.txMempool, tx.ID)
 		}
+
+		return nil
+	}(); err != nil {
+		return Block{}, duration, err
 	}
-	n.mu.Unlock()
 
 	return blockFS.Block, duration, nil
 }

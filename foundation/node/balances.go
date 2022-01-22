@@ -36,6 +36,11 @@ func applyTransactionsToBalances(balanceSheet BalanceSheet, txs []Tx) error {
 	return nil
 }
 
+// applyMiningRewardToBalance gives the miner account a reward for mining a block.
+func applyMiningRewardToBalance(balanceSheet BalanceSheet, minerAccount string, reward uint) {
+	balanceSheet[minerAccount] += reward
+}
+
 // applyTransactionToBalance performs the business logic for applying a
 // transaction to the balance sheet.
 func applyTransactionToBalance(balanceSheet BalanceSheet, tx Tx) error {
