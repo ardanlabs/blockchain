@@ -131,6 +131,7 @@ Occasionally we run into material that we feel is important. This is a section p
 ## Research Papers
 [Transparent Logs for Skeptical Clients](https://research.swtch.com/tlog) - Russ Cox  
 [Impossibility of Distributed Consensus with One Faulty Process](https://groups.csail.mit.edu/tds/papers/Lynch/jacm85.pdf)  
+[Ethereum: A Secure Decentralized Generalized Transation Ledger](https://ethereum.github.io/yellowpaper/paper.pdf) - Dr. Gavin Wood  
 
 
 ## Video
