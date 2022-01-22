@@ -8,6 +8,7 @@ Package node is the implementation of a blockchain DB.
 
 - Video
 [Is It Possible To Get The Same 24 BIP39 Seed Words?](https://www.youtube.com/watch?v=hjRntYh0ot8) - John Chow
+[What the hell are NFT's?](https://www.youtube.com/watch?v=XwMjPWOailQ) - Josh Strife Hayes
 
 - Articles
 [Transparent Logs for Skeptical Clients](https://research.swtch.com/tlog) - Russ Cox
@@ -17,6 +18,8 @@ Package node is the implementation of a blockchain DB.
 [Ethereum Blocks](https://ethereum.org/en/developers/docs/blocks/) - Ethereum Website
 
 **NOTES**
+
+A blockchain is a database for storing things of value.
 
 Blockchain is an immutable, transparent database. The token supply,
 initial user balances, and global blockchain settings you define
