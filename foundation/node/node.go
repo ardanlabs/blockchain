@@ -11,6 +11,7 @@ import (
 )
 
 /*
+	Remove the extra transaction for the reward, this can be done outside when writing the block.
 	Set a maximum number of transactions per block.
 	Choose the best transactions based on fees.
 	Need a way to identify my chain is no longer the valid chain, re-sync.
