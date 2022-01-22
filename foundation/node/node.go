@@ -11,10 +11,8 @@ import (
 )
 
 /*
-	Set a maximum number of transactions per block.
 	Choose the best transactions based on fees.
-	Need a way to identify my chain is no longer the valid chain, re-sync.
-	Need a way to validate a new block against the entire known blockchain.
+	Need a way to identify when chain is no longer the valid chain, re-sync.
 	Need a wallet to sign transactions properly.
 	Maybe adjust difficulty based on time to mine. Currently hardcoded to 6 zeros.
 	Add fees to transactions.
@@ -36,24 +34,26 @@ type EventHandler func(v string, args ...interface{})
 // Config represents the configuration required to start
 // the blockchain node.
 type Config struct {
-	Account    string
-	Host       string
-	DBPath     string
-	KnownPeers PeerSet
-	Reward     uint
-	Difficulty int
-	EvHandler  EventHandler
+	Account       string
+	Host          string
+	DBPath        string
+	KnownPeers    PeerSet
+	Reward        uint // What a miner gets for mining a block.
+	Difficulty    int  // How many leading eros a block hash must have.
+	TransPerBlock int  // How many transactions need to be in a block.
+	EvHandler     EventHandler
 }
 
 // Node manages the blockchain database.
 type Node struct {
-	account    string
-	host       string
-	dbPath     string
-	knownPeers PeerSet
-	reward     uint
-	difficulty int
-	evHandler  EventHandler
+	account       string
+	host          string
+	dbPath        string
+	knownPeers    PeerSet
+	reward        uint
+	difficulty    int
+	transPerBlock int
+	evHandler     EventHandler
 
 	genesis      Genesis
 	txMempool    map[ID]Tx
@@ -117,13 +117,14 @@ func New(cfg Config) (*Node, error) {
 
 	// Create the node to provide support for managing the blockchain.
 	node := Node{
-		account:    cfg.Account,
-		host:       cfg.Host,
-		dbPath:     cfg.DBPath,
-		knownPeers: cfg.KnownPeers,
-		reward:     cfg.Reward,
-		difficulty: cfg.Difficulty,
-		evHandler:  ev,
+		account:       cfg.Account,
+		host:          cfg.Host,
+		dbPath:        cfg.DBPath,
+		knownPeers:    cfg.KnownPeers,
+		reward:        cfg.Reward,
+		difficulty:    cfg.Difficulty,
+		transPerBlock: cfg.TransPerBlock,
+		evHandler:     ev,
 
 		genesis:      genesis,
 		txMempool:    make(map[ID]Tx),
@@ -187,7 +188,7 @@ func (n *Node) AddTransactions(txs []Tx, share bool) {
 		n.bcWorker.signalShareTransactions(txs)
 	}
 
-	if len(n.txMempool) >= 2 {
+	if len(n.txMempool) >= n.transPerBlock {
 		n.evHandler("node: AddTransactions: signal mining")
 		n.bcWorker.signalStartMining()
 	}
@@ -424,7 +425,7 @@ func (n *Node) MineNewBlock(ctx context.Context) (Block, time.Duration, error) {
 		defer n.mu.Unlock()
 
 		// Are there enough transactions in the pool.
-		if len(n.txMempool) < 2 {
+		if len(n.txMempool) < n.transPerBlock {
 			n.mu.Unlock()
 			return ErrNotEnoughTransactions
 		}

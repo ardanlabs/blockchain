@@ -218,9 +218,9 @@ func (bw *bcWorker) runMiningOperation() {
 	default:
 	}
 
-	// Make sure there are at least 2 transactions in the mempool.
+	// Make sure there are at least transPerBlock in the mempool.
 	length := bw.node.QueryMempoolLength()
-	if length < 2 {
+	if length < bw.node.transPerBlock {
 		bw.evHandler("bcWorker: runMiningOperation: **********: not enough transactions to mine: %d", length)
 		return
 	}
