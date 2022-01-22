@@ -34,7 +34,7 @@ Occasionally we run into material that we feel is important. This is a section p
 
 
 ## Books
-[Build a blockchain from scratch](https://web3.coach/) - Lukas Lukae
+[Build a blockchain from scratch](https://web3coach.gumroad.com/l/build-a-blockchain-from-scratch-in-go) - Lukas Lukac  
 
 
 ## Code Projects
