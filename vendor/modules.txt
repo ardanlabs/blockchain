@@ -4,7 +4,7 @@ github.com/StackExchange/wmi
 # github.com/VictoriaMetrics/fastcache v1.6.0
 ## explicit; go 1.13
 github.com/VictoriaMetrics/fastcache
-# github.com/ardanlabs/conf/v3 v3.0.0
+# github.com/ardanlabs/conf/v3 v3.1.1
 ## explicit; go 1.13
 github.com/ardanlabs/conf/v3
 # github.com/btcsuite/btcd v0.20.1-beta
@@ -309,7 +309,7 @@ go.uber.org/atomic
 # go.uber.org/multierr v1.6.0
 ## explicit; go 1.12
 go.uber.org/multierr
-# go.uber.org/zap v1.19.1
+# go.uber.org/zap v1.20.0
 ## explicit; go 1.13
 go.uber.org/zap
 go.uber.org/zap/buffer

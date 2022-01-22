@@ -169,6 +169,7 @@ func parse(args []string, namespace string, cfgStruct interface{}) error {
 
 	// Process all fields found in the config struct provided.
 	for _, field := range fields {
+		field := field
 
 		// If the field is supposed to hold the leftover args then hold a reference for later.
 		if field.Field.Type() == argsT {
@@ -189,7 +190,6 @@ func parse(args []string, namespace string, cfgStruct interface{}) error {
 		}
 
 		// Process each field against all sources.
-		var everProvided bool
 		for _, sourcer := range sources {
 			if sourcer == nil {
 				continue
@@ -199,7 +199,6 @@ func parse(args []string, namespace string, cfgStruct interface{}) error {
 			if !provided {
 				continue
 			}
-			everProvided = true
 
 			// A value was found so update the struct value with it.
 			if err := processField(false, value, field.Field); err != nil {
@@ -214,7 +213,7 @@ func parse(args []string, namespace string, cfgStruct interface{}) error {
 
 		// If this key is not provided by any source, check if it was
 		// required to be provided.
-		if !everProvided && field.Options.Required {
+		if field.Options.Required && field.Field.IsZero() {
 			return fmt.Errorf("required field %s is missing value", field.Name)
 		}
 	}
