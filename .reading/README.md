@@ -109,15 +109,11 @@ Occasionally we run into material that we feel is important. This is a section p
 [Russia proposes ban on use and mining of cryptocurrencies](https://www.cnbc.com/2022/01/20/russian-central-bank-proposes-banning-cryptocurrencies-crypto-mining.html)  
 [Bud Light Owns a Nouns Ethereum NFT](https://decrypt.co/90860/bud-light-nouns-ethereum-nft-super-bowl-ad)  
 [Witnesses Debate Crypto Mining's Efficiency in Congressional Hearing on Environment](https://www.coindesk.com/policy/2022/01/21/witnesses-debate-crypto-minings-efficiency-in-congressional-hearing-on-environment)  
+[Cryptocurrency is a Giant Ponzi Scheme](https://jacobinmag.com/2022/01/cryptocurrency-scam-blockchain-bitcoin-economy-decentralization) - Sohale Mortazavi  
+[Web3 First Impressions](https://moxie.org/2022/01/07/web3-first-impressions.html) - Moxie  
 
 ### March 2021
 [Argo Blockchain launching new ‘clean energy’ mining pool](https://coingeek.com/argo-blockchain-launching-new-clean-energy-mining-pool) - Jacob Roze  
-
-### Crypto Currency
-[Cryptocurrency is a Giant Ponzi Scheme](https://jacobinmag.com/2022/01/cryptocurrency-scam-blockchain-bitcoin-economy-decentralization) - Sohale Mortazavi  
-
-### Web3
-[Web3 First Impressions](https://moxie.org/2022/01/07/web3-first-impressions.html) - Moxie  
 
 
 ## Organizations
