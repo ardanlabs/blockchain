@@ -34,25 +34,25 @@ type EventHandler func(v string, args ...interface{})
 // Config represents the configuration required to start
 // the blockchain node.
 type Config struct {
-	Account       string
+	MinerAccount  string
 	Host          string
 	DBPath        string
-	KnownPeers    PeerSet
 	Reward        uint // What a miner gets for mining a block.
 	Difficulty    int  // How many leading eros a block hash must have.
 	TransPerBlock int  // How many transactions need to be in a block.
+	KnownPeers    PeerSet
 	EvHandler     EventHandler
 }
 
 // Node manages the blockchain database.
 type Node struct {
-	account       string
+	minerAccount  string
 	host          string
 	dbPath        string
-	knownPeers    PeerSet
 	reward        uint
 	difficulty    int
 	transPerBlock int
+	knownPeers    PeerSet
 	evHandler     EventHandler
 
 	genesis      Genesis
@@ -117,13 +117,13 @@ func New(cfg Config) (*Node, error) {
 
 	// Create the node to provide support for managing the blockchain.
 	node := Node{
-		account:       cfg.Account,
+		minerAccount:  cfg.MinerAccount,
 		host:          cfg.Host,
 		dbPath:        cfg.DBPath,
-		knownPeers:    cfg.KnownPeers,
 		reward:        cfg.Reward,
 		difficulty:    cfg.Difficulty,
 		transPerBlock: cfg.TransPerBlock,
+		knownPeers:    cfg.KnownPeers,
 		evHandler:     ev,
 
 		genesis:      genesis,
@@ -433,7 +433,7 @@ func (n *Node) MineNewBlock(ctx context.Context) (Block, time.Duration, error) {
 		}
 
 		// Create a new block which owns it's own copy of the transactions.
-		nb = NewBlock(n.account, n.difficulty, n.latestBlock, n.txMempool)
+		nb = NewBlock(n.minerAccount, n.difficulty, n.latestBlock, n.txMempool)
 
 		// Get a copy of the balance sheet.
 		balanceSheet = copyBalanceSheet(n.balanceSheet)
@@ -455,7 +455,7 @@ func (n *Node) MineNewBlock(ctx context.Context) (Block, time.Duration, error) {
 	}
 
 	// Add the miner reward to the balance sheet.
-	applyMiningRewardToBalance(balanceSheet, n.account, n.reward)
+	applyMiningRewardToBalance(balanceSheet, n.minerAccount, n.reward)
 
 	// Attempt to create a new BlockFS by solving the POW puzzle.
 	// This can be cancelled.
