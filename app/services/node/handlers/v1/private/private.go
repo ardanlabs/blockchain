@@ -9,15 +9,15 @@ import (
 	"strconv"
 
 	v1 "github.com/ardanlabs/blockchain/business/web/v1"
-	"github.com/ardanlabs/blockchain/foundation/node"
+	"github.com/ardanlabs/blockchain/foundation/blockchain"
 	"github.com/ardanlabs/blockchain/foundation/web"
 	"go.uber.org/zap"
 )
 
 // Handlers manages the set of bar ledger endpoints.
 type Handlers struct {
-	Log  *zap.SugaredLogger
-	Node *node.Node
+	Log *zap.SugaredLogger
+	BC  *blockchain.State
 }
 
 // AddNextBlock accepts a new mined block from a peer, validates it, then adds it
@@ -25,20 +25,20 @@ type Handlers struct {
 func (h Handlers) AddNextBlock(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 
 	// If the node is mining, it needs to stop immediately.
-	h.Node.SignalCancelMining()
+	h.BC.SignalCancelMining()
 
-	var block node.Block
+	var block blockchain.Block
 	if err := web.Decode(r, &block); err != nil {
 		return fmt.Errorf("unable to decode payload: %w", err)
 	}
 
-	if err := h.Node.WriteNextBlock(block); err != nil {
+	if err := h.BC.WriteNextBlock(block); err != nil {
 		return v1.NewRequestError(err, http.StatusNotAcceptable)
 	}
 
 	resp := struct {
-		Status string     `json:"status"`
-		Block  node.Block `json:"block"`
+		Status string           `json:"status"`
+		Block  blockchain.Block `json:"block"`
 	}{
 		Status: "accepted",
 		Block:  block,
@@ -54,7 +54,7 @@ func (h Handlers) AddTransactions(ctx context.Context, w http.ResponseWriter, r 
 		return web.NewShutdownError("web value missing from context")
 	}
 
-	var txs []node.Tx
+	var txs []blockchain.Tx
 	if err := web.Decode(r, &txs); err != nil {
 		return fmt.Errorf("unable to decode payload: %w", err)
 	}
@@ -65,7 +65,7 @@ func (h Handlers) AddTransactions(ctx context.Context, w http.ResponseWriter, r 
 
 	// Add these transaction but don't share them, since they were
 	// shared with us already.
-	h.Node.AddTransactions(txs, false)
+	h.BC.AddTransactions(txs, false)
 
 	resp := struct {
 		Status string `json:"status"`
@@ -80,12 +80,12 @@ func (h Handlers) AddTransactions(ctx context.Context, w http.ResponseWriter, r 
 
 // Status returns the current status of the node.
 func (h Handlers) Status(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	latestBlock := h.Node.CopyLatestBlock()
+	latestBlock := h.BC.CopyLatestBlock()
 
-	status := node.PeerStatus{
+	status := blockchain.PeerStatus{
 		LatestBlockHash:   latestBlock.Hash(),
 		LatestBlockNumber: latestBlock.Header.Number,
-		KnownPeers:        h.Node.CopyKnownPeers(),
+		KnownPeers:        h.BC.CopyKnownPeers(),
 	}
 
 	return web.Respond(ctx, w, status, http.StatusOK)
@@ -95,12 +95,12 @@ func (h Handlers) Status(ctx context.Context, w http.ResponseWriter, r *http.Req
 func (h Handlers) BlocksByNumber(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	fromStr := web.Param(r, "from")
 	if fromStr == "latest" || fromStr == "" {
-		fromStr = fmt.Sprintf("%d", node.QueryLastest)
+		fromStr = fmt.Sprintf("%d", blockchain.QueryLastest)
 	}
 
 	toStr := web.Param(r, "to")
 	if toStr == "latest" || toStr == "" {
-		toStr = fmt.Sprintf("%d", node.QueryLastest)
+		toStr = fmt.Sprintf("%d", blockchain.QueryLastest)
 	}
 
 	from, err := strconv.ParseUint(fromStr, 10, 64)
@@ -116,7 +116,7 @@ func (h Handlers) BlocksByNumber(ctx context.Context, w http.ResponseWriter, r *
 		return v1.NewRequestError(errors.New("from greater than to"), http.StatusBadRequest)
 	}
 
-	dbBlocks := h.Node.QueryBlocksByNumber(from, to)
+	dbBlocks := h.BC.QueryBlocksByNumber(from, to)
 	if len(dbBlocks) == 0 {
 		return web.Respond(ctx, w, nil, http.StatusNoContent)
 	}

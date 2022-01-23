@@ -39,4 +39,4 @@ The only way for the miner to create one that matches that combination is to
 brute-force inputs. They can tweak a parameter in their data to produce a different
 outcome for every guess until they get the right hash.
 */
-package node
+package blockchain

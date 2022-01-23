@@ -1,4 +1,4 @@
-package node
+package blockchain
 
 // Peer represents information about a Node in the network.
 type Peer struct {

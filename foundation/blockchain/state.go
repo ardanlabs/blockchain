@@ -1,4 +1,4 @@
-package node
+package blockchain
 
 import (
 	"context"
@@ -44,8 +44,8 @@ type Config struct {
 	EvHandler     EventHandler
 }
 
-// Node manages the blockchain database.
-type Node struct {
+// State manages the blockchain database.
+type State struct {
 	minerAccount  string
 	host          string
 	dbPath        string
@@ -66,7 +66,7 @@ type Node struct {
 }
 
 // New constructs a new blockchain for data management.
-func New(cfg Config) (*Node, error) {
+func New(cfg Config) (*State, error) {
 
 	// Build a safe event handler function for use.
 	ev := func(v string, args ...interface{}) {
@@ -115,8 +115,8 @@ func New(cfg Config) (*Node, error) {
 		return nil, err
 	}
 
-	// Create the node to provide support for managing the blockchain.
-	node := Node{
+	// Create the State to provide support for managing the blockchain.
+	state := State{
 		minerAccount:  cfg.MinerAccount,
 		host:          cfg.Host,
 		dbPath:        cfg.DBPath,
@@ -136,110 +136,110 @@ func New(cfg Config) (*Node, error) {
 	ev("node: Started: blocks[%d]", latestBlock.Header.Number)
 
 	// Run the blockchain workers.
-	node.bcWorker = runBCWorker(&node, cfg.EvHandler)
+	state.bcWorker = runBCWorker(&state, cfg.EvHandler)
 
-	return &node, nil
+	return &state, nil
 }
 
 // Shutdown cleanly brings the node down.
-func (n *Node) Shutdown() error {
-	n.mu.Lock()
+func (s *State) Shutdown() error {
+	s.mu.Lock()
 	defer func() {
-		n.file.Close()
-		n.mu.Unlock()
+		s.file.Close()
+		s.mu.Unlock()
 	}()
 
 	// Stop all blockchain writing activity.
-	n.bcWorker.shutdown()
+	s.bcWorker.shutdown()
 
 	return nil
 }
 
 // SignalMining sends a signal to the mining G to start.
-func (n *Node) SignalMining() {
-	n.bcWorker.signalStartMining()
+func (s *State) SignalMining() {
+	s.bcWorker.signalStartMining()
 }
 
 // SignalCancelMining sends a signal to the mining G to stop.
-func (n *Node) SignalCancelMining() {
-	n.bcWorker.signalCancelMining()
+func (s *State) SignalCancelMining() {
+	s.bcWorker.signalCancelMining()
 }
 
 // =============================================================================
 
 // AddTransactions appends a new transactions to the mempool.
-func (n *Node) AddTransactions(txs []Tx, share bool) {
-	n.mu.Lock()
-	defer n.mu.Unlock()
+func (s *State) AddTransactions(txs []Tx, share bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
-	n.evHandler("node: AddTransactions: started : txrs[%d]", len(txs))
-	defer n.evHandler("node: AddTransactions: completed")
+	s.evHandler("node: AddTransactions: started : txrs[%d]", len(txs))
+	defer s.evHandler("node: AddTransactions: completed")
 
-	n.evHandler("node: AddTransactions: before: mempool[%d]", len(n.txMempool))
+	s.evHandler("node: AddTransactions: before: mempool[%d]", len(s.txMempool))
 	for _, tx := range txs {
-		if _, exists := n.txMempool[tx.ID]; !exists {
-			n.txMempool[tx.ID] = tx
+		if _, exists := s.txMempool[tx.ID]; !exists {
+			s.txMempool[tx.ID] = tx
 		}
 	}
-	n.evHandler("node: AddTransactions: after: mempool[%d]", len(n.txMempool))
+	s.evHandler("node: AddTransactions: after: mempool[%d]", len(s.txMempool))
 
 	if share {
-		n.evHandler("node: AddTransactions: signal tx sharing")
-		n.bcWorker.signalShareTransactions(txs)
+		s.evHandler("node: AddTransactions: signal tx sharing")
+		s.bcWorker.signalShareTransactions(txs)
 	}
 
-	if len(n.txMempool) >= n.transPerBlock {
-		n.evHandler("node: AddTransactions: signal mining")
-		n.bcWorker.signalStartMining()
+	if len(s.txMempool) >= s.transPerBlock {
+		s.evHandler("node: AddTransactions: signal mining")
+		s.bcWorker.signalStartMining()
 	}
 }
 
 // CopyGenesis returns a copy of the genesis information.
-func (n *Node) CopyGenesis() Genesis {
-	n.mu.Lock()
-	defer n.mu.Unlock()
+func (s *State) CopyGenesis() Genesis {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
-	return n.genesis
+	return s.genesis
 }
 
 // CopyLatestBlock returns the current hash of the latest block.
-func (n *Node) CopyLatestBlock() Block {
-	n.mu.Lock()
-	defer n.mu.Unlock()
+func (s *State) CopyLatestBlock() Block {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
-	return n.latestBlock
+	return s.latestBlock
 }
 
 // CopyMempool returns a copy of the mempool.
-func (n *Node) CopyMempool() []Tx {
-	n.mu.Lock()
-	defer n.mu.Unlock()
+func (s *State) CopyMempool() []Tx {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
-	cpy := make([]Tx, 0, len(n.txMempool))
-	for _, tx := range n.txMempool {
+	cpy := make([]Tx, 0, len(s.txMempool))
+	for _, tx := range s.txMempool {
 		cpy = append(cpy, tx)
 	}
 	return cpy
 }
 
 // CopyBalanceSheet returns a copy of the balance sheet.
-func (n *Node) CopyBalanceSheet() BalanceSheet {
-	n.mu.Lock()
-	defer n.mu.Unlock()
+func (s *State) CopyBalanceSheet() BalanceSheet {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
-	return copyBalanceSheet(n.balanceSheet)
+	return copyBalanceSheet(s.balanceSheet)
 }
 
 // CopyKnownPeerSet retrieves information about the peer for updating
 // the known peer list and their current block number.
-func (n *Node) CopyKnownPeers() []Peer {
-	n.mu.Lock()
-	defer n.mu.Unlock()
+func (s *State) CopyKnownPeers() []Peer {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
 	// Can't include ourselves in this list.
-	peers := make([]Peer, 0, len(n.knownPeers)-1)
-	for peer := range n.knownPeers {
-		if !peer.match(n.host) {
+	peers := make([]Peer, 0, len(s.knownPeers)-1)
+	for peer := range s.knownPeers {
+		if !peer.match(s.host) {
 			peers = append(peers, peer)
 		}
 	}
@@ -253,12 +253,12 @@ func (n *Node) CopyKnownPeers() []Peer {
 const QueryLastest = ^uint64(0) >> 1
 
 // QueryBalances returns a copy of the set of balances by account.
-func (n *Node) QueryBalances(account string) BalanceSheet {
-	n.mu.Lock()
-	defer n.mu.Unlock()
+func (s *State) QueryBalances(account string) BalanceSheet {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
 	balanceSheet := newBalanceSheet()
-	for acct, value := range n.balanceSheet {
+	for acct, value := range s.balanceSheet {
 		if account == acct {
 			balanceSheet.replace(acct, value)
 		}
@@ -268,17 +268,17 @@ func (n *Node) QueryBalances(account string) BalanceSheet {
 }
 
 // QueryMempoolLength returns the current length of the mempool.
-func (n *Node) QueryMempoolLength() int {
-	n.mu.Lock()
-	defer n.mu.Unlock()
+func (s *State) QueryMempoolLength() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
-	return len(n.txMempool)
+	return len(s.txMempool)
 }
 
 // QueryBlocksByNumber returns the set of blocks based on block numbers. This
 // function reads the blockchain from disk first.
-func (n *Node) QueryBlocksByNumber(from uint64, to uint64) []Block {
-	blocks, err := loadBlocksFromDisk(n.dbPath)
+func (s *State) QueryBlocksByNumber(from uint64, to uint64) []Block {
+	blocks, err := loadBlocksFromDisk(s.dbPath)
 	if err != nil {
 		return nil
 	}
@@ -301,8 +301,8 @@ func (n *Node) QueryBlocksByNumber(from uint64, to uint64) []Block {
 // QueryBlocksByAccount returns the set of blocks by account. If the account
 // is empty, all blocks are returned. This function reads the blockchain
 // from disk first.
-func (n *Node) QueryBlocksByAccount(account string) []Block {
-	blocks, err := loadBlocksFromDisk(n.dbPath)
+func (s *State) QueryBlocksByAccount(account string) []Block {
+	blocks, err := loadBlocksFromDisk(s.dbPath)
 	if err != nil {
 		return nil
 	}
@@ -325,11 +325,11 @@ blocks:
 
 // WriteNextBlock takes a block received from a peer, validates it and
 // if that passes, writes the block to disk.
-func (n *Node) WriteNextBlock(block Block) error {
-	n.evHandler("node: WriteNextBlock: started : block[%s]", block.Hash())
-	defer n.evHandler("node: WriteNextBlock: completed")
+func (s *State) WriteNextBlock(block Block) error {
+	s.evHandler("node: WriteNextBlock: started : block[%s]", block.Hash())
+	defer s.evHandler("node: WriteNextBlock: completed")
 
-	hash, err := n.validateNextBlock(block)
+	hash, err := s.validateNextBlock(block)
 	if err != nil {
 		return err
 	}
@@ -347,26 +347,26 @@ func (n *Node) WriteNextBlock(block Block) error {
 
 	// Execute this code inside a lock.
 	if err := func() error {
-		n.mu.Lock()
-		defer n.mu.Unlock()
+		s.mu.Lock()
+		defer s.mu.Unlock()
 
 		// Write the new block to the chain on disk.
-		if _, err := n.file.Write(append(blockFSJson, '\n')); err != nil {
+		if _, err := s.file.Write(append(blockFSJson, '\n')); err != nil {
 			return err
 		}
 
 		// Apply the transactions to the balance sheet and remove
 		// from the mempool.
 		for _, tx := range block.Transactions {
-			applyTransactionToBalance(n.balanceSheet, tx)
-			delete(n.txMempool, tx.ID)
+			applyTransactionToBalance(s.balanceSheet, tx)
+			delete(s.txMempool, tx.ID)
 		}
 
 		// Add the miner reward for the beneficiary to the balance sheet.
-		applyMiningRewardToBalance(n.balanceSheet, block.Header.Beneficiary, n.reward)
+		applyMiningRewardToBalance(s.balanceSheet, block.Header.Beneficiary, s.reward)
 
 		// Save this as the latest block.
-		n.latestBlock = block
+		s.latestBlock = block
 
 		return nil
 	}(); err != nil {
@@ -378,13 +378,13 @@ func (n *Node) WriteNextBlock(block Block) error {
 
 // validateNextBlock takes a block and validates it to be included into
 // the blockchain.
-func (n *Node) validateNextBlock(block Block) (string, error) {
+func (s *State) validateNextBlock(block Block) (string, error) {
 	hash := block.Hash()
-	if !isHashSolved(n.difficulty, hash) {
+	if !isHashSolved(s.difficulty, hash) {
 		return zeroHash, fmt.Errorf("%s invalid hash", hash)
 	}
 
-	latestBlock := n.CopyLatestBlock()
+	latestBlock := s.CopyLatestBlock()
 	nextNumber := latestBlock.Header.Number + 1
 
 	if block.Header.Number != nextNumber {
@@ -401,42 +401,42 @@ func (n *Node) validateNextBlock(block Block) (string, error) {
 // =============================================================================
 
 // addPeerNode adds an address to the list of peers.
-func (n *Node) addPeerNode(peer Peer) error {
-	n.mu.Lock()
-	defer n.mu.Unlock()
+func (s *State) addPeerNode(peer Peer) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
 	// Don't add this node to the known peer list.
-	if peer.match(n.host) {
+	if peer.match(s.host) {
 		return errors.New("already exists")
 	}
 
-	n.knownPeers.Add(peer)
+	s.knownPeers.Add(peer)
 	return nil
 }
 
 // =============================================================================
 
 // MineNewBlock writes the published transaction from the memory pool to disk.
-func (n *Node) MineNewBlock(ctx context.Context) (Block, time.Duration, error) {
+func (s *State) MineNewBlock(ctx context.Context) (Block, time.Duration, error) {
 	var nb Block
 	var balanceSheet BalanceSheet
 
 	// Execute this code inside a lock.
 	if err := func() error {
-		n.mu.Lock()
-		defer n.mu.Unlock()
+		s.mu.Lock()
+		defer s.mu.Unlock()
 
 		// Are there enough transactions in the pool.
-		if len(n.txMempool) < n.transPerBlock {
-			n.mu.Unlock()
+		if len(s.txMempool) < s.transPerBlock {
+			s.mu.Unlock()
 			return ErrNotEnoughTransactions
 		}
 
 		// Create a new block which owns it's own copy of the transactions.
-		nb = NewBlock(n.minerAccount, n.difficulty, n.latestBlock, n.txMempool)
+		nb = NewBlock(s.minerAccount, s.difficulty, s.latestBlock, s.txMempool)
 
 		// Get a copy of the balance sheet.
-		balanceSheet = copyBalanceSheet(n.balanceSheet)
+		balanceSheet = copyBalanceSheet(s.balanceSheet)
 
 		return nil
 	}(); err != nil {
@@ -455,11 +455,11 @@ func (n *Node) MineNewBlock(ctx context.Context) (Block, time.Duration, error) {
 	}
 
 	// Add the miner reward to the balance sheet.
-	applyMiningRewardToBalance(balanceSheet, n.minerAccount, n.reward)
+	applyMiningRewardToBalance(balanceSheet, s.minerAccount, s.reward)
 
 	// Attempt to create a new BlockFS by solving the POW puzzle.
 	// This can be cancelled.
-	blockFS, duration, err := performPOW(ctx, n.difficulty, nb, n.evHandler)
+	blockFS, duration, err := performPOW(ctx, s.difficulty, nb, s.evHandler)
 	if err != nil {
 		return Block{}, duration, err
 	}
@@ -477,21 +477,21 @@ func (n *Node) MineNewBlock(ctx context.Context) (Block, time.Duration, error) {
 
 	// Execute this code inside a lock.
 	if err := func() error {
-		n.mu.Lock()
-		defer n.mu.Unlock()
+		s.mu.Lock()
+		defer s.mu.Unlock()
 
 		// Write the new block to the chain on disk.
-		if _, err := n.file.Write(append(blockFSJson, '\n')); err != nil {
-			n.mu.Unlock()
+		if _, err := s.file.Write(append(blockFSJson, '\n')); err != nil {
+			s.mu.Unlock()
 			return err
 		}
 
-		n.balanceSheet = balanceSheet
-		n.latestBlock = blockFS.Block
+		s.balanceSheet = balanceSheet
+		s.latestBlock = blockFS.Block
 
 		// Remove the transactions from this block.
 		for _, tx := range nb.Transactions {
-			delete(n.txMempool, tx.ID)
+			delete(s.txMempool, tx.ID)
 		}
 
 		return nil

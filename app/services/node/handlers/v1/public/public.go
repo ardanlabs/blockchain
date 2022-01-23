@@ -6,15 +6,15 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/ardanlabs/blockchain/foundation/node"
+	"github.com/ardanlabs/blockchain/foundation/blockchain"
 	"github.com/ardanlabs/blockchain/foundation/web"
 	"go.uber.org/zap"
 )
 
 // Handlers manages the set of bar ledger endpoints.
 type Handlers struct {
-	Log  *zap.SugaredLogger
-	Node *node.Node
+	Log *zap.SugaredLogger
+	BC  *blockchain.State
 }
 
 // AddTransactions adds new user transactions to the mempool.
@@ -29,14 +29,14 @@ func (h Handlers) AddTransactions(ctx context.Context, w http.ResponseWriter, r 
 		return fmt.Errorf("unable to decode payload: %w", err)
 	}
 
-	txs := make([]node.Tx, len(userTxs))
+	txs := make([]blockchain.Tx, len(userTxs))
 	for i, tx := range userTxs {
 		h.Log.Infow("add user tran", "traceid", v.TraceID, "tx", tx)
-		txs[i] = node.NewTx(tx.From, tx.To, tx.Value, tx.Data)
+		txs[i] = blockchain.NewTx(tx.From, tx.To, tx.Value, tx.Data)
 	}
 
 	// Add these transaction and share them with the network.
-	h.Node.AddTransactions(txs, true)
+	h.BC.AddTransactions(txs, true)
 
 	resp := struct {
 		Status string `json:"status"`
@@ -51,25 +51,25 @@ func (h Handlers) AddTransactions(ctx context.Context, w http.ResponseWriter, r 
 
 // Genesis returns the genesis information.
 func (h Handlers) Genesis(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	gen := h.Node.CopyGenesis()
+	gen := h.BC.CopyGenesis()
 	return web.Respond(ctx, w, gen, http.StatusOK)
 }
 
 // Mempool returns the set of uncommitted transactions.
 func (h Handlers) Mempool(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	txs := h.Node.CopyMempool()
+	txs := h.BC.CopyMempool()
 	return web.Respond(ctx, w, txs, http.StatusOK)
 }
 
 // Balances returns the current balances for all users.
 func (h Handlers) Balances(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	account := web.Param(r, "account")
-	var balanceSheet node.BalanceSheet
+	var balanceSheet blockchain.BalanceSheet
 
 	if account == "" {
-		balanceSheet = h.Node.CopyBalanceSheet()
+		balanceSheet = h.BC.CopyBalanceSheet()
 	} else {
-		balanceSheet = h.Node.QueryBalances(account)
+		balanceSheet = h.BC.QueryBalances(account)
 	}
 
 	bals := make([]balance, 0, len(balanceSheet))
@@ -82,8 +82,8 @@ func (h Handlers) Balances(ctx context.Context, w http.ResponseWriter, r *http.R
 	}
 
 	balances := balances{
-		LastestBlock: h.Node.CopyLatestBlock().Hash(),
-		Uncommitted:  len(h.Node.CopyMempool()),
+		LastestBlock: h.BC.CopyLatestBlock().Hash(),
+		Uncommitted:  len(h.BC.CopyMempool()),
 		Balances:     bals,
 	}
 
@@ -94,7 +94,7 @@ func (h Handlers) Balances(ctx context.Context, w http.ResponseWriter, r *http.R
 func (h Handlers) BlocksByAccount(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	account := web.Param(r, "account")
 
-	dbBlocks := h.Node.QueryBlocksByAccount(account)
+	dbBlocks := h.BC.QueryBlocksByAccount(account)
 	if len(dbBlocks) == 0 {
 		return web.Respond(ctx, w, nil, http.StatusNoContent)
 	}
@@ -104,7 +104,7 @@ func (h Handlers) BlocksByAccount(ctx context.Context, w http.ResponseWriter, r 
 
 // SignalMining signals to start a mining operation.
 func (h Handlers) SignalMining(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	h.Node.SignalMining()
+	h.BC.SignalMining()
 
 	resp := struct {
 		Status string `json:"status"`

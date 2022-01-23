@@ -1,4 +1,4 @@
-package node
+package blockchain
 
 import (
 	"github.com/google/uuid"

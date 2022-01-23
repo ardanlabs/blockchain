@@ -1,4 +1,4 @@
-package node
+package blockchain
 
 import (
 	"encoding/json"

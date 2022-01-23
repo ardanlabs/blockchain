@@ -1,4 +1,4 @@
-package node
+package blockchain
 
 import (
 	"bytes"
@@ -28,7 +28,7 @@ const peerUpdateInterval = time.Minute
 // bcWorker manages a goroutine that executes a write block
 // call on a timer.
 type bcWorker struct {
-	node         *Node
+	state        *State
 	wg           sync.WaitGroup
 	ticker       time.Ticker
 	shut         chan struct{}
@@ -41,9 +41,9 @@ type bcWorker struct {
 
 // runBCWorker creates a blockWriter for writing transactions
 // from the mempool to a new block.
-func runBCWorker(node *Node, evHandler EventHandler) *bcWorker {
+func runBCWorker(state *State, evHandler EventHandler) *bcWorker {
 	bw := bcWorker{
-		node:         node,
+		state:        state,
 		ticker:       *time.NewTicker(peerUpdateInterval),
 		shut:         make(chan struct{}),
 		startMining:  make(chan bool, 1),
@@ -195,7 +195,7 @@ func (bw *bcWorker) runShareTxOperation(txs []Tx) {
 	bw.evHandler("bcWorker: runShareTxOperation: started")
 	defer bw.evHandler("bcWorker: runShareTxOperation: completed")
 
-	for _, peer := range bw.node.CopyKnownPeers() {
+	for _, peer := range bw.state.CopyKnownPeers() {
 		url := fmt.Sprintf("%s/tx/add", fmt.Sprintf(bw.baseURL, peer.Host))
 		if err := send(http.MethodPost, url, txs, nil); err != nil {
 			bw.evHandler("bcWorker: runShareTxOperation: WARNING: %s", err)
@@ -219,8 +219,8 @@ func (bw *bcWorker) runMiningOperation() {
 	}
 
 	// Make sure there are at least transPerBlock in the mempool.
-	length := bw.node.QueryMempoolLength()
-	if length < bw.node.transPerBlock {
+	length := bw.state.QueryMempoolLength()
+	if length < bw.state.transPerBlock {
 		bw.evHandler("bcWorker: runMiningOperation: **********: not enough transactions to mine: %d", length)
 		return
 	}
@@ -255,7 +255,7 @@ func (bw *bcWorker) runMiningOperation() {
 			wg.Done()
 		}()
 
-		block, duration, err := bw.node.MineNewBlock(ctx)
+		block, duration, err := bw.state.MineNewBlock(ctx)
 		bw.evHandler("bcWorker: runMiningOperation: **********: miningG: mining duration[%v]", duration)
 
 		if err != nil {
@@ -290,7 +290,7 @@ func (bw *bcWorker) sendBlockToPeers(block Block) error {
 	bw.evHandler("bcWorker: sendBlockToPeers: **********: started")
 	defer bw.evHandler("bcWorker: sendBlockToPeers: **********: completed")
 
-	for _, peer := range bw.node.CopyKnownPeers() {
+	for _, peer := range bw.state.CopyKnownPeers() {
 		url := fmt.Sprintf("%s/block/next", fmt.Sprintf(bw.baseURL, peer.Host))
 
 		var status struct {
@@ -315,7 +315,7 @@ func (bw *bcWorker) runPeerOperation() {
 	bw.evHandler("bcWorker: runPeerOperation: started")
 	defer bw.evHandler("bcWorker: runPeerOperation: completed")
 
-	for _, peer := range bw.node.CopyKnownPeers() {
+	for _, peer := range bw.state.CopyKnownPeers() {
 
 		// Retrieve the status of this peer.
 		peerStatus, err := bw.queryPeerStatus(peer)
@@ -329,7 +329,7 @@ func (bw *bcWorker) runPeerOperation() {
 		}
 
 		// If this peer has blocks we don't have, we need to add them.
-		if peerStatus.LatestBlockNumber > bw.node.CopyLatestBlock().Header.Number {
+		if peerStatus.LatestBlockNumber > bw.state.CopyLatestBlock().Header.Number {
 			bw.evHandler("bcWorker: runPeerOperation: writePeerBlocks: %s: latestBlockNumber[%d]", peer.Host, peerStatus.LatestBlockNumber)
 			if err := bw.writePeerBlocks(peer); err != nil {
 				bw.evHandler("bcWorker: runPeerOperation: writePeerBlocks: %s: ERROR %s", peer.Host, err)
@@ -363,7 +363,7 @@ func (bw *bcWorker) addNewPeers(knownPeers []Peer) error {
 	defer bw.evHandler("bcWorker: runPeerOperation: addNewPeers: completed")
 
 	for _, peer := range knownPeers {
-		if err := bw.node.addPeerNode(peer); err != nil {
+		if err := bw.state.addPeerNode(peer); err != nil {
 
 			// It already exists, nothing to report.
 			return nil
@@ -380,7 +380,7 @@ func (bw *bcWorker) writePeerBlocks(peer Peer) error {
 	bw.evHandler("bcWorker: runPeerOperation: writePeerBlocks: **********: started: %s", peer)
 	defer bw.evHandler("bcWorker: runPeerOperation: writePeerBlocks: **********: completed: %s", peer)
 
-	from := bw.node.CopyLatestBlock().Header.Number + 1
+	from := bw.state.CopyLatestBlock().Header.Number + 1
 	url := fmt.Sprintf("%s/block/list/%d/latest", fmt.Sprintf(bw.baseURL, peer.Host), from)
 
 	var blocks []Block
@@ -393,7 +393,7 @@ func (bw *bcWorker) writePeerBlocks(peer Peer) error {
 	for _, block := range blocks {
 		bw.evHandler("bcWorker: runPeerOperation: writePeerBlocks: **********: prevBlk[%s]: newBlk[%s]: numTrans[%d]", block.Header.ParentHash, block.Hash(), len(block.Transactions))
 
-		if err := bw.node.WriteNextBlock(block); err != nil {
+		if err := bw.state.WriteNextBlock(block); err != nil {
 			return err
 		}
 	}
