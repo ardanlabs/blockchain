@@ -14,21 +14,21 @@ import (
 	"time"
 )
 
-// Hash represents the data representation for a hash value.
-type Hash string
-
 // zeroHash represents a has code of zeros.
-const zeroHash Hash = "00000000000000000000000000000000"
+const zeroHash string = "00000000000000000000000000000000"
 
 // =============================================================================
 
 // BlockHeader represents common information required for each block.
 type BlockHeader struct {
-	MinerAccount string `json:"miner"`
-	PrevBlock    Hash   `json:"prev_block"`
-	Number       uint64 `json:"number"`
-	Time         uint64 `json:"time"`
-	Nonce        uint64 `json:"nonce"`
+	ParentHash  string `json:"parent_hash"`
+	Beneficiary string `json:"beneficiary"`
+	Difficulty  int    `json:"difficulty"`
+	Number      uint64 `json:"number"`
+	GasPrice    uint   `json:"gas_price"`
+	GasLimit    uint   `json:"gas_limit"`
+	TimeStamp   uint64 `json:"timestamp"`
+	Nonce       uint64 `json:"nonce"`
 }
 
 // Block represents a set of transactions grouped together.
@@ -38,14 +38,14 @@ type Block struct {
 }
 
 // NewBlock constructs a new BlockFS for persisting.
-func NewBlock(minerAccount string, prevBlock Block, txs map[ID]Tx) Block {
-	hash := zeroHash
-	if prevBlock.Header.Number > 0 {
-		hash = prevBlock.Hash()
+func NewBlock(beneficiary string, difficulty int, parentBlock Block, txs map[ID]Tx) Block {
+	parentHash := zeroHash
+	if parentBlock.Header.Number > 0 {
+		parentHash = parentBlock.Hash()
 	}
 
-	// Store a copy of the transaction to support
-	// state changes that don't get written to the mempool.
+	// Store a copy of the transactions so the mempool is not
+	// affected until the block is mined.
 	cpy := make([]Tx, 0, len(txs))
 	for _, tx := range txs {
 		cpy = append(cpy, tx)
@@ -53,10 +53,11 @@ func NewBlock(minerAccount string, prevBlock Block, txs map[ID]Tx) Block {
 
 	return Block{
 		Header: BlockHeader{
-			MinerAccount: minerAccount,
-			PrevBlock:    hash,
-			Number:       prevBlock.Header.Number + 1,
-			Time:         uint64(time.Now().Unix()),
+			ParentHash:  parentHash,
+			Beneficiary: beneficiary,
+			Difficulty:  difficulty,
+			Number:      parentBlock.Header.Number + 1,
+			TimeStamp:   uint64(time.Now().Unix()),
 		},
 		Transactions: cpy,
 	}
@@ -64,7 +65,7 @@ func NewBlock(minerAccount string, prevBlock Block, txs map[ID]Tx) Block {
 
 // Hash returns the unique hash for the block by marshaling
 // the block into JSON and performing a hashing operation.
-func (b Block) Hash() Hash {
+func (b Block) Hash() string {
 	if b.Header.Number == 0 {
 		return zeroHash
 	}
@@ -75,14 +76,14 @@ func (b Block) Hash() Hash {
 	}
 
 	hash := sha256.Sum256(data)
-	return Hash(hex.EncodeToString(hash[:]))
+	return hex.EncodeToString(hash[:])
 }
 
 // =============================================================================
 
 // BlockFS represents what is written to the DB file.
 type BlockFS struct {
-	Hash  Hash
+	Hash  string
 	Block Block
 }
 
@@ -138,8 +139,8 @@ func performPOW(ctx context.Context, difficulty int, b Block, ev EventHandler) (
 
 // isHashSolved checks the hash to make sure it complies with
 // the POW rules. We need to match a difficulty number of 0's.
-func isHashSolved(difficulty int, hash Hash) bool {
-	const match = Hash("00000000000000000")
+func isHashSolved(difficulty int, hash string) bool {
+	const match = "00000000000000000"
 
 	if len(hash) != 64 {
 		return false

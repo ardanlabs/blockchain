@@ -36,9 +36,9 @@ func applyTransactionsToBalances(balanceSheet BalanceSheet, txs []Tx) error {
 	return nil
 }
 
-// applyMiningRewardToBalance gives the miner account a reward for mining a block.
-func applyMiningRewardToBalance(balanceSheet BalanceSheet, minerAccount string, reward uint) {
-	balanceSheet[minerAccount] += reward
+// applyMiningRewardToBalance gives the beneficiary account a reward for mining a block.
+func applyMiningRewardToBalance(balanceSheet BalanceSheet, beneficiary string, reward uint) {
+	balanceSheet[beneficiary] += reward
 }
 
 // applyTransactionToBalance performs the business logic for applying a
@@ -49,20 +49,20 @@ func applyTransactionToBalance(balanceSheet BalanceSheet, tx Tx) error {
 	}
 
 	if tx.Data == TxDataReward {
-		balanceSheet[tx.ToAccount] += tx.Value
+		balanceSheet[tx.To] += tx.Value
 		return nil
 	}
 
-	if tx.FromAccount == tx.ToAccount {
-		return fmt.Errorf("invalid transaction, do you mean to give a reward, from %s, to %s", tx.FromAccount, tx.ToAccount)
+	if tx.From == tx.To {
+		return fmt.Errorf("invalid transaction, do you mean to give a reward, from %s, to %s", tx.From, tx.To)
 	}
 
-	if tx.Value > balanceSheet[tx.FromAccount] {
-		return fmt.Errorf("%s has an insufficient balance", tx.FromAccount)
+	if tx.Value > balanceSheet[tx.From] {
+		return fmt.Errorf("%s has an insufficient balance", tx.From)
 	}
 
-	balanceSheet[tx.FromAccount] -= tx.Value
-	balanceSheet[tx.ToAccount] += tx.Value
+	balanceSheet[tx.From] -= tx.Value
+	balanceSheet[tx.To] += tx.Value
 
 	return nil
 }

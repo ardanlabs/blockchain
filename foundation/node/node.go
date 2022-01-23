@@ -106,7 +106,7 @@ func New(cfg Config) (*Node, error) {
 		}
 
 		// Add the miner reward to the balance sheet.
-		applyMiningRewardToBalance(balanceSheet, block.Header.MinerAccount, cfg.Reward)
+		applyMiningRewardToBalance(balanceSheet, block.Header.Beneficiary, cfg.Reward)
 	}
 
 	// Open the blockchain database file for processing.
@@ -308,10 +308,12 @@ func (n *Node) QueryBlocksByAccount(account string) []Block {
 	}
 
 	var out []Block
+blocks:
 	for _, block := range blocks {
 		for _, tran := range block.Transactions {
-			if tran.FromAccount == account || tran.ToAccount == account {
+			if account == "" || tran.From == account || tran.To == account {
 				out = append(out, block)
+				continue blocks
 			}
 		}
 	}
@@ -360,8 +362,8 @@ func (n *Node) WriteNextBlock(block Block) error {
 			delete(n.txMempool, tx.ID)
 		}
 
-		// Add the miner reward to the balance sheet.
-		applyMiningRewardToBalance(n.balanceSheet, block.Header.MinerAccount, n.reward)
+		// Add the miner reward for the beneficiary to the balance sheet.
+		applyMiningRewardToBalance(n.balanceSheet, block.Header.Beneficiary, n.reward)
 
 		// Save this as the latest block.
 		n.latestBlock = block
@@ -376,7 +378,7 @@ func (n *Node) WriteNextBlock(block Block) error {
 
 // validateNextBlock takes a block and validates it to be included into
 // the blockchain.
-func (n *Node) validateNextBlock(block Block) (Hash, error) {
+func (n *Node) validateNextBlock(block Block) (string, error) {
 	hash := block.Hash()
 	if !isHashSolved(n.difficulty, hash) {
 		return zeroHash, fmt.Errorf("%s invalid hash", hash)
@@ -389,8 +391,8 @@ func (n *Node) validateNextBlock(block Block) (Hash, error) {
 		return zeroHash, fmt.Errorf("this block is not the next number, got %d, exp %d", block.Header.Number, nextNumber)
 	}
 
-	if block.Header.PrevBlock != latestBlock.Hash() {
-		return zeroHash, fmt.Errorf("prev block doesn't match our latest, got %s, exp %s", block.Header.PrevBlock, latestBlock.Hash())
+	if block.Header.ParentHash != latestBlock.Hash() {
+		return zeroHash, fmt.Errorf("prev block doesn't match our latest, got %s, exp %s", block.Header.ParentHash, latestBlock.Hash())
 	}
 
 	return hash, nil
@@ -431,7 +433,7 @@ func (n *Node) MineNewBlock(ctx context.Context) (Block, time.Duration, error) {
 		}
 
 		// Create a new block which owns it's own copy of the transactions.
-		nb = NewBlock(n.account, n.latestBlock, n.txMempool)
+		nb = NewBlock(n.account, n.difficulty, n.latestBlock, n.txMempool)
 
 		// Get a copy of the balance sheet.
 		balanceSheet = copyBalanceSheet(n.balanceSheet)

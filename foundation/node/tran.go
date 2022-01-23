@@ -37,23 +37,25 @@ type ID string
 
 // Tx represents a transaction in the block.
 type Tx struct {
-	ID          ID     `json:"id"`
-	FromAccount string `json:"from"`
-	ToAccount   string `json:"to"`
-	Value       uint   `json:"value"`
-	Data        string `json:"data"`
-	Status      string `json:"status"`
-	StatusInfo  string `json:"status_info"`
+	ID         ID     `json:"id"`
+	From       string `json:"from"`
+	To         string `json:"to"`
+	Value      uint   `json:"value"`
+	Data       string `json:"data"`
+	GasPrice   uint   `json:"gas_price"`
+	GasLimit   uint   `json:"gas_limit"`
+	Status     string `json:"status"`
+	StatusInfo string `json:"status_info"`
 }
 
 // NewTx constructs a new TxRecord.
-func NewTx(fromAccount string, toAccount string, value uint, data string) Tx {
+func NewTx(from string, to string, value uint, data string) Tx {
 	return Tx{
-		ID:          ID(uuid.New().String()),
-		FromAccount: fromAccount,
-		ToAccount:   toAccount,
-		Value:       value,
-		Data:        data,
-		Status:      TxStatusNew,
+		ID:     ID(uuid.New().String()),
+		From:   from,
+		To:     to,
+		Value:  value,
+		Data:   data,
+		Status: TxStatusNew,
 	}
 }

@@ -39,7 +39,7 @@ func (ps PeerSet) Add(peer Peer) {
 // PeerStatus represents information about the status
 // of any given peer.
 type PeerStatus struct {
-	LatestBlockHash   Hash   `json:"latest_block_hash"`
+	LatestBlockHash   string `json:"latest_block_hash"`
 	LatestBlockNumber uint64 `json:"latest_block_number"`
 	KnownPeers        []Peer `json:"known_peers"`
 }

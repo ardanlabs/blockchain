@@ -271,7 +271,7 @@ func (bw *bcWorker) runMiningOperation() {
 		}
 
 		// WOW, we mined a block.
-		bw.evHandler("bcWorker: runMiningOperation: **********: miningG: MINED BLOCK: prevBlk[%s]: newBlk[%s]: numTrans[%d]", block.Header.PrevBlock, block.Hash(), len(block.Transactions))
+		bw.evHandler("bcWorker: runMiningOperation: **********: miningG: MINED BLOCK: prevBlk[%s]: newBlk[%s]: numTrans[%d]", block.Header.ParentHash, block.Hash(), len(block.Transactions))
 
 		// Send the new block to the network.
 		if err := bw.sendBlockToPeers(block); err != nil {
@@ -391,7 +391,7 @@ func (bw *bcWorker) writePeerBlocks(peer Peer) error {
 	bw.evHandler("bcWorker: runPeerOperation: writePeerBlocks: **********: found blocks[%d]", len(blocks))
 
 	for _, block := range blocks {
-		bw.evHandler("bcWorker: runPeerOperation: writePeerBlocks: **********: prevBlk[%s]: newBlk[%s]: numTrans[%d]", block.Header.PrevBlock, block.Hash(), len(block.Transactions))
+		bw.evHandler("bcWorker: runPeerOperation: writePeerBlocks: **********: prevBlk[%s]: newBlk[%s]: numTrans[%d]", block.Header.ParentHash, block.Hash(), len(block.Transactions))
 
 		if err := bw.node.WriteNextBlock(block); err != nil {
 			return err
