@@ -25,8 +25,8 @@ type BlockHeader struct {
 	Beneficiary string `json:"beneficiary"` // The account who receives the reward and gas fee.
 	Difficulty  int    `json:"difficulty"`  // The number of 0's needed to solve the hash solution.
 	Number      uint64 `json:"number"`      // The block number in the chain.
-	GasPrice    uint   `json:"gas_price"`   // The actual amount of gas spent to execute the transaction.
-	GasLimit    uint   `json:"gas_limit"`   // The max amount of gas associated with the transaction.
+	GasPrice    uint   `json:"gas_price"`   // The actual amount of gas spent to execute the block.
+	GasLimit    uint   `json:"gas_limit"`   // The max amount of gas associated with the block.
 	TimeStamp   uint64 `json:"timestamp"`   // The time the block was mined.
 	Nonce       uint64 `json:"nonce"`       // The value identified to solve the hash solution.
 }
