@@ -41,8 +41,8 @@ type Tx struct {
 	To         string `json:"to"`          // The account receiving the benefit of the transaction.
 	Value      uint   `json:"value"`       // The monetary value received from this transactions.
 	Data       string `json:"data"`        // Extra data related to the transaction.
-	GasPrice   uint   `json:"gas_price"`   // The actual amount of gas spent to execute the transaction.
-	GasLimit   uint   `json:"gas_limit"`   // The max amount of gas associated with the transaction.
+	GasPrice   uint   `json:"gas_price"`   // The amount of gas offered to execute the transaction.
+	GasLimit   uint   `json:"gas_limit"`   // The minimum amount of gas required to execute the transaction.
 	Status     string `json:"status"`      // The final status of the transaction to help reconcile balances.
 	StatusInfo string `json:"status_info"` // Extra information related to the state.
 }
