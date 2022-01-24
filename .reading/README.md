@@ -140,6 +140,7 @@ Occasionally we run into material that we feel is important. This is a section p
 [Impossibility of Distributed Consensus with One Faulty Process](https://groups.csail.mit.edu/tds/papers/Lynch/jacm85.pdf)  
 [Ethereum: A Secure Decentralized Generalized Transation Ledger](https://ethereum.github.io/yellowpaper/paper.pdf) - Dr. Gavin Wood  
 [GHOST: Secure High-Rate Transaction Processing in Bitcoin](https://www.ifca.ai/pub/fc15/89750476.pdf) - Sompolinsky, Zohar  
+[Nov 2021: Digital Currency Governance Consortium White Paper Series](https://www3.weforum.org/docs/WEF_Digital_Currency_Governance_Consortium_White_Paper_Series_2021.pdf) - World Economic Forum  
 
 
 ## Research Articles
