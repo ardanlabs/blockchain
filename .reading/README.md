@@ -4,6 +4,10 @@ Occasionally we run into material that we feel is important. This is a section p
 
 # News
 
+### General Agencies
+[CoinDesk](https://www.coindesk.com/)  
+[CoinCenter](https://www.coincenter.org/)  
+
 ### Jan 2022
 [US Congress to Hold Oversight Hearing on Crypto Mining](https://www.coindesk.com/policy/2022/01/06/us-congress-organizing-oversight-hearing-on-crypto-minings-environmental-footprint-report)  
 [Wikipedia Faces Pressure to Stop Accepting Crypto Donations on Environmental Grounds](https://www.coindesk.com/business/2022/01/12/wikipedia-faces-pressure-to-stop-accepting-crypto-donations-on-environmental-grounds)  
@@ -14,6 +18,7 @@ Occasionally we run into material that we feel is important. This is a section p
 [Witnesses Debate Crypto Mining's Efficiency in Congressional Hearing on Environment](https://www.coindesk.com/policy/2022/01/21/witnesses-debate-crypto-minings-efficiency-in-congressional-hearing-on-environment)  
 [Cryptocurrency is a Giant Ponzi Scheme](https://jacobinmag.com/2022/01/cryptocurrency-scam-blockchain-bitcoin-economy-decentralization) - Sohale Mortazavi  
 [Web3 First Impressions](https://moxie.org/2022/01/07/web3-first-impressions.html) - Moxie  
+[Biden Administration to Release Executive Order on Crypto as Early as February](https://www.coindesk.com/policy/2022/01/24/biden-administration-to-release-executive-order-on-crypto-as-early-as-february-report) - James Rubin  
 
 ### March 2021
 [Argo Blockchain launching new ‘clean energy’ mining pool](https://coingeek.com/argo-blockchain-launching-new-clean-energy-mining-pool) - Jacob Roze  

@@ -12,8 +12,6 @@ import (
 
 /*
 	Choose the best transactions based on fees.
-	If receive a block whose number if +2 ahead, my chain is wrong, resync.
-	Don't send a response back on a mined block.
 	Need a wallet to sign transactions properly.
 	Maybe adjust difficulty based on time to mine. Currently hardcoded to 6 zeros.
 	Add fees to transactions.
@@ -25,6 +23,10 @@ import (
 // ErrNotEnoughTransactions is returned when a block is requested to be created
 // and there are not enough transactions.
 var ErrNotEnoughTransactions = errors.New("not enough transactions in mempool")
+
+// ErrChainForked is returned from validateNextBlock if another node's chain
+// is two or more blocks ahead of ours.
+var ErrChainForked = errors.New("blockchain forked, start resync")
 
 // =============================================================================
 
@@ -60,7 +62,7 @@ type State struct {
 	txMempool    map[ID]Tx
 	latestBlock  Block
 	balanceSheet BalanceSheet
-	file         *os.File
+	dbFile       *os.File
 	mu           sync.Mutex
 
 	bcWorker *bcWorker
@@ -111,7 +113,7 @@ func New(cfg Config) (*State, error) {
 	}
 
 	// Open the blockchain database file for processing.
-	file, err := os.OpenFile(cfg.DBPath, os.O_APPEND|os.O_RDWR, 0600)
+	dbFile, err := os.OpenFile(cfg.DBPath, os.O_APPEND|os.O_RDWR, 0600)
 	if err != nil {
 		return nil, err
 	}
@@ -131,7 +133,7 @@ func New(cfg Config) (*State, error) {
 		txMempool:    make(map[ID]Tx),
 		latestBlock:  latestBlock,
 		balanceSheet: balanceSheet,
-		file:         file,
+		dbFile:       dbFile,
 	}
 
 	ev("node: Started: blocks[%d]", latestBlock.Header.Number)
@@ -146,7 +148,7 @@ func New(cfg Config) (*State, error) {
 func (s *State) Shutdown() error {
 	s.mu.Lock()
 	defer func() {
-		s.file.Close()
+		s.dbFile.Close()
 		s.mu.Unlock()
 	}()
 
@@ -332,6 +334,13 @@ func (s *State) WriteNextBlock(block Block) error {
 
 	hash, err := s.validateNextBlock(block)
 	if err != nil {
+
+		// We need to attempt to correct the fork in our chain. We will wipe
+		// out our current chain on disk and reset from our peers.
+		if errors.Is(err, ErrChainForked) {
+			s.clearChainAndReset()
+		}
+
 		return err
 	}
 
@@ -352,7 +361,7 @@ func (s *State) WriteNextBlock(block Block) error {
 		defer s.mu.Unlock()
 
 		// Write the new block to the chain on disk.
-		if _, err := s.file.Write(append(blockFSJson, '\n')); err != nil {
+		if _, err := s.dbFile.Write(append(blockFSJson, '\n')); err != nil {
 			return err
 		}
 
@@ -388,6 +397,12 @@ func (s *State) validateNextBlock(block Block) (string, error) {
 	latestBlock := s.CopyLatestBlock()
 	nextNumber := latestBlock.Header.Number + 1
 
+	// The node who sent this block has a chain that is two or more blocks ahead
+	// of ours. This means there has been a fork and we are on the wrong side.
+	if block.Header.Number >= (nextNumber + 2) {
+		return zeroHash, ErrChainForked
+	}
+
 	if block.Header.Number != nextNumber {
 		return zeroHash, fmt.Errorf("this block is not the next number, got %d, exp %d", block.Header.Number, nextNumber)
 	}
@@ -397,6 +412,53 @@ func (s *State) validateNextBlock(block Block) (string, error) {
 	}
 
 	return hash, nil
+}
+
+// clearChainAndReset clears the state of the blockchain to start over.
+// This is a simplistic way to approach this for now.
+func (s *State) clearChainAndReset() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	// Stop the peer ticker and then reset it.
+	// TODO: It might be important to run if this is already running.
+	s.bcWorker.ticker.Stop()
+	defer s.bcWorker.ticker.Reset(peerUpdateInterval)
+
+	// Close the remove the current blockchain database file.
+	s.dbFile.Close()
+	if err := os.Remove(s.dbPath); err != nil {
+		return err
+	}
+
+	// Open a new blockchain database file for processing.
+	dbFile, err := os.OpenFile(s.dbPath, os.O_APPEND|os.O_RDWR, 0600)
+	if err != nil {
+		return err
+	}
+
+	// Reload the genesis file to get starting balances for
+	// founders of the block chain.
+	genesis, err := loadGenesis()
+	if err != nil {
+		return err
+	}
+
+	// Apply the genesis balances to the balance sheet.
+	balanceSheet := copyBalanceSheet(genesis.Balances)
+
+	// Reset the state of the database.
+	s.genesis = genesis
+	s.txMempool = make(map[ID]Tx)
+	s.latestBlock = Block{}
+	s.balanceSheet = balanceSheet
+	s.dbFile = dbFile
+
+	// Attempt to update the blockchain on disk from the peer's.
+	// TODO: It might be important to run if this is already running.
+	s.bcWorker.runPeerOperation()
+
+	return nil
 }
 
 // =============================================================================
@@ -482,7 +544,7 @@ func (s *State) MineNewBlock(ctx context.Context) (Block, time.Duration, error) 
 		defer s.mu.Unlock()
 
 		// Write the new block to the chain on disk.
-		if _, err := s.file.Write(append(blockFSJson, '\n')); err != nil {
+		if _, err := s.dbFile.Write(append(blockFSJson, '\n')); err != nil {
 			s.mu.Unlock()
 			return err
 		}

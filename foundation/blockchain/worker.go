@@ -273,11 +273,9 @@ func (bw *bcWorker) runMiningOperation() {
 		// WOW, we mined a block.
 		bw.evHandler("bcWorker: runMiningOperation: **********: miningG: MINED BLOCK: prevBlk[%s]: newBlk[%s]: numTrans[%d]", block.Header.ParentHash, block.Hash(), len(block.Transactions))
 
-		// Send the new block to the network.
+		// Send the new block to the network. Log the error, but that's it.
 		if err := bw.sendBlockToPeers(block); err != nil {
 			bw.evHandler("bcWorker: runMiningOperation: **********: miningG: sendBlockToPeers: WARNING %s", err)
-
-			// TODO: I need to potentially re-sync my blockchain on disk.
 		}
 	}()
 
