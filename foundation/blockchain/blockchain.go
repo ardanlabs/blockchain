@@ -38,5 +38,14 @@ It might say, for instance, only a block whose hash begins with 00 will be valid
 The only way for the miner to create one that matches that combination is to
 brute-force inputs. They can tweak a parameter in their data to produce a different
 outcome for every guess until they get the right hash.
+
+Two directions exist for ASIC resistance; firstly make it sequential memory-hard,
+i.e. engineer the function such that the determination of the nonce requires a lot
+of memory and bandwidth such that the memory cannot be used in parallel to discover
+multiple nonces simultaneously. The second is to make the type of computation it
+would need to do general-purpose; the meaning of “specialised hardware” for a
+general-purpose task set is, naturally, general purpose hardware and as such
+commodity desktop computers are likely to be pretty close to “specialised hardware”
+for the task. For Ethereum 1.0 we have chosen the first path.
 */
 package blockchain
