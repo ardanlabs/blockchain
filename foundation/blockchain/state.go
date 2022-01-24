@@ -12,7 +12,8 @@ import (
 
 /*
 	Choose the best transactions based on fees.
-	Need a way to identify when chain is no longer the valid chain, re-sync.
+	If receive a block whose number if +2 ahead, my chain is wrong, resync.
+	Don't send a response back on a mined block.
 	Need a wallet to sign transactions properly.
 	Maybe adjust difficulty based on time to mine. Currently hardcoded to 6 zeros.
 	Add fees to transactions.
