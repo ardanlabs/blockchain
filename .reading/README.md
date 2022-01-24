@@ -141,6 +141,11 @@ Occasionally we run into material that we feel is important. This is a section p
 [Paper Review - GHOST Protocol](http://ajainuary.com/2019/10/17/need-for-speed/) -  Anurag Jain  
 
 
+## Wallet
+[Basic Proof of Wallet Code](https://go.dev/play/p/A_66_Kz9tpl) - Pavel Aborilov  
+[Golang HexToECDSA Examples](https://golang.hotexamples.com/examples/github.com.ethereum.go-ethereum.crypto/-/HexToECDSA/golang-hextoecdsa-function-examples.html)  
+
+
 ## Video
 [Is It Possible To Get The Same 24 BIP39 Seed Words?](https://www.youtube.com/watch?v=hjRntYh0ot8) - John Chow  
 [What the hell are NFT's?](https://www.youtube.com/watch?v=XwMjPWOailQ) - Josh Strife Hayes  
