@@ -33,6 +33,11 @@ func (h Handlers) AddNextBlock(ctx context.Context, w http.ResponseWriter, r *ht
 	}
 
 	if err := h.BC.WriteNextBlock(block); err != nil {
+
+		// We need to correct the fork in our chain.
+		if errors.Is(err, blockchain.ErrChainForked) {
+			h.BC.Truncate()
+		}
 		return v1.NewRequestError(err, http.StatusNotAcceptable)
 	}
 

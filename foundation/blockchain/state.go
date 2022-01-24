@@ -158,6 +158,8 @@ func (s *State) Shutdown() error {
 	return nil
 }
 
+// =============================================================================
+
 // SignalMining sends a signal to the mining G to start.
 func (s *State) SignalMining() {
 	s.bcWorker.signalStartMining()
@@ -196,6 +198,51 @@ func (s *State) AddTransactions(txs []Tx, share bool) {
 		s.bcWorker.signalStartMining()
 	}
 }
+
+// =============================================================================
+
+// Truncate resets the chain both on disk and in memory. This is used to
+// correct an identified fork.
+func (s *State) Truncate() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	// Close the remove the current blockchain database file.
+	s.dbFile.Close()
+	if err := os.Remove(s.dbPath); err != nil {
+		return err
+	}
+
+	// Open a new blockchain database file for processing.
+	dbFile, err := os.OpenFile(s.dbPath, os.O_APPEND|os.O_RDWR, 0600)
+	if err != nil {
+		return err
+	}
+
+	// Reload the genesis file to get starting balances for
+	// founders of the block chain.
+	genesis, err := loadGenesis()
+	if err != nil {
+		return err
+	}
+
+	// Apply the genesis balances to the balance sheet.
+	balanceSheet := copyBalanceSheet(genesis.Balances)
+
+	// Reset the state of the database.
+	s.genesis = genesis
+	s.txMempool = make(map[ID]Tx)
+	s.latestBlock = Block{}
+	s.balanceSheet = balanceSheet
+	s.dbFile = dbFile
+
+	// Start the peer update operation.
+	s.bcWorker.signalPeerUpdates()
+
+	return nil
+}
+
+// =============================================================================
 
 // CopyGenesis returns a copy of the genesis information.
 func (s *State) CopyGenesis() Genesis {
@@ -334,13 +381,6 @@ func (s *State) WriteNextBlock(block Block) error {
 
 	hash, err := s.validateNextBlock(block)
 	if err != nil {
-
-		// We need to attempt to correct the fork in our chain. We will wipe
-		// out our current chain on disk and reset from our peers.
-		if errors.Is(err, ErrChainForked) {
-			s.clearChainAndReset()
-		}
-
 		return err
 	}
 
@@ -412,53 +452,6 @@ func (s *State) validateNextBlock(block Block) (string, error) {
 	}
 
 	return hash, nil
-}
-
-// clearChainAndReset clears the state of the blockchain to start over.
-// This is a simplistic way to approach this for now.
-func (s *State) clearChainAndReset() error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	// Stop the peer ticker and then reset it.
-	// TODO: It might be important to run if this is already running.
-	s.bcWorker.ticker.Stop()
-	defer s.bcWorker.ticker.Reset(peerUpdateInterval)
-
-	// Close the remove the current blockchain database file.
-	s.dbFile.Close()
-	if err := os.Remove(s.dbPath); err != nil {
-		return err
-	}
-
-	// Open a new blockchain database file for processing.
-	dbFile, err := os.OpenFile(s.dbPath, os.O_APPEND|os.O_RDWR, 0600)
-	if err != nil {
-		return err
-	}
-
-	// Reload the genesis file to get starting balances for
-	// founders of the block chain.
-	genesis, err := loadGenesis()
-	if err != nil {
-		return err
-	}
-
-	// Apply the genesis balances to the balance sheet.
-	balanceSheet := copyBalanceSheet(genesis.Balances)
-
-	// Reset the state of the database.
-	s.genesis = genesis
-	s.txMempool = make(map[ID]Tx)
-	s.latestBlock = Block{}
-	s.balanceSheet = balanceSheet
-	s.dbFile = dbFile
-
-	// Attempt to update the blockchain on disk from the peer's.
-	// TODO: It might be important to run if this is already running.
-	s.bcWorker.runPeerOperation()
-
-	return nil
 }
 
 // =============================================================================
