@@ -12,6 +12,7 @@ import (
 
 /*
 	Choose the best transactions based on fees.
+	Create a block index file for query and clean up forks.
 	Need a wallet to sign transactions properly.
 	Maybe adjust difficulty based on time to mine. Currently hardcoded to 6 zeros.
 	Add fees to transactions.
