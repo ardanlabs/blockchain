@@ -24,6 +24,7 @@ Occasionally we run into material that we feel is important. This is a section p
 [Argo Blockchain launching new ‘clean energy’ mining pool](https://coingeek.com/argo-blockchain-launching-new-clean-energy-mining-pool) - Jacob Roze  
 
 
+
 # Everything Else
 
 ## Apps
@@ -36,6 +37,10 @@ Occasionally we run into material that we feel is important. This is a section p
 [Coin Dance](https://coin.dance/)  
 [Bithunt dApp Project List](https://bithunt.com/explore)  
 [Top Stablecoin Tokens by Market Capitalization](https://coinmarketcap.com/view/stablecoin/)  
+
+
+## Articles (General)
+[5 Differences between Cosmos & Polkadot](https://juliankoh.medium.com/5-differences-between-cosmos-polkadot-67f09535594b) - Julian Koh  
 
 
 ## Bitcoin
@@ -80,7 +85,6 @@ Occasionally we run into material that we feel is important. This is a section p
 [Strike: Bitcoin Wallet](https://strike.me/en/)  
 [Blockchain Development APIs](https://infura.io/)  
 [Mirror: Web3 toolkit](https://mirror.xyz/)  
-[Cosoms SDK: Framework for building blockchains](https://v1.cosmos.network/sdk)  
 
 
 ## Conferences
@@ -96,35 +100,6 @@ Occasionally we run into material that we feel is important. This is a section p
 [Bitclout](https://bitclout.com)  
 
 
-## Ethereum
-
-### Development
-[Ethereum Mining](https://ethereum.org/en/developers/docs/consensus-mechanisms/pow/mining) - Ethereum Website
-[Ethereum Blocks](https://ethereum.org/en/developers/docs/blocks) - Ethereum Website  
-[Ethereum DAO's](https://ethereum.org/en/dao")  - Website  
-[Ethereum Nodes and Clients](https://ethereum.org/en/developers/docs/nodes-and-clients) - Website  
-[ERC 20 Token Standard](https://ethereum.org/en/developers/docs/standards/tokens/erc-20) - Website  
-
-[The Hidden World of Ethereum Snipers](https://www.samchepal.com/the-hidden-world-of) - Samneet Chepal  
-[Smart Contract Addresses](https://ethereum.stackexchange.com/questions/760/how-is-the-address-of-an-ethereum-contract-computed/761#761) - Stackexchange  
-[How to access Ethereum Mempool](https://www.quicknode.com/guides/defi/how-to-access-ethereum-mempool) - Sahil Sen  
-[What Is Ethereum Gas](https://www.sofi.com/learn/content/what-is-ethereum-gas) - Brian Nibley  
-[What Is the Ethereum Virtual Machine: How Does It Work](https://www.sofi.com/learn/content/what-is-ethereum-virtual-machine) - Brian Nibley  
-[The Actual Networking behind the Ethereum Network: How It Works](https://medium.com/orbs-network/the-actual-networking-behind-the-ethereum-network-how-it-works-6e147ca36b45) - Gil Dagan  
-[The Ethereum Virtual Machine](https://cypherpunks-core.github.io/ethereumbook/13evm.html)  
-[Ethereum 201: Mnemonics](https://wolovim.medium.com/ethereum-201-mnemonics-bb01a9108c38) - Marc Garreau  
-
-### Blockspace
-[Ethereum Blockspace - Who Gets What and Why](https://research.paradigm.xyz/ethereum-blockspace#overview-of-the-blockspace-market)  
-[Transaction Fees – Markets for Block Space](https://www.bitcoinsuisse.com/research/decrypt/transaction-fees-markets-for-block-space)  
-
-### Ethereum Development Tooling
-[Remix](https://remix.ethereum.org/)  
-[Hard Hat](https://hardhat.org/)  
-[Eth Build](https://sandbox.eth.build/)  
-[What Is Eth Build](https://www.youtube.com/watch?v=30pa790tIIA) - Austin Griffith  
-
-
 ## Organizations
 [Girls Who Code](https://girlswhocode.com/crypto)  
 
@@ -134,6 +109,8 @@ Occasionally we run into material that we feel is important. This is a section p
 [Polkadot](https://polkadot.network)  
 [Kusama](https://kusama.network)  
 [Avalanche: Smart Contracts Platform](https://www.avax.network/)  
+[Cosoms: Framework for building blockchains](https://v1.cosmos.network/sdk)  
+[Celestia: Effortlessly deploy your own blockchain](https://celestia.org/)
 
 
 ## Research Papers
@@ -163,3 +140,35 @@ Occasionally we run into material that we feel is important. This is a section p
 ### Vitalik Buterin (Creater of Ethereum)
 [Lex Fridman Podcast: Vitalik Buterin: Ethereum, Cryptocurrency, and the Future of Money](https://www.youtube.com/watch?v=3x1b_S6Qp2Q)  
 [Tim Ferriss Show: Creator of Ethereum, Talking NFTs & More](https://www.youtube.com/watch?v=42uhsP4vvCE)  
+
+
+
+# Ethereum
+
+## Development
+[Ethereum Mining](https://ethereum.org/en/developers/docs/consensus-mechanisms/pow/mining) - Ethereum Website
+[Ethereum Blocks](https://ethereum.org/en/developers/docs/blocks) - Ethereum Website  
+[Ethereum DAO's](https://ethereum.org/en/dao")  - Website  
+[Ethereum Nodes and Clients](https://ethereum.org/en/developers/docs/nodes-and-clients) - Website  
+[ERC 20 Token Standard](https://ethereum.org/en/developers/docs/standards/tokens/erc-20) - Website  
+
+[The Hidden World of Ethereum Snipers](https://www.samchepal.com/the-hidden-world-of) - Samneet Chepal  
+[Smart Contract Addresses](https://ethereum.stackexchange.com/questions/760/how-is-the-address-of-an-ethereum-contract-computed/761#761) - Stackexchange  
+[How to access Ethereum Mempool](https://www.quicknode.com/guides/defi/how-to-access-ethereum-mempool) - Sahil Sen  
+[What Is Ethereum Gas](https://www.sofi.com/learn/content/what-is-ethereum-gas) - Brian Nibley  
+[What Is the Ethereum Virtual Machine: How Does It Work](https://www.sofi.com/learn/content/what-is-ethereum-virtual-machine) - Brian Nibley  
+[The Actual Networking behind the Ethereum Network: How It Works](https://medium.com/orbs-network/the-actual-networking-behind-the-ethereum-network-how-it-works-6e147ca36b45) - Gil Dagan  
+[The Ethereum Virtual Machine](https://cypherpunks-core.github.io/ethereumbook/13evm.html)  
+[Ethereum 201: Mnemonics](https://wolovim.medium.com/ethereum-201-mnemonics-bb01a9108c38) - Marc Garreau  
+
+
+## Blockspace
+[Ethereum Blockspace - Who Gets What and Why](https://research.paradigm.xyz/ethereum-blockspace#overview-of-the-blockspace-market)  
+[Transaction Fees – Markets for Block Space](https://www.bitcoinsuisse.com/research/decrypt/transaction-fees-markets-for-block-space)  
+
+
+## Ethereum Development Tooling
+[Remix](https://remix.ethereum.org/)  
+[Hard Hat](https://hardhat.org/)  
+[Eth Build](https://sandbox.eth.build/)  
+[What Is Eth Build](https://www.youtube.com/watch?v=30pa790tIIA) - Austin Griffith  
