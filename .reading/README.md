@@ -9,16 +9,18 @@ Occasionally we run into material that we feel is important. This is a section p
 [CoinCenter](https://www.coincenter.org/)  
 
 ### Jan 2022
-[US Congress to Hold Oversight Hearing on Crypto Mining](https://www.coindesk.com/policy/2022/01/06/us-congress-organizing-oversight-hearing-on-crypto-minings-environmental-footprint-report)  
-[Wikipedia Faces Pressure to Stop Accepting Crypto Donations on Environmental Grounds](https://www.coindesk.com/business/2022/01/12/wikipedia-faces-pressure-to-stop-accepting-crypto-donations-on-environmental-grounds)  
-[Coinbase will let you pay with Mastercard in its upcoming NFT marketplace](https://www.theverge.com/2022/1/18/22889359/coinbase-mastercard-nft-marketplace-payments)  
-[El Salvador’s plan to create the first Bitcoin-powered nation](https://fortune.com/2022/01/19/el-salvador-bitcoin-economy-distressed-debt)  
-[Russia proposes ban on use and mining of cryptocurrencies](https://www.cnbc.com/2022/01/20/russian-central-bank-proposes-banning-cryptocurrencies-crypto-mining.html)  
-[Bud Light Owns a Nouns Ethereum NFT](https://decrypt.co/90860/bud-light-nouns-ethereum-nft-super-bowl-ad)  
-[Witnesses Debate Crypto Mining's Efficiency in Congressional Hearing on Environment](https://www.coindesk.com/policy/2022/01/21/witnesses-debate-crypto-minings-efficiency-in-congressional-hearing-on-environment)  
-[Cryptocurrency is a Giant Ponzi Scheme](https://jacobinmag.com/2022/01/cryptocurrency-scam-blockchain-bitcoin-economy-decentralization) - Sohale Mortazavi  
-[Web3 First Impressions](https://moxie.org/2022/01/07/web3-first-impressions.html) - Moxie  
+
+[CBDC White Paper, Fed Flags Privacy, Financial Stability Risks](https://www.coindesk.com/policy/2022/01/20/federal-reserve-highlights-privacy-financial-stability-concerns-in-cbdc-white-paper) - By Nikhilesh De, Danny Nelson  
 [Biden Administration to Release Executive Order on Crypto as Early as February](https://www.coindesk.com/policy/2022/01/24/biden-administration-to-release-executive-order-on-crypto-as-early-as-february-report) - James Rubin  
+[Web3 First Impressions](https://moxie.org/2022/01/07/web3-first-impressions.html) - Moxie  
+[Cryptocurrency is a Giant Ponzi Scheme](https://jacobinmag.com/2022/01/cryptocurrency-scam-blockchain-bitcoin-economy-decentralization) - Sohale Mortazavi  
+[Witnesses Debate Crypto Mining's Efficiency in Congressional Hearing on Environment](https://www.coindesk.com/policy/2022/01/21/witnesses-debate-crypto-minings-efficiency-in-congressional-hearing-on-environment)  
+[Bud Light Owns a Nouns Ethereum NFT](https://decrypt.co/90860/bud-light-nouns-ethereum-nft-super-bowl-ad)  
+[Russia proposes ban on use and mining of cryptocurrencies](https://www.cnbc.com/2022/01/20/russian-central-bank-proposes-banning-cryptocurrencies-crypto-mining.html)  
+[El Salvador’s plan to create the first Bitcoin-powered nation](https://fortune.com/2022/01/19/el-salvador-bitcoin-economy-distressed-debt)  
+[Coinbase will let you pay with Mastercard in its upcoming NFT marketplace](https://www.theverge.com/2022/1/18/22889359/coinbase-mastercard-nft-marketplace-payments)  
+[Wikipedia Faces Pressure to Stop Accepting Crypto Donations on Environmental Grounds](https://www.coindesk.com/business/2022/01/12/wikipedia-faces-pressure-to-stop-accepting-crypto-donations-on-environmental-grounds)  
+[US Congress to Hold Oversight Hearing on Crypto Mining](https://www.coindesk.com/policy/2022/01/06/us-congress-organizing-oversight-hearing-on-crypto-minings-environmental-footprint-report)  
 
 ### March 2021
 [Argo Blockchain launching new ‘clean energy’ mining pool](https://coingeek.com/argo-blockchain-launching-new-clean-energy-mining-pool) - Jacob Roze  
@@ -116,7 +118,7 @@ Occasionally we run into material that we feel is important. This is a section p
 ## Research Papers
 [Transparent Logs for Skeptical Clients](https://research.swtch.com/tlog) - Russ Cox  
 [Impossibility of Distributed Consensus with One Faulty Process](https://groups.csail.mit.edu/tds/papers/Lynch/jacm85.pdf)  
-[Ethereum: A Secure Decentralized Generalized Transation Ledger](https://ethereum.github.io/yellowpaper/paper.pdf) - Dr. Gavin Wood  
+[Ethereum: Yellow Paper, Berlin Version](https://ethereum.github.io/yellowpaper/paper.pdf) - Dr. Gavin Wood  
 [GHOST: Secure High-Rate Transaction Processing in Bitcoin](https://www.ifca.ai/pub/fc15/89750476.pdf) - Sompolinsky, Zohar  
 [Nov 2021: Digital Currency Governance Consortium White Paper Series](https://www3.weforum.org/docs/WEF_Digital_Currency_Governance_Consortium_White_Paper_Series_2021.pdf) - World Economic Forum  
 
