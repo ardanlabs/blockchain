@@ -79,7 +79,8 @@ Occasionally we run into material that we feel is important. This is a section p
 [Aware: Biometerics](https://www.aware.com/)  
 [Strike: Bitcoin Wallet](https://strike.me/en/)  
 [Blockchain Development APIs](https://infura.io/)  
-[Mirror: Web3 toolkit](https://mirror.xyz/)
+[Mirror: Web3 toolkit](https://mirror.xyz/)  
+[Cosoms SDK: Framework for building blockchains](https://v1.cosmos.network/sdk)  
 
 
 ## Conferences
