@@ -2,6 +2,7 @@
     "date": "2021-12-17T00:00:00.000000000Z",
     "chain_id": "the-blockchain-ledger",
     "balance_sheet": {
-        "bill_kennedy": 1000000
+        "bill_kennedy": 1000000,
+        "pavel_aborilov": 1000000
     }
 }
