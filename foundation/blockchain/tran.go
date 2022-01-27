@@ -36,7 +36,7 @@ type Tx struct {
 	ID         string `json:"id"`          // Unique ID for the transaction to help with mempool lookups.
 	From       string `json:"from"`        // The account this transaction is from.
 	To         string `json:"to"`          // The account receiving the benefit of the transaction.
-	Value      uint   `json:"value"`       // The monetary value received from this transactions.
+	Value      uint   `json:"value"`       // The monetary value received from this transaction.
 	Data       string `json:"data"`        // Extra data related to the transaction.
 	GasPrice   uint   `json:"gas_price"`   // The amount of gas offered to execute the transaction.
 	GasLimit   uint   `json:"gas_limit"`   // The minimum amount of gas required to execute the transaction.
