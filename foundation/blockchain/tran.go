@@ -31,19 +31,9 @@ func (txe *TxError) Error() string {
 
 // =============================================================================
 
-// ID represents a unique ID in the system.
-type TxID string
-
-// generateTxID generates a new ID for a transaction.
-func generateTxID() TxID {
-	return TxID(uuid.New().String())
-}
-
-// =============================================================================
-
 // Tx represents a transaction in the block.
 type Tx struct {
-	ID         TxID   `json:"id"`          // Unique ID for the transaction to help with mempool lookups.
+	ID         string `json:"id"`          // Unique ID for the transaction to help with mempool lookups.
 	From       string `json:"from"`        // The account this transaction is from.
 	To         string `json:"to"`          // The account receiving the benefit of the transaction.
 	Value      uint   `json:"value"`       // The monetary value received from this transactions.
@@ -57,7 +47,7 @@ type Tx struct {
 // NewTx constructs a new TxRecord.
 func NewTx(from string, to string, value uint, data string) Tx {
 	return Tx{
-		ID:     generateTxID(),
+		ID:     uuid.New().String(),
 		From:   from,
 		To:     to,
 		Value:  value,
@@ -69,7 +59,7 @@ func NewTx(from string, to string, value uint, data string) Tx {
 // =============================================================================
 
 // TxMempool represents a cache of transactions each with a unique id.
-type TxMempool map[TxID]Tx
+type TxMempool map[string]Tx
 
 // NewTxMempool constructs a new info set to manage node peer information.
 func NewTxMempool() TxMempool {
@@ -82,14 +72,14 @@ func (tm TxMempool) Count() int {
 }
 
 // Add adds a new transaction to the mempool.
-func (tm TxMempool) Add(id TxID, tx Tx) {
+func (tm TxMempool) Add(id string, tx Tx) {
 	if _, exists := tm[id]; !exists {
 		tm[id] = tx
 	}
 }
 
 // Delete removed a transaction from the mempool.
-func (tm TxMempool) Delete(id TxID) {
+func (tm TxMempool) Delete(id string) {
 	delete(tm, id)
 }
 
