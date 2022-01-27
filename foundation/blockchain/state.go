@@ -60,7 +60,7 @@ type State struct {
 	evHandler     EventHandler
 
 	genesis      Genesis
-	txMempool    map[ID]Tx
+	txMempool    TxMempool
 	latestBlock  Block
 	balanceSheet BalanceSheet
 	dbFile       *os.File
@@ -131,7 +131,7 @@ func New(cfg Config) (*State, error) {
 		evHandler:     ev,
 
 		genesis:      genesis,
-		txMempool:    make(map[ID]Tx),
+		txMempool:    NewTxMempool(),
 		latestBlock:  latestBlock,
 		balanceSheet: balanceSheet,
 		dbFile:       dbFile,
@@ -181,20 +181,18 @@ func (s *State) AddTransactions(txs []Tx, share bool) {
 	s.evHandler("node: AddTransactions: started : txrs[%d]", len(txs))
 	defer s.evHandler("node: AddTransactions: completed")
 
-	s.evHandler("node: AddTransactions: before: mempool[%d]", len(s.txMempool))
+	s.evHandler("node: AddTransactions: before: mempool[%d]", s.txMempool.Count())
 	for _, tx := range txs {
-		if _, exists := s.txMempool[tx.ID]; !exists {
-			s.txMempool[tx.ID] = tx
-		}
+		s.txMempool.Add(tx.ID, tx)
 	}
-	s.evHandler("node: AddTransactions: after: mempool[%d]", len(s.txMempool))
+	s.evHandler("node: AddTransactions: after: mempool[%d]", s.txMempool.Count())
 
 	if share {
 		s.evHandler("node: AddTransactions: signal tx sharing")
 		s.bcWorker.signalShareTransactions(txs)
 	}
 
-	if len(s.txMempool) >= s.transPerBlock {
+	if s.txMempool.Count() >= s.transPerBlock {
 		s.evHandler("node: AddTransactions: signal mining")
 		s.bcWorker.signalStartMining()
 	}
@@ -232,7 +230,7 @@ func (s *State) Truncate() error {
 
 	// Reset the state of the database.
 	s.genesis = genesis
-	s.txMempool = make(map[ID]Tx)
+	s.txMempool = NewTxMempool()
 	s.latestBlock = Block{}
 	s.balanceSheet = balanceSheet
 	s.dbFile = dbFile
@@ -266,11 +264,7 @@ func (s *State) CopyMempool() []Tx {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	cpy := make([]Tx, 0, len(s.txMempool))
-	for _, tx := range s.txMempool {
-		cpy = append(cpy, tx)
-	}
-	return cpy
+	return s.txMempool.Copy()
 }
 
 // CopyBalanceSheet returns a copy of the balance sheet.
@@ -323,7 +317,7 @@ func (s *State) QueryMempoolLength() int {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	return len(s.txMempool)
+	return s.txMempool.Count()
 }
 
 // QueryBlocksByNumber returns the set of blocks based on block numbers. This
@@ -410,7 +404,7 @@ func (s *State) WriteNextBlock(block Block) error {
 		// from the mempool.
 		for _, tx := range block.Transactions {
 			applyTransactionToBalance(s.balanceSheet, tx)
-			delete(s.txMempool, tx.ID)
+			s.txMempool.Delete(tx.ID)
 		}
 
 		// Add the miner reward for the beneficiary to the balance sheet.
@@ -484,7 +478,7 @@ func (s *State) MineNewBlock(ctx context.Context) (Block, time.Duration, error) 
 		defer s.mu.Unlock()
 
 		// Are there enough transactions in the pool.
-		if len(s.txMempool) < s.transPerBlock {
+		if s.txMempool.Count() < s.transPerBlock {
 			s.mu.Unlock()
 			return ErrNotEnoughTransactions
 		}
@@ -548,7 +542,7 @@ func (s *State) MineNewBlock(ctx context.Context) (Block, time.Duration, error) 
 
 		// Remove the transactions from this block.
 		for _, tx := range nb.Transactions {
-			delete(s.txMempool, tx.ID)
+			s.txMempool.Delete(tx.ID)
 		}
 
 		return nil

@@ -38,7 +38,7 @@ type Block struct {
 }
 
 // NewBlock constructs a new BlockFS for persisting.
-func NewBlock(beneficiary string, difficulty int, parentBlock Block, txs map[ID]Tx) Block {
+func NewBlock(beneficiary string, difficulty int, parentBlock Block, txMempool TxMempool) Block {
 	parentHash := zeroHash
 	if parentBlock.Header.Number > 0 {
 		parentHash = parentBlock.Hash()
@@ -46,10 +46,7 @@ func NewBlock(beneficiary string, difficulty int, parentBlock Block, txs map[ID]
 
 	// Store a copy of the transactions so the mempool is not
 	// affected until the block is mined.
-	cpy := make([]Tx, 0, len(txs))
-	for _, tx := range txs {
-		cpy = append(cpy, tx)
-	}
+	cpy := txMempool.Copy()
 
 	return Block{
 		Header: BlockHeader{

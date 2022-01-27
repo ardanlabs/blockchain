@@ -32,11 +32,18 @@ func (txe *TxError) Error() string {
 // =============================================================================
 
 // ID represents a unique ID in the system.
-type ID string
+type TxID string
+
+// generateTxID generates a new ID for a transaction.
+func generateTxID() TxID {
+	return TxID(uuid.New().String())
+}
+
+// =============================================================================
 
 // Tx represents a transaction in the block.
 type Tx struct {
-	ID         ID     `json:"id"`          // Unique ID for the transaction to help with mempool lookups.
+	ID         TxID   `json:"id"`          // Unique ID for the transaction to help with mempool lookups.
 	From       string `json:"from"`        // The account this transaction is from.
 	To         string `json:"to"`          // The account receiving the benefit of the transaction.
 	Value      uint   `json:"value"`       // The monetary value received from this transactions.
@@ -50,11 +57,47 @@ type Tx struct {
 // NewTx constructs a new TxRecord.
 func NewTx(from string, to string, value uint, data string) Tx {
 	return Tx{
-		ID:     ID(uuid.New().String()),
+		ID:     generateTxID(),
 		From:   from,
 		To:     to,
 		Value:  value,
 		Data:   data,
 		Status: TxStatusNew,
 	}
+}
+
+// =============================================================================
+
+// TxMempool represents a cache of transactions each with a unique id.
+type TxMempool map[TxID]Tx
+
+// NewTxMempool constructs a new info set to manage node peer information.
+func NewTxMempool() TxMempool {
+	return make(TxMempool)
+}
+
+// Count returns the current number of transaction in the pool.
+func (tm TxMempool) Count() int {
+	return len(tm)
+}
+
+// Add adds a new transaction to the mempool.
+func (tm TxMempool) Add(id TxID, tx Tx) {
+	if _, exists := tm[id]; !exists {
+		tm[id] = tx
+	}
+}
+
+// Delete removed a transaction from the mempool.
+func (tm TxMempool) Delete(id TxID) {
+	delete(tm, id)
+}
+
+// Copy returns a list of the current transaction in the pool.
+func (tm TxMempool) Copy() []Tx {
+	cpy := make([]Tx, 0, len(tm))
+	for _, tx := range tm {
+		cpy = append(cpy, tx)
+	}
+	return cpy
 }
