@@ -31,7 +31,7 @@ func (txe *TxError) Error() string {
 
 // =============================================================================
 
-// Tx represents a transaction in the block.
+// Tx represents the basic unit of record for the things of value being recorded.
 type Tx struct {
 	ID         string `json:"id"`          // Unique ID for the transaction to help with mempool lookups.
 	From       string `json:"from"`        // The account this transaction is from.
