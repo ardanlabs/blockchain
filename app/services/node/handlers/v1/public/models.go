@@ -15,5 +15,6 @@ type tx struct {
 	From  string `json:"from"`
 	To    string `json:"to"`
 	Value uint   `json:"value"`
+	Tip   uint   `json:"tip"`
 	Data  string `json:"data"`
 }

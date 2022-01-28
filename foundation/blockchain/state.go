@@ -11,13 +11,20 @@ import (
 )
 
 /*
+	Need a wallet to sign transactions properly.
+	Start mining once there is enough in rewards and fees to make it worth it.
 	Choose the best transactions based on fees.
 	Create a block index file for query and clean up forks.
-	Need a wallet to sign transactions properly.
-	Maybe adjust difficulty based on time to mine. Currently hardcoded to 6 zeros.
-	Add fees to transactions.
-	Add the token supply and global blockchain settings in the genesis file.
+	Add the global blockchain settings in the genesis file.
 */
+
+// Global blockchain settings.
+const (
+	gsDifficulty          = 6   // The number of preceding 0's needed for a hash.
+	gsMiningReward        = 700 // The reward for mining a block.
+	gsGasPrice            = 15  // Price per unit of Gas.
+	gsTransactionPerBlock = 2   // Number of transactions needed to mine a block.
+)
 
 // =============================================================================
 
@@ -38,26 +45,20 @@ type EventHandler func(v string, args ...interface{})
 // Config represents the configuration required to start
 // the blockchain node.
 type Config struct {
-	MinerAccount  string
-	Host          string
-	DBPath        string
-	Reward        uint // What a miner gets for mining a block.
-	Difficulty    int  // How many leading eros a block hash must have.
-	TransPerBlock int  // How many transactions need to be in a block.
-	KnownPeers    PeerSet
-	EvHandler     EventHandler
+	MinerAccount string
+	Host         string
+	DBPath       string
+	KnownPeers   PeerSet
+	EvHandler    EventHandler
 }
 
 // State manages the blockchain database.
 type State struct {
-	minerAccount  string
-	host          string
-	dbPath        string
-	reward        uint
-	difficulty    int
-	transPerBlock int
-	knownPeers    PeerSet
-	evHandler     EventHandler
+	minerAccount string
+	host         string
+	dbPath       string
+	knownPeers   PeerSet
+	evHandler    EventHandler
 
 	genesis      Genesis
 	txMempool    TxMempool
@@ -102,15 +103,19 @@ func New(cfg Config) (*State, error) {
 	// Apply the genesis balances to the balance sheet.
 	balanceSheet := copyBalanceSheet(genesis.Balances)
 
-	// Update the balance sheet by processing all the transactions in
-	// the set of blocks.
+	// Process the blocks and transactions against the balance sheet.
 	for _, block := range blocks {
-		if err := applyTransactionsToBalances(balanceSheet, block.Transactions); err != nil {
-			return nil, err
+		for _, tx := range block.Transactions {
+
+			// Apply the balance changes based on this transaction.
+			applyTransactionToBalance(balanceSheet, tx)
+
+			// Apply the miner tip and gas fee for this transaction.
+			applyMiningFeeToBalance(balanceSheet, block.Header.Beneficiary, tx)
 		}
 
-		// Add the miner reward to the balance sheet.
-		applyMiningRewardToBalance(balanceSheet, block.Header.Beneficiary, cfg.Reward)
+		// Apply the miner reward for this block.
+		applyMiningRewardToBalance(balanceSheet, block.Header.Beneficiary, gsMiningReward)
 	}
 
 	// Open the blockchain database file for processing.
@@ -121,14 +126,11 @@ func New(cfg Config) (*State, error) {
 
 	// Create the State to provide support for managing the blockchain.
 	state := State{
-		minerAccount:  cfg.MinerAccount,
-		host:          cfg.Host,
-		dbPath:        cfg.DBPath,
-		reward:        cfg.Reward,
-		difficulty:    cfg.Difficulty,
-		transPerBlock: cfg.TransPerBlock,
-		knownPeers:    cfg.KnownPeers,
-		evHandler:     ev,
+		minerAccount: cfg.MinerAccount,
+		host:         cfg.Host,
+		dbPath:       cfg.DBPath,
+		knownPeers:   cfg.KnownPeers,
+		evHandler:    ev,
 
 		genesis:      genesis,
 		txMempool:    NewTxMempool(),
@@ -192,7 +194,7 @@ func (s *State) AddTransactions(txs []Tx, share bool) {
 		s.bcWorker.signalShareTransactions(txs)
 	}
 
-	if s.txMempool.Count() >= s.transPerBlock {
+	if s.txMempool.Count() >= gsTransactionPerBlock {
 		s.evHandler("node: AddTransactions: signal mining")
 		s.bcWorker.signalStartMining()
 	}
@@ -400,15 +402,21 @@ func (s *State) WriteNextBlock(block Block) error {
 			return err
 		}
 
-		// Apply the transactions to the balance sheet and remove
-		// from the mempool.
+		// Process the transactions against the balance sheet.
 		for _, tx := range block.Transactions {
+
+			// Apply the balance changes based on this transaction.
 			applyTransactionToBalance(s.balanceSheet, tx)
+
+			// Apply the miner tip and gas fee for this transaction.
+			applyMiningFeeToBalance(s.balanceSheet, block.Header.Beneficiary, tx)
+
+			// Remove the transaction from the mempool if it exists.
 			s.txMempool.Delete(tx.ID)
 		}
 
-		// Add the miner reward for the beneficiary to the balance sheet.
-		applyMiningRewardToBalance(s.balanceSheet, block.Header.Beneficiary, s.reward)
+		// Apply the miner reward for this block.
+		applyMiningRewardToBalance(s.balanceSheet, block.Header.Beneficiary, gsMiningReward)
 
 		// Save this as the latest block.
 		s.latestBlock = block
@@ -425,7 +433,7 @@ func (s *State) WriteNextBlock(block Block) error {
 // the blockchain.
 func (s *State) validateNextBlock(block Block) (string, error) {
 	hash := block.Hash()
-	if !isHashSolved(s.difficulty, hash) {
+	if !isHashSolved(gsDifficulty, hash) {
 		return zeroHash, fmt.Errorf("%s invalid hash", hash)
 	}
 
@@ -478,13 +486,13 @@ func (s *State) MineNewBlock(ctx context.Context) (Block, time.Duration, error) 
 		defer s.mu.Unlock()
 
 		// Are there enough transactions in the pool.
-		if s.txMempool.Count() < s.transPerBlock {
+		if s.txMempool.Count() < gsTransactionPerBlock {
 			s.mu.Unlock()
 			return ErrNotEnoughTransactions
 		}
 
 		// Create a new block which owns it's own copy of the transactions.
-		nb = NewBlock(s.minerAccount, s.difficulty, s.latestBlock, s.txMempool)
+		nb = NewBlock(s.minerAccount, gsDifficulty, s.latestBlock, s.txMempool)
 
 		// Get a copy of the balance sheet.
 		balanceSheet = copyBalanceSheet(s.balanceSheet)
@@ -494,23 +502,32 @@ func (s *State) MineNewBlock(ctx context.Context) (Block, time.Duration, error) 
 		return Block{}, 0, ErrNotEnoughTransactions
 	}
 
-	// Apply the transactions to the copy of the balance sheet and
-	// set the status information.
+	// Process the transactions against the balance sheet.
 	for i, tx := range nb.Transactions {
+
+		// Apply the balance changes based on this transaction. Set status
+		// information for other nodes to process this correctly.
 		if err := applyTransactionToBalance(balanceSheet, tx); err != nil {
 			nb.Transactions[i].Status = TxStatusError
 			nb.Transactions[i].StatusInfo = err.Error()
 			continue
 		}
 		nb.Transactions[i].Status = TxStatusAccepted
+
+		// Apply the miner tip and gas fee for this transaction.
+		applyMiningFeeToBalance(balanceSheet, s.minerAccount, tx)
+
+		// Update the total gas and tip fees.
+		nb.Header.TotalGas += tx.Gas
+		nb.Header.TotalTip += tx.Tip
 	}
 
-	// Add the miner reward to the balance sheet.
-	applyMiningRewardToBalance(balanceSheet, s.minerAccount, s.reward)
+	// Apply the miner reward for this block.
+	applyMiningRewardToBalance(balanceSheet, s.minerAccount, gsMiningReward)
 
 	// Attempt to create a new BlockFS by solving the POW puzzle.
 	// This can be cancelled.
-	blockFS, duration, err := performPOW(ctx, s.difficulty, nb, s.evHandler)
+	blockFS, duration, err := performPOW(ctx, gsDifficulty, nb, s.evHandler)
 	if err != nil {
 		return Block{}, duration, err
 	}

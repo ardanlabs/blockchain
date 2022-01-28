@@ -55,12 +55,9 @@ func run(log *zap.SugaredLogger) error {
 			PrivateHost     string        `conf:"default:0.0.0.0:9080"`
 		}
 		Node struct {
-			MinerAccount  string   `conf:"default:miner1"`
-			DBPath        string   `conf:"default:zblock/blocks.db"`
-			KnownPeers    []string `conf:"default:0.0.0.0:9080;0.0.0.0:9180"`
-			Reward        uint     `conf:"default:700"`
-			Difficulty    int      `conf:"default:6"`
-			TransPerBlock int      `conf:"default:2"`
+			MinerAccount string   `conf:"default:miner1"`
+			DBPath       string   `conf:"default:zblock/blocks.db"`
+			KnownPeers   []string `conf:"default:0.0.0.0:9080;0.0.0.0:9180"`
 		}
 	}{
 		Version: conf.Version{
@@ -105,14 +102,11 @@ func run(log *zap.SugaredLogger) error {
 	}
 
 	bc, err := blockchain.New(blockchain.Config{
-		MinerAccount:  cfg.Node.MinerAccount,
-		Host:          cfg.Web.PrivateHost,
-		DBPath:        cfg.Node.DBPath,
-		KnownPeers:    peerSet,
-		Reward:        cfg.Node.Reward,
-		Difficulty:    cfg.Node.Difficulty,
-		TransPerBlock: cfg.Node.TransPerBlock,
-		EvHandler:     ev,
+		MinerAccount: cfg.Node.MinerAccount,
+		Host:         cfg.Web.PrivateHost,
+		DBPath:       cfg.Node.DBPath,
+		KnownPeers:   peerSet,
+		EvHandler:    ev,
 	})
 	if err != nil {
 		return err

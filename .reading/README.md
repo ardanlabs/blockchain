@@ -152,6 +152,7 @@ Occasionally we run into material that we feel is important. This is a section p
 ## Development
 [Ethereum Mining](https://ethereum.org/en/developers/docs/consensus-mechanisms/pow/mining) - Ethereum Website
 [Ethereum Blocks](https://ethereum.org/en/developers/docs/blocks) - Ethereum Website  
+[Ethereum Gas and Fees](https://ethereum.org/en/developers/docs/gas/) - Ethereum Website  
 [Ethereum DAO's](https://ethereum.org/en/dao")  - Website  
 [Ethereum Nodes and Clients](https://ethereum.org/en/developers/docs/nodes-and-clients) - Website  
 [ERC 20 Token Standard](https://ethereum.org/en/developers/docs/standards/tokens/erc-20) - Website  

@@ -6,8 +6,8 @@ SHELL := /bin/bash
 # curl -X POST http:/localhost:8080/v1/tx/add --header 'Content-Type: application/json' --data-binary "@app/tooling/curl/trans1.json" 
 #
 # Add User transactions
-# curl -X POST http:/localhost:8080/v1/tx/add --header 'Content-Type: application/json' --data-raw '[{"from": "bill_kennedy","to": "bill_kennedy","value": 10, "data": "reward"}]'
-# curl -X POST http:/localhost:8080/v1/tx/add --header 'Content-Type: application/json' --data-raw '[{"from": "ceasar","to": "babayaga","value": 10}]'
+# curl -X POST http:/localhost:8080/v1/tx/add --header 'Content-Type: application/json' --data-raw '[{"from": "bill_kennedy", "to": "bill_kennedy", "value": 10, "tip": 0, "data": "reward"}]'
+# curl -X POST http:/localhost:8080/v1/tx/add --header 'Content-Type: application/json' --data-raw '[{"from": "ceasar", "to": "babayaga", "tip": 10, "value": 10}]'
 #
 # Bookeeping transactions
 # curl -il -X GET http://localhost:8080/v1/genesis/list

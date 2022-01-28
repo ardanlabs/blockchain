@@ -34,23 +34,25 @@ func (txe *TxError) Error() string {
 // Tx represents the basic unit of record for the things of value being recorded.
 type Tx struct {
 	ID         string `json:"id"`          // Unique ID for the transaction to help with mempool lookups.
-	From       string `json:"from"`        // The account this transaction is from.
-	To         string `json:"to"`          // The account receiving the benefit of the transaction.
-	Value      uint   `json:"value"`       // The monetary value received from this transaction.
+	From       string `json:"from"`        // Account this transaction is from.
+	To         string `json:"to"`          // Account receiving the benefit of the transaction.
+	Value      uint   `json:"value"`       // Monetary value received from this transaction.
+	Tip        uint   `json:"tip"`         // Tip offered by the sender as an incentive.
+	Gas        uint   `json:"gas"`         // Gas fee to recover computation costs paid by sender.
 	Data       string `json:"data"`        // Extra data related to the transaction.
-	GasPrice   uint   `json:"gas_price"`   // The amount of gas offered to execute the transaction.
-	GasLimit   uint   `json:"gas_limit"`   // The minimum amount of gas required to execute the transaction.
-	Status     string `json:"status"`      // The final status of the transaction to help reconcile balances.
+	Status     string `json:"status"`      // Final status of the transaction to help reconcile balances.
 	StatusInfo string `json:"status_info"` // Extra information related to the state.
 }
 
 // NewTx constructs a new TxRecord.
-func NewTx(from string, to string, value uint, data string) Tx {
+func NewTx(from string, to string, value uint, tip uint, data string) Tx {
 	return Tx{
 		ID:     uuid.New().String(),
 		From:   from,
 		To:     to,
 		Value:  value,
+		Tip:    tip,
+		Gas:    gsGasPrice,
 		Data:   data,
 		Status: TxStatusNew,
 	}

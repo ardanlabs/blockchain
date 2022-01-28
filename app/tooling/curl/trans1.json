@@ -1,8 +1,8 @@
 [
-    {"from": "bill_kennedy", "to": "babayaga", "value": 2000, "data": ""},
-    {"from": "bill_kennedy", "to": "bill_kennedy", "value": 100, "data": "reward"},
-    {"from": "babayaga", "to": "bill_kennedy", "value": 1, "data": ""},
-    {"from": "babayaga", "to": "ceasar", "value": 1000, "data": ""},
-    {"from": "babayaga", "to": "bill_kennedy", "value": 50, "data": ""},
-    {"from": "bill_kennedy", "to": "bill_kennedy", "value": 600, "data": "reward"}
+    {"from": "bill_kennedy", "to": "babayaga", "value": 2000, "tip": 5, "data": ""},
+    {"from": "bill_kennedy", "to": "bill_kennedy", "value": 100, "tip": 0, "data": "reward"},
+    {"from": "babayaga", "to": "bill_kennedy", "value": 1, "tip": 5, "data": ""},
+    {"from": "babayaga", "to": "ceasar", "value": 1000, "tip": 5, "data": ""},
+    {"from": "babayaga", "to": "bill_kennedy", "value": 50, "tip": 5, "data": ""},
+    {"from": "bill_kennedy", "to": "bill_kennedy", "value": 600, "tip": 0, "data": "reward"}
 ]

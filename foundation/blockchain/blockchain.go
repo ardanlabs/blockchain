@@ -47,5 +47,21 @@ would need to do general-purpose; the meaning of “specialised hardware” for 
 general-purpose task set is, naturally, general purpose hardware and as such
 commodity desktop computers are likely to be pretty close to “specialised hardware”
 for the task. For Ethereum 1.0 we have chosen the first path.
+
+== Block Size
+Before the London Upgrade, Ethereum had fixed-sized blocks. In times of high network
+demand, these blocks operated at total capacity. As a result, users often had to wait
+for high demand to reduce to get included in a block, which led to a poor user experience.
+
+The London Upgrade introduced variable-size blocks to Ethereum. Each block has a
+target size of 15 million gas, but the size of blocks will increase or decrease in
+accordance with network demand, up until the block limit of 30 million gas (2x
+the target block size). The protocol achieves an equilibrium block size of
+15 million on average through the process of tâtonnement. This means if the
+block size is greater than the target block size, the protocol will increase
+the base fee for the following block. Similarly, the protocol will decrease
+the base fee if the block size is less than the target block size. The amount
+by which the base fee is adjusted is proportional to how far the current block
+size is from the target.
 */
 package blockchain

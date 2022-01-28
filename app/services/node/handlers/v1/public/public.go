@@ -32,7 +32,7 @@ func (h Handlers) AddTransactions(ctx context.Context, w http.ResponseWriter, r 
 	txs := make([]blockchain.Tx, len(userTxs))
 	for i, tx := range userTxs {
 		h.Log.Infow("add user tran", "traceid", v.TraceID, "tx", tx)
-		txs[i] = blockchain.NewTx(tx.From, tx.To, tx.Value, tx.Data)
+		txs[i] = blockchain.NewTx(tx.From, tx.To, tx.Value, tx.Tip, tx.Data)
 	}
 
 	// Add these transaction and share them with the network.

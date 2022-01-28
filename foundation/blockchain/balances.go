@@ -26,19 +26,17 @@ func copyBalanceSheet(org BalanceSheet) BalanceSheet {
 	return balanceSheet
 }
 
-// applyTransactionsToBalances applies the transactions to the specified
-// balances, adding new accounts as they are found.
-func applyTransactionsToBalances(balanceSheet BalanceSheet, txs []Tx) error {
-	for _, tx := range txs {
-		applyTransactionToBalance(balanceSheet, tx)
-	}
-
-	return nil
-}
-
 // applyMiningRewardToBalance gives the beneficiary account a reward for mining a block.
 func applyMiningRewardToBalance(balanceSheet BalanceSheet, beneficiary string, reward uint) {
 	balanceSheet[beneficiary] += reward
+}
+
+// applyMiningFeeToBalance gives the beneficiary account a fee for mining the block.
+func applyMiningFeeToBalance(balanceSheet BalanceSheet, beneficiary string, tx Tx) {
+	fee := tx.Gas + tx.Tip
+
+	balanceSheet[beneficiary] += fee
+	balanceSheet[tx.From] -= fee
 }
 
 // applyTransactionToBalance performs the business logic for applying a
@@ -63,6 +61,10 @@ func applyTransactionToBalance(balanceSheet BalanceSheet, tx Tx) error {
 
 	balanceSheet[tx.From] -= tx.Value
 	balanceSheet[tx.To] += tx.Value
+
+	if tx.Tip > 0 {
+		balanceSheet[tx.From] -= tx.Tip
+	}
 
 	return nil
 }

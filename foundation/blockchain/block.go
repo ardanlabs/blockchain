@@ -21,14 +21,14 @@ const zeroHash string = "00000000000000000000000000000000"
 
 // BlockHeader represents common information required for each block.
 type BlockHeader struct {
-	ParentHash  string `json:"parent_hash"` // The hash of the previous block in the chain.
-	Beneficiary string `json:"beneficiary"` // The account who receives the reward and gas fee.
-	Difficulty  int    `json:"difficulty"`  // The number of 0's needed to solve the hash solution.
-	Number      uint64 `json:"number"`      // The block number in the chain.
-	GasPrice    uint   `json:"gas_price"`   // The actual amount of gas spent to execute the block based on transactions.
-	GasLimit    uint   `json:"gas_limit"`   // The minimum amount of gas required to execute the block based on transactions.
-	TimeStamp   uint64 `json:"timestamp"`   // The time the block was mined.
-	Nonce       uint64 `json:"nonce"`       // The value identified to solve the hash solution.
+	ParentHash  string `json:"parent_hash"` // Hash of the previous block in the chain.
+	Beneficiary string `json:"beneficiary"` // Account who receives the reward and gas fee.
+	Difficulty  int    `json:"difficulty"`  // Number of 0's needed to solve the hash solution.
+	Number      uint64 `json:"number"`      // Block number in the chain.
+	TotalTip    uint   `json:"total_tip"`   // Total tip paid by all senders as an incentive.
+	TotalGas    uint   `json:"total_gas"`   // Total gas fee to recover computation costs paid by sender.
+	TimeStamp   uint64 `json:"timestamp"`   // Time the block was mined.
+	Nonce       uint64 `json:"nonce"`       // Value identified to solve the hash solution.
 }
 
 // Block represents a set of transactions grouped together.

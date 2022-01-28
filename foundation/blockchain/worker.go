@@ -234,7 +234,7 @@ func (bw *bcWorker) runMiningOperation() {
 
 	// Make sure there are at least transPerBlock in the mempool.
 	length := bw.state.QueryMempoolLength()
-	if length < bw.state.transPerBlock {
+	if length < gsTransactionPerBlock {
 		bw.evHandler("bcWorker: runMiningOperation: **********: not enough transactions to mine: %d", length)
 		return
 	}
