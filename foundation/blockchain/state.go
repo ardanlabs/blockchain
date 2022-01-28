@@ -13,6 +13,7 @@ import (
 )
 
 /*
+	Need to start mining based on gas+tip value being at a certain level.
 	Need a wallet to sign transactions properly.
 	Start mining once there is enough in rewards and fees to make it worth it.
 	Choose the best transactions based on fees.

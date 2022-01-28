@@ -33,11 +33,11 @@ type Tx struct {
 	From       string `json:"from"`        // Account this transaction is from.
 	To         string `json:"to"`          // Account receiving the benefit of the transaction.
 	Value      uint   `json:"value"`       // Monetary value received from this transaction.
-	Tip        uint   `json:"tip"`         // Tip offered by the sender as an incentive.
+	Tip        uint   `json:"tip"`         // Tip offered by the sender as an incentive to mine this transaction.
 	Gas        uint   `json:"gas"`         // Gas fee to recover computation costs paid by sender.
 	Data       string `json:"data"`        // Extra data related to the transaction.
 	Status     string `json:"status"`      // Final status of the transaction to help reconcile balances.
-	StatusInfo string `json:"status_info"` // Extra information related to the state.
+	StatusInfo string `json:"status_info"` // Extra information related to the status.
 }
 
 // =============================================================================
