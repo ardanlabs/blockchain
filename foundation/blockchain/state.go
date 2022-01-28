@@ -8,6 +8,8 @@ import (
 	"os"
 	"sync"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 /*
@@ -15,16 +17,8 @@ import (
 	Start mining once there is enough in rewards and fees to make it worth it.
 	Choose the best transactions based on fees.
 	Create a block index file for query and clean up forks.
-	Add the global blockchain settings in the genesis file.
+	Need tests.
 */
-
-// Global blockchain settings.
-const (
-	gsDifficulty          = 6   // The number of preceding 0's needed for a hash.
-	gsMiningReward        = 700 // The reward for mining a block.
-	gsGasPrice            = 15  // Price per unit of Gas.
-	gsTransactionPerBlock = 2   // Number of transactions needed to mine a block.
-)
 
 // =============================================================================
 
@@ -115,7 +109,7 @@ func New(cfg Config) (*State, error) {
 		}
 
 		// Apply the miner reward for this block.
-		applyMiningRewardToBalance(balanceSheet, block.Header.Beneficiary, gsMiningReward)
+		applyMiningRewardToBalance(balanceSheet, block.Header.Beneficiary, genesis.MiningReward)
 	}
 
 	// Open the blockchain database file for processing.
@@ -163,6 +157,22 @@ func (s *State) Shutdown() error {
 
 // =============================================================================
 
+// NewTx constructs a new Transaction record with blocking settings.
+func (s *State) NewTx(from string, to string, value uint, tip uint, data string) Tx {
+	return Tx{
+		ID:     uuid.New().String(),
+		From:   from,
+		To:     to,
+		Value:  value,
+		Tip:    tip,
+		Gas:    s.genesis.GasPrice,
+		Data:   data,
+		Status: TxStatusNew,
+	}
+}
+
+// =============================================================================
+
 // SignalMining sends a signal to the mining G to start.
 func (s *State) SignalMining() {
 	s.bcWorker.signalStartMining()
@@ -194,7 +204,7 @@ func (s *State) AddTransactions(txs []Tx, share bool) {
 		s.bcWorker.signalShareTransactions(txs)
 	}
 
-	if s.txMempool.Count() >= gsTransactionPerBlock {
+	if s.txMempool.Count() >= s.genesis.ReadyToMine {
 		s.evHandler("node: AddTransactions: signal mining")
 		s.bcWorker.signalStartMining()
 	}
@@ -416,7 +426,7 @@ func (s *State) WriteNextBlock(block Block) error {
 		}
 
 		// Apply the miner reward for this block.
-		applyMiningRewardToBalance(s.balanceSheet, block.Header.Beneficiary, gsMiningReward)
+		applyMiningRewardToBalance(s.balanceSheet, block.Header.Beneficiary, s.genesis.MiningReward)
 
 		// Save this as the latest block.
 		s.latestBlock = block
@@ -433,7 +443,7 @@ func (s *State) WriteNextBlock(block Block) error {
 // the blockchain.
 func (s *State) validateNextBlock(block Block) (string, error) {
 	hash := block.Hash()
-	if !isHashSolved(gsDifficulty, hash) {
+	if !isHashSolved(s.genesis.Difficulty, hash) {
 		return zeroHash, fmt.Errorf("%s invalid hash", hash)
 	}
 
@@ -486,13 +496,13 @@ func (s *State) MineNewBlock(ctx context.Context) (Block, time.Duration, error) 
 		defer s.mu.Unlock()
 
 		// Are there enough transactions in the pool.
-		if s.txMempool.Count() < gsTransactionPerBlock {
+		if s.txMempool.Count() < s.genesis.ReadyToMine {
 			s.mu.Unlock()
 			return ErrNotEnoughTransactions
 		}
 
 		// Create a new block which owns it's own copy of the transactions.
-		nb = NewBlock(s.minerAccount, gsDifficulty, s.latestBlock, s.txMempool)
+		nb = NewBlock(s.minerAccount, s.genesis.Difficulty, s.latestBlock, s.txMempool)
 
 		// Get a copy of the balance sheet.
 		balanceSheet = copyBalanceSheet(s.balanceSheet)
@@ -523,11 +533,11 @@ func (s *State) MineNewBlock(ctx context.Context) (Block, time.Duration, error) 
 	}
 
 	// Apply the miner reward for this block.
-	applyMiningRewardToBalance(balanceSheet, s.minerAccount, gsMiningReward)
+	applyMiningRewardToBalance(balanceSheet, s.minerAccount, s.genesis.MiningReward)
 
 	// Attempt to create a new BlockFS by solving the POW puzzle.
 	// This can be cancelled.
-	blockFS, duration, err := performPOW(ctx, gsDifficulty, nb, s.evHandler)
+	blockFS, duration, err := performPOW(ctx, s.genesis.Difficulty, nb, s.evHandler)
 	if err != nil {
 		return Block{}, duration, err
 	}

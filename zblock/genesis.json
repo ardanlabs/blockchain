@@ -1,6 +1,10 @@
 {
     "date": "2021-12-17T00:00:00.000000000Z",
     "chain_id": "the-blockchain-ledger",
+    "difficulty": 6,
+    "ready_to_mine": 2,
+	"mining_reward": 700,
+	"gas_price": 15,
     "balance_sheet": {
         "bill_kennedy": 1000000,
         "pavel_aborilov": 1000000
