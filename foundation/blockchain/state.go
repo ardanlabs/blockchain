@@ -14,8 +14,6 @@ import (
 
 /*
 	Need a wallet to sign transactions properly.
-	Start mining once there is enough in rewards and fees to make it worth it.
-	Choose the best transactions based on fees.
 	Create a block index file for query and clean up forks.
 	Need tests.
 */
