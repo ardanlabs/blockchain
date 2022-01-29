@@ -75,3 +75,16 @@ func (tm TxMempool) Copy() []Tx {
 	}
 	return cpy
 }
+
+// CopyBest returns a list of the best transactions for the next
+// mining operation. The caller specifies how many transaction they want.
+func (tm TxMempool) CopyBest(amount int) []Tx {
+	cpy := make([]Tx, 0, amount)
+	for _, tx := range tm {
+		cpy = append(cpy, tx)
+		if len(cpy) == amount {
+			break
+		}
+	}
+	return cpy
+}

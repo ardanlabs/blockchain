@@ -38,15 +38,14 @@ type Block struct {
 }
 
 // NewBlock constructs a new BlockFS for persisting.
-func NewBlock(beneficiary string, difficulty int, parentBlock Block, txMempool TxMempool) Block {
+func NewBlock(beneficiary string, difficulty int, transPerBlock int, parentBlock Block, txMempool TxMempool) Block {
 	parentHash := zeroHash
 	if parentBlock.Header.Number > 0 {
 		parentHash = parentBlock.Hash()
 	}
 
-	// Store a copy of the transactions so the mempool is not
-	// affected until the block is mined.
-	cpy := txMempool.Copy()
+	// Copy the best transactions from the mempool for this new block.
+	cpy := txMempool.CopyBest(transPerBlock)
 
 	return Block{
 		Header: BlockHeader{
@@ -87,6 +86,8 @@ type BlockFS struct {
 // performPOW does the work of mining to find a valid hash for a specified
 // block and returns a BlockFS ready to be written to disk.
 func performPOW(ctx context.Context, difficulty int, b Block, ev EventHandler) (BlockFS, time.Duration, error) {
+	ev("bcWorker: runMiningOperation: **********: miningG: transactions %v", b.Transactions)
+
 	t := time.Now()
 
 	// Choose a random starting point for the nonce.

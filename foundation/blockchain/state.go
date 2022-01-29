@@ -13,7 +13,6 @@ import (
 )
 
 /*
-	Need to start mining based on gas+tip value being at a certain level.
 	Need a wallet to sign transactions properly.
 	Start mining once there is enough in rewards and fees to make it worth it.
 	Choose the best transactions based on fees.
@@ -205,7 +204,7 @@ func (s *State) AddTransactions(txs []Tx, share bool) {
 		s.bcWorker.signalShareTransactions(txs)
 	}
 
-	if s.txMempool.Count() >= s.genesis.ReadyToMine {
+	if s.txMempool.Count() >= s.genesis.TransPerBlock {
 		s.evHandler("node: AddTransactions: signal mining")
 		s.bcWorker.signalStartMining()
 	}
@@ -404,7 +403,7 @@ func (s *State) WriteNextBlock(block Block) error {
 	}
 
 	// Execute this code inside a lock.
-	if err := func() error {
+	err = func() error {
 		s.mu.Lock()
 		defer s.mu.Unlock()
 
@@ -433,7 +432,8 @@ func (s *State) WriteNextBlock(block Block) error {
 		s.latestBlock = block
 
 		return nil
-	}(); err != nil {
+	}()
+	if err != nil {
 		return err
 	}
 
@@ -492,24 +492,24 @@ func (s *State) MineNewBlock(ctx context.Context) (Block, time.Duration, error) 
 	var balanceSheet BalanceSheet
 
 	// Execute this code inside a lock.
-	if err := func() error {
+	err := func() error {
 		s.mu.Lock()
 		defer s.mu.Unlock()
 
 		// Are there enough transactions in the pool.
-		if s.txMempool.Count() < s.genesis.ReadyToMine {
-			s.mu.Unlock()
+		if s.txMempool.Count() < s.genesis.TransPerBlock {
 			return ErrNotEnoughTransactions
 		}
 
 		// Create a new block which owns it's own copy of the transactions.
-		nb = NewBlock(s.minerAccount, s.genesis.Difficulty, s.latestBlock, s.txMempool)
+		nb = NewBlock(s.minerAccount, s.genesis.Difficulty, s.genesis.TransPerBlock, s.latestBlock, s.txMempool)
 
 		// Get a copy of the balance sheet.
 		balanceSheet = copyBalanceSheet(s.balanceSheet)
 
 		return nil
-	}(); err != nil {
+	}()
+	if err != nil {
 		return Block{}, 0, ErrNotEnoughTransactions
 	}
 
@@ -555,13 +555,12 @@ func (s *State) MineNewBlock(ctx context.Context) (Block, time.Duration, error) 
 	}
 
 	// Execute this code inside a lock.
-	if err := func() error {
+	err = func() error {
 		s.mu.Lock()
 		defer s.mu.Unlock()
 
 		// Write the new block to the chain on disk.
 		if _, err := s.dbFile.Write(append(blockFSJson, '\n')); err != nil {
-			s.mu.Unlock()
 			return err
 		}
 
@@ -574,7 +573,8 @@ func (s *State) MineNewBlock(ctx context.Context) (Block, time.Duration, error) 
 		}
 
 		return nil
-	}(); err != nil {
+	}()
+	if err != nil {
 		return Block{}, duration, err
 	}
 

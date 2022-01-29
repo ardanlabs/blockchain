@@ -225,6 +225,15 @@ func (bw *bcWorker) runMiningOperation() {
 	bw.evHandler("bcWorker: runMiningOperation: **********: mining started")
 	defer bw.evHandler("bcWorker: runMiningOperation: **********: mining completed")
 
+	// After running a mining operation, check if a new operation should
+	// be signaled again.
+	defer func() {
+		length := bw.state.QueryMempoolLength()
+		if length >= bw.state.genesis.TransPerBlock {
+			bw.signalStartMining()
+		}
+	}()
+
 	// Drain the cancel mining channel before starting.
 	select {
 	case <-bw.cancelMining:
@@ -234,7 +243,7 @@ func (bw *bcWorker) runMiningOperation() {
 
 	// Make sure there are at least transPerBlock in the mempool.
 	length := bw.state.QueryMempoolLength()
-	if length < bw.state.genesis.ReadyToMine {
+	if length < bw.state.genesis.TransPerBlock {
 		bw.evHandler("bcWorker: runMiningOperation: **********: not enough transactions to mine: %d", length)
 		return
 	}
