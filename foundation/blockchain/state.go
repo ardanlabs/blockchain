@@ -143,11 +143,9 @@ func New(cfg Config) (*State, error) {
 
 // Shutdown cleanly brings the node down.
 func (s *State) Shutdown() error {
-	s.mu.Lock()
-	defer func() {
-		s.dbFile.Close()
-		s.mu.Unlock()
-	}()
+
+	// Make sure the database file is properly closed.
+	defer s.dbFile.Close()
 
 	// Stop all blockchain writing activity.
 	s.bcWorker.shutdown()
@@ -403,7 +401,7 @@ func (s *State) WriteNextBlock(block Block) error {
 	}
 
 	// Execute this code inside a lock.
-	err = func() error {
+	if err := func() error {
 		s.mu.Lock()
 		defer s.mu.Unlock()
 
@@ -432,8 +430,7 @@ func (s *State) WriteNextBlock(block Block) error {
 		s.latestBlock = block
 
 		return nil
-	}()
-	if err != nil {
+	}(); err != nil {
 		return err
 	}
 
@@ -492,7 +489,7 @@ func (s *State) MineNewBlock(ctx context.Context) (Block, time.Duration, error) 
 	var balanceSheet BalanceSheet
 
 	// Execute this code inside a lock.
-	err := func() error {
+	if err := func() error {
 		s.mu.Lock()
 		defer s.mu.Unlock()
 
@@ -508,8 +505,7 @@ func (s *State) MineNewBlock(ctx context.Context) (Block, time.Duration, error) 
 		balanceSheet = copyBalanceSheet(s.balanceSheet)
 
 		return nil
-	}()
-	if err != nil {
+	}(); err != nil {
 		return Block{}, 0, ErrNotEnoughTransactions
 	}
 
@@ -555,7 +551,7 @@ func (s *State) MineNewBlock(ctx context.Context) (Block, time.Duration, error) 
 	}
 
 	// Execute this code inside a lock.
-	err = func() error {
+	if err := func() error {
 		s.mu.Lock()
 		defer s.mu.Unlock()
 
@@ -573,8 +569,7 @@ func (s *State) MineNewBlock(ctx context.Context) (Block, time.Duration, error) 
 		}
 
 		return nil
-	}()
-	if err != nil {
+	}(); err != nil {
 		return Block{}, duration, err
 	}
 

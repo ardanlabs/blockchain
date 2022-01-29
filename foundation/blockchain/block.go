@@ -45,7 +45,7 @@ func NewBlock(beneficiary string, difficulty int, transPerBlock int, parentBlock
 	}
 
 	// Copy the best transactions from the mempool for this new block.
-	cpy := txMempool.CopyBest(transPerBlock)
+	cpy := txMempool.CopyBestByTip(transPerBlock)
 
 	return Block{
 		Header: BlockHeader{
@@ -86,7 +86,8 @@ type BlockFS struct {
 // performPOW does the work of mining to find a valid hash for a specified
 // block and returns a BlockFS ready to be written to disk.
 func performPOW(ctx context.Context, difficulty int, b Block, ev EventHandler) (BlockFS, time.Duration, error) {
-	ev("bcWorker: runMiningOperation: **********: miningG: transactions %v", b.Transactions)
+	ev("bcWorker: runMiningOperation: **********: miningG: POW: started: transactions %v", b.Transactions)
+	defer ev("bcWorker: runMiningOperation: **********: miningG: POW: completed")
 
 	t := time.Now()
 
@@ -101,11 +102,12 @@ func performPOW(ctx context.Context, difficulty int, b Block, ev EventHandler) (
 	for {
 		attempts++
 		if attempts%1_000_000 == 0 {
-			ev("bcWorker: runMiningOperation: **********: miningG: mining attempts[%d]", attempts)
+			ev("bcWorker: runMiningOperation: **********: miningG: POW: attempts[%d]", attempts)
 		}
 
 		// Did we timeout trying to solve the problem.
 		if ctx.Err() != nil {
+			ev("bcWorker: runMiningOperation: **********: miningG: POW: canceled")
 			return BlockFS{}, time.Since(t), ctx.Err()
 		}
 
@@ -121,10 +123,11 @@ func performPOW(ctx context.Context, difficulty int, b Block, ev EventHandler) (
 
 		// Did we timeout trying to solve the problem.
 		if ctx.Err() != nil {
+			ev("bcWorker: runMiningOperation: **********: miningG: POW: canceled")
 			return BlockFS{}, time.Since(t), ctx.Err()
 		}
 
-		ev("bcWorker: runMiningOperation: **********: miningG: mining final attempts[%d]", attempts)
+		ev("bcWorker: runMiningOperation: **********: miningG: POW: final attempts[%d]", attempts)
 
 		// We found a solution to the POW.
 		bfs := BlockFS{

@@ -117,9 +117,13 @@ func (bw *bcWorker) peerOperations() {
 	for {
 		select {
 		case <-bw.peerUpdates:
-			bw.runPeerUpdatesOperation()
+			if !bw.isShutdown() {
+				bw.runPeerUpdatesOperation()
+			}
 		case <-bw.ticker.C:
-			bw.runPeerUpdatesOperation()
+			if !bw.isShutdown() {
+				bw.runPeerUpdatesOperation()
+			}
 		case <-bw.shut:
 			bw.evHandler("bcWorker: peerOperations: received shut signal")
 			return
@@ -135,7 +139,9 @@ func (bw *bcWorker) miningOperations() {
 	for {
 		select {
 		case <-bw.startMining:
-			bw.runMiningOperation()
+			if !bw.isShutdown() {
+				bw.runMiningOperation()
+			}
 		case <-bw.shut:
 			bw.evHandler("bcWorker: miningOperations: received shut signal")
 			return
@@ -151,11 +157,23 @@ func (bw *bcWorker) shareTxOperations() {
 	for {
 		select {
 		case txs := <-bw.txSharing:
-			bw.runShareTxOperation(txs)
+			if !bw.isShutdown() {
+				bw.runShareTxOperation(txs)
+			}
 		case <-bw.shut:
 			bw.evHandler("bcWorker: shareTxOperations: received shut signal")
 			return
 		}
+	}
+}
+
+// isShutdown is used to test if a shutdown has been signaled.
+func (bw *bcWorker) isShutdown() bool {
+	select {
+	case <-bw.shut:
+		return true
+	default:
+		return false
 	}
 }
 
@@ -259,7 +277,12 @@ func (bw *bcWorker) runMiningOperation() {
 
 	// This G exists to cancel the mining operation.
 	go func() {
-		defer func() { cancel(); wg.Done() }()
+		bw.evHandler("bcWorker: runMiningOperation: **********: cancelG: started")
+		defer func() {
+			bw.evHandler("bcWorker: runMiningOperation: **********: cancelG: completed")
+			cancel()
+			wg.Done()
+		}()
 
 		select {
 		case <-bw.cancelMining:

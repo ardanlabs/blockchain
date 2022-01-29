@@ -1,5 +1,9 @@
 package blockchain
 
+import (
+	"sort"
+)
+
 // Set of transaction data types.
 const (
 	TxDataReward = "reward"
@@ -77,14 +81,35 @@ func (tm TxMempool) Copy() []Tx {
 }
 
 // CopyBest returns a list of the best transactions for the next
-// mining operation. The caller specifies how many transaction they want.
-func (tm TxMempool) CopyBest(amount int) []Tx {
-	cpy := make([]Tx, 0, amount)
-	for _, tx := range tm {
-		cpy = append(cpy, tx)
-		if len(cpy) == amount {
-			break
-		}
+// mining operation based on the offered tip. The caller specifies
+// how many transaction they want.
+func (tm TxMempool) CopyBestByTip(amount int) []Tx {
+	txs := tm.Copy()
+	sort.Sort(byTip(txs))
+
+	cpy := make([]Tx, amount)
+	for i := 0; i < amount; i++ {
+		cpy[i] = txs[i]
 	}
 	return cpy
+}
+
+// =============================================================================
+
+// byTip provides sorting support by the transaction tip value.
+type byTip []Tx
+
+// Len returns the number of transactions in the list.
+func (bt byTip) Len() int {
+	return len(bt)
+}
+
+// Less returns true or false based on the tip value between two transactions.
+func (bt byTip) Less(i, j int) bool {
+	return bt[j].Tip < bt[i].Tip
+}
+
+// Swap moves transactions in the order of the tip value.
+func (bt byTip) Swap(i, j int) {
+	bt[i], bt[j] = bt[j], bt[i]
 }

@@ -26,6 +26,9 @@ SHELL := /bin/bash
 up:
 	go run app/services/node/main.go | go run app/tooling/logfmt/main.go
 
+up-race:
+	go run app/services/node/main.go -race | go run app/tooling/logfmt/main.go
+
 up2:
 	go run app/services/node/main.go --web-debug-host 0.0.0.0:7181 --web-public-host 0.0.0.0:8180 --web-private-host 0.0.0.0:9180 --node-miner-account=miner2 --node-db-path zblock/blocks2.db | go run app/tooling/logfmt/main.go
 
