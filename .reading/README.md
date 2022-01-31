@@ -10,6 +10,7 @@ Occasionally we run into material that we feel is important. This is a section p
 
 ### Jan 2022
 
+[How do we solve bitcoin’s carbon problem?](https://www.theguardian.com/technology/2022/jan/30/how-do-we-solve-bitcoins-carbon-problem) - Laurie Clarke  
 [Google Cloud is hiring a legion of blockchain experts to expand its business](https://www.cnbc.com/amp/2022/01/27/google-cloud-blockchain-team-to-seek-new-business.html) - Jordan Novet  
 [CBDC White Paper, Fed Flags Privacy, Financial Stability Risks](https://www.coindesk.com/policy/2022/01/20/federal-reserve-highlights-privacy-financial-stability-concerns-in-cbdc-white-paper) - By Nikhilesh De, Danny Nelson  
 [Biden Administration to Release Executive Order on Crypto as Early as February](https://www.coindesk.com/policy/2022/01/24/biden-administration-to-release-executive-order-on-crypto-as-early-as-february-report) - James Rubin  
@@ -88,6 +89,7 @@ Occasionally we run into material that we feel is important. This is a section p
 [Strike: Bitcoin Wallet](https://strike.me/en/)  
 [Blockchain Development APIs](https://infura.io/)  
 [Mirror: Web3 toolkit](https://mirror.xyz/)  
+[QuickNode](https://www.quicknode.com/)  
 
 
 ## Conferences
