@@ -83,13 +83,13 @@ Occasionally we run into material that we feel is important. This is a section p
 
 
 ## Companies
-[NChain](https://nchain.com/)  
-[The Graph](https://thegraph.com/en/)  
-[Aware: Biometerics](https://www.aware.com/)  
+[NChain: We unlock the potential of enterprise data by making it reliable](https://nchain.com/)  
+[The Graph: The Graph is an indexing protocol for querying networks like Ethereum and IPFS](https://thegraph.com/en/)  
+[Aware: Biometrically Powered Visitor and Employee Management](https://www.aware.com/)  
 [Strike: Bitcoin Wallet](https://strike.me/en/)  
-[Blockchain Development APIs](https://infura.io/)  
-[Mirror: Web3 toolkit](https://mirror.xyz/)  
-[QuickNode](https://www.quicknode.com/)  
+[Infrua: The world’s most powerful blockchain development suite](https://infura.io/)  
+[Mirror: The essential web3 toolkit for sharing and funding anything](https://mirror.xyz/)  
+[QuickNode: We make it simple to power your blockchain applications and scale up as you grow](https://www.quicknode.com/)  
 
 
 ## Conferences
@@ -115,7 +115,8 @@ Occasionally we run into material that we feel is important. This is a section p
 [Kusama](https://kusama.network)  
 [Avalanche: Smart Contracts Platform](https://www.avax.network/)  
 [Cosoms: Framework for building blockchains](https://v1.cosmos.network/sdk)  
-[Celestia: Effortlessly deploy your own blockchain](https://celestia.org/)
+[Celestia: Effortlessly deploy your own blockchain](https://celestia.org/)  
+[Substrate: Build future proof blockchains optimized for any use case](https://substrate.io/)
 
 
 ## Research Papers
