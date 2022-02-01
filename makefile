@@ -25,10 +25,10 @@ SHELL := /bin/bash
 # curl -il -X GET http://localhost:8080/v1/mining/signal
 #
 # Wallet Stuff
-# go run app/wallet/main.go generate - will generate new private key and store it in the private.ecdsa
+# go run app/wallet/main.go generate
 # go run app/wallet/main.go account -w kennedy
-# go run app/wallet/main.go balance -w kennedy - will pick private key from private.ecdsa and print out your balance
-# go run app/wallet/main.go send -w kennedy -t 0xdd6B972ffcc631a62CAE1BB9d80b7ff429c8ebA4 -v 15 - will send transaction to bill_kennedy with value 15
+# go run app/wallet/main.go balance -w kennedy
+# go run app/wallet/main.go send -w kennedy -t 0xdd6B972ffcc631a62CAE1BB9d80b7ff429c8ebA4 -v 15
 
 # ==============================================================================
 # Local support
