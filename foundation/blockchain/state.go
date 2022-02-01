@@ -13,9 +13,6 @@ import (
 )
 
 /*
-	-- To Learn
-	Why would we want to save the signature inside the transaction?
-
 	-- Wallet
 	Provide name resolution for name => address
 	Remove the current AddTransaction endpoint.
@@ -24,6 +21,8 @@ import (
 
 	-- Blockchain
 	Remove Status fields from transaction, don't block a failed transaction.
+	Remove the from field for the signature.
+	Make sure each node validates the signature.
 	Create a block index file for query and clean up forks.
 
 	-- Testing
