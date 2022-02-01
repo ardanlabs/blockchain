@@ -35,6 +35,7 @@ func PublicRoutes(app *web.App, cfg Config) {
 	app.Handle(http.MethodGet, version, "/mining/signal", pbl.SignalMining)
 	app.Handle(http.MethodGet, version, "/tx/uncommitted/list", pbl.Mempool)
 	app.Handle(http.MethodPost, version, "/tx/add", pbl.AddTransactions)
+	app.Handle(http.MethodPost, version, "/tx/send", pbl.SendTransactions)
 }
 
 // PrivateRoutes binds all the version 1 private routes.

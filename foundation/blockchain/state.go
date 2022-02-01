@@ -283,7 +283,7 @@ func (s *State) CopyBalanceSheet() BalanceSheet {
 	return copyBalanceSheet(s.balanceSheet)
 }
 
-// CopyKnownPeerSet retrieves information about the peer for updating
+// CopyKnownPeers retrieves information about the peer for updating
 // the known peer list and their current block number.
 func (s *State) CopyKnownPeers() []Peer {
 	s.mu.Lock()
@@ -513,6 +513,7 @@ func (s *State) MineNewBlock(ctx context.Context) (Block, time.Duration, error) 
 		// Apply the balance changes based on this transaction. Set status
 		// information for other nodes to process this correctly.
 		if err := applyTransactionToBalance(balanceSheet, tx); err != nil {
+			// why do we still mine transaction if we have error in it?
 			nb.Transactions[i].Status = TxStatusError
 			nb.Transactions[i].StatusInfo = err.Error()
 			continue

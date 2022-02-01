@@ -1,5 +1,5 @@
 /*
-Package node is the implementation of a blockchain DB.
+Package blockchain is the implementation of a blockchain DB.
 
 A blockchain is a database for storing things of value.
 

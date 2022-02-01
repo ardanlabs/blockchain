@@ -80,7 +80,7 @@ func (tm TxMempool) Copy() []Tx {
 	return cpy
 }
 
-// CopyBest returns a list of the best transactions for the next
+// CopyBestByTip returns a list of the best transactions for the next
 // mining operation based on the offered tip. The caller specifies
 // how many transaction they want.
 func (tm TxMempool) CopyBestByTip(amount int) []Tx {
