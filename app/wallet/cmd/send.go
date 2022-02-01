@@ -25,7 +25,7 @@ var sendCmd = &cobra.Command{
 	Use:   "send",
 	Short: "Send transaction",
 	Run: func(cmd *cobra.Command, args []string) {
-		privateKey, err := crypto.LoadECDSA("private.ecdsa")
+		privateKey, err := crypto.LoadECDSA(getPrivateKeyPath())
 		if err != nil {
 			log.Fatal(err)
 		}

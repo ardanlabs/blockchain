@@ -3,8 +3,19 @@ package cmd
 
 import (
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/spf13/cobra"
+)
+
+var (
+	privateKeyName string
+	walletPath     string
+)
+
+const (
+	keyExtenstion = ".ecdsa"
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -24,4 +35,13 @@ func Execute() {
 
 func init() {
 	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	rootCmd.PersistentFlags().StringVarP(&privateKeyName, "wallet", "w", "private.ecdsa", "Path to the private key.")
+	rootCmd.PersistentFlags().StringVarP(&walletPath, "wallet-path", "p", "zblock/wallets/", "Path to the directory with private keys.")
+}
+
+func getPrivateKeyPath() string {
+	if !strings.HasSuffix(privateKeyName, keyExtenstion) {
+		privateKeyName += keyExtenstion
+	}
+	return filepath.Join(walletPath, privateKeyName)
 }

@@ -16,7 +16,7 @@ var generateCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal(err)
 		}
-		if err := crypto.SaveECDSA("private.ecdsa", privateKey); err != nil {
+		if err := crypto.SaveECDSA(getPrivateKeyPath(), privateKey); err != nil {
 			log.Fatal(err)
 		}
 	},

@@ -16,7 +16,7 @@ var balanceCmd = &cobra.Command{
 	Use:   "balance",
 	Short: "Print your balance.",
 	Run: func(cmd *cobra.Command, args []string) {
-		privateKey, err := crypto.LoadECDSA("private.ecdsa")
+		privateKey, err := crypto.LoadECDSA(getPrivateKeyPath())
 		if err != nil {
 			log.Fatal(err)
 		}
