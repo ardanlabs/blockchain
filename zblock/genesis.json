@@ -6,7 +6,7 @@
 	"mining_reward": 700,
 	"gas_price": 15,
     "balance_sheet": {
-        "bill_kennedy": 1000000,
+        "0xDcf63988a27fC083a39f3f17211606B4cbfe1269": 1000000,
         "pavel_aborilov": 1000000
     }
 }

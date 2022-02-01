@@ -19,6 +19,10 @@ SHELL := /bin/bash
 # Force a mining operation
 # curl -il -X GET http://localhost:8080/v1/mining/signal
 #
+# Wallet Stuff
+# go run app/wallet/main.go generate - will generate new private key and store it in the private.ecdsa
+# go run app/wallet/main.go balance - will pick private key from private.ecdsa and print out your balance
+# go run app/wallet/main.go send -t bill_kennedy -v 15 - will send transaction to bill_kennedy with value 15
 
 # ==============================================================================
 # Local support
@@ -34,6 +38,15 @@ up2:
 
 down:
 	kill -INT $(shell ps | grep go-build | grep -v grep | sed -n 2,2p | cut -c1-5)
+
+# ==============================================================================
+# Wallet support
+
+walbal:
+	go run app/wallet/main.go balance
+
+walgen:
+	go run app/wallet/main.go generate
 
 # ==============================================================================
 # Modules support

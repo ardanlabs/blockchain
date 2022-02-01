@@ -21,6 +21,7 @@ var balanceCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 		account := crypto.PubkeyToAddress(privateKey.PublicKey)
+		fmt.Println("Public Key:", account)
 		resp, err := http.Get(fmt.Sprintf("%s/v1/balances/list/%s", url, account))
 		if err != nil {
 			log.Fatal(err)
