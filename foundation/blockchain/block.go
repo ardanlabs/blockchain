@@ -22,7 +22,7 @@ const zeroHash string = "00000000000000000000000000000000"
 // BlockHeader represents common information required for each block.
 type BlockHeader struct {
 	ParentHash  string `json:"parent_hash"` // Hash of the previous block in the chain.
-	Beneficiary string `json:"beneficiary"` // Account who receives the reward and gas fee.
+	Beneficiary string `json:"beneficiary"` // Address who receives the reward and gas fee.
 	Difficulty  int    `json:"difficulty"`  // Number of 0's needed to solve the hash solution.
 	Number      uint64 `json:"number"`      // Block number in the chain.
 	TotalTip    uint   `json:"total_tip"`   // Total tip paid by all senders as an incentive.

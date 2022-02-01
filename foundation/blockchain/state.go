@@ -13,8 +13,20 @@ import (
 )
 
 /*
-	Need a wallet to sign transactions properly.
+	-- To Learn
+	Why would we want to save the signature inside the transaction?
+
+	-- Wallet
+	Provide name resolution for name => address
+	Remove the current AddTransaction endpoint.
+	Need to load the address's balances from chain, use mempool as well, allow refresh.
+	Need to verify enough money at the address before sending a transaction.
+
+	-- Blockchain
+	Remove Status fields from transaction, don't block a failed transaction.
 	Create a block index file for query and clean up forks.
+
+	-- Testing
 	Need tests.
 */
 
@@ -37,7 +49,7 @@ type EventHandler func(v string, args ...interface{})
 // Config represents the configuration required to start
 // the blockchain node.
 type Config struct {
-	MinerAccount string
+	MinerAddress string
 	Host         string
 	DBPath       string
 	KnownPeers   PeerSet
@@ -46,7 +58,7 @@ type Config struct {
 
 // State manages the blockchain database.
 type State struct {
-	minerAccount string
+	minerAddress string
 	host         string
 	dbPath       string
 	knownPeers   PeerSet
@@ -118,7 +130,7 @@ func New(cfg Config) (*State, error) {
 
 	// Create the State to provide support for managing the blockchain.
 	state := State{
-		minerAccount: cfg.MinerAccount,
+		minerAddress: cfg.MinerAddress,
 		host:         cfg.Host,
 		dbPath:       cfg.DBPath,
 		knownPeers:   cfg.KnownPeers,
@@ -305,15 +317,15 @@ func (s *State) CopyKnownPeers() []Peer {
 // QueryLastest represents to query the latest block in the chain.
 const QueryLastest = ^uint64(0) >> 1
 
-// QueryBalances returns a copy of the set of balances by account.
-func (s *State) QueryBalances(account string) BalanceSheet {
+// QueryBalances returns a copy of the set of balances by address.
+func (s *State) QueryBalances(address string) BalanceSheet {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	balanceSheet := newBalanceSheet()
-	for acct, value := range s.balanceSheet {
-		if account == acct {
-			balanceSheet.replace(acct, value)
+	for addr, value := range s.balanceSheet {
+		if address == addr {
+			balanceSheet.replace(addr, value)
 		}
 	}
 
@@ -351,10 +363,10 @@ func (s *State) QueryBlocksByNumber(from uint64, to uint64) []Block {
 	return out
 }
 
-// QueryBlocksByAccount returns the set of blocks by account. If the account
+// QueryBlocksByAddress returns the set of blocks by address. If the address
 // is empty, all blocks are returned. This function reads the blockchain
 // from disk first.
-func (s *State) QueryBlocksByAccount(account string) []Block {
+func (s *State) QueryBlocksByAddress(address string) []Block {
 	blocks, err := loadBlocksFromDisk(s.dbPath)
 	if err != nil {
 		return nil
@@ -364,7 +376,7 @@ func (s *State) QueryBlocksByAccount(account string) []Block {
 blocks:
 	for _, block := range blocks {
 		for _, tran := range block.Transactions {
-			if account == "" || tran.From == account || tran.To == account {
+			if address == "" || tran.From == address || tran.To == address {
 				out = append(out, block)
 				continue blocks
 			}
@@ -497,7 +509,7 @@ func (s *State) MineNewBlock(ctx context.Context) (Block, time.Duration, error) 
 		}
 
 		// Create a new block which owns it's own copy of the transactions.
-		nb = NewBlock(s.minerAccount, s.genesis.Difficulty, s.genesis.TransPerBlock, s.latestBlock, s.txMempool)
+		nb = NewBlock(s.minerAddress, s.genesis.Difficulty, s.genesis.TransPerBlock, s.latestBlock, s.txMempool)
 
 		// Get a copy of the balance sheet.
 		balanceSheet = copyBalanceSheet(s.balanceSheet)
@@ -521,7 +533,7 @@ func (s *State) MineNewBlock(ctx context.Context) (Block, time.Duration, error) 
 		nb.Transactions[i].Status = TxStatusAccepted
 
 		// Apply the miner tip and gas fee for this transaction.
-		applyMiningFeeToBalance(balanceSheet, s.minerAccount, tx)
+		applyMiningFeeToBalance(balanceSheet, s.minerAddress, tx)
 
 		// Update the total gas and tip fees.
 		nb.Header.TotalGas += tx.Gas
@@ -529,7 +541,7 @@ func (s *State) MineNewBlock(ctx context.Context) (Block, time.Duration, error) 
 	}
 
 	// Apply the miner reward for this block.
-	applyMiningRewardToBalance(balanceSheet, s.minerAccount, s.genesis.MiningReward)
+	applyMiningRewardToBalance(balanceSheet, s.minerAddress, s.genesis.MiningReward)
 
 	// Attempt to create a new BlockFS by solving the POW puzzle.
 	// This can be cancelled.

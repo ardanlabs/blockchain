@@ -55,7 +55,7 @@ func run(log *zap.SugaredLogger) error {
 			PrivateHost     string        `conf:"default:0.0.0.0:9080"`
 		}
 		Node struct {
-			MinerAccount string   `conf:"default:miner1"`
+			MinerAddress string   `conf:"default:miner1"`
 			DBPath       string   `conf:"default:zblock/blocks.db"`
 			KnownPeers   []string `conf:"default:0.0.0.0:9080;0.0.0.0:9180"`
 		}
@@ -102,7 +102,7 @@ func run(log *zap.SugaredLogger) error {
 	}
 
 	bc, err := blockchain.New(blockchain.Config{
-		MinerAccount: cfg.Node.MinerAccount,
+		MinerAddress: cfg.Node.MinerAddress,
 		Host:         cfg.Web.PrivateHost,
 		DBPath:       cfg.Node.DBPath,
 		KnownPeers:   peerSet,

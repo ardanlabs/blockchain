@@ -1,7 +1,7 @@
 package public
 
 type balance struct {
-	Account string `json:"account"`
+	Address string `json:"address"`
 	Balance uint   `json:"balance"`
 }
 

@@ -29,9 +29,9 @@ func PublicRoutes(app *web.App, cfg Config) {
 
 	app.Handle(http.MethodGet, version, "/genesis/list", pbl.Genesis)
 	app.Handle(http.MethodGet, version, "/balances/list", pbl.Balances)
-	app.Handle(http.MethodGet, version, "/balances/list/:account", pbl.Balances)
-	app.Handle(http.MethodGet, version, "/blocks/list", pbl.BlocksByAccount)
-	app.Handle(http.MethodGet, version, "/blocks/list/:account", pbl.BlocksByAccount)
+	app.Handle(http.MethodGet, version, "/balances/list/:address", pbl.Balances)
+	app.Handle(http.MethodGet, version, "/blocks/list", pbl.BlocksByAddress)
+	app.Handle(http.MethodGet, version, "/blocks/list/:address", pbl.BlocksByAddress)
 	app.Handle(http.MethodGet, version, "/mining/signal", pbl.SignalMining)
 	app.Handle(http.MethodGet, version, "/tx/uncommitted/list", pbl.Mempool)
 	app.Handle(http.MethodPost, version, "/tx/add", pbl.AddTransactions)

@@ -17,8 +17,8 @@ var addressCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal(err)
 		}
-		account := crypto.PubkeyToAddress(privateKey.PublicKey)
-		fmt.Println(account)
+		address := crypto.PubkeyToAddress(privateKey.PublicKey)
+		fmt.Println(address)
 	},
 }
 

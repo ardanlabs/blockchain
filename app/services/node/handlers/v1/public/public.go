@@ -109,19 +109,19 @@ func (h Handlers) Mempool(ctx context.Context, w http.ResponseWriter, r *http.Re
 
 // Balances returns the current balances for all users.
 func (h Handlers) Balances(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	account := web.Param(r, "account")
+	address := web.Param(r, "address")
 	var balanceSheet blockchain.BalanceSheet
 
-	if account == "" {
+	if address == "" {
 		balanceSheet = h.BC.CopyBalanceSheet()
 	} else {
-		balanceSheet = h.BC.QueryBalances(account)
+		balanceSheet = h.BC.QueryBalances(address)
 	}
 
 	bals := make([]balance, 0, len(balanceSheet))
-	for act, dbBal := range balanceSheet {
+	for addr, dbBal := range balanceSheet {
 		bal := balance{
-			Account: act,
+			Address: addr,
 			Balance: dbBal,
 		}
 		bals = append(bals, bal)
@@ -136,11 +136,11 @@ func (h Handlers) Balances(ctx context.Context, w http.ResponseWriter, r *http.R
 	return web.Respond(ctx, w, balances, http.StatusOK)
 }
 
-// BlocksByAccount returns all the blocks and their details.
-func (h Handlers) BlocksByAccount(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	account := web.Param(r, "account")
+// BlocksByAddress returns all the blocks and their details.
+func (h Handlers) BlocksByAddress(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	address := web.Param(r, "address")
 
-	dbBlocks := h.BC.QueryBlocksByAccount(account)
+	dbBlocks := h.BC.QueryBlocksByAddress(address)
 	if len(dbBlocks) == 0 {
 		return web.Respond(ctx, w, nil, http.StatusNoContent)
 	}
