@@ -9,13 +9,6 @@ const (
 	TxDataReward = "reward"
 )
 
-// Set of transaction status types.
-const (
-	TxStatusAccepted = "accepted" // Accepted and should be applied to the balance.
-	TxStatusError    = "error"    // An error occured and should not be applied to the balance.
-	TxStatusNew      = "new"      // The transaction is newly added to the mempool.
-)
-
 // =============================================================================
 
 // TxError represents an error on a transaction.
@@ -33,15 +26,13 @@ func (txe *TxError) Error() string {
 
 // Tx represents the basic unit of record for the things of value being recorded.
 type Tx struct {
-	ID         string `json:"id"`          // Unique ID for the transaction to help with mempool lookups.
-	From       string `json:"from"`        // Address this transaction is from.
-	To         string `json:"to"`          // Address receiving the benefit of the transaction.
-	Value      uint   `json:"value"`       // Monetary value received from this transaction.
-	Tip        uint   `json:"tip"`         // Tip offered by the sender as an incentive to mine this transaction.
-	Gas        uint   `json:"gas"`         // Gas fee to recover computation costs paid by the sender.
-	Data       string `json:"data"`        // Extra data related to the transaction.
-	Status     string `json:"status"`      // Final status of the transaction to help reconcile balances.
-	StatusInfo string `json:"status_info"` // Extra information related to the status.
+	ID    string `json:"id"`    // Unique ID for the transaction to help with mempool lookups.
+	From  string `json:"from"`  // Address this transaction is from.
+	To    string `json:"to"`    // Address receiving the benefit of the transaction.
+	Value uint   `json:"value"` // Monetary value received from this transaction.
+	Tip   uint   `json:"tip"`   // Tip offered by the sender as an incentive to mine this transaction.
+	Gas   uint   `json:"gas"`   // Gas fee to recover computation costs paid by the sender.
+	Data  string `json:"data"`  // Extra data related to the transaction.
 }
 
 // =============================================================================

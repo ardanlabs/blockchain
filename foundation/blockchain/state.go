@@ -20,7 +20,6 @@ import (
 	Need to verify enough money at the address before sending a transaction.
 
 	-- Blockchain
-	Remove Status fields from transaction, don't block a failed transaction.
 	Remove the from field for the signature.
 	Make sure each node validates the signature.
 	Create a block index file for query and clean up forks.
@@ -142,7 +141,7 @@ func New(cfg Config) (*State, error) {
 		dbFile:       dbFile,
 	}
 
-	ev("node: Started: blocks[%d]", latestBlock.Header.Number)
+	ev("state: Started: blocks[%d]", latestBlock.Header.Number)
 
 	// Run the blockchain workers.
 	state.bcWorker = runBCWorker(&state, cfg.EvHandler)
@@ -167,14 +166,13 @@ func (s *State) Shutdown() error {
 // NewTx constructs a new Transaction record with blocking settings.
 func (s *State) NewTx(from string, to string, value uint, tip uint, data string) Tx {
 	return Tx{
-		ID:     uuid.New().String(),
-		From:   from,
-		To:     to,
-		Value:  value,
-		Tip:    tip,
-		Gas:    s.genesis.GasPrice,
-		Data:   data,
-		Status: TxStatusNew,
+		ID:    uuid.New().String(),
+		From:  from,
+		To:    to,
+		Value: value,
+		Tip:   tip,
+		Gas:   s.genesis.GasPrice,
+		Data:  data,
 	}
 }
 
@@ -197,22 +195,22 @@ func (s *State) AddTransactions(txs []Tx, share bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	s.evHandler("node: AddTransactions: started : txrs[%d]", len(txs))
-	defer s.evHandler("node: AddTransactions: completed")
+	s.evHandler("state: AddTransactions: started : txrs[%d]", len(txs))
+	defer s.evHandler("state: AddTransactions: completed")
 
-	s.evHandler("node: AddTransactions: before: mempool[%d]", s.txMempool.Count())
+	s.evHandler("state: AddTransactions: before: mempool[%d]", s.txMempool.Count())
 	for _, tx := range txs {
 		s.txMempool.Add(tx.ID, tx)
 	}
-	s.evHandler("node: AddTransactions: after: mempool[%d]", s.txMempool.Count())
+	s.evHandler("state: AddTransactions: after: mempool[%d]", s.txMempool.Count())
 
 	if share {
-		s.evHandler("node: AddTransactions: signal tx sharing")
+		s.evHandler("state: AddTransactions: signal tx sharing")
 		s.bcWorker.signalShareTransactions(txs)
 	}
 
 	if s.txMempool.Count() >= s.genesis.TransPerBlock {
-		s.evHandler("node: AddTransactions: signal mining")
+		s.evHandler("state: AddTransactions: signal mining")
 		s.bcWorker.signalStartMining()
 	}
 }
@@ -390,8 +388,8 @@ blocks:
 // WriteNextBlock takes a block received from a peer, validates it and
 // if that passes, writes the block to disk.
 func (s *State) WriteNextBlock(block Block) error {
-	s.evHandler("node: WriteNextBlock: started : block[%s]", block.Hash())
-	defer s.evHandler("node: WriteNextBlock: completed")
+	s.evHandler("state: WriteNextBlock: started : block[%s]", block.Hash())
+	defer s.evHandler("state: WriteNextBlock: completed")
 
 	hash, err := s.validateNextBlock(block)
 	if err != nil {
@@ -519,17 +517,14 @@ func (s *State) MineNewBlock(ctx context.Context) (Block, time.Duration, error) 
 	}
 
 	// Process the transactions against the balance sheet.
-	for i, tx := range nb.Transactions {
+	for _, tx := range nb.Transactions {
 
 		// Apply the balance changes based on this transaction. Set status
 		// information for other nodes to process this correctly.
 		if err := applyTransactionToBalance(balanceSheet, tx); err != nil {
-			// why do we still mine transaction if we have error in it?
-			nb.Transactions[i].Status = TxStatusError
-			nb.Transactions[i].StatusInfo = err.Error()
+			s.evHandler("state: MineNewBlock: **********: WARNING : %s", err)
 			continue
 		}
-		nb.Transactions[i].Status = TxStatusAccepted
 
 		// Apply the miner tip and gas fee for this transaction.
 		applyMiningFeeToBalance(balanceSheet, s.minerAddress, tx)
