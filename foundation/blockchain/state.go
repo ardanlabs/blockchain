@@ -15,12 +15,11 @@ import (
 /*
 	-- Wallet
 	Provide name resolution for name => address
-	Remove the current AddTransaction endpoint.
+	Provide support to read a file of transactions to send.
 	Need to load the address's balances from chain, use mempool as well, allow refresh.
 	Need to verify enough money at the address before sending a transaction.
 
 	-- Blockchain
-	Remove the from field for the signature.
 	Make sure each node validates the signature.
 	Create a block index file for query and clean up forks.
 
