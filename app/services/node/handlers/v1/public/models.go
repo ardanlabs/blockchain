@@ -12,7 +12,6 @@ type Balances struct {
 }
 
 type Tx struct {
-	From  string `json:"from"`
 	To    string `json:"to"`
 	Value uint   `json:"value"`
 	Tip   uint   `json:"tip"`

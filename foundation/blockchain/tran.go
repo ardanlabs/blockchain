@@ -1,7 +1,10 @@
 package blockchain
 
 import (
+	"encoding/json"
 	"sort"
+
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 // Set of transaction data types.
@@ -26,13 +29,40 @@ func (txe *TxError) Error() string {
 
 // Tx represents the basic unit of record for the things of value being recorded.
 type Tx struct {
-	ID    string `json:"id"`    // Unique ID for the transaction to help with mempool lookups.
-	From  string `json:"from"`  // Address this transaction is from.
-	To    string `json:"to"`    // Address receiving the benefit of the transaction.
-	Value uint   `json:"value"` // Monetary value received from this transaction.
-	Tip   uint   `json:"tip"`   // Tip offered by the sender as an incentive to mine this transaction.
-	Gas   uint   `json:"gas"`   // Gas fee to recover computation costs paid by the sender.
-	Data  string `json:"data"`  // Extra data related to the transaction.
+	ID        string `json:"id"`        // Unique ID for the transaction to help with mempool lookups.
+	To        string `json:"to"`        // Address receiving the benefit of the transaction.
+	Value     uint   `json:"value"`     // Monetary value received from this transaction.
+	Tip       uint   `json:"tip"`       // Tip offered by the sender as an incentive to mine this transaction.
+	Gas       uint   `json:"gas"`       // Gas fee to recover computation costs paid by the sender.
+	Data      string `json:"data"`      // Extra data related to the transaction.
+	Signature []byte `json:"signature"` // Signature of the person who signed transaction.
+}
+
+// From extracts the address for the account that signed the transaction.
+func (tx Tx) From() string {
+	baseTx := struct {
+		To    string `json:"to"`
+		Value uint   `json:"value"`
+		Tip   uint   `json:"tip"`
+		Data  string `json:"data"`
+	}{
+		To:    tx.To,
+		Value: tx.Value,
+		Tip:   tx.Tip,
+		Data:  tx.Data,
+	}
+
+	data, err := json.Marshal(baseTx)
+	if err != nil {
+		return ""
+	}
+	hash := crypto.Keccak256Hash(data)
+	publicKey, err := crypto.SigToPub(hash.Bytes(), tx.Signature)
+	if err != nil {
+		return ""
+	}
+
+	return crypto.PubkeyToAddress(*publicKey).String()
 }
 
 // =============================================================================

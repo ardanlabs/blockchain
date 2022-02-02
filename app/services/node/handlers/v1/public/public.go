@@ -3,13 +3,11 @@ package public
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 
 	"github.com/ardanlabs/blockchain/foundation/blockchain"
 	"github.com/ardanlabs/blockchain/foundation/web"
-	"github.com/ethereum/go-ethereum/crypto"
 	"go.uber.org/zap"
 )
 
@@ -35,50 +33,7 @@ func (h Handlers) SendTransactions(ctx context.Context, w http.ResponseWriter, r
 	for i, signedTx := range signedTxs {
 		h.Log.Infow("add user tran", "traceid", v.TraceID, "tx", signedTx)
 		tx := signedTx.Transaction
-
-		data, err := json.Marshal(tx)
-		if err != nil {
-			return fmt.Errorf("unable to marshal transaction: %w", err)
-		}
-		hash := crypto.Keccak256Hash(data)
-		publicKey, err := crypto.SigToPub(hash.Bytes(), signedTx.Signature)
-		if err != nil {
-			return fmt.Errorf("unable to get public key from signature: %w", err)
-		}
-		from := crypto.PubkeyToAddress(*publicKey)
-		txs[i] = h.BC.NewTx(from.String(), tx.To, tx.Value, tx.Tip, tx.Data)
-	}
-
-	// Add these transaction and share them with the network.
-	h.BC.AddTransactions(txs, true)
-
-	resp := struct {
-		Status string `json:"status"`
-		Total  int
-	}{
-		Status: "transactions added to mempool",
-		Total:  len(txs),
-	}
-
-	return web.Respond(ctx, w, resp, http.StatusOK)
-}
-
-// AddTransactions adds new user transactions to the mempool.
-func (h Handlers) AddTransactions(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	v, err := web.GetValues(ctx)
-	if err != nil {
-		return web.NewShutdownError("web value missing from context")
-	}
-
-	var userTxs []Tx
-	if err := web.Decode(r, &userTxs); err != nil {
-		return fmt.Errorf("unable to decode payload: %w", err)
-	}
-
-	txs := make([]blockchain.Tx, len(userTxs))
-	for i, tx := range userTxs {
-		h.Log.Infow("add user tran", "traceid", v.TraceID, "tx", tx)
-		txs[i] = h.BC.NewTx(tx.From, tx.To, tx.Value, tx.Tip, tx.Data)
+		txs[i] = h.BC.NewTx(signedTx.Signature, tx.To, tx.Value, tx.Tip, tx.Data)
 	}
 
 	// Add these transaction and share them with the network.

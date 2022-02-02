@@ -36,7 +36,7 @@ func applyMiningFeeToBalance(balanceSheet BalanceSheet, beneficiary string, tx T
 	fee := tx.Gas + tx.Tip
 
 	balanceSheet[beneficiary] += fee
-	balanceSheet[tx.From] -= fee
+	balanceSheet[tx.From()] -= fee
 }
 
 // applyTransactionToBalance performs the business logic for applying a
@@ -47,19 +47,22 @@ func applyTransactionToBalance(balanceSheet BalanceSheet, tx Tx) error {
 		return nil
 	}
 
-	if tx.From == tx.To {
-		return fmt.Errorf("invalid transaction, do you mean to give a reward, from %s, to %s", tx.From, tx.To)
+	// Capture the address for the account this transaction came from.
+	from := tx.From()
+
+	if from == tx.To {
+		return fmt.Errorf("invalid transaction, do you mean to give a reward, from %s, to %s", from, tx.To)
 	}
 
-	if tx.Value > balanceSheet[tx.From] {
-		return fmt.Errorf("%s has an insufficient balance", tx.From)
+	if tx.Value > balanceSheet[from] {
+		return fmt.Errorf("%s has an insufficient balance", from)
 	}
 
-	balanceSheet[tx.From] -= tx.Value
+	balanceSheet[from] -= tx.Value
 	balanceSheet[tx.To] += tx.Value
 
 	if tx.Tip > 0 {
-		balanceSheet[tx.From] -= tx.Tip
+		balanceSheet[from] -= tx.Tip
 	}
 
 	return nil

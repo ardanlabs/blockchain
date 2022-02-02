@@ -5,14 +5,6 @@ SHELL := /bin/bash
 # Pavel: 0xdd6B972ffcc631a62CAE1BB9d80b7ff429c8ebA4
 # Ceasar: 0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76
 # Baba: 0x6Fe6CF3c8fF57c58d24BfC869668F48BCbDb3BD9
-# 
-# Seed transactions
-# curl -X POST http:/localhost:8080/v1/tx/add --header 'Content-Type: application/json' --data-binary "@app/tooling/curl/seed.json" 
-# curl -X POST http:/localhost:8080/v1/tx/add --header 'Content-Type: application/json' --data-binary "@app/tooling/curl/trans1.json" 
-#
-# Add User transactions
-# curl -X POST http:/localhost:8080/v1/tx/add --header 'Content-Type: application/json' --data-raw '[{"from": "0xF01813E4B85e178A83e29B8E7bF26BD830a25f32", "to": "0xF01813E4B85e178A83e29B8E7bF26BD830a25f32", "value": 10, "tip": 0, "data": "reward"}]'
-# curl -X POST http:/localhost:8080/v1/tx/add --header 'Content-Type: application/json' --data-raw '[{"from": "0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76", "to": "0x6Fe6CF3c8fF57c58d24BfC869668F48BCbDb3BD9", "tip": 10, "value": 10}]'
 #
 # Bookeeping transactions
 # curl -il -X GET http://localhost:8080/v1/genesis/list
@@ -28,7 +20,8 @@ SHELL := /bin/bash
 # go run app/wallet/main.go generate
 # go run app/wallet/main.go account -w kennedy
 # go run app/wallet/main.go balance -w kennedy
-# go run app/wallet/main.go send -w kennedy -t 0xdd6B972ffcc631a62CAE1BB9d80b7ff429c8ebA4 -v 15
+# go run app/wallet/main.go send -w kennedy -t 0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76 -v 100
+# go run app/wallet/main.go send -w kennedy -t 0x6Fe6CF3c8fF57c58d24BfC869668F48BCbDb3BD9 -v 150
 
 # ==============================================================================
 # Local support

@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bytes"
+	"crypto/ecdsa"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -18,6 +19,7 @@ var (
 	value uint
 	tip   uint
 	data  string
+	file  string
 )
 
 // sendCmd represents the send command
@@ -29,38 +31,51 @@ var sendCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal(err)
 		}
-		tx := public.Tx{
-			To:    to,
-			Value: value,
-			Tip:   tip,
-			Data:  data,
-		}
-		data, err := json.Marshal(tx)
-		if err != nil {
-			log.Fatal(err)
-		}
-		hash := crypto.Keccak256Hash(data)
-		signature, err := crypto.Sign(hash.Bytes(), privateKey)
-		if err != nil {
-			log.Fatal(err)
+
+		if file == "" {
+			sendWithDetails(privateKey)
+			return
 		}
 
-		payload := []public.SignedTx{
-			{
-				Transaction: tx,
-				Signature:   signature,
-			},
-		}
-		data, err = json.Marshal(payload)
-		if err != nil {
-			log.Fatal(err)
-		}
-		resp, err := http.Post(fmt.Sprintf("%s/v1/tx/send", url), "application/json", bytes.NewBuffer(data))
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer resp.Body.Close()
+		sendWithFile(privateKey)
 	},
+}
+
+func sendWithFile(privateKey *ecdsa.PrivateKey) {
+}
+
+func sendWithDetails(privateKey *ecdsa.PrivateKey) {
+	tx := public.Tx{
+		To:    to,
+		Value: value,
+		Tip:   tip,
+		Data:  data,
+	}
+	data, err := json.Marshal(tx)
+	if err != nil {
+		log.Fatal(err)
+	}
+	hash := crypto.Keccak256Hash(data)
+	signature, err := crypto.Sign(hash.Bytes(), privateKey)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	payload := []public.SignedTx{
+		{
+			Transaction: tx,
+			Signature:   signature,
+		},
+	}
+	data, err = json.Marshal(payload)
+	if err != nil {
+		log.Fatal(err)
+	}
+	resp, err := http.Post(fmt.Sprintf("%s/v1/tx/send", url), "application/json", bytes.NewBuffer(data))
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer resp.Body.Close()
 }
 
 func init() {
@@ -71,4 +86,5 @@ func init() {
 	sendCmd.Flags().UintVarP(&value, "value", "v", 0, "Value to send.")
 	sendCmd.Flags().UintVarP(&tip, "tip", "c", 0, "Tip to send.")
 	sendCmd.Flags().StringVarP(&data, "data", "d", "", "Data to send.")
+	sendCmd.Flags().StringVarP(&data, "file", "f", "", "File to read for transactions.")
 }

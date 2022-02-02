@@ -164,15 +164,15 @@ func (s *State) Shutdown() error {
 // =============================================================================
 
 // NewTx constructs a new Transaction record with blocking settings.
-func (s *State) NewTx(from string, to string, value uint, tip uint, data string) Tx {
+func (s *State) NewTx(signature []byte, to string, value uint, tip uint, data string) Tx {
 	return Tx{
-		ID:    uuid.New().String(),
-		From:  from,
-		To:    to,
-		Value: value,
-		Tip:   tip,
-		Gas:   s.genesis.GasPrice,
-		Data:  data,
+		ID:        uuid.New().String(),
+		To:        to,
+		Value:     value,
+		Tip:       tip,
+		Gas:       s.genesis.GasPrice,
+		Data:      data,
+		Signature: signature,
 	}
 }
 
@@ -372,8 +372,8 @@ func (s *State) QueryBlocksByAddress(address string) []Block {
 	var out []Block
 blocks:
 	for _, block := range blocks {
-		for _, tran := range block.Transactions {
-			if address == "" || tran.From == address || tran.To == address {
+		for _, tx := range block.Transactions {
+			if address == "" || tx.From() == address || tx.To == address {
 				out = append(out, block)
 				continue blocks
 			}
