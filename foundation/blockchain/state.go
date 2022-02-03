@@ -183,9 +183,6 @@ func (s *State) SubmitWalletTransaction(signedTx WalletTxSigned) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	s.evHandler("state: SubmitWalletTransaction: started : signedTx[%d]", signedTx)
-	defer s.evHandler("state: SubmitWalletTransaction: completed")
-
 	tx := Tx{
 		ID:        uuid.New().String(),
 		To:        signedTx.Tx.To,
