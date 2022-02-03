@@ -166,21 +166,6 @@ func (s *State) Shutdown() error {
 
 // =============================================================================
 
-// NewTx constructs a new Transaction record with blocking settings.
-func (s *State) NewTx(signature []byte, to string, value uint, tip uint, data string) Tx {
-	return Tx{
-		ID:        uuid.New().String(),
-		To:        to,
-		Value:     value,
-		Tip:       tip,
-		Gas:       s.genesis.GasPrice,
-		Data:      data,
-		Signature: signature,
-	}
-}
-
-// =============================================================================
-
 // SignalMining sends a signal to the mining G to start.
 func (s *State) SignalMining() {
 	s.powWorker.signalStartMining()
@@ -201,7 +186,15 @@ func (s *State) SubmitWalletTransaction(signedTx WalletTxSigned) {
 	s.evHandler("state: SubmitWalletTransaction: started : signedTx[%d]", signedTx)
 	defer s.evHandler("state: SubmitWalletTransaction: completed")
 
-	tx := s.NewTx(signedTx.Signature, signedTx.Tx.To, signedTx.Tx.Value, signedTx.Tx.Tip, signedTx.Tx.Data)
+	tx := Tx{
+		ID:        uuid.New().String(),
+		To:        signedTx.Tx.To,
+		Value:     signedTx.Tx.Value,
+		Tip:       signedTx.Tx.Tip,
+		Gas:       s.genesis.GasPrice,
+		Data:      signedTx.Tx.Data,
+		Signature: signedTx.Signature,
+	}
 
 	s.evHandler("state: SubmitWalletTransaction: started : tx[%d]", tx)
 	defer s.evHandler("state: SubmitWalletTransaction: completed")
