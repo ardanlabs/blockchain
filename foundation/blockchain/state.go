@@ -20,6 +20,7 @@ import (
 	Need to verify enough money at the address before sending a transaction.
 
 	-- Blockchain
+	Add a name server for known account. Used for displaying information.
 	Create a block index file for query and clean up forks.
 	Publishing events. (New Blocks)
 	Implement a POS workflow. (Maybe)
