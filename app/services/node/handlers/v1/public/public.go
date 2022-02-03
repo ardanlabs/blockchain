@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
+	v1 "github.com/ardanlabs/blockchain/business/web/v1"
 	"github.com/ardanlabs/blockchain/foundation/blockchain"
 	"github.com/ardanlabs/blockchain/foundation/web"
 	"go.uber.org/zap"
@@ -30,7 +31,9 @@ func (h Handlers) SubmitWalletTransaction(ctx context.Context, w http.ResponseWr
 	}
 
 	h.Log.Infow("add user tran", "traceid", v.TraceID, "tx", signedTx)
-	h.BC.SubmitWalletTransaction(signedTx)
+	if err := h.BC.SubmitWalletTransaction(signedTx); err != nil {
+		return v1.NewRequestError(err, http.StatusBadRequest)
+	}
 
 	resp := struct {
 		Status string `json:"status"`

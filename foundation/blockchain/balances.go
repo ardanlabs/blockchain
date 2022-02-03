@@ -15,6 +15,11 @@ func (bs BalanceSheet) replace(address string, value uint) {
 	bs[address] = value
 }
 
+// remove deletes the address from the balance sheet
+func (bs BalanceSheet) remove(address string) {
+	delete(bs, address)
+}
+
 // =============================================================================
 
 // copyBalanceSheet makes a copy of the specified balance sheet.
@@ -33,10 +38,14 @@ func applyMiningRewardToBalance(balanceSheet BalanceSheet, beneficiary string, r
 
 // applyMiningFeeToBalance gives the beneficiary address a fee for mining the block.
 func applyMiningFeeToBalance(balanceSheet BalanceSheet, beneficiary string, tx Tx) {
-	fee := tx.Gas + tx.Tip
+	from, err := tx.From()
+	if err != nil {
+		return
+	}
 
+	fee := tx.Gas + tx.Tip
 	balanceSheet[beneficiary] += fee
-	balanceSheet[tx.From()] -= fee
+	balanceSheet[from] -= fee
 }
 
 // applyTransactionToBalance performs the business logic for applying a
@@ -47,8 +56,11 @@ func applyTransactionToBalance(balanceSheet BalanceSheet, tx Tx) error {
 		return nil
 	}
 
-	// Capture the address for the account this transaction came from.
-	from := tx.From()
+	// Capture the address of the account that signed this transaction.
+	from, err := tx.From()
+	if err != nil {
+		return fmt.Errorf("invalid signature, %s", err)
+	}
 
 	if from == tx.To {
 		return fmt.Errorf("invalid transaction, do you mean to give a reward, from %s, to %s", from, tx.To)

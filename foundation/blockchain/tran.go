@@ -39,7 +39,7 @@ type Tx struct {
 }
 
 // From extracts the address for the account that signed the transaction.
-func (tx Tx) From() string {
+func (tx Tx) From() (string, error) {
 	walletTx := WalletTx{
 		To:    tx.To,
 		Value: tx.Value,
@@ -49,15 +49,15 @@ func (tx Tx) From() string {
 
 	data, err := json.Marshal(walletTx)
 	if err != nil {
-		return ""
+		return "", err
 	}
 	hash := crypto.Keccak256Hash(data)
 	publicKey, err := crypto.SigToPub(hash.Bytes(), tx.Signature)
 	if err != nil {
-		return ""
+		return "", err
 	}
 
-	return crypto.PubkeyToAddress(*publicKey).String()
+	return crypto.PubkeyToAddress(*publicKey).String(), nil
 }
 
 // =============================================================================

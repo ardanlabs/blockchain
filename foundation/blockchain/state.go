@@ -17,13 +17,10 @@ import (
 	Provide name resolution for name => address
 	Provide support to read a file of transactions to send.
 	Concept of connecting and receiving events.
-	Need to load the address's balances from chain, use mempool as well, allow refresh.
 	Need to verify enough money at the address before sending a transaction.
 
 	-- Blockchain
-	Make sure each node validates the signature.
 	Create a block index file for query and clean up forks.
-	Balance respecting the mempool.
 	Publishing events. (New Blocks)
 	Implement a POS workflow. (Maybe)
 
@@ -179,7 +176,7 @@ func (s *State) SignalCancelMining() {
 // =============================================================================
 
 // SubmitWalletTransaction accepts a transaction from a wallet for inclusion.
-func (s *State) SubmitWalletTransaction(signedTx WalletTxSigned) {
+func (s *State) SubmitWalletTransaction(signedTx WalletTxSigned) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -196,6 +193,12 @@ func (s *State) SubmitWalletTransaction(signedTx WalletTxSigned) {
 	s.evHandler("state: SubmitWalletTransaction: started : tx[%d]", tx)
 	defer s.evHandler("state: SubmitWalletTransaction: completed")
 
+	// Validate the signature on this transaction is valid.
+	if _, err := tx.From(); err != nil {
+		s.evHandler("state: SubmitWalletTransaction: ERROR: invalid signature: %s", err)
+		return err
+	}
+
 	s.evHandler("state: SubmitWalletTransaction: before: mempool[%d]", s.txMempool.Count())
 	s.txMempool.Add(tx.ID, tx)
 	s.evHandler("state: SubmitWalletTransaction: after: mempool[%d]", s.txMempool.Count())
@@ -207,6 +210,8 @@ func (s *State) SubmitWalletTransaction(signedTx WalletTxSigned) {
 		s.evHandler("state: SubmitWalletTransaction: signal mining")
 		s.powWorker.signalStartMining()
 	}
+
+	return nil
 }
 
 // SubmitWalletTransaction accepts a transaction from a node for inclusion.
@@ -331,10 +336,14 @@ func (s *State) QueryBalances(address string) BalanceSheet {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	balanceSheet := newBalanceSheet()
-	for addr, value := range s.balanceSheet {
-		if address == addr {
-			balanceSheet.replace(addr, value)
+	balanceSheet := copyBalanceSheet(s.balanceSheet)
+	for _, tx := range s.txMempool {
+		applyTransactionToBalance(balanceSheet, tx)
+	}
+
+	for addr := range balanceSheet {
+		if address != addr {
+			balanceSheet.remove(addr)
 		}
 	}
 
@@ -385,7 +394,11 @@ func (s *State) QueryBlocksByAddress(address string) []Block {
 blocks:
 	for _, block := range blocks {
 		for _, tx := range block.Transactions {
-			if address == "" || tx.From() == address || tx.To == address {
+			from, err := tx.From()
+			if err != nil {
+				continue
+			}
+			if address == "" || from == address || tx.To == address {
 				out = append(out, block)
 				continue blocks
 			}
