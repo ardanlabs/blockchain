@@ -16,12 +16,16 @@ import (
 	-- Wallet
 	Provide name resolution for name => address
 	Provide support to read a file of transactions to send.
+	Concept of connecting and receiving events.
 	Need to load the address's balances from chain, use mempool as well, allow refresh.
 	Need to verify enough money at the address before sending a transaction.
 
 	-- Blockchain
 	Make sure each node validates the signature.
 	Create a block index file for query and clean up forks.
+	Balance respecting the mempool.
+	Publishing events. (New Blocks)
+	Implement a POS workflow. (Maybe)
 
 	-- Testing
 	Need tests.
@@ -68,7 +72,7 @@ type State struct {
 	dbFile       *os.File
 	mu           sync.Mutex
 
-	bcWorker *bcWorker
+	powWorker *powWorker
 }
 
 // New constructs a new blockchain for data management.
@@ -142,8 +146,8 @@ func New(cfg Config) (*State, error) {
 
 	ev("state: Started: blocks[%d]", latestBlock.Header.Number)
 
-	// Run the blockchain workers.
-	state.bcWorker = runBCWorker(&state, cfg.EvHandler)
+	// Run the POW worker.
+	state.powWorker = runPOWWorker(&state, cfg.EvHandler)
 
 	return &state, nil
 }
@@ -155,7 +159,7 @@ func (s *State) Shutdown() error {
 	defer s.dbFile.Close()
 
 	// Stop all blockchain writing activity.
-	s.bcWorker.shutdown()
+	s.powWorker.shutdown()
 
 	return nil
 }
@@ -179,12 +183,12 @@ func (s *State) NewTx(signature []byte, to string, value uint, tip uint, data st
 
 // SignalMining sends a signal to the mining G to start.
 func (s *State) SignalMining() {
-	s.bcWorker.signalStartMining()
+	s.powWorker.signalStartMining()
 }
 
 // SignalCancelMining sends a signal to the mining G to stop.
 func (s *State) SignalCancelMining() {
-	s.bcWorker.signalCancelMining()
+	s.powWorker.signalCancelMining()
 }
 
 // =============================================================================
@@ -205,12 +209,12 @@ func (s *State) AddTransactions(txs []Tx, share bool) {
 
 	if share {
 		s.evHandler("state: AddTransactions: signal tx sharing")
-		s.bcWorker.signalShareTransactions(txs)
+		s.powWorker.signalShareTransactions(txs)
 	}
 
 	if s.txMempool.Count() >= s.genesis.TransPerBlock {
 		s.evHandler("state: AddTransactions: signal mining")
-		s.bcWorker.signalStartMining()
+		s.powWorker.signalStartMining()
 	}
 }
 
@@ -252,7 +256,7 @@ func (s *State) Truncate() error {
 	s.dbFile = dbFile
 
 	// Start the peer update operation.
-	s.bcWorker.signalPeerUpdates()
+	s.powWorker.signalPeerUpdates()
 
 	return nil
 }
