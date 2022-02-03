@@ -193,27 +193,46 @@ func (s *State) SignalCancelMining() {
 
 // =============================================================================
 
-// AddTransactions appends a new transactions to the mempool.
-func (s *State) AddTransactions(txs []Tx, share bool) {
+// SubmitWalletTransaction accepts a transaction from a wallet for inclusion.
+func (s *State) SubmitWalletTransaction(signedTx WalletTxSigned) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	s.evHandler("state: AddTransactions: started : txrs[%d]", len(txs))
-	defer s.evHandler("state: AddTransactions: completed")
+	s.evHandler("state: SubmitWalletTransaction: started : signedTx[%d]", signedTx)
+	defer s.evHandler("state: SubmitWalletTransaction: completed")
 
-	s.evHandler("state: AddTransactions: before: mempool[%d]", s.txMempool.Count())
-	for _, tx := range txs {
-		s.txMempool.Add(tx.ID, tx)
-	}
-	s.evHandler("state: AddTransactions: after: mempool[%d]", s.txMempool.Count())
+	tx := s.NewTx(signedTx.Signature, signedTx.Tx.To, signedTx.Tx.Value, signedTx.Tx.Tip, signedTx.Tx.Data)
 
-	if share {
-		s.evHandler("state: AddTransactions: signal tx sharing")
-		s.powWorker.signalShareTransactions(txs)
-	}
+	s.evHandler("state: SubmitWalletTransaction: started : tx[%d]", tx)
+	defer s.evHandler("state: SubmitWalletTransaction: completed")
+
+	s.evHandler("state: SubmitWalletTransaction: before: mempool[%d]", s.txMempool.Count())
+	s.txMempool.Add(tx.ID, tx)
+	s.evHandler("state: SubmitWalletTransaction: after: mempool[%d]", s.txMempool.Count())
+
+	s.evHandler("state: SubmitWalletTransaction: signal tx sharing")
+	s.powWorker.signalShareTransactions(tx)
 
 	if s.txMempool.Count() >= s.genesis.TransPerBlock {
-		s.evHandler("state: AddTransactions: signal mining")
+		s.evHandler("state: SubmitWalletTransaction: signal mining")
+		s.powWorker.signalStartMining()
+	}
+}
+
+// SubmitWalletTransaction accepts a transaction from a node for inclusion.
+func (s *State) SubmitNodeTransaction(tx Tx) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.evHandler("state: SubmitNodeTransaction: started : tx[%d]", tx)
+	defer s.evHandler("state: SubmitNodeTransaction: completed")
+
+	s.evHandler("state: SubmitNodeTransaction: before: mempool[%d]", s.txMempool.Count())
+	s.txMempool.Add(tx.ID, tx)
+	s.evHandler("state: SubmitNodeTransaction: after: mempool[%d]", s.txMempool.Count())
+
+	if s.txMempool.Count() >= s.genesis.TransPerBlock {
+		s.evHandler("state: SubmitNodeTransaction: signal mining")
 		s.powWorker.signalStartMining()
 	}
 }

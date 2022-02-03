@@ -40,19 +40,14 @@ type Tx struct {
 
 // From extracts the address for the account that signed the transaction.
 func (tx Tx) From() string {
-	baseTx := struct {
-		To    string `json:"to"`
-		Value uint   `json:"value"`
-		Tip   uint   `json:"tip"`
-		Data  string `json:"data"`
-	}{
+	walletTx := WalletTx{
 		To:    tx.To,
 		Value: tx.Value,
 		Tip:   tx.Tip,
 		Data:  tx.Data,
 	}
 
-	data, err := json.Marshal(baseTx)
+	data, err := json.Marshal(walletTx)
 	if err != nil {
 		return ""
 	}

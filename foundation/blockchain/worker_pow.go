@@ -34,7 +34,7 @@ type powWorker struct {
 	peerUpdates  chan bool
 	startMining  chan bool
 	cancelMining chan bool
-	txSharing    chan []Tx
+	txSharing    chan Tx
 	evHandler    EventHandler
 	baseURL      string
 }
@@ -48,7 +48,7 @@ func runPOWWorker(state *State, evHandler EventHandler) *powWorker {
 		peerUpdates:  make(chan bool, 1),
 		startMining:  make(chan bool, 1),
 		cancelMining: make(chan bool, 1),
-		txSharing:    make(chan []Tx, maxTxShareRequests),
+		txSharing:    make(chan Tx, maxTxShareRequests),
 		evHandler:    evHandler,
 		baseURL:      "http://%s/v1/node",
 	}
@@ -154,9 +154,9 @@ func (w *powWorker) shareTxOperations() {
 
 	for {
 		select {
-		case txs := <-w.txSharing:
+		case tx := <-w.txSharing:
 			if !w.isShutdown() {
-				w.runShareTxOperation(txs)
+				w.runShareTxOperation(tx)
 			}
 		case <-w.shut:
 			w.evHandler("bcWorker: shareTxOperations: received shut signal")
@@ -209,9 +209,9 @@ func (w *powWorker) signalCancelMining() {
 
 // signalShareTransactions queues up a share transaction operation. If
 // maxTxShareRequests signals exist in the channel, we won't send these.
-func (w *powWorker) signalShareTransactions(txs []Tx) {
+func (w *powWorker) signalShareTransactions(signedTx Tx) {
 	select {
-	case w.txSharing <- txs:
+	case w.txSharing <- signedTx:
 		w.evHandler("bcWorker: signalShareTransactions: share Tx signaled")
 	default:
 		w.evHandler("bcWorker: signalShareTransactions: queue full, transactions won't be shared.")
@@ -221,13 +221,13 @@ func (w *powWorker) signalShareTransactions(txs []Tx) {
 // =============================================================================
 
 // runShareTxOperation updates the peer list and sync's up the database.
-func (w *powWorker) runShareTxOperation(txs []Tx) {
+func (w *powWorker) runShareTxOperation(tx Tx) {
 	w.evHandler("bcWorker: runShareTxOperation: started")
 	defer w.evHandler("bcWorker: runShareTxOperation: completed")
 
 	for _, peer := range w.state.CopyKnownPeers() {
-		url := fmt.Sprintf("%s/tx/add", fmt.Sprintf(w.baseURL, peer.Host))
-		if err := send(http.MethodPost, url, txs, nil); err != nil {
+		url := fmt.Sprintf("%s/tx/submit", fmt.Sprintf(w.baseURL, peer.Host))
+		if err := send(http.MethodPost, url, tx, nil); err != nil {
 			w.evHandler("bcWorker: runShareTxOperation: WARNING: %s", err)
 		}
 	}

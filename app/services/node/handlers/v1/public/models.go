@@ -10,15 +10,3 @@ type Balances struct {
 	Uncommitted  int       `json:"uncommitted"`
 	Balances     []balance `json:"balances"`
 }
-
-type Tx struct {
-	To    string `json:"to"`
-	Value uint   `json:"value"`
-	Tip   uint   `json:"tip"`
-	Data  string `json:"data"`
-}
-
-type SignedTx struct {
-	Transaction Tx     `json:"transaction"`
-	Signature   []byte `json:"signature"`
-}

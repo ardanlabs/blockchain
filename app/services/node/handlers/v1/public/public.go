@@ -17,34 +17,25 @@ type Handlers struct {
 	BC  *blockchain.State
 }
 
-// SendTransactions adds new user transactions to the mempool.
-func (h Handlers) SendTransactions(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+// SubmitWalletTransaction adds new user transactions to the mempool.
+func (h Handlers) SubmitWalletTransaction(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	v, err := web.GetValues(ctx)
 	if err != nil {
 		return web.NewShutdownError("web value missing from context")
 	}
 
-	var signedTxs []SignedTx
-	if err := web.Decode(r, &signedTxs); err != nil {
+	var signedTx blockchain.WalletTxSigned
+	if err := web.Decode(r, &signedTx); err != nil {
 		return fmt.Errorf("unable to decode payload: %w", err)
 	}
 
-	txs := make([]blockchain.Tx, len(signedTxs))
-	for i, signedTx := range signedTxs {
-		h.Log.Infow("add user tran", "traceid", v.TraceID, "tx", signedTx)
-		tx := signedTx.Transaction
-		txs[i] = h.BC.NewTx(signedTx.Signature, tx.To, tx.Value, tx.Tip, tx.Data)
-	}
-
-	// Add these transaction and share them with the network.
-	h.BC.AddTransactions(txs, true)
+	h.Log.Infow("add user tran", "traceid", v.TraceID, "tx", signedTx)
+	h.BC.SubmitWalletTransaction(signedTx)
 
 	resp := struct {
 		Status string `json:"status"`
-		Total  int
 	}{
 		Status: "transactions added to mempool",
-		Total:  len(txs),
 	}
 
 	return web.Respond(ctx, w, resp, http.StatusOK)

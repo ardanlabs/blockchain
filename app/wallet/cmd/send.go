@@ -8,7 +8,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/ardanlabs/blockchain/app/services/node/handlers/v1/public"
+	"github.com/ardanlabs/blockchain/foundation/blockchain"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/spf13/cobra"
 )
@@ -45,33 +45,23 @@ func sendWithFile(privateKey *ecdsa.PrivateKey) {
 }
 
 func sendWithDetails(privateKey *ecdsa.PrivateKey) {
-	tx := public.Tx{
+	walletTx := blockchain.WalletTx{
 		To:    to,
 		Value: value,
 		Tip:   tip,
 		Data:  data,
 	}
-	data, err := json.Marshal(tx)
-	if err != nil {
-		log.Fatal(err)
-	}
-	hash := crypto.Keccak256Hash(data)
-	signature, err := crypto.Sign(hash.Bytes(), privateKey)
+
+	signedTx, err := walletTx.Sign(privateKey)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	payload := []public.SignedTx{
-		{
-			Transaction: tx,
-			Signature:   signature,
-		},
-	}
-	data, err = json.Marshal(payload)
+	data, err := json.Marshal(signedTx)
 	if err != nil {
 		log.Fatal(err)
 	}
-	resp, err := http.Post(fmt.Sprintf("%s/v1/tx/send", url), "application/json", bytes.NewBuffer(data))
+	resp, err := http.Post(fmt.Sprintf("%s/v1/tx/submit", url), "application/json", bytes.NewBuffer(data))
 	if err != nil {
 		log.Fatal(err)
 	}
