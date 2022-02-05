@@ -45,14 +45,14 @@ func sendWithFile(privateKey *ecdsa.PrivateKey) {
 }
 
 func sendWithDetails(privateKey *ecdsa.PrivateKey) {
-	walletTx := blockchain.WalletTx{
+	userTx := blockchain.UserTx{
 		To:    to,
 		Value: value,
 		Tip:   tip,
 		Data:  data,
 	}
 
-	signedTx, err := walletTx.Sign(privateKey)
+	signedTx, err := userTx.Sign(privateKey)
 	if err != nil {
 		log.Fatal(err)
 	}

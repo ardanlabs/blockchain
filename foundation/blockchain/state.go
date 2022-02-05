@@ -176,19 +176,13 @@ func (s *State) SignalCancelMining() {
 // =============================================================================
 
 // SubmitWalletTransaction accepts a transaction from a wallet for inclusion.
-func (s *State) SubmitWalletTransaction(signedTx WalletTxSigned) error {
+func (s *State) SubmitWalletTransaction(signedTx SignedTx) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	tx := Tx{
-		WalletTx: WalletTx{
-			To:    signedTx.Tx.To,
-			Value: signedTx.Tx.Value,
-			Tip:   signedTx.Tx.Tip,
-			Data:  signedTx.Tx.Data,
-		},
-		Gas:       s.genesis.GasPrice,
-		Signature: signedTx.Signature,
+		SignedTx: signedTx,
+		Gas:      s.genesis.GasPrice,
 	}
 
 	s.evHandler("state: SubmitWalletTransaction: started : tx[%d]", tx)

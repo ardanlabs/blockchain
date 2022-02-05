@@ -30,22 +30,16 @@ func (txe *TxError) Error() string {
 
 // =============================================================================
 
-// WalletTxSigned provides a signature from the sender for a transaction.
-type WalletTxSigned struct {
-	Tx        WalletTx `json:"tx"`
-	Signature string   `json:"sig"`
-}
-
-// WalletTx is what is submitted by a wallet.
-type WalletTx struct {
+// UserTx is the transactional data submitted by a user.
+type UserTx struct {
 	To    string `json:"to"`    // Address receiving the benefit of the transaction.
 	Value uint   `json:"value"` // Monetary value received from this transaction.
 	Tip   uint   `json:"tip"`   // Tip offered by the sender as an incentive to mine this transaction.
 	Data  string `json:"data"`  // Extra data related to the transaction.
 }
 
-// Sign generates a Tx that is signed with the specified private key.
-func (tx WalletTx) Sign(privateKey *ecdsa.PrivateKey) (WalletTxSigned, error) {
+// Sign uses the specified private key to sign the user transaction.
+func (tx UserTx) Sign(privateKey *ecdsa.PrivateKey) (SignedTx, error) {
 	data, err := json.Marshal(tx)
 	if err != nil {
 		log.Fatal(err)
@@ -54,36 +48,41 @@ func (tx WalletTx) Sign(privateKey *ecdsa.PrivateKey) (WalletTxSigned, error) {
 
 	sig, err := crypto.Sign(hash.Bytes(), privateKey)
 	if err != nil {
-		return WalletTxSigned{}, err
+		return SignedTx{}, err
 	}
 
-	signedTx := WalletTxSigned{
-		Tx:        tx,
+	signedTx := SignedTx{
+		UserTx:    tx,
 		Signature: hex.EncodeToString(sig),
 	}
 
 	return signedTx, nil
 }
 
+// SignedTx provides a signature from the sender for a transaction.
+type SignedTx struct {
+	UserTx
+	Signature string `json:"sig"` // Signature of the person who signed the transaction.
+}
+
 // =============================================================================
 
-// Tx represents the basic unit of record for the things of value being recorded.
+// Tx represents the transaction recorded inside the blockchain.
 type Tx struct {
-	WalletTx
-	Gas       uint   `json:"gas"` // Gas fee to recover computation costs paid by the sender.
-	Signature string `json:"sig"` // Signature of the person who signed the transaction.
+	SignedTx
+	Gas uint `json:"gas"` // Gas fee to recover computation costs paid by the sender.
 }
 
 // From extracts the address for the account that signed the transaction.
 func (tx Tx) From() (string, error) {
-	walletTx := WalletTx{
+	userTx := UserTx{
 		To:    tx.To,
 		Value: tx.Value,
 		Tip:   tx.Tip,
 		Data:  tx.Data,
 	}
 
-	data, err := json.Marshal(walletTx)
+	data, err := json.Marshal(userTx)
 	if err != nil {
 		return "", err
 	}

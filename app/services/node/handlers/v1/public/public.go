@@ -25,7 +25,7 @@ func (h Handlers) SubmitWalletTransaction(ctx context.Context, w http.ResponseWr
 		return web.NewShutdownError("web value missing from context")
 	}
 
-	var signedTx blockchain.WalletTxSigned
+	var signedTx blockchain.SignedTx
 	if err := web.Decode(r, &signedTx); err != nil {
 		return fmt.Errorf("unable to decode payload: %w", err)
 	}
