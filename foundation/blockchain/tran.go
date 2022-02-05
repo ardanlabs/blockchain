@@ -19,7 +19,7 @@ const (
 
 // TxError represents an error on a transaction.
 type TxError struct {
-	Tx  Tx
+	Tx  BlockTx
 	Err error
 }
 
@@ -67,14 +67,14 @@ type SignedTx struct {
 
 // =============================================================================
 
-// Tx represents the transaction recorded inside the blockchain.
-type Tx struct {
+// BlockTx represents the transaction recorded inside the blockchain.
+type BlockTx struct {
 	SignedTx
 	Gas uint `json:"gas"` // Gas fee to recover computation costs paid by the sender.
 }
 
 // From extracts the address for the account that signed the transaction.
-func (tx Tx) From() (string, error) {
+func (tx BlockTx) From() (string, error) {
 	userTx := UserTx{
 		To:    tx.To,
 		Value: tx.Value,
@@ -104,7 +104,7 @@ func (tx Tx) From() (string, error) {
 // =============================================================================
 
 // TxMempool represents a cache of transactions each with a unique id.
-type TxMempool map[string]Tx
+type TxMempool map[string]BlockTx
 
 // NewTxMempool constructs a new info set to manage node peer information.
 func NewTxMempool() TxMempool {
@@ -117,7 +117,7 @@ func (tm TxMempool) Count() int {
 }
 
 // Add adds a new transaction to the mempool.
-func (tm TxMempool) Add(sig string, tx Tx) {
+func (tm TxMempool) Add(sig string, tx BlockTx) {
 	if _, exists := tm[sig]; !exists {
 		tm[sig] = tx
 	}
@@ -129,8 +129,8 @@ func (tm TxMempool) Delete(sig string) {
 }
 
 // Copy returns a list of the current transaction in the pool.
-func (tm TxMempool) Copy() []Tx {
-	cpy := make([]Tx, 0, len(tm))
+func (tm TxMempool) Copy() []BlockTx {
+	cpy := make([]BlockTx, 0, len(tm))
 	for _, tx := range tm {
 		cpy = append(cpy, tx)
 	}
@@ -140,11 +140,11 @@ func (tm TxMempool) Copy() []Tx {
 // CopyBestByTip returns a list of the best transactions for the next
 // mining operation based on the offered tip. The caller specifies
 // how many transaction they want.
-func (tm TxMempool) CopyBestByTip(amount int) []Tx {
+func (tm TxMempool) CopyBestByTip(amount int) []BlockTx {
 	txs := tm.Copy()
 	sort.Sort(byTip(txs))
 
-	cpy := make([]Tx, amount)
+	cpy := make([]BlockTx, amount)
 	for i := 0; i < amount; i++ {
 		cpy[i] = txs[i]
 	}
@@ -154,7 +154,7 @@ func (tm TxMempool) CopyBestByTip(amount int) []Tx {
 // =============================================================================
 
 // byTip provides sorting support by the transaction tip value.
-type byTip []Tx
+type byTip []BlockTx
 
 // Len returns the number of transactions in the list.
 func (bt byTip) Len() int {

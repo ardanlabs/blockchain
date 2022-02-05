@@ -180,7 +180,7 @@ func (s *State) SubmitWalletTransaction(signedTx SignedTx) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	tx := Tx{
+	tx := BlockTx{
 		SignedTx: signedTx,
 		Gas:      s.genesis.GasPrice,
 	}
@@ -210,7 +210,7 @@ func (s *State) SubmitWalletTransaction(signedTx SignedTx) error {
 }
 
 // SubmitWalletTransaction accepts a transaction from a node for inclusion.
-func (s *State) SubmitNodeTransaction(tx Tx) {
+func (s *State) SubmitNodeTransaction(tx BlockTx) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -289,7 +289,7 @@ func (s *State) CopyLatestBlock() Block {
 }
 
 // CopyMempool returns a copy of the mempool.
-func (s *State) CopyMempool() []Tx {
+func (s *State) CopyMempool() []BlockTx {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 

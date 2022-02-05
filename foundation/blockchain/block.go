@@ -34,7 +34,7 @@ type BlockHeader struct {
 // Block represents a group of transactions batched together.
 type Block struct {
 	Header       BlockHeader `json:"header"`
-	Transactions []Tx        `json:"txs"`
+	Transactions []BlockTx   `json:"txs"`
 }
 
 // NewBlock constructs a new BlockFS for persisting.

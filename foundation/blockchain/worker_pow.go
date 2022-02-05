@@ -34,7 +34,7 @@ type powWorker struct {
 	peerUpdates  chan bool
 	startMining  chan bool
 	cancelMining chan bool
-	txSharing    chan Tx
+	txSharing    chan BlockTx
 	evHandler    EventHandler
 	baseURL      string
 }
@@ -48,7 +48,7 @@ func runPOWWorker(state *State, evHandler EventHandler) *powWorker {
 		peerUpdates:  make(chan bool, 1),
 		startMining:  make(chan bool, 1),
 		cancelMining: make(chan bool, 1),
-		txSharing:    make(chan Tx, maxTxShareRequests),
+		txSharing:    make(chan BlockTx, maxTxShareRequests),
 		evHandler:    evHandler,
 		baseURL:      "http://%s/v1/node",
 	}
@@ -209,9 +209,9 @@ func (w *powWorker) signalCancelMining() {
 
 // signalShareTransactions queues up a share transaction operation. If
 // maxTxShareRequests signals exist in the channel, we won't send these.
-func (w *powWorker) signalShareTransactions(signedTx Tx) {
+func (w *powWorker) signalShareTransactions(blockTx BlockTx) {
 	select {
-	case w.txSharing <- signedTx:
+	case w.txSharing <- blockTx:
 		w.evHandler("bcWorker: signalShareTransactions: share Tx signaled")
 	default:
 		w.evHandler("bcWorker: signalShareTransactions: queue full, transactions won't be shared.")
@@ -221,7 +221,7 @@ func (w *powWorker) signalShareTransactions(signedTx Tx) {
 // =============================================================================
 
 // runShareTxOperation updates the peer list and sync's up the database.
-func (w *powWorker) runShareTxOperation(tx Tx) {
+func (w *powWorker) runShareTxOperation(tx BlockTx) {
 	w.evHandler("bcWorker: runShareTxOperation: started")
 	defer w.evHandler("bcWorker: runShareTxOperation: completed")
 

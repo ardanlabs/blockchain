@@ -59,7 +59,7 @@ func (h Handlers) SubmitNodeTransaction(ctx context.Context, w http.ResponseWrit
 		return web.NewShutdownError("web value missing from context")
 	}
 
-	var tx blockchain.Tx
+	var tx blockchain.BlockTx
 	if err := web.Decode(r, &tx); err != nil {
 		return fmt.Errorf("unable to decode payload: %w", err)
 	}

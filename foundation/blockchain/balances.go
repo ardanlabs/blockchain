@@ -37,7 +37,7 @@ func applyMiningRewardToBalance(balanceSheet BalanceSheet, beneficiary string, r
 }
 
 // applyMiningFeeToBalance gives the beneficiary address a fee for mining the block.
-func applyMiningFeeToBalance(balanceSheet BalanceSheet, beneficiary string, tx Tx) {
+func applyMiningFeeToBalance(balanceSheet BalanceSheet, beneficiary string, tx BlockTx) {
 	from, err := tx.From()
 	if err != nil {
 		return
@@ -50,7 +50,7 @@ func applyMiningFeeToBalance(balanceSheet BalanceSheet, beneficiary string, tx T
 
 // applyTransactionToBalance performs the business logic for applying a
 // transaction to the balance sheet.
-func applyTransactionToBalance(balanceSheet BalanceSheet, tx Tx) error {
+func applyTransactionToBalance(balanceSheet BalanceSheet, tx BlockTx) error {
 	if tx.Data == TxDataReward {
 		balanceSheet[tx.To] += tx.Value
 		return nil
