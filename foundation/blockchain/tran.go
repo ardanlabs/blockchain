@@ -30,13 +30,13 @@ func (txe *TxError) Error() string {
 
 // Tx represents the basic unit of record for the things of value being recorded.
 type Tx struct {
-	ID        string `json:"id"`        // Unique ID for the transaction to help with mempool lookups.
-	To        string `json:"to"`        // Address receiving the benefit of the transaction.
-	Value     uint   `json:"value"`     // Monetary value received from this transaction.
-	Tip       uint   `json:"tip"`       // Tip offered by the sender as an incentive to mine this transaction.
-	Gas       uint   `json:"gas"`       // Gas fee to recover computation costs paid by the sender.
-	Data      string `json:"data"`      // Extra data related to the transaction.
-	Signature string `json:"signature"` // Signature of the person who signed transaction.
+	ID        string `json:"id"`    // Unique ID for the transaction to help with mempool lookups.
+	To        string `json:"to"`    // Address receiving the benefit of the transaction.
+	Value     uint   `json:"value"` // Monetary value received from this transaction.
+	Tip       uint   `json:"tip"`   // Tip offered by the sender as an incentive to mine this transaction.
+	Gas       uint   `json:"gas"`   // Gas fee to recover computation costs paid by the sender.
+	Data      string `json:"data"`  // Extra data related to the transaction.
+	Signature string `json:"sig"`   // Signature of the person who signed the transaction.
 }
 
 // From extracts the address for the account that signed the transaction.
