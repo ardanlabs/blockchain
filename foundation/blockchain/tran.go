@@ -1,8 +1,10 @@
 package blockchain
 
 import (
+	"crypto/ecdsa"
 	"encoding/hex"
 	"encoding/json"
+	"log"
 	"sort"
 
 	"github.com/ethereum/go-ethereum/crypto"
@@ -28,14 +30,48 @@ func (txe *TxError) Error() string {
 
 // =============================================================================
 
+// WalletTxSigned provides a signature from the sender for a transaction.
+type WalletTxSigned struct {
+	Tx        WalletTx `json:"tx"`
+	Signature string   `json:"sig"`
+}
+
+// WalletTx is what is submitted by a wallet.
+type WalletTx struct {
+	To    string `json:"to"`    // Address receiving the benefit of the transaction.
+	Value uint   `json:"value"` // Monetary value received from this transaction.
+	Tip   uint   `json:"tip"`   // Tip offered by the sender as an incentive to mine this transaction.
+	Data  string `json:"data"`  // Extra data related to the transaction.
+}
+
+// Sign generates a Tx that is signed with the specified private key.
+func (tx WalletTx) Sign(privateKey *ecdsa.PrivateKey) (WalletTxSigned, error) {
+	data, err := json.Marshal(tx)
+	if err != nil {
+		log.Fatal(err)
+	}
+	hash := crypto.Keccak256Hash(data)
+
+	sig, err := crypto.Sign(hash.Bytes(), privateKey)
+	if err != nil {
+		return WalletTxSigned{}, err
+	}
+
+	signedTx := WalletTxSigned{
+		Tx:        tx,
+		Signature: hex.EncodeToString(sig),
+	}
+
+	return signedTx, nil
+}
+
+// =============================================================================
+
 // Tx represents the basic unit of record for the things of value being recorded.
 type Tx struct {
-	To        string `json:"to"`    // Address receiving the benefit of the transaction.
-	Value     uint   `json:"value"` // Monetary value received from this transaction.
-	Tip       uint   `json:"tip"`   // Tip offered by the sender as an incentive to mine this transaction.
-	Gas       uint   `json:"gas"`   // Gas fee to recover computation costs paid by the sender.
-	Data      string `json:"data"`  // Extra data related to the transaction.
-	Signature string `json:"sig"`   // Signature of the person who signed the transaction.
+	WalletTx
+	Gas       uint   `json:"gas"` // Gas fee to recover computation costs paid by the sender.
+	Signature string `json:"sig"` // Signature of the person who signed the transaction.
 }
 
 // From extracts the address for the account that signed the transaction.

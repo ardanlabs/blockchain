@@ -181,11 +181,13 @@ func (s *State) SubmitWalletTransaction(signedTx WalletTxSigned) error {
 	defer s.mu.Unlock()
 
 	tx := Tx{
-		To:        signedTx.Tx.To,
-		Value:     signedTx.Tx.Value,
-		Tip:       signedTx.Tx.Tip,
+		WalletTx: WalletTx{
+			To:    signedTx.Tx.To,
+			Value: signedTx.Tx.Value,
+			Tip:   signedTx.Tx.Tip,
+			Data:  signedTx.Tx.Data,
+		},
 		Gas:       s.genesis.GasPrice,
-		Data:      signedTx.Tx.Data,
 		Signature: signedTx.Signature,
 	}
 
