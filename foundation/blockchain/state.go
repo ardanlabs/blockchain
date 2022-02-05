@@ -8,8 +8,6 @@ import (
 	"os"
 	"sync"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 /*
@@ -183,7 +181,6 @@ func (s *State) SubmitWalletTransaction(signedTx WalletTxSigned) error {
 	defer s.mu.Unlock()
 
 	tx := Tx{
-		ID:        uuid.New().String(),
 		To:        signedTx.Tx.To,
 		Value:     signedTx.Tx.Value,
 		Tip:       signedTx.Tx.Tip,
@@ -202,7 +199,7 @@ func (s *State) SubmitWalletTransaction(signedTx WalletTxSigned) error {
 	}
 
 	s.evHandler("state: SubmitWalletTransaction: before: mempool[%d]", s.txMempool.Count())
-	s.txMempool.Add(tx.ID, tx)
+	s.txMempool.Add(tx.Signature, tx)
 	s.evHandler("state: SubmitWalletTransaction: after: mempool[%d]", s.txMempool.Count())
 
 	s.evHandler("state: SubmitWalletTransaction: signal tx sharing")
@@ -225,7 +222,7 @@ func (s *State) SubmitNodeTransaction(tx Tx) {
 	defer s.evHandler("state: SubmitNodeTransaction: completed")
 
 	s.evHandler("state: SubmitNodeTransaction: before: mempool[%d]", s.txMempool.Count())
-	s.txMempool.Add(tx.ID, tx)
+	s.txMempool.Add(tx.Signature, tx)
 	s.evHandler("state: SubmitNodeTransaction: after: mempool[%d]", s.txMempool.Count())
 
 	if s.txMempool.Count() >= s.genesis.TransPerBlock {
@@ -454,7 +451,7 @@ func (s *State) WriteNextBlock(block Block) error {
 			applyMiningFeeToBalance(s.balanceSheet, block.Header.Beneficiary, tx)
 
 			// Remove the transaction from the mempool if it exists.
-			s.txMempool.Delete(tx.ID)
+			s.txMempool.Delete(tx.Signature)
 		}
 
 		// Apply the miner reward for this block.
@@ -597,7 +594,7 @@ func (s *State) MineNewBlock(ctx context.Context) (Block, time.Duration, error) 
 
 		// Remove the transactions from this block.
 		for _, tx := range nb.Transactions {
-			s.txMempool.Delete(tx.ID)
+			s.txMempool.Delete(tx.Signature)
 		}
 
 		return nil

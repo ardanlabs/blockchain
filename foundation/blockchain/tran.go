@@ -30,7 +30,6 @@ func (txe *TxError) Error() string {
 
 // Tx represents the basic unit of record for the things of value being recorded.
 type Tx struct {
-	ID        string `json:"id"`    // Unique ID for the transaction to help with mempool lookups.
 	To        string `json:"to"`    // Address receiving the benefit of the transaction.
 	Value     uint   `json:"value"` // Monetary value received from this transaction.
 	Tip       uint   `json:"tip"`   // Tip offered by the sender as an incentive to mine this transaction.
@@ -83,15 +82,15 @@ func (tm TxMempool) Count() int {
 }
 
 // Add adds a new transaction to the mempool.
-func (tm TxMempool) Add(id string, tx Tx) {
-	if _, exists := tm[id]; !exists {
-		tm[id] = tx
+func (tm TxMempool) Add(sig string, tx Tx) {
+	if _, exists := tm[sig]; !exists {
+		tm[sig] = tx
 	}
 }
 
 // Delete removed a transaction from the mempool.
-func (tm TxMempool) Delete(id string) {
-	delete(tm, id)
+func (tm TxMempool) Delete(sig string) {
+	delete(tm, sig)
 }
 
 // Copy returns a list of the current transaction in the pool.
