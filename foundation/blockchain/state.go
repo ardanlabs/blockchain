@@ -20,6 +20,7 @@ import (
 	Need to verify enough money at the address before sending a transaction.
 
 	-- Blockchain
+	Have nodes receiving a new block check the signature on all transactions.
 	Add a name server for known account. Used for displaying information.
 	Create a block index file for query and clean up forks.
 	Publishing events. (New Blocks)
