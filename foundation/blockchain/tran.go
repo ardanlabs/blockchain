@@ -1,6 +1,7 @@
 package blockchain
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"sort"
 
@@ -35,7 +36,7 @@ type Tx struct {
 	Tip       uint   `json:"tip"`       // Tip offered by the sender as an incentive to mine this transaction.
 	Gas       uint   `json:"gas"`       // Gas fee to recover computation costs paid by the sender.
 	Data      string `json:"data"`      // Extra data related to the transaction.
-	Signature []byte `json:"signature"` // Signature of the person who signed transaction.
+	Signature string `json:"signature"` // Signature of the person who signed transaction.
 }
 
 // From extracts the address for the account that signed the transaction.
@@ -52,7 +53,13 @@ func (tx Tx) From() (string, error) {
 		return "", err
 	}
 	hash := crypto.Keccak256Hash(data)
-	publicKey, err := crypto.SigToPub(hash.Bytes(), tx.Signature)
+
+	sig, err := hex.DecodeString(tx.Signature)
+	if err != nil {
+		return "", err
+	}
+
+	publicKey, err := crypto.SigToPub(hash.Bytes(), sig)
 	if err != nil {
 		return "", err
 	}

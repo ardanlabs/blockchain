@@ -2,6 +2,7 @@ package blockchain
 
 import (
 	"crypto/ecdsa"
+	"encoding/hex"
 	"encoding/json"
 	"log"
 
@@ -11,7 +12,7 @@ import (
 // WalletTxSigned provides a signature from the sender for a transaction.
 type WalletTxSigned struct {
 	Tx        WalletTx `json:"tx"`
-	Signature []byte   `json:"sig"`
+	Signature string   `json:"sig"`
 }
 
 // WalletTx is what is submitted by a wallet.
@@ -37,7 +38,7 @@ func (tx WalletTx) Sign(privateKey *ecdsa.PrivateKey) (WalletTxSigned, error) {
 
 	signedTx := WalletTxSigned{
 		Tx:        tx,
-		Signature: sig,
+		Signature: hex.EncodeToString(sig),
 	}
 
 	return signedTx, nil
