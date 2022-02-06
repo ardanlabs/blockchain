@@ -49,11 +49,13 @@ func (tx UserTx) Sign(privateKey *ecdsa.PrivateKey) (SignedTx, error) {
 		return SignedTx{}, err
 	}
 
+	r, s, v := toSignatureValues(sig)
+
 	signedTx := SignedTx{
 		UserTx: tx,
-		V:      (&big.Int{}).SetUint64(uint64(sig[64])),
-		R:      (&big.Int{}).SetBytes(sig[:32]),
-		S:      (&big.Int{}).SetBytes(sig[32:64]),
+		V:      v,
+		R:      r,
+		S:      s,
 	}
 
 	return signedTx, nil
@@ -88,10 +90,7 @@ func (tx BlockTx) FromAddress() (string, error) {
 	}
 	hash := crypto.Keccak256Hash(data)
 
-	sig := make([]byte, 65)
-	copy(sig, tx.R.Bytes())
-	copy(sig[32:], tx.S.Bytes())
-	sig[64] = byte(tx.V.Uint64())
+	sig := toSignatureBytes(tx.R, tx.S, tx.V)
 
 	publicKey, err := crypto.SigToPub(hash.Bytes(), sig)
 	if err != nil {
@@ -99,4 +98,26 @@ func (tx BlockTx) FromAddress() (string, error) {
 	}
 
 	return crypto.PubkeyToAddress(*publicKey).String(), nil
+}
+
+// =============================================================================
+
+// toSignatureValues converts the signature into the r, s, v values.
+func toSignatureValues(sig []byte) (r, s, v *big.Int) {
+	r = new(big.Int).SetBytes(sig[:32])
+	s = new(big.Int).SetBytes(sig[32:64])
+	v = new(big.Int).SetBytes([]byte{sig[64]})
+
+	return r, s, v
+}
+
+// toSignature converts the r, s, v values into a slice of bytes.
+func toSignatureBytes(r, s, v *big.Int) []byte {
+	sig := make([]byte, crypto.SignatureLength)
+
+	copy(sig, r.Bytes())
+	copy(sig[32:], s.Bytes())
+	sig[64] = byte(v.Uint64())
+
+	return sig
 }
