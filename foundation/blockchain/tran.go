@@ -51,7 +51,7 @@ func (tx UserTx) Sign(privateKey *ecdsa.PrivateKey) (SignedTx, error) {
 
 	signedTx := SignedTx{
 		UserTx: tx,
-		V:      (&big.Int{}).SetInt64(int64(sig[64])),
+		V:      (&big.Int{}).SetUint64(uint64(sig[64])),
 		R:      (&big.Int{}).SetBytes(sig[:32]),
 		S:      (&big.Int{}).SetBytes(sig[32:64]),
 	}
