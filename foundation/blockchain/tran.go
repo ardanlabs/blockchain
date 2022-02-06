@@ -80,8 +80,8 @@ type BlockTx struct {
 	Gas uint `json:"gas"` // Gas fee to recover computation costs paid by the sender.
 }
 
-// From extracts the address for the account that signed the transaction.
-func (tx BlockTx) From() (string, error) {
+// FromAddress extracts the address for the account that signed the transaction.
+func (tx BlockTx) FromAddress() (string, error) {
 	data, err := json.Marshal(tx.UserTx)
 	if err != nil {
 		return "", err

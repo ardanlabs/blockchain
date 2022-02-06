@@ -38,7 +38,7 @@ func applyMiningRewardToBalance(balanceSheet BalanceSheet, beneficiary string, r
 
 // applyMiningFeeToBalance gives the beneficiary address a fee for mining the block.
 func applyMiningFeeToBalance(balanceSheet BalanceSheet, beneficiary string, tx BlockTx) {
-	from, err := tx.From()
+	from, err := tx.FromAddress()
 	if err != nil {
 		return
 	}
@@ -57,7 +57,7 @@ func applyTransactionToBalance(balanceSheet BalanceSheet, tx BlockTx) error {
 	}
 
 	// Capture the address of the account that signed this transaction.
-	from, err := tx.From()
+	from, err := tx.FromAddress()
 	if err != nil {
 		return fmt.Errorf("invalid signature, %s", err)
 	}

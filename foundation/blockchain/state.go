@@ -395,7 +395,7 @@ func (s *State) QueryBlocksByAddress(address string) []Block {
 blocks:
 	for _, block := range blocks {
 		for _, tx := range block.Transactions {
-			from, err := tx.From()
+			from, err := tx.FromAddress()
 			if err != nil {
 				continue
 			}
