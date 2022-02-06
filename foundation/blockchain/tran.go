@@ -33,7 +33,7 @@ type UserTx struct {
 	To    string `json:"to"`    // Address receiving the benefit of the transaction.
 	Value uint   `json:"value"` // Monetary value received from this transaction.
 	Tip   uint   `json:"tip"`   // Tip offered by the sender as an incentive to mine this transaction.
-	Data  string `json:"data"`  // Extra data related to the transaction.
+	Data  []byte `json:"data"`  // Extra data related to the transaction.
 }
 
 // Sign uses the specified private key to sign the user transaction.

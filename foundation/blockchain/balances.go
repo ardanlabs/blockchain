@@ -51,7 +51,7 @@ func applyMiningFeeToBalance(balanceSheet BalanceSheet, beneficiary string, tx B
 // applyTransactionToBalance performs the business logic for applying a
 // transaction to the balance sheet.
 func applyTransactionToBalance(balanceSheet BalanceSheet, tx BlockTx) error {
-	if tx.Data == TxDataReward {
+	if string(tx.Data) == TxDataReward {
 		balanceSheet[tx.To] += tx.Value
 		return nil
 	}

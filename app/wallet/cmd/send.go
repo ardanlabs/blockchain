@@ -18,7 +18,7 @@ var (
 	to    string
 	value uint
 	tip   uint
-	data  string
+	data  []byte
 	file  string
 )
 
@@ -75,6 +75,6 @@ func init() {
 	sendCmd.MarkFlagRequired("to")
 	sendCmd.Flags().UintVarP(&value, "value", "v", 0, "Value to send.")
 	sendCmd.Flags().UintVarP(&tip, "tip", "c", 0, "Tip to send.")
-	sendCmd.Flags().StringVarP(&data, "data", "d", "", "Data to send.")
-	sendCmd.Flags().StringVarP(&data, "file", "f", "", "File to read for transactions.")
+	sendCmd.Flags().BytesHexVarP(&data, "data", "d", nil, "Data to send.")
+	sendCmd.Flags().BytesHexVarP(&data, "file", "f", nil, "File to read for transactions.")
 }
