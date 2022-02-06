@@ -2,9 +2,8 @@ package blockchain
 
 import (
 	"crypto/ecdsa"
-	"encoding/hex"
 	"encoding/json"
-	"log"
+	"math/big"
 
 	"github.com/ethereum/go-ethereum/crypto"
 )
@@ -41,7 +40,7 @@ type UserTx struct {
 func (tx UserTx) Sign(privateKey *ecdsa.PrivateKey) (SignedTx, error) {
 	data, err := json.Marshal(tx)
 	if err != nil {
-		log.Fatal(err)
+		return SignedTx{}, err
 	}
 	hash := crypto.Keccak256Hash(data)
 
@@ -51,8 +50,10 @@ func (tx UserTx) Sign(privateKey *ecdsa.PrivateKey) (SignedTx, error) {
 	}
 
 	signedTx := SignedTx{
-		UserTx:    tx,
-		Signature: hex.EncodeToString(sig),
+		UserTx: tx,
+		V:      (&big.Int{}).SetInt64(int64(sig[64])),
+		R:      (&big.Int{}).SetBytes(sig[:32]),
+		S:      (&big.Int{}).SetBytes(sig[32:64]),
 	}
 
 	return signedTx, nil
@@ -61,7 +62,14 @@ func (tx UserTx) Sign(privateKey *ecdsa.PrivateKey) (SignedTx, error) {
 // SignedTx is a signed version of the user transaction.
 type SignedTx struct {
 	UserTx
-	Signature string `json:"sig"` // Signature of the person who signed the transaction.
+	V *big.Int `json:"v"` // Last byte of the signature.
+	R *big.Int `json:"r"` // First 32 bytes of the signature.
+	S *big.Int `json:"s"` // Next 32 bytes of the signature.
+}
+
+// VerifySignature verifies the signature conforms to the Secp256k1 standard.
+func (tx SignedTx) VerifySignature() bool {
+	return crypto.ValidateSignatureValues(byte(tx.V.Uint64()), tx.R, tx.S, true)
 }
 
 // =============================================================================
@@ -74,23 +82,16 @@ type BlockTx struct {
 
 // From extracts the address for the account that signed the transaction.
 func (tx BlockTx) From() (string, error) {
-	userTx := UserTx{
-		To:    tx.To,
-		Value: tx.Value,
-		Tip:   tx.Tip,
-		Data:  tx.Data,
-	}
-
-	data, err := json.Marshal(userTx)
+	data, err := json.Marshal(tx.UserTx)
 	if err != nil {
 		return "", err
 	}
 	hash := crypto.Keccak256Hash(data)
 
-	sig, err := hex.DecodeString(tx.Signature)
-	if err != nil {
-		return "", err
-	}
+	sig := make([]byte, 65)
+	copy(sig, tx.R.Bytes())
+	copy(sig[32:], tx.S.Bytes())
+	sig[64] = byte(tx.V.Uint64())
 
 	publicKey, err := crypto.SigToPub(hash.Bytes(), sig)
 	if err != nil {

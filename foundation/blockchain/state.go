@@ -188,14 +188,13 @@ func (s *State) SubmitWalletTransaction(signedTx SignedTx) error {
 	s.evHandler("state: SubmitWalletTransaction: started : tx[%d]", tx)
 	defer s.evHandler("state: SubmitWalletTransaction: completed")
 
-	// Validate the signature on this transaction is valid.
-	if _, err := tx.From(); err != nil {
-		s.evHandler("state: SubmitWalletTransaction: ERROR: invalid signature: %s", err)
-		return err
+	if !tx.VerifySignature() {
+		s.evHandler("state: SubmitWalletTransaction: ERROR: invalid signature")
+		return errors.New("invalid signature")
 	}
 
 	s.evHandler("state: SubmitWalletTransaction: before: mempool[%d]", s.txMempool.Count())
-	s.txMempool.Add(tx.Signature, tx)
+	s.txMempool.Add(tx)
 	s.evHandler("state: SubmitWalletTransaction: after: mempool[%d]", s.txMempool.Count())
 
 	s.evHandler("state: SubmitWalletTransaction: signal tx sharing")
@@ -210,21 +209,28 @@ func (s *State) SubmitWalletTransaction(signedTx SignedTx) error {
 }
 
 // SubmitWalletTransaction accepts a transaction from a node for inclusion.
-func (s *State) SubmitNodeTransaction(tx BlockTx) {
+func (s *State) SubmitNodeTransaction(tx BlockTx) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	s.evHandler("state: SubmitNodeTransaction: started : tx[%d]", tx)
 	defer s.evHandler("state: SubmitNodeTransaction: completed")
 
+	if !tx.VerifySignature() {
+		s.evHandler("state: SubmitNodeTransaction: ERROR: invalid signature")
+		return errors.New("invalid signature")
+	}
+
 	s.evHandler("state: SubmitNodeTransaction: before: mempool[%d]", s.txMempool.Count())
-	s.txMempool.Add(tx.Signature, tx)
+	s.txMempool.Add(tx)
 	s.evHandler("state: SubmitNodeTransaction: after: mempool[%d]", s.txMempool.Count())
 
 	if s.txMempool.Count() >= s.genesis.TransPerBlock {
 		s.evHandler("state: SubmitNodeTransaction: signal mining")
 		s.powWorker.signalStartMining()
 	}
+
+	return nil
 }
 
 // =============================================================================
@@ -447,7 +453,7 @@ func (s *State) WriteNextBlock(block Block) error {
 			applyMiningFeeToBalance(s.balanceSheet, block.Header.Beneficiary, tx)
 
 			// Remove the transaction from the mempool if it exists.
-			s.txMempool.Delete(tx.Signature)
+			s.txMempool.Delete(tx)
 		}
 
 		// Apply the miner reward for this block.
@@ -590,7 +596,7 @@ func (s *State) MineNewBlock(ctx context.Context) (Block, time.Duration, error) 
 
 		// Remove the transactions from this block.
 		for _, tx := range nb.Transactions {
-			s.txMempool.Delete(tx.Signature)
+			s.txMempool.Delete(tx)
 		}
 
 		return nil

@@ -64,11 +64,10 @@ func (h Handlers) SubmitNodeTransaction(ctx context.Context, w http.ResponseWrit
 		return fmt.Errorf("unable to decode payload: %w", err)
 	}
 
-	h.Log.Infow("add user tran", "traceid", v.TraceID, "tx", tx)
-
-	// Add these transaction but don't share them, since they were
-	// shared with us already.
-	h.BC.SubmitNodeTransaction(tx)
+	h.Log.Infow("add node tran", "traceid", v.TraceID, "tx", tx)
+	if err := h.BC.SubmitNodeTransaction(tx); err != nil {
+		return v1.NewRequestError(err, http.StatusBadRequest)
+	}
 
 	resp := struct {
 		Status string `json:"status"`

@@ -1,6 +1,11 @@
 package blockchain
 
-import "sort"
+import (
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
+	"sort"
+)
 
 // TxMempool represents a cache of transactions each with a unique id.
 type TxMempool map[string]BlockTx
@@ -16,15 +21,17 @@ func (tm TxMempool) Count() int {
 }
 
 // Add adds a new transaction to the mempool.
-func (tm TxMempool) Add(sig string, tx BlockTx) {
-	if _, exists := tm[sig]; !exists {
-		tm[sig] = tx
+func (tm TxMempool) Add(tx BlockTx) {
+	hash := hashBlock(tx)
+	if _, exists := tm[hash]; !exists {
+		tm[hash] = tx
 	}
 }
 
 // Delete removed a transaction from the mempool.
-func (tm TxMempool) Delete(sig string) {
-	delete(tm, sig)
+func (tm TxMempool) Delete(tx BlockTx) {
+	hash := hashBlock(tx)
+	delete(tm, hash)
 }
 
 // Copy returns a list of the current transaction in the pool.
@@ -48,6 +55,18 @@ func (tm TxMempool) CopyBestByTip(amount int) []BlockTx {
 		cpy[i] = txs[i]
 	}
 	return cpy
+}
+
+// Hash returns the unique hash for the block by marshaling
+// the block into JSON and performing a hashing operation.
+func hashBlock(tx BlockTx) string {
+	data, err := json.Marshal(tx.UserTx)
+	if err != nil {
+		return zeroHash
+	}
+
+	hash := sha256.Sum256(data)
+	return hex.EncodeToString(hash[:])
 }
 
 // =============================================================================
