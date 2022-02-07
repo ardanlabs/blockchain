@@ -182,8 +182,8 @@ func (s *State) SubmitWalletTransaction(signedTx SignedTx) error {
 		Gas:      s.genesis.GasPrice,
 	}
 
-	if !tx.VerifySignature() {
-		return errors.New("invalid signature")
+	if err := tx.VerifySignature(); err != nil {
+		return err
 	}
 
 	s.txMempool.add(tx)
@@ -201,8 +201,8 @@ func (s *State) SubmitNodeTransaction(tx BlockTx) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if !tx.VerifySignature() {
-		return errors.New("invalid signature")
+	if err := tx.VerifySignature(); err != nil {
+		return err
 	}
 
 	s.txMempool.add(tx)
@@ -301,8 +301,8 @@ func (s *State) validateNextBlock(block Block) (string, error) {
 	}
 
 	for _, tx := range block.Transactions {
-		if !tx.VerifySignature() {
-			return zeroHash, fmt.Errorf("transaction has invalid signature, tx[%v]", tx)
+		if err := tx.VerifySignature(); err != nil {
+			return zeroHash, fmt.Errorf("transaction has invalid signature, %w, tx[%v]", err, tx)
 		}
 	}
 

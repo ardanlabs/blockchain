@@ -4,6 +4,8 @@ import (
 	"crypto/ecdsa"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/crypto"
@@ -50,7 +52,7 @@ func (tx UserTx) Sign(privateKey *ecdsa.PrivateKey) (SignedTx, error) {
 		return SignedTx{}, err
 	}
 
-	r, s, v := toSignatureValues(sig)
+	v, r, s := toSignatureValues(sig)
 
 	signedTx := SignedTx{
 		UserTx: tx,
@@ -70,14 +72,42 @@ type SignedTx struct {
 	S *big.Int `json:"s"` // Second number of the ECDSA signature.
 }
 
-// VerifySignature verifies the signature conforms to our standards.
-func (tx SignedTx) VerifySignature() bool {
+// VerifySignature verifies the signature conforms to our standards and
+// is associated with the data claimed to be signed.
+func (tx SignedTx) VerifySignature() error {
+
+	// Check the recovery id is either 0 or 1.
 	v := tx.V.Uint64() - ardanID
 	if v != 0 && v != 1 {
-		return false
+		return errors.New("invalid recovery id")
 	}
 
-	return crypto.ValidateSignatureValues(byte(v), tx.R, tx.S, true)
+	// Validate the signature values are valid.
+	if !crypto.ValidateSignatureValues(byte(v), tx.R, tx.S, true) {
+		return errors.New("invalid signature values")
+	}
+
+	// Marshal and hash the user data to validate the signature.
+	data, err := json.Marshal(tx.UserTx)
+	if err != nil {
+		return fmt.Errorf("marshal data, %w", err)
+	}
+	dataHash := crypto.Keccak256Hash(data)
+	hash := crypto.Keccak256Hash([]byte(ardanSignature), dataHash.Bytes())
+
+	// Capture the public key associated with this data and signature.
+	sig := toSignatureBytesWithoutArdan(tx.V, tx.R, tx.S)
+	sigPublicKey, err := crypto.Ecrecover(hash.Bytes(), sig)
+	if err != nil {
+		return fmt.Errorf("ecrecover, %w", err)
+	}
+
+	// Check that the given public key created the signature over the data.
+	if !crypto.VerifySignature(sigPublicKey, hash.Bytes(), sig[:crypto.RecoveryIDOffset]) {
+		return errors.New("invalid signature")
+	}
+
+	return nil
 }
 
 // =============================================================================
@@ -94,12 +124,10 @@ func (tx BlockTx) FromAddress() (string, error) {
 	if err != nil {
 		return "", err
 	}
-
-	// This first hash forces the data for the digest to be 32 bytes long.
 	dataHash := crypto.Keccak256Hash(data)
 	hash := crypto.Keccak256Hash([]byte(ardanSignature), dataHash.Bytes())
 
-	publicKey, err := crypto.SigToPub(hash.Bytes(), toSignatureCryptoBytes(tx.R, tx.S, tx.V))
+	publicKey, err := crypto.SigToPub(hash.Bytes(), toSignatureBytesWithoutArdan(tx.V, tx.R, tx.S))
 	if err != nil {
 		return "", err
 	}
@@ -109,23 +137,23 @@ func (tx BlockTx) FromAddress() (string, error) {
 
 // Signature returns the signature as a string.
 func (tx BlockTx) Signature() string {
-	return "0x" + hex.EncodeToString(toSignatureBytes(tx.R, tx.S, tx.V))
+	return "0x" + hex.EncodeToString(toSignatureBytesWithArdan(tx.V, tx.R, tx.S))
 }
 
 // =============================================================================
 
 // toSignatureValues converts the signature into the r, s, v values.
-func toSignatureValues(sig []byte) (r, s, v *big.Int) {
+func toSignatureValues(sig []byte) (v, r, s *big.Int) {
 	r = new(big.Int).SetBytes(sig[:32])
 	s = new(big.Int).SetBytes(sig[32:64])
 	v = new(big.Int).SetBytes([]byte{sig[64] + ardanID})
 
-	return r, s, v
+	return v, r, s
 }
 
-// toSignatureCryptoBytes converts the r, s, v values into a slice of bytes
+// toSignatureBytesWithoutArdan converts the r, s, v values into a slice of bytes
 // with the removal of the ardanID.
-func toSignatureCryptoBytes(r, s, v *big.Int) []byte {
+func toSignatureBytesWithoutArdan(v, r, s *big.Int) []byte {
 	sig := make([]byte, crypto.SignatureLength)
 
 	copy(sig, r.Bytes())
@@ -135,8 +163,8 @@ func toSignatureCryptoBytes(r, s, v *big.Int) []byte {
 	return sig
 }
 
-// toSignatureBytes converts the r, s, v values into a slice of bytes.
-func toSignatureBytes(r, s, v *big.Int) []byte {
+// toSignatureBytesWithArdan converts the r, s, v values into a slice of bytes.
+func toSignatureBytesWithArdan(v, r, s *big.Int) []byte {
 	sig := make([]byte, crypto.SignatureLength)
 
 	copy(sig, r.Bytes())
