@@ -160,18 +160,6 @@ func (s *State) Shutdown() error {
 
 // =============================================================================
 
-// SignalMining sends a signal to the mining G to start.
-func (s *State) SignalMining() {
-	s.powWorker.signalStartMining()
-}
-
-// SignalCancelMining sends a signal to the mining G to stop.
-func (s *State) SignalCancelMining() chan struct{} {
-	return s.powWorker.signalCancelMining()
-}
-
-// =============================================================================
-
 // SubmitWalletTransaction accepts a transaction from a wallet for inclusion.
 func (s *State) SubmitWalletTransaction(signedTx SignedTx) error {
 	s.mu.Lock()

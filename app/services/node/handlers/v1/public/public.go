@@ -120,16 +120,3 @@ func (h Handlers) BlocksByAddress(ctx context.Context, w http.ResponseWriter, r 
 
 	return web.Respond(ctx, w, blocks, http.StatusOK)
 }
-
-// SignalMining signals to start a mining operation.
-func (h Handlers) SignalMining(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	h.BC.SignalMining()
-
-	resp := struct {
-		Status string `json:"status"`
-	}{
-		Status: "mining signalled",
-	}
-
-	return web.Respond(ctx, w, resp, http.StatusOK)
-}
