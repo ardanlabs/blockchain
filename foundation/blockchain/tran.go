@@ -19,6 +19,10 @@ const (
 // the signature can be 0x1d or 0x1e.
 const recoveryID = 29
 
+// This ensures that the signatures we generate cannot be used for purposes
+// outside of the Ardan blockchain.
+const ardanSignature = "\x19Ardan Signed Message:\n32"
+
 // =============================================================================
 
 // TxError represents an error on a transaction.
@@ -48,7 +52,7 @@ func (tx UserTx) Sign(privateKey *ecdsa.PrivateKey) (SignedTx, error) {
 	if err != nil {
 		return SignedTx{}, err
 	}
-	hash := crypto.Keccak256Hash(data)
+	hash := crypto.Keccak256Hash([]byte(ardanSignature), data)
 
 	sig, err := crypto.Sign(hash.Bytes(), privateKey)
 	if err != nil {
@@ -99,7 +103,7 @@ func (tx BlockTx) FromAddress() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	hash := crypto.Keccak256Hash(data)
+	hash := crypto.Keccak256Hash([]byte(ardanSignature), data)
 
 	sig := toSignatureCryptoBytes(tx.R, tx.S, tx.V)
 	publicKey, err := crypto.SigToPub(hash.Bytes(), sig)
