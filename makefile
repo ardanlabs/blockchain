@@ -23,6 +23,8 @@ SHELL := /bin/bash
 # go run app/wallet/main.go balance -w kennedy
 # go run app/wallet/main.go send -w kennedy -t 0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76 -v 100
 # go run app/wallet/main.go send -w kennedy -t 0x6Fe6CF3c8fF57c58d24BfC869668F48BCbDb3BD9 -v 150
+# go run app/wallet/main.go send -w pavel -t 0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76 -v 75
+# go run app/wallet/main.go send -w pavel -t 0x6Fe6CF3c8fF57c58d24BfC869668F48BCbDb3BD9 -v 250
 
 # ==============================================================================
 # Local support
