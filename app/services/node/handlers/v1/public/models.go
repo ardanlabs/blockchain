@@ -14,13 +14,13 @@ type balances struct {
 }
 
 type tx struct {
+	From  string `json:"from"`
 	To    string `json:"to"`
 	Value uint   `json:"value"`
 	Tip   uint   `json:"tip"`
 	Data  []byte `json:"data"`
 	Gas   uint   `json:"gas"`
 	Sig   string `json:"sig"`
-	From  string `json:"from"`
 }
 
 type block struct {
