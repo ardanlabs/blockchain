@@ -43,9 +43,9 @@ func (tx UserTx) Sign(privateKey *ecdsa.PrivateKey) (SignedTx, error) {
 
 	// This first hash forces the data for the digest to be 32 bytes long.
 	dataHash := crypto.Keccak256Hash(data)
-	digestHash := crypto.Keccak256Hash([]byte(ardanSignature), dataHash.Bytes())
+	hash := crypto.Keccak256Hash([]byte(ardanSignature), dataHash.Bytes())
 
-	sig, err := crypto.Sign(digestHash.Bytes(), privateKey)
+	sig, err := crypto.Sign(hash.Bytes(), privateKey)
 	if err != nil {
 		return SignedTx{}, err
 	}
@@ -97,9 +97,9 @@ func (tx BlockTx) FromAddress() (string, error) {
 
 	// This first hash forces the data for the digest to be 32 bytes long.
 	dataHash := crypto.Keccak256Hash(data)
-	digestHash := crypto.Keccak256Hash([]byte(ardanSignature), dataHash.Bytes())
+	hash := crypto.Keccak256Hash([]byte(ardanSignature), dataHash.Bytes())
 
-	publicKey, err := crypto.SigToPub(digestHash.Bytes(), toSignatureCryptoBytes(tx.R, tx.S, tx.V))
+	publicKey, err := crypto.SigToPub(hash.Bytes(), toSignatureCryptoBytes(tx.R, tx.S, tx.V))
 	if err != nil {
 		return "", err
 	}
