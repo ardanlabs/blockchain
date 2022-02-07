@@ -6,10 +6,20 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/ardanlabs/blockchain/app/services/node/handlers/v1/public"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/spf13/cobra"
 )
+
+type balance struct {
+	Address string `json:"address"`
+	Balance uint   `json:"balance"`
+}
+
+type balances struct {
+	LastestBlock string    `json:"lastest_block"`
+	Uncommitted  int       `json:"uncommitted"`
+	Balances     []balance `json:"balances"`
+}
 
 // balanceCmd represents the balance command
 var balanceCmd = &cobra.Command{
@@ -28,7 +38,7 @@ var balanceCmd = &cobra.Command{
 		}
 		defer resp.Body.Close()
 		decoder := json.NewDecoder(resp.Body)
-		var balances public.Balances
+		var balances balances
 		if err := decoder.Decode(&balances); err != nil {
 			log.Fatal(err)
 		}

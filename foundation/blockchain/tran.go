@@ -2,6 +2,7 @@ package blockchain
 
 import (
 	"crypto/ecdsa"
+	"encoding/hex"
 	"encoding/json"
 	"math/big"
 
@@ -12,6 +13,11 @@ import (
 const (
 	TxDataReward = "reward"
 )
+
+// recoveryID is an arbitrary number for signing messages. This will make it
+// clear that the signature comes from the Ardan blockchain. The value inside
+// the signature can be 0x1d or 0x1e.
+const recoveryID = 29
 
 // =============================================================================
 
@@ -64,14 +70,19 @@ func (tx UserTx) Sign(privateKey *ecdsa.PrivateKey) (SignedTx, error) {
 // SignedTx is a signed version of the user transaction.
 type SignedTx struct {
 	UserTx
-	V *big.Int `json:"v"` // Last byte of the signature.
-	R *big.Int `json:"r"` // First 32 bytes of the signature.
-	S *big.Int `json:"s"` // Next 32 bytes of the signature.
+	V *big.Int `json:"v"` // Recovery identifier, either 0 or 1.
+	R *big.Int `json:"r"` // First number of the ECDSA signature.
+	S *big.Int `json:"s"` // Second number of the ECDSA signature.
 }
 
-// VerifySignature verifies the signature conforms to the Secp256k1 standard.
+// VerifySignature verifies the signature conforms to our standards.
 func (tx SignedTx) VerifySignature() bool {
-	return crypto.ValidateSignatureValues(byte(tx.V.Uint64()), tx.R, tx.S, true)
+	v := tx.V.Uint64() - recoveryID
+	if v != 0 && v != 1 {
+		return false
+	}
+
+	return crypto.ValidateSignatureValues(byte(v), tx.R, tx.S, true)
 }
 
 // =============================================================================
@@ -90,8 +101,7 @@ func (tx BlockTx) FromAddress() (string, error) {
 	}
 	hash := crypto.Keccak256Hash(data)
 
-	sig := toSignatureBytes(tx.R, tx.S, tx.V)
-
+	sig := toSignatureCryptoBytes(tx.R, tx.S, tx.V)
 	publicKey, err := crypto.SigToPub(hash.Bytes(), sig)
 	if err != nil {
 		return "", err
@@ -100,18 +110,35 @@ func (tx BlockTx) FromAddress() (string, error) {
 	return crypto.PubkeyToAddress(*publicKey).String(), nil
 }
 
+// Signature returns the signature as a string.
+func (tx BlockTx) Signature() string {
+	return "0x" + hex.EncodeToString(toSignatureBytes(tx.R, tx.S, tx.V))
+}
+
 // =============================================================================
 
 // toSignatureValues converts the signature into the r, s, v values.
 func toSignatureValues(sig []byte) (r, s, v *big.Int) {
 	r = new(big.Int).SetBytes(sig[:32])
 	s = new(big.Int).SetBytes(sig[32:64])
-	v = new(big.Int).SetBytes([]byte{sig[64]})
+	v = new(big.Int).SetBytes([]byte{sig[64] + recoveryID})
 
 	return r, s, v
 }
 
-// toSignature converts the r, s, v values into a slice of bytes.
+// toSignatureCryptoBytes converts the r, s, v values into a slice of bytes
+// with the removal of the recoveryID.
+func toSignatureCryptoBytes(r, s, v *big.Int) []byte {
+	sig := make([]byte, crypto.SignatureLength)
+
+	copy(sig, r.Bytes())
+	copy(sig[32:], s.Bytes())
+	sig[64] = byte(v.Uint64() - recoveryID)
+
+	return sig
+}
+
+// toSignatureBytes converts the r, s, v values into a slice of bytes.
 func toSignatureBytes(r, s, v *big.Int) []byte {
 	sig := make([]byte, crypto.SignatureLength)
 

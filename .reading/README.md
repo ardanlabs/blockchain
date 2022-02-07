@@ -168,6 +168,7 @@ Occasionally we run into material that we feel is important. This is a section p
 [The Actual Networking behind the Ethereum Network: How It Works](https://medium.com/orbs-network/the-actual-networking-behind-the-ethereum-network-how-it-works-6e147ca36b45) - Gil Dagan  
 [The Ethereum Virtual Machine](https://cypherpunks-core.github.io/ethereumbook/13evm.html)  
 [Ethereum 201: Mnemonics](https://wolovim.medium.com/ethereum-201-mnemonics-bb01a9108c38) - Marc Garreau  
+[The Magic of Digital Signatures on Ethereum](https://medium.com/mycrypto/the-magic-of-digital-signatures-on-ethereum-98fe184dc9c7) - Maarten Zuidhoorn  
 
 
 ## Blockspace

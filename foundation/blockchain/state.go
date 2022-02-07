@@ -213,7 +213,7 @@ func (s *State) SubmitNodeTransaction(tx BlockTx) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	s.evHandler("state: SubmitNodeTransaction: started : tx[%d]", tx)
+	s.evHandler("state: SubmitNodeTransaction: started : tx[%v]", tx)
 	defer s.evHandler("state: SubmitNodeTransaction: completed")
 
 	if !tx.VerifySignature() {

@@ -76,7 +76,7 @@ func (h Handlers) Balances(ctx context.Context, w http.ResponseWriter, r *http.R
 		bals = append(bals, bal)
 	}
 
-	balances := Balances{
+	balances := balances{
 		LastestBlock: h.BC.CopyLatestBlock().Hash(),
 		Uncommitted:  len(h.BC.CopyMempool()),
 		Balances:     bals,
@@ -94,7 +94,31 @@ func (h Handlers) BlocksByAddress(ctx context.Context, w http.ResponseWriter, r 
 		return web.Respond(ctx, w, nil, http.StatusNoContent)
 	}
 
-	return web.Respond(ctx, w, dbBlocks, http.StatusOK)
+	blocks := make([]block, len(dbBlocks))
+	for j, blk := range dbBlocks {
+		trans := make([]tx, len(blk.Transactions))
+		for i, tran := range blk.Transactions {
+			address, _ := tran.FromAddress()
+			trans[i] = tx{
+				From:  address,
+				To:    tran.To,
+				Value: tran.Value,
+				Tip:   tran.Tip,
+				Data:  tran.Data,
+				Gas:   tran.Gas,
+				Sig:   tran.Signature(),
+			}
+		}
+
+		b := block{
+			Header:       blk.Header,
+			Transactions: trans,
+		}
+
+		blocks[j] = b
+	}
+
+	return web.Respond(ctx, w, blocks, http.StatusOK)
 }
 
 // SignalMining signals to start a mining operation.
