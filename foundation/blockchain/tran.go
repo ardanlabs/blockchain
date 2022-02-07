@@ -14,10 +14,10 @@ const (
 	TxDataReward = "reward"
 )
 
-// recoveryID is an arbitrary number for signing messages. This will make it
-// clear that the signature comes from the Ardan blockchain. The value inside
-// the signature can be 0x1d or 0x1e.
-const recoveryID = 29
+// ardanID is an arbitrary number for signing messages. This will make it
+// clear that the signature comes from the Ardan blockchain.
+// Ethereum and Bitcoin do this as well, but they use the value of 27.
+const ardanID = 29
 
 // This ensures that the signatures we generate cannot be used for purposes
 // outside of the Ardan blockchain. Ethereum does this.
@@ -72,7 +72,7 @@ type SignedTx struct {
 
 // VerifySignature verifies the signature conforms to our standards.
 func (tx SignedTx) VerifySignature() bool {
-	v := tx.V.Uint64() - recoveryID
+	v := tx.V.Uint64() - ardanID
 	if v != 0 && v != 1 {
 		return false
 	}
@@ -118,19 +118,19 @@ func (tx BlockTx) Signature() string {
 func toSignatureValues(sig []byte) (r, s, v *big.Int) {
 	r = new(big.Int).SetBytes(sig[:32])
 	s = new(big.Int).SetBytes(sig[32:64])
-	v = new(big.Int).SetBytes([]byte{sig[64] + recoveryID})
+	v = new(big.Int).SetBytes([]byte{sig[64] + ardanID})
 
 	return r, s, v
 }
 
 // toSignatureCryptoBytes converts the r, s, v values into a slice of bytes
-// with the removal of the recoveryID.
+// with the removal of the ardanID.
 func toSignatureCryptoBytes(r, s, v *big.Int) []byte {
 	sig := make([]byte, crypto.SignatureLength)
 
 	copy(sig, r.Bytes())
 	copy(sig[32:], s.Bytes())
-	sig[64] = byte(v.Uint64() - recoveryID)
+	sig[64] = byte(v.Uint64() - ardanID)
 
 	return sig
 }
