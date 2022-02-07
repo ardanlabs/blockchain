@@ -18,7 +18,6 @@ import (
 	Need to verify enough money at the address before sending a transaction.
 
 	-- Blockchain
-	Have nodes receiving a new block check the signature on all transactions.
 	Add a name server for known account. Used for displaying information.
 	Create a block index file for query and clean up forks.
 	Publishing events. (New Blocks)
@@ -197,7 +196,7 @@ func (s *State) SubmitWalletTransaction(signedTx SignedTx) error {
 	return nil
 }
 
-// SubmitWalletTransaction accepts a transaction from a node for inclusion.
+// SubmitNodeTransaction accepts a transaction from a node for inclusion.
 func (s *State) SubmitNodeTransaction(tx BlockTx) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -475,6 +474,12 @@ func (s *State) validateNextBlock(block Block) (string, error) {
 
 	if block.Header.ParentHash != latestBlock.Hash() {
 		return zeroHash, fmt.Errorf("prev block doesn't match our latest, got %s, exp %s", block.Header.ParentHash, latestBlock.Hash())
+	}
+
+	for _, tx := range block.Transactions {
+		if !tx.VerifySignature() {
+			return zeroHash, fmt.Errorf("transaction has invalid signature, tx[%v]", tx)
+		}
 	}
 
 	return hash, nil
