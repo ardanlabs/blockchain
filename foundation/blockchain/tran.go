@@ -20,7 +20,8 @@ const (
 const recoveryID = 29
 
 // This ensures that the signatures we generate cannot be used for purposes
-// outside of the Ardan blockchain.
+// outside of the Ardan blockchain. Ethereum does this.
+// "\x19Ethereum Signed Message:\n" + length(message) + message
 const ardanSignature = "\x19Ardan Signed Message:\n32"
 
 // =============================================================================
@@ -39,9 +40,12 @@ func (tx UserTx) Sign(privateKey *ecdsa.PrivateKey) (SignedTx, error) {
 	if err != nil {
 		return SignedTx{}, err
 	}
-	hash := crypto.Keccak256Hash([]byte(ardanSignature), data)
 
-	sig, err := crypto.Sign(hash.Bytes(), privateKey)
+	// This first hash forces the data for the digest to be 32 bytes long.
+	dataHash := crypto.Keccak256Hash(data)
+	digestHash := crypto.Keccak256Hash([]byte(ardanSignature), dataHash.Bytes())
+
+	sig, err := crypto.Sign(digestHash.Bytes(), privateKey)
 	if err != nil {
 		return SignedTx{}, err
 	}
@@ -90,10 +94,12 @@ func (tx BlockTx) FromAddress() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	hash := crypto.Keccak256Hash([]byte(ardanSignature), data)
 
-	sig := toSignatureCryptoBytes(tx.R, tx.S, tx.V)
-	publicKey, err := crypto.SigToPub(hash.Bytes(), sig)
+	// This first hash forces the data for the digest to be 32 bytes long.
+	dataHash := crypto.Keccak256Hash(data)
+	digestHash := crypto.Keccak256Hash([]byte(ardanSignature), dataHash.Bytes())
+
+	publicKey, err := crypto.SigToPub(digestHash.Bytes(), toSignatureCryptoBytes(tx.R, tx.S, tx.V))
 	if err != nil {
 		return "", err
 	}
