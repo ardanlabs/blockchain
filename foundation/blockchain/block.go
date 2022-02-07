@@ -37,15 +37,15 @@ type Block struct {
 	Transactions []BlockTx   `json:"txs"`
 }
 
-// NewBlock constructs a new BlockFS for persisting.
-func NewBlock(beneficiary string, difficulty int, transPerBlock int, parentBlock Block, txMempool TxMempool) Block {
+// newBlock constructs a new BlockFS for persisting.
+func newBlock(beneficiary string, difficulty int, transPerBlock int, parentBlock Block, txMempool txMempool) Block {
 	parentHash := zeroHash
 	if parentBlock.Header.Number > 0 {
 		parentHash = parentBlock.Hash()
 	}
 
 	// Copy the best transactions from the mempool for this new block.
-	cpy := txMempool.CopyBestByTip(transPerBlock)
+	cpy := txMempool.copyBestByTip(transPerBlock)
 
 	return Block{
 		Header: BlockHeader{
@@ -77,15 +77,15 @@ func (b Block) Hash() string {
 
 // =============================================================================
 
-// BlockFS represents what is written to the DB file.
-type BlockFS struct {
+// blockFS represents what is written to the DB file.
+type blockFS struct {
 	Hash  string
 	Block Block
 }
 
 // performPOW does the work of mining to find a valid hash for a specified
 // block and returns a BlockFS ready to be written to disk.
-func performPOW(ctx context.Context, difficulty int, b Block, ev EventHandler) (BlockFS, time.Duration, error) {
+func performPOW(ctx context.Context, difficulty int, b Block, ev EventHandler) (blockFS, time.Duration, error) {
 	ev("bcWorker: runMiningOperation: **********: miningG: POW: started: transactions %v", b.Transactions)
 	defer ev("bcWorker: runMiningOperation: **********: miningG: POW: completed")
 
@@ -94,7 +94,7 @@ func performPOW(ctx context.Context, difficulty int, b Block, ev EventHandler) (
 	// Choose a random starting point for the nonce.
 	nBig, err := rand.Int(rand.Reader, big.NewInt(math.MaxInt64))
 	if err != nil {
-		return BlockFS{}, time.Since(t), ctx.Err()
+		return blockFS{}, time.Since(t), ctx.Err()
 	}
 	b.Header.Nonce = nBig.Uint64()
 
@@ -108,7 +108,7 @@ func performPOW(ctx context.Context, difficulty int, b Block, ev EventHandler) (
 		// Did we timeout trying to solve the problem.
 		if ctx.Err() != nil {
 			ev("bcWorker: runMiningOperation: **********: miningG: POW: canceled")
-			return BlockFS{}, time.Since(t), ctx.Err()
+			return blockFS{}, time.Since(t), ctx.Err()
 		}
 
 		// Hash the block and check if we have solved the puzzle.
@@ -124,13 +124,13 @@ func performPOW(ctx context.Context, difficulty int, b Block, ev EventHandler) (
 		// Did we timeout trying to solve the problem.
 		if ctx.Err() != nil {
 			ev("bcWorker: runMiningOperation: **********: miningG: POW: canceled")
-			return BlockFS{}, time.Since(t), ctx.Err()
+			return blockFS{}, time.Since(t), ctx.Err()
 		}
 
 		ev("bcWorker: runMiningOperation: **********: miningG: POW: final attempts[%d]", attempts)
 
 		// We found a solution to the POW.
-		bfs := BlockFS{
+		bfs := blockFS{
 			Hash:  hash,
 			Block: b,
 		}
@@ -169,7 +169,7 @@ func loadBlocksFromDisk(dbPath string) ([]Block, error) {
 			return nil, err
 		}
 
-		var blockFS BlockFS
+		var blockFS blockFS
 		if err := json.Unmarshal(scanner.Bytes(), &blockFS); err != nil {
 			return nil, err
 		}

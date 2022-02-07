@@ -7,35 +7,35 @@ import (
 	"sort"
 )
 
-// TxMempool represents a cache of transactions each with a unique id.
-type TxMempool map[string]BlockTx
+// txMempool represents a cache of transactions each with a unique id.
+type txMempool map[string]BlockTx
 
-// NewTxMempool constructs a new info set to manage node peer information.
-func NewTxMempool() TxMempool {
-	return make(TxMempool)
+// newTxMempool constructs a new info set to manage node peer information.
+func newTxMempool() txMempool {
+	return make(txMempool)
 }
 
-// Count returns the current number of transaction in the pool.
-func (tm TxMempool) Count() int {
+// count returns the current number of transaction in the pool.
+func (tm txMempool) count() int {
 	return len(tm)
 }
 
-// Add adds a new transaction to the mempool.
-func (tm TxMempool) Add(tx BlockTx) {
+// add adds a new transaction to the mempool.
+func (tm txMempool) add(tx BlockTx) {
 	hash := hashBlock(tx)
 	if _, exists := tm[hash]; !exists {
 		tm[hash] = tx
 	}
 }
 
-// Delete removed a transaction from the mempool.
-func (tm TxMempool) Delete(tx BlockTx) {
+// delete removed a transaction from the mempool.
+func (tm txMempool) delete(tx BlockTx) {
 	hash := hashBlock(tx)
 	delete(tm, hash)
 }
 
-// Copy returns a list of the current transaction in the pool.
-func (tm TxMempool) Copy() []BlockTx {
+// copy returns a list of the current transaction in the pool.
+func (tm txMempool) copy() []BlockTx {
 	cpy := make([]BlockTx, 0, len(tm))
 	for _, tx := range tm {
 		cpy = append(cpy, tx)
@@ -43,11 +43,11 @@ func (tm TxMempool) Copy() []BlockTx {
 	return cpy
 }
 
-// CopyBestByTip returns a list of the best transactions for the next
+// copyBestByTip returns a list of the best transactions for the next
 // mining operation based on the offered tip. The caller specifies
 // how many transaction they want.
-func (tm TxMempool) CopyBestByTip(amount int) []BlockTx {
-	txs := tm.Copy()
+func (tm txMempool) copyBestByTip(amount int) []BlockTx {
+	txs := tm.copy()
 	sort.Sort(byTip(txs))
 
 	cpy := make([]BlockTx, amount)

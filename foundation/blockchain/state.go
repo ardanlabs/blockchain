@@ -63,7 +63,7 @@ type State struct {
 	evHandler    EventHandler
 
 	genesis      Genesis
-	txMempool    TxMempool
+	txMempool    txMempool
 	latestBlock  Block
 	balanceSheet BalanceSheet
 	dbFile       *os.File
@@ -74,13 +74,6 @@ type State struct {
 
 // New constructs a new blockchain for data management.
 func New(cfg Config) (*State, error) {
-
-	// Build a safe event handler function for use.
-	ev := func(v string, args ...interface{}) {
-		if cfg.EvHandler != nil {
-			cfg.EvHandler(v, args...)
-		}
-	}
 
 	// Load the genesis file to get starting balances for
 	// founders of the block chain.
@@ -126,6 +119,13 @@ func New(cfg Config) (*State, error) {
 		return nil, err
 	}
 
+	// Build a safe event handler function for use.
+	ev := func(v string, args ...interface{}) {
+		if cfg.EvHandler != nil {
+			cfg.EvHandler(v, args...)
+		}
+	}
+
 	// Create the State to provide support for managing the blockchain.
 	state := State{
 		minerAddress: cfg.MinerAddress,
@@ -135,13 +135,11 @@ func New(cfg Config) (*State, error) {
 		evHandler:    ev,
 
 		genesis:      genesis,
-		txMempool:    NewTxMempool(),
+		txMempool:    newTxMempool(),
 		latestBlock:  latestBlock,
 		balanceSheet: balanceSheet,
 		dbFile:       dbFile,
 	}
-
-	ev("state: Started: blocks[%d]", latestBlock.Header.Number)
 
 	// Run the POW worker.
 	state.powWorker = runPOWWorker(&state, cfg.EvHandler)
@@ -185,23 +183,14 @@ func (s *State) SubmitWalletTransaction(signedTx SignedTx) error {
 		Gas:      s.genesis.GasPrice,
 	}
 
-	s.evHandler("state: SubmitWalletTransaction: started : tx[%d]", tx)
-	defer s.evHandler("state: SubmitWalletTransaction: completed")
-
 	if !tx.VerifySignature() {
-		s.evHandler("state: SubmitWalletTransaction: ERROR: invalid signature")
 		return errors.New("invalid signature")
 	}
 
-	s.evHandler("state: SubmitWalletTransaction: before: mempool[%d]", s.txMempool.Count())
-	s.txMempool.Add(tx)
-	s.evHandler("state: SubmitWalletTransaction: after: mempool[%d]", s.txMempool.Count())
-
-	s.evHandler("state: SubmitWalletTransaction: signal tx sharing")
+	s.txMempool.add(tx)
 	s.powWorker.signalShareTransactions(tx)
 
-	if s.txMempool.Count() >= s.genesis.TransPerBlock {
-		s.evHandler("state: SubmitWalletTransaction: signal mining")
+	if s.txMempool.count() >= s.genesis.TransPerBlock {
 		s.powWorker.signalStartMining()
 	}
 
@@ -213,20 +202,13 @@ func (s *State) SubmitNodeTransaction(tx BlockTx) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	s.evHandler("state: SubmitNodeTransaction: started : tx[%v]", tx)
-	defer s.evHandler("state: SubmitNodeTransaction: completed")
-
 	if !tx.VerifySignature() {
-		s.evHandler("state: SubmitNodeTransaction: ERROR: invalid signature")
 		return errors.New("invalid signature")
 	}
 
-	s.evHandler("state: SubmitNodeTransaction: before: mempool[%d]", s.txMempool.Count())
-	s.txMempool.Add(tx)
-	s.evHandler("state: SubmitNodeTransaction: after: mempool[%d]", s.txMempool.Count())
+	s.txMempool.add(tx)
 
-	if s.txMempool.Count() >= s.genesis.TransPerBlock {
-		s.evHandler("state: SubmitNodeTransaction: signal mining")
+	if s.txMempool.count() >= s.genesis.TransPerBlock {
 		s.powWorker.signalStartMining()
 	}
 
@@ -265,7 +247,7 @@ func (s *State) Truncate() error {
 
 	// Reset the state of the database.
 	s.genesis = genesis
-	s.txMempool = NewTxMempool()
+	s.txMempool = newTxMempool()
 	s.latestBlock = Block{}
 	s.balanceSheet = balanceSheet
 	s.dbFile = dbFile
@@ -299,7 +281,7 @@ func (s *State) CopyMempool() []BlockTx {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	return s.txMempool.Copy()
+	return s.txMempool.copy()
 }
 
 // CopyBalanceSheet returns a copy of the balance sheet.
@@ -356,7 +338,7 @@ func (s *State) QueryMempoolLength() int {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	return s.txMempool.Count()
+	return s.txMempool.count()
 }
 
 // QueryBlocksByNumber returns the set of blocks based on block numbers. This
@@ -422,7 +404,7 @@ func (s *State) WriteNextBlock(block Block) error {
 		return err
 	}
 
-	blockFS := BlockFS{
+	blockFS := blockFS{
 		Hash:  hash,
 		Block: block,
 	}
@@ -453,7 +435,7 @@ func (s *State) WriteNextBlock(block Block) error {
 			applyMiningFeeToBalance(s.balanceSheet, block.Header.Beneficiary, tx)
 
 			// Remove the transaction from the mempool if it exists.
-			s.txMempool.Delete(tx)
+			s.txMempool.delete(tx)
 		}
 
 		// Apply the miner reward for this block.
@@ -527,12 +509,12 @@ func (s *State) MineNewBlock(ctx context.Context) (Block, time.Duration, error) 
 		defer s.mu.Unlock()
 
 		// Are there enough transactions in the pool.
-		if s.txMempool.Count() < s.genesis.TransPerBlock {
+		if s.txMempool.count() < s.genesis.TransPerBlock {
 			return ErrNotEnoughTransactions
 		}
 
 		// Create a new block which owns it's own copy of the transactions.
-		nb = NewBlock(s.minerAddress, s.genesis.Difficulty, s.genesis.TransPerBlock, s.latestBlock, s.txMempool)
+		nb = newBlock(s.minerAddress, s.genesis.Difficulty, s.genesis.TransPerBlock, s.latestBlock, s.txMempool)
 
 		// Get a copy of the balance sheet.
 		balanceSheet = copyBalanceSheet(s.balanceSheet)
@@ -596,7 +578,7 @@ func (s *State) MineNewBlock(ctx context.Context) (Block, time.Duration, error) 
 
 		// Remove the transactions from this block.
 		for _, tx := range nb.Transactions {
-			s.txMempool.Delete(tx)
+			s.txMempool.delete(tx)
 		}
 
 		return nil
