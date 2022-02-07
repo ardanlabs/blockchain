@@ -25,19 +25,6 @@ const ardanSignature = "\x19Ardan Signed Message:\n32"
 
 // =============================================================================
 
-// TxError represents an error on a transaction.
-type TxError struct {
-	Tx  BlockTx
-	Err error
-}
-
-// Error implements the error interface.
-func (txe *TxError) Error() string {
-	return txe.Err.Error()
-}
-
-// =============================================================================
-
 // UserTx is the transactional data submitted by a user.
 type UserTx struct {
 	To    string `json:"to"`    // Address receiving the benefit of the transaction.
