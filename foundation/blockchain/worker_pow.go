@@ -264,9 +264,9 @@ func (w *powWorker) runMiningOperation() {
 		return
 	}
 
-	// Create a context so mining can be cancelled. Mining has 2 minutes
+	// Create a context so mining can be cancelled. Mining has 5 minutes
 	// to find a solution.
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 
 	// Can't return from this function until these G's are complete.
