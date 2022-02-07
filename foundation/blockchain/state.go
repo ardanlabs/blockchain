@@ -216,6 +216,101 @@ func (s *State) SubmitNodeTransaction(tx BlockTx) error {
 
 // =============================================================================
 
+// WriteNextBlock takes a block received from a peer, validates it and
+// if that passes, writes the block to disk.
+func (s *State) WriteNextBlock(block Block) error {
+	s.evHandler("state: WriteNextBlock: started : block[%s]", block.Hash())
+	defer s.evHandler("state: WriteNextBlock: completed")
+
+	hash, err := s.validateNextBlock(block)
+	if err != nil {
+		return err
+	}
+
+	blockFS := blockFS{
+		Hash:  hash,
+		Block: block,
+	}
+
+	// Marshal the block for writing to disk.
+	blockFSJson, err := json.Marshal(blockFS)
+	if err != nil {
+		return err
+	}
+
+	// Execute this code inside a lock.
+	if err := func() error {
+		s.mu.Lock()
+		defer s.mu.Unlock()
+
+		// Write the new block to the chain on disk.
+		if _, err := s.dbFile.Write(append(blockFSJson, '\n')); err != nil {
+			return err
+		}
+
+		// Process the transactions against the balance sheet.
+		for _, tx := range block.Transactions {
+
+			// Apply the balance changes based on this transaction.
+			applyTransactionToBalance(s.balanceSheet, tx)
+
+			// Apply the miner tip and gas fee for this transaction.
+			applyMiningFeeToBalance(s.balanceSheet, block.Header.Beneficiary, tx)
+
+			// Remove the transaction from the mempool if it exists.
+			s.txMempool.delete(tx)
+		}
+
+		// Apply the miner reward for this block.
+		applyMiningRewardToBalance(s.balanceSheet, block.Header.Beneficiary, s.genesis.MiningReward)
+
+		// Save this as the latest block.
+		s.latestBlock = block
+
+		return nil
+	}(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// validateNextBlock takes a block and validates it to be included into
+// the blockchain.
+func (s *State) validateNextBlock(block Block) (string, error) {
+	hash := block.Hash()
+	if !isHashSolved(s.genesis.Difficulty, hash) {
+		return zeroHash, fmt.Errorf("%s invalid hash", hash)
+	}
+
+	latestBlock := s.CopyLatestBlock()
+	nextNumber := latestBlock.Header.Number + 1
+
+	// The node who sent this block has a chain that is two or more blocks ahead
+	// of ours. This means there has been a fork and we are on the wrong side.
+	if block.Header.Number >= (nextNumber + 2) {
+		return zeroHash, ErrChainForked
+	}
+
+	if block.Header.Number != nextNumber {
+		return zeroHash, fmt.Errorf("this block is not the next number, got %d, exp %d", block.Header.Number, nextNumber)
+	}
+
+	if block.Header.ParentHash != latestBlock.Hash() {
+		return zeroHash, fmt.Errorf("prev block doesn't match our latest, got %s, exp %s", block.Header.ParentHash, latestBlock.Hash())
+	}
+
+	for _, tx := range block.Transactions {
+		if !tx.VerifySignature() {
+			return zeroHash, fmt.Errorf("transaction has invalid signature, tx[%v]", tx)
+		}
+	}
+
+	return hash, nil
+}
+
+// =============================================================================
+
 // Truncate resets the chain both on disk and in memory. This is used to
 // correct an identified fork.
 func (s *State) Truncate() error {
@@ -388,101 +483,6 @@ blocks:
 	}
 
 	return out
-}
-
-// =============================================================================
-
-// WriteNextBlock takes a block received from a peer, validates it and
-// if that passes, writes the block to disk.
-func (s *State) WriteNextBlock(block Block) error {
-	s.evHandler("state: WriteNextBlock: started : block[%s]", block.Hash())
-	defer s.evHandler("state: WriteNextBlock: completed")
-
-	hash, err := s.validateNextBlock(block)
-	if err != nil {
-		return err
-	}
-
-	blockFS := blockFS{
-		Hash:  hash,
-		Block: block,
-	}
-
-	// Marshal the block for writing to disk.
-	blockFSJson, err := json.Marshal(blockFS)
-	if err != nil {
-		return err
-	}
-
-	// Execute this code inside a lock.
-	if err := func() error {
-		s.mu.Lock()
-		defer s.mu.Unlock()
-
-		// Write the new block to the chain on disk.
-		if _, err := s.dbFile.Write(append(blockFSJson, '\n')); err != nil {
-			return err
-		}
-
-		// Process the transactions against the balance sheet.
-		for _, tx := range block.Transactions {
-
-			// Apply the balance changes based on this transaction.
-			applyTransactionToBalance(s.balanceSheet, tx)
-
-			// Apply the miner tip and gas fee for this transaction.
-			applyMiningFeeToBalance(s.balanceSheet, block.Header.Beneficiary, tx)
-
-			// Remove the transaction from the mempool if it exists.
-			s.txMempool.delete(tx)
-		}
-
-		// Apply the miner reward for this block.
-		applyMiningRewardToBalance(s.balanceSheet, block.Header.Beneficiary, s.genesis.MiningReward)
-
-		// Save this as the latest block.
-		s.latestBlock = block
-
-		return nil
-	}(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// validateNextBlock takes a block and validates it to be included into
-// the blockchain.
-func (s *State) validateNextBlock(block Block) (string, error) {
-	hash := block.Hash()
-	if !isHashSolved(s.genesis.Difficulty, hash) {
-		return zeroHash, fmt.Errorf("%s invalid hash", hash)
-	}
-
-	latestBlock := s.CopyLatestBlock()
-	nextNumber := latestBlock.Header.Number + 1
-
-	// The node who sent this block has a chain that is two or more blocks ahead
-	// of ours. This means there has been a fork and we are on the wrong side.
-	if block.Header.Number >= (nextNumber + 2) {
-		return zeroHash, ErrChainForked
-	}
-
-	if block.Header.Number != nextNumber {
-		return zeroHash, fmt.Errorf("this block is not the next number, got %d, exp %d", block.Header.Number, nextNumber)
-	}
-
-	if block.Header.ParentHash != latestBlock.Hash() {
-		return zeroHash, fmt.Errorf("prev block doesn't match our latest, got %s, exp %s", block.Header.ParentHash, latestBlock.Hash())
-	}
-
-	for _, tx := range block.Transactions {
-		if !tx.VerifySignature() {
-			return zeroHash, fmt.Errorf("transaction has invalid signature, tx[%v]", tx)
-		}
-	}
-
-	return hash, nil
 }
 
 // =============================================================================
