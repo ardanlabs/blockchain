@@ -65,7 +65,7 @@ func (tx UserTx) Sign(privateKey *ecdsa.PrivateKey) (SignedTx, error) {
 // SignedTx is a signed version of the user transaction.
 type SignedTx struct {
 	UserTx
-	V *big.Int `json:"v"` // Recovery identifier, either 0 or 1.
+	V *big.Int `json:"v"` // Recovery identifier, either 29 or 30 with ardanID.
 	R *big.Int `json:"r"` // First number of the ECDSA signature.
 	S *big.Int `json:"s"` // Second number of the ECDSA signature.
 }
