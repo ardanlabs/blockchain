@@ -53,10 +53,6 @@ func runPOWWorker(state *State, evHandler EventHandler) *powWorker {
 		baseURL:      "http://%s/v1/node",
 	}
 
-	// Before anything, update the peer list and make sure this
-	// node's blockchain is up to date.
-	w.runPeerUpdatesOperation()
-
 	// Load the set of operations we need to run.
 	operations := []func(){
 		w.peerOperations,

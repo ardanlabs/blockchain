@@ -18,11 +18,12 @@ func (tm txMempool) count() int {
 }
 
 // add adds a new transaction to the mempool.
-func (tm txMempool) add(tx BlockTx) {
+func (tm txMempool) add(tx BlockTx) int {
 	hash := tx.Hash()
 	if _, exists := tm[hash]; !exists {
 		tm[hash] = tx
 	}
+	return len(tm)
 }
 
 // delete removed a transaction from the mempool.

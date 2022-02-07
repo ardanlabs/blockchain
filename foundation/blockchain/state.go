@@ -140,8 +140,10 @@ func New(cfg Config) (*State, error) {
 		dbFile:       dbFile,
 	}
 
-	// Run the POW worker.
+	// Run the POW worker and run the peer update operation to
+	// sync the blockchain before starting.
 	state.powWorker = runPOWWorker(&state, cfg.EvHandler)
+	state.powWorker.runPeerUpdatesOperation()
 
 	return &state, nil
 }
@@ -174,10 +176,10 @@ func (s *State) SubmitWalletTransaction(signedTx SignedTx) error {
 		return err
 	}
 
-	s.txMempool.add(tx)
+	n := s.txMempool.add(tx)
 	s.powWorker.signalShareTransactions(tx)
 
-	if s.txMempool.count() >= s.genesis.TransPerBlock {
+	if n >= s.genesis.TransPerBlock {
 		s.powWorker.signalStartMining()
 	}
 
@@ -193,9 +195,8 @@ func (s *State) SubmitNodeTransaction(tx BlockTx) error {
 		return err
 	}
 
-	s.txMempool.add(tx)
-
-	if s.txMempool.count() >= s.genesis.TransPerBlock {
+	n := s.txMempool.add(tx)
+	if n >= s.genesis.TransPerBlock {
 		s.powWorker.signalStartMining()
 	}
 
