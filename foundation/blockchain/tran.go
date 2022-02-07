@@ -2,6 +2,7 @@ package blockchain
 
 import (
 	"crypto/ecdsa"
+	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -138,6 +139,17 @@ func (tx BlockTx) FromAddress() (string, error) {
 // Signature returns the signature as a string.
 func (tx BlockTx) Signature() string {
 	return "0x" + hex.EncodeToString(toSignatureBytesWithArdan(tx.V, tx.R, tx.S))
+}
+
+// Hash returns a unique string for the value.
+func (tx BlockTx) Hash() string {
+	data, err := json.Marshal(tx)
+	if err != nil {
+		return zeroHash
+	}
+
+	hash := sha256.Sum256(data)
+	return hex.EncodeToString(hash[:])
 }
 
 // =============================================================================

@@ -33,7 +33,7 @@ type powWorker struct {
 	shut         chan struct{}
 	peerUpdates  chan bool
 	startMining  chan bool
-	cancelMining chan bool
+	cancelMining chan chan struct{}
 	txSharing    chan BlockTx
 	evHandler    EventHandler
 	baseURL      string
@@ -47,7 +47,7 @@ func runPOWWorker(state *State, evHandler EventHandler) *powWorker {
 		shut:         make(chan struct{}),
 		peerUpdates:  make(chan bool, 1),
 		startMining:  make(chan bool, 1),
-		cancelMining: make(chan bool, 1),
+		cancelMining: make(chan chan struct{}, 1),
 		txSharing:    make(chan BlockTx, maxTxShareRequests),
 		evHandler:    evHandler,
 		baseURL:      "http://%s/v1/node",
@@ -98,7 +98,7 @@ func (w *powWorker) shutdown() {
 	w.ticker.Stop()
 
 	w.evHandler("bcWorker: shutdown: signal cancel mining")
-	w.signalCancelMining()
+	close(w.signalCancelMining())
 
 	w.evHandler("bcWorker: shutdown: terminate goroutines")
 	close(w.shut)
@@ -199,12 +199,16 @@ func (w *powWorker) signalStartMining() {
 
 // signalCancelMining cancels a mining operation. If there is already a signal
 // pending in the channel, just return since a mining operation will cancel.
-func (w *powWorker) signalCancelMining() {
+func (w *powWorker) signalCancelMining() chan struct{} {
+	wait := make(chan struct{})
+
 	select {
-	case w.cancelMining <- true:
+	case w.cancelMining <- wait:
 	default:
 	}
 	w.evHandler("bcWorker: signalCancelMining: cancel mining signaled")
+
+	return wait
 }
 
 // signalShareTransactions queues up a share transaction operation. If
@@ -246,6 +250,7 @@ func (w *powWorker) runMiningOperation() {
 	defer func() {
 		length := w.state.QueryMempoolLength()
 		if length >= w.state.genesis.TransPerBlock {
+			w.evHandler("bcWorker: runMiningOperation: **********: signal mining again")
 			w.signalStartMining()
 		}
 	}()
@@ -273,28 +278,35 @@ func (w *powWorker) runMiningOperation() {
 	var wg sync.WaitGroup
 	wg.Add(2)
 
+	// The cancel G will assign this wait channel if the WriteNextBlock is
+	// executed by a new block being received. At that point mining was cancelled.
+	// We can't start a new mining operation until we know WriteNextBlock is finished.
+	var wait chan struct{}
+	defer func() {
+		if wait != nil {
+			w.evHandler("bcWorker: runMiningOperation: **********: miningG: waiting on WriteNextBlock")
+			<-wait
+			w.evHandler("bcWorker: runMiningOperation: **********: miningG: released by WriteNextBlock")
+		}
+	}()
+
 	// This G exists to cancel the mining operation.
 	go func() {
-		w.evHandler("bcWorker: runMiningOperation: **********: cancelG: started")
 		defer func() {
-			w.evHandler("bcWorker: runMiningOperation: **********: cancelG: completed")
 			cancel()
 			wg.Done()
 		}()
 
 		select {
-		case <-w.cancelMining:
-			w.evHandler("bcWorker: runMiningOperation: **********: cancelG: cancel mining")
+		case wait = <-w.cancelMining:
+			w.evHandler("bcWorker: runMiningOperation: **********: cancelG: cancel mining requested")
 		case <-ctx.Done():
-			w.evHandler("bcWorker: runMiningOperation: **********: cancelG: context cancelled")
 		}
 	}()
 
 	// This G is performing the mining.
 	go func() {
-		w.evHandler("bcWorker: runMiningOperation: **********: miningG: started")
 		defer func() {
-			w.evHandler("bcWorker: runMiningOperation: **********: miningG: completed")
 			cancel()
 			wg.Done()
 		}()
@@ -307,7 +319,7 @@ func (w *powWorker) runMiningOperation() {
 			case errors.Is(err, ErrNotEnoughTransactions):
 				w.evHandler("bcWorker: runMiningOperation: **********: miningG: WARNING: not enough transactions in mempool")
 			case ctx.Err() != nil:
-				w.evHandler("bcWorker: runMiningOperation: **********: miningG: WARNING: mining cancelled")
+				w.evHandler("bcWorker: runMiningOperation: **********: miningG: mining cancelled")
 			default:
 				w.evHandler("bcWorker: runMiningOperation: **********: miningG: ERROR: %s", err)
 			}

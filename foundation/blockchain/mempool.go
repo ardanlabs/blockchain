@@ -1,9 +1,6 @@
 package blockchain
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
-	"encoding/json"
 	"sort"
 )
 
@@ -22,7 +19,7 @@ func (tm txMempool) count() int {
 
 // add adds a new transaction to the mempool.
 func (tm txMempool) add(tx BlockTx) {
-	hash := hashBlock(tx)
+	hash := tx.Hash()
 	if _, exists := tm[hash]; !exists {
 		tm[hash] = tx
 	}
@@ -30,7 +27,7 @@ func (tm txMempool) add(tx BlockTx) {
 
 // delete removed a transaction from the mempool.
 func (tm txMempool) delete(tx BlockTx) {
-	hash := hashBlock(tx)
+	hash := tx.Hash()
 	delete(tm, hash)
 }
 
@@ -55,18 +52,6 @@ func (tm txMempool) copyBestByTip(amount int) []BlockTx {
 		cpy[i] = txs[i]
 	}
 	return cpy
-}
-
-// Hash returns the unique hash for the block by marshaling
-// the block into JSON and performing a hashing operation.
-func hashBlock(tx BlockTx) string {
-	data, err := json.Marshal(tx.UserTx)
-	if err != nil {
-		return zeroHash
-	}
-
-	hash := sha256.Sum256(data)
-	return hex.EncodeToString(hash[:])
 }
 
 // =============================================================================

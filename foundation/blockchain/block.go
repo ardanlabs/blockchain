@@ -86,8 +86,12 @@ type blockFS struct {
 // performPOW does the work of mining to find a valid hash for a specified
 // block and returns a BlockFS ready to be written to disk.
 func performPOW(ctx context.Context, difficulty int, b Block, ev EventHandler) (blockFS, time.Duration, error) {
-	ev("bcWorker: runMiningOperation: **********: miningG: POW: started: transactions %v", b.Transactions)
+	ev("bcWorker: runMiningOperation: **********: miningG: POW: started")
 	defer ev("bcWorker: runMiningOperation: **********: miningG: POW: completed")
+
+	for _, tx := range b.Transactions {
+		ev("bcWorker: runMiningOperation: **********: miningG: POW: tx[%s]", tx.Hash())
+	}
 
 	t := time.Now()
 

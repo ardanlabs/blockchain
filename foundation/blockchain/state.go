@@ -166,8 +166,8 @@ func (s *State) SignalMining() {
 }
 
 // SignalCancelMining sends a signal to the mining G to stop.
-func (s *State) SignalCancelMining() {
-	s.powWorker.signalCancelMining()
+func (s *State) SignalCancelMining() chan struct{} {
+	return s.powWorker.signalCancelMining()
 }
 
 // =============================================================================
@@ -221,6 +221,17 @@ func (s *State) SubmitNodeTransaction(tx BlockTx) error {
 func (s *State) WriteNextBlock(block Block) error {
 	s.evHandler("state: WriteNextBlock: started : block[%s]", block.Hash())
 	defer s.evHandler("state: WriteNextBlock: completed")
+
+	// If the node is mining, it needs to stop immediately.
+	// The wait channel provided will hold the mining G from starting a
+	// new mining operation until the channel is close.
+	// This is critical since this block needs to be written before a new
+	// mining operation can begin.
+	wait := s.powWorker.signalCancelMining()
+	defer func() {
+		s.evHandler("state: WriteNextBlock: release runMiningOperation")
+		close(wait)
+	}()
 
 	hash, err := s.validateNextBlock(block)
 	if err != nil {
