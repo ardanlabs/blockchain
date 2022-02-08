@@ -216,7 +216,7 @@ func (s *State) WriteNextBlock(block Block) error {
 	// its state changes before a new mining operation takes place.
 	done := s.powWorker.signalCancelMining()
 	defer func() {
-		s.evHandler("state: WriteNextBlock: release runMiningOperation")
+		s.evHandler("state: WriteNextBlock: signal runMiningOperation to terminate")
 		done()
 	}()
 
@@ -241,10 +241,14 @@ func (s *State) WriteNextBlock(block Block) error {
 		s.mu.Lock()
 		defer s.mu.Unlock()
 
+		s.evHandler("state: WriteNextBlock: write to disk")
+
 		// Write the new block to the chain on disk.
 		if _, err := s.dbFile.Write(append(blockFSJson, '\n')); err != nil {
 			return err
 		}
+
+		s.evHandler("state: WriteNextBlock: apply transactions to balance")
 
 		// Process the transactions against the balance sheet.
 		for _, tx := range block.Transactions {
@@ -255,9 +259,13 @@ func (s *State) WriteNextBlock(block Block) error {
 			// Apply the miner tip and gas fee for this transaction.
 			applyMiningFeeToBalance(s.balanceSheet, block.Header.Beneficiary, tx)
 
+			s.evHandler("state: WriteNextBlock: remove from mempool: tx[%s]", tx.Hash())
+
 			// Remove the transaction from the mempool if it exists.
 			s.txMempool.delete(tx)
 		}
+
+		s.evHandler("state: WriteNextBlock: apply mining reward")
 
 		// Apply the miner reward for this block.
 		applyMiningRewardToBalance(s.balanceSheet, block.Header.Beneficiary, s.genesis.MiningReward)
@@ -276,6 +284,8 @@ func (s *State) WriteNextBlock(block Block) error {
 // validateNextBlock takes a block and validates it to be included into
 // the blockchain.
 func (s *State) validateNextBlock(block Block) (string, error) {
+	s.evHandler("state: WriteNextBlock: validate: hash solved")
+
 	hash := block.Hash()
 	if !isHashSolved(s.genesis.Difficulty, hash) {
 		return zeroHash, fmt.Errorf("%s invalid hash", hash)
@@ -284,19 +294,27 @@ func (s *State) validateNextBlock(block Block) (string, error) {
 	latestBlock := s.CopyLatestBlock()
 	nextNumber := latestBlock.Header.Number + 1
 
+	s.evHandler("state: WriteNextBlock: validate: chain not forked")
+
 	// The node who sent this block has a chain that is two or more blocks ahead
 	// of ours. This means there has been a fork and we are on the wrong side.
 	if block.Header.Number >= (nextNumber + 2) {
 		return zeroHash, ErrChainForked
 	}
 
+	s.evHandler("state: WriteNextBlock: validate: block number")
+
 	if block.Header.Number != nextNumber {
 		return zeroHash, fmt.Errorf("this block is not the next number, got %d, exp %d", block.Header.Number, nextNumber)
 	}
 
+	s.evHandler("state: WriteNextBlock: validate: parent hash")
+
 	if block.Header.ParentHash != latestBlock.Hash() {
 		return zeroHash, fmt.Errorf("prev block doesn't match our latest, got %s, exp %s", block.Header.ParentHash, latestBlock.Hash())
 	}
+
+	s.evHandler("state: WriteNextBlock: validate: transaction signatures")
 
 	for _, tx := range block.Transactions {
 		if err := tx.VerifySignature(); err != nil {
