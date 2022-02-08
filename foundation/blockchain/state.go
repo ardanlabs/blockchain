@@ -140,10 +140,9 @@ func New(cfg Config) (*State, error) {
 		dbFile:       dbFile,
 	}
 
-	// Run the POW worker and run the peer update operation to
-	// sync the blockchain before starting.
-	state.powWorker = runPOWWorker(&state, cfg.EvHandler)
-	state.powWorker.runPeerUpdatesOperation()
+	// Run the POW worker which will assign itself to
+	// this state.
+	runPOWWorker(&state, cfg.EvHandler)
 
 	return &state, nil
 }
@@ -211,15 +210,14 @@ func (s *State) WriteNextBlock(block Block) error {
 	s.evHandler("state: WriteNextBlock: started : block[%s]", block.Hash())
 	defer s.evHandler("state: WriteNextBlock: completed")
 
-	// If the node is mining, it needs to stop immediately.
-	// The wait channel provided will hold the mining G from starting a
-	// new mining operation until the channel is close.
-	// This is critical since this block needs to be written before a new
-	// mining operation can begin.
-	wait := s.powWorker.signalCancelMining()
+	// If the runMiningOperation function is being executed it needs to stop
+	// immediately. The G executing runMiningOperation will not return from the
+	// function until the done is called. That allows this function to complete
+	// its state changes before a new mining operation takes place.
+	done := s.powWorker.signalCancelMining()
 	defer func() {
 		s.evHandler("state: WriteNextBlock: release runMiningOperation")
-		close(wait)
+		done()
 	}()
 
 	hash, err := s.validateNextBlock(block)
@@ -508,6 +506,8 @@ func (s *State) MineNewBlock(ctx context.Context) (Block, time.Duration, error) 
 	var nb Block
 	var balanceSheet BalanceSheet
 
+	s.evHandler("bcWorker: runMiningOperation: MINING: create new block")
+
 	// Execute this code inside a lock.
 	if err := func() error {
 		s.mu.Lock()
@@ -529,13 +529,15 @@ func (s *State) MineNewBlock(ctx context.Context) (Block, time.Duration, error) 
 		return Block{}, 0, ErrNotEnoughTransactions
 	}
 
+	s.evHandler("bcWorker: runMiningOperation: MINING: apply transactions to balance")
+
 	// Process the transactions against the balance sheet.
 	for _, tx := range nb.Transactions {
 
 		// Apply the balance changes based on this transaction. Set status
 		// information for other nodes to process this correctly.
 		if err := applyTransactionToBalance(balanceSheet, tx); err != nil {
-			s.evHandler("state: MineNewBlock: **********: WARNING : %s", err)
+			s.evHandler("bcWorker: runMiningOperation: MINING: WARNING : %s", err)
 			continue
 		}
 
@@ -561,6 +563,8 @@ func (s *State) MineNewBlock(ctx context.Context) (Block, time.Duration, error) 
 	if ctx.Err() != nil {
 		return Block{}, duration, ctx.Err()
 	}
+
+	s.evHandler("bcWorker: runMiningOperation: MINING: write to disk")
 
 	// Marshal the block for writing to disk.
 	blockFSJson, err := json.Marshal(blockFS)
