@@ -212,7 +212,7 @@ func (s *State) WriteNextBlock(block Block) error {
 
 	// If the runMiningOperation function is being executed it needs to stop
 	// immediately. The G executing runMiningOperation will not return from the
-	// function until the done is called. That allows this function to complete
+	// function until done is called. That allows this function to complete
 	// its state changes before a new mining operation takes place.
 	done := s.powWorker.signalCancelMining()
 	defer func() {
