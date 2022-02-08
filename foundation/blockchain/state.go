@@ -547,7 +547,7 @@ func (s *State) MineNewBlock(ctx context.Context) (Block, time.Duration, error) 
 		return Block{}, 0, ErrNotEnoughTransactions
 	}
 
-	s.evHandler("worker: runMiningOperation: MINING: apply transactions to balance")
+	s.evHandler("worker: runMiningOperation: MINING: update copy of balance sheet")
 
 	// Process the transactions against the balance sheet.
 	for _, tx := range nb.Transactions {
@@ -582,8 +582,6 @@ func (s *State) MineNewBlock(ctx context.Context) (Block, time.Duration, error) 
 		return Block{}, duration, ctx.Err()
 	}
 
-	s.evHandler("worker: runMiningOperation: MINING: write to disk")
-
 	// Marshal the block for writing to disk.
 	blockFSJson, err := json.Marshal(blockFS)
 	if err != nil {
@@ -595,16 +593,21 @@ func (s *State) MineNewBlock(ctx context.Context) (Block, time.Duration, error) 
 		s.mu.Lock()
 		defer s.mu.Unlock()
 
+		s.evHandler("worker: runMiningOperation: MINING: write to disk")
+
 		// Write the new block to the chain on disk.
 		if _, err := s.dbFile.Write(append(blockFSJson, '\n')); err != nil {
 			return err
 		}
+
+		s.evHandler("worker: runMiningOperation: MINING: apply new balance sheet")
 
 		s.balanceSheet = balanceSheet
 		s.latestBlock = blockFS.Block
 
 		// Remove the transactions from this block.
 		for _, tx := range nb.Transactions {
+			s.evHandler("worker: runMiningOperation: MINING: remove from mempool: tx[%s]", tx.Hash())
 			s.txMempool.delete(tx)
 		}
 
