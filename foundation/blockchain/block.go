@@ -86,11 +86,11 @@ type blockFS struct {
 // performPOW does the work of mining to find a valid hash for a specified
 // block and returns a BlockFS ready to be written to disk.
 func performPOW(ctx context.Context, difficulty int, b Block, ev EventHandler) (blockFS, time.Duration, error) {
-	ev("bcWorker: runMiningOperation: MINING: POW: started")
-	defer ev("bcWorker: runMiningOperation: MINING: POW: completed")
+	ev("worker: runMiningOperation: MINING: POW: started")
+	defer ev("worker: runMiningOperation: MINING: POW: completed")
 
 	for _, tx := range b.Transactions {
-		ev("bcWorker: runMiningOperation: MINING: POW: tx[%s]", tx.Hash())
+		ev("worker: runMiningOperation: MINING: POW: tx[%s]", tx.Hash())
 	}
 
 	t := time.Now()
@@ -106,12 +106,12 @@ func performPOW(ctx context.Context, difficulty int, b Block, ev EventHandler) (
 	for {
 		attempts++
 		if attempts%1_000_000 == 0 {
-			ev("bcWorker: runMiningOperation: MINING: POW: attempts[%d]", attempts)
+			ev("worker: runMiningOperation: MINING: POW: attempts[%d]", attempts)
 		}
 
 		// Did we timeout trying to solve the problem.
 		if ctx.Err() != nil {
-			ev("bcWorker: runMiningOperation: MINING: POW: canceled")
+			ev("worker: runMiningOperation: MINING: POW: CANCELLED")
 			return blockFS{}, time.Since(t), ctx.Err()
 		}
 
@@ -127,11 +127,12 @@ func performPOW(ctx context.Context, difficulty int, b Block, ev EventHandler) (
 
 		// Did we timeout trying to solve the problem.
 		if ctx.Err() != nil {
-			ev("bcWorker: runMiningOperation: MINING: POW: canceled")
+			ev("worker: runMiningOperation: MINING: POW: CANCELLED")
 			return blockFS{}, time.Since(t), ctx.Err()
 		}
 
-		ev("bcWorker: runMiningOperation: MINING: POW: final attempts[%d]", attempts)
+		ev("worker: runMiningOperation: MINING: POW: SOLVED: prevBlk[%s]: newBlk[%s]", b.Header.ParentHash, b.Hash())
+		ev("worker: runMiningOperation: MINING: POW: attempts[%d]", attempts)
 
 		// We found a solution to the POW.
 		bfs := blockFS{

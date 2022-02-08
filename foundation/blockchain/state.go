@@ -582,6 +582,8 @@ func (s *State) MineNewBlock(ctx context.Context) (Block, time.Duration, error) 
 		return Block{}, duration, ctx.Err()
 	}
 
+	s.evHandler("worker: runMiningOperation: MINING: marshal block for write")
+
 	// Marshal the block for writing to disk.
 	blockFSJson, err := json.Marshal(blockFS)
 	if err != nil {

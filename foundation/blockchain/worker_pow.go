@@ -324,10 +324,8 @@ func (w *powWorker) runMiningOperation() {
 			return
 		}
 
-		// WOW, we mined a block.
-		w.evHandler("worker: runMiningOperation: MINING: SOLVED: prevBlk[%s]: newBlk[%s]: numTrans[%d]", block.Header.ParentHash, block.Hash(), len(block.Transactions))
-
-		// Send the new block to the network. Log the error, but that's it.
+		// WOW, we mined a block. Send the new block to the network.
+		// Log the error, but that's it.
 		if err := w.sendBlockToPeers(block); err != nil {
 			w.evHandler("worker: runMiningOperation: MINING: sendBlockToPeers: WARNING %s", err)
 		}
