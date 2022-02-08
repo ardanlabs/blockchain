@@ -524,7 +524,7 @@ func (s *State) MineNewBlock(ctx context.Context) (Block, time.Duration, error) 
 	var nb Block
 	var balanceSheet BalanceSheet
 
-	s.evHandler("bcWorker: runMiningOperation: MINING: create new block")
+	s.evHandler("worker: runMiningOperation: MINING: create new block")
 
 	// Execute this code inside a lock.
 	if err := func() error {
@@ -547,7 +547,7 @@ func (s *State) MineNewBlock(ctx context.Context) (Block, time.Duration, error) 
 		return Block{}, 0, ErrNotEnoughTransactions
 	}
 
-	s.evHandler("bcWorker: runMiningOperation: MINING: apply transactions to balance")
+	s.evHandler("worker: runMiningOperation: MINING: apply transactions to balance")
 
 	// Process the transactions against the balance sheet.
 	for _, tx := range nb.Transactions {
@@ -555,7 +555,7 @@ func (s *State) MineNewBlock(ctx context.Context) (Block, time.Duration, error) 
 		// Apply the balance changes based on this transaction. Set status
 		// information for other nodes to process this correctly.
 		if err := applyTransactionToBalance(balanceSheet, tx); err != nil {
-			s.evHandler("bcWorker: runMiningOperation: MINING: WARNING : %s", err)
+			s.evHandler("worker: runMiningOperation: MINING: WARNING : %s", err)
 			continue
 		}
 
@@ -582,7 +582,7 @@ func (s *State) MineNewBlock(ctx context.Context) (Block, time.Duration, error) 
 		return Block{}, duration, ctx.Err()
 	}
 
-	s.evHandler("bcWorker: runMiningOperation: MINING: write to disk")
+	s.evHandler("worker: runMiningOperation: MINING: write to disk")
 
 	// Marshal the block for writing to disk.
 	blockFSJson, err := json.Marshal(blockFS)

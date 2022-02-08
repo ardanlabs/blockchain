@@ -98,7 +98,7 @@ func run(log *zap.SugaredLogger) error {
 
 	ev := func(v string, args ...interface{}) {
 		s := fmt.Sprintf(v, args...)
-		log.Infow(s, "traceid", "11111111-1111-1111-1111-111111111111")
+		log.Infow(s, "traceid", "00000000-0000-0000-0000-000000000000")
 	}
 
 	bc, err := blockchain.New(blockchain.Config{
