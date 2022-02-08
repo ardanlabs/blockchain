@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-// zeroHash represents a has code of zeros.
+// zeroHash represents a hash code of zeros.
 const zeroHash string = "00000000000000000000000000000000"
 
 // =============================================================================
