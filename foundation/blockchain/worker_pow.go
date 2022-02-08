@@ -196,7 +196,7 @@ func (w *powWorker) signalStartMining() {
 }
 
 // signalCancelMining signals the G executing the runMiningOperation function
-// to stop immediately. That G will not return from the function until the done
+// to stop immediately. That G will not return from the function until done
 // is called. This allows the caller to complete any state changes before a new
 // mining operation takes place.
 func (w *powWorker) signalCancelMining() (done func()) {
