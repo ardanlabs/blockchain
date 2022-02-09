@@ -10,8 +10,8 @@ import (
 )
 
 var (
-	privateKeyName string
-	walletPath     string
+	accountName string
+	accountPath string
 )
 
 const (
@@ -35,13 +35,13 @@ func Execute() {
 
 func init() {
 	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-	rootCmd.PersistentFlags().StringVarP(&privateKeyName, "wallet", "w", "private.ecdsa", "Path to the private key.")
-	rootCmd.PersistentFlags().StringVarP(&walletPath, "wallet-path", "p", "zblock/wallets/", "Path to the directory with private keys.")
+	rootCmd.PersistentFlags().StringVarP(&accountName, "account", "a", "private.ecdsa", "Path to the private key.")
+	rootCmd.PersistentFlags().StringVarP(&accountPath, "account-path", "p", "zblock/accounts/", "Path to the directory with private keys.")
 }
 
 func getPrivateKeyPath() string {
-	if !strings.HasSuffix(privateKeyName, keyExtenstion) {
-		privateKeyName += keyExtenstion
+	if !strings.HasSuffix(accountName, keyExtenstion) {
+		accountName += keyExtenstion
 	}
-	return filepath.Join(walletPath, privateKeyName)
+	return filepath.Join(accountPath, accountName)
 }
