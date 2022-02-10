@@ -97,7 +97,7 @@ func (tx SignedTx) VerifySignature() error {
 	hash := crypto.Keccak256Hash([]byte(ardanSignature), dataHash.Bytes())
 
 	// Capture the public key associated with this data and signature.
-	sig := toSignatureBytesForCrypto(tx.V, tx.R, tx.S)
+	sig := toSignatureBytes(tx.V, tx.R, tx.S)
 	sigPublicKey, err := crypto.Ecrecover(hash.Bytes(), sig)
 	if err != nil {
 		return fmt.Errorf("ecrecover, %w", err)
@@ -128,7 +128,7 @@ func (tx BlockTx) FromAddress() (string, error) {
 	dataHash := crypto.Keccak256Hash(data)
 	hash := crypto.Keccak256Hash([]byte(ardanSignature), dataHash.Bytes())
 
-	publicKey, err := crypto.SigToPub(hash.Bytes(), toSignatureBytesForCrypto(tx.V, tx.R, tx.S))
+	publicKey, err := crypto.SigToPub(hash.Bytes(), toSignatureBytes(tx.V, tx.R, tx.S))
 	if err != nil {
 		return "", err
 	}
@@ -138,7 +138,7 @@ func (tx BlockTx) FromAddress() (string, error) {
 
 // Signature returns the signature as a string.
 func (tx BlockTx) Signature() string {
-	return "0x" + hex.EncodeToString(toSignatureBytes(tx.V, tx.R, tx.S))
+	return "0x" + hex.EncodeToString(toSignatureBytesForDisplay(tx.V, tx.R, tx.S))
 }
 
 // Hash returns a unique string for the value.
@@ -163,25 +163,25 @@ func toSignatureValues(sig []byte) (v, r, s *big.Int) {
 	return v, r, s
 }
 
-// toSignatureBytes converts the r, s, v values into a slice of bytes.
+// toSignatureBytes converts the r, s, v values into a slice of bytes
+// with the removal of the ardanID.
 func toSignatureBytes(v, r, s *big.Int) []byte {
 	sig := make([]byte, crypto.SignatureLength)
 
 	copy(sig, r.Bytes())
 	copy(sig[32:], s.Bytes())
-	sig[64] = byte(v.Uint64())
+	sig[64] = byte(v.Uint64() - ardanID)
 
 	return sig
 }
 
-// toSignatureBytesForCrypto converts the r, s, v values into a slice of bytes
-// with the removal of the ardanID.
-func toSignatureBytesForCrypto(v, r, s *big.Int) []byte {
+// toSignatureBytesForDisplay converts the r, s, v values into a slice of bytes.
+func toSignatureBytesForDisplay(v, r, s *big.Int) []byte {
 	sig := make([]byte, crypto.SignatureLength)
 
 	copy(sig, r.Bytes())
 	copy(sig[32:], s.Bytes())
-	sig[64] = byte(v.Uint64() - ardanID)
+	sig[64] = byte(v.Uint64())
 
 	return sig
 }
