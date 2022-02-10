@@ -61,8 +61,8 @@ func (tx UserTx) Sign(privateKey *ecdsa.PrivateKey) (SignedTx, error) {
 	return signedTx, nil
 }
 
-// HashWithArdanSignature returns a hash of the user transaction with the
-// Ardan stamp embedded into the final hash.
+// HashWithArdanSignature returns a hash of 32 bytes that represents this user
+// transaction with the Ardan stamp embedded into the final hash.
 func (tx UserTx) HashWithArdanStamp() ([]byte, error) {
 
 	// Marshal and hash the user data to validate the signature.
