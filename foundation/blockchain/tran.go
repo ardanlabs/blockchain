@@ -35,14 +35,14 @@ type UserTx struct {
 // Sign uses the specified private key to sign the user transaction.
 func (tx UserTx) Sign(privateKey *ecdsa.PrivateKey) (SignedTx, error) {
 
-	// Hash the user transaction for signing.
-	hash, err := tx.HashWithArdanSignature()
+	// Prepare the transaction for signing.
+	tran, err := tx.HashWithArdanSignature()
 	if err != nil {
 		return SignedTx{}, err
 	}
 
 	// Sign the hash with the private key to produce a signature.
-	sig, err := crypto.Sign(hash, privateKey)
+	sig, err := crypto.Sign(tran, privateKey)
 	if err != nil {
 		return SignedTx{}, err
 	}
@@ -108,8 +108,8 @@ func (tx SignedTx) VerifySignature() error {
 		return errors.New("invalid signature values")
 	}
 
-	// Hash the user transaction for signing.
-	hash, err := tx.HashWithArdanSignature()
+	// Prepare the transaction for recovery and validation.
+	tran, err := tx.HashWithArdanSignature()
 	if err != nil {
 		return err
 	}
@@ -118,14 +118,14 @@ func (tx SignedTx) VerifySignature() error {
 	sig := toSignatureBytes(tx.V, tx.R, tx.S)
 
 	// Capture the uncompressed public key associated with this signature.
-	sigPublicKey, err := crypto.Ecrecover(hash, sig)
+	sigPublicKey, err := crypto.Ecrecover(tran, sig)
 	if err != nil {
 		return fmt.Errorf("ecrecover, %w", err)
 	}
 
 	// Check that the given public key created the signature over the data.
 	rs := sig[:crypto.RecoveryIDOffset]
-	if !crypto.VerifySignature(sigPublicKey, hash, rs) {
+	if !crypto.VerifySignature(sigPublicKey, tran, rs) {
 		return errors.New("invalid signature")
 	}
 
@@ -143,8 +143,8 @@ type BlockTx struct {
 // FromAddress extracts the address for the account that signed the transaction.
 func (tx BlockTx) FromAddress() (string, error) {
 
-	// Hash the user transaction for signing.
-	hash, err := tx.HashWithArdanSignature()
+	// Prepare the transaction for public key extraction.
+	tran, err := tx.HashWithArdanSignature()
 	if err != nil {
 		return "", err
 	}
@@ -153,7 +153,7 @@ func (tx BlockTx) FromAddress() (string, error) {
 	sig := toSignatureBytes(tx.V, tx.R, tx.S)
 
 	// Capture the public key associated with this signature.
-	publicKey, err := crypto.SigToPub(hash, sig)
+	publicKey, err := crypto.SigToPub(tran, sig)
 	if err != nil {
 		return "", err
 	}
