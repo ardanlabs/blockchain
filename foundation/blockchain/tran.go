@@ -69,8 +69,8 @@ func (tx UserTx) Sign(privateKey *ecdsa.PrivateKey) (SignedTx, error) {
 type SignedTx struct {
 	UserTx
 	V *big.Int `json:"v"` // Recovery identifier, either 29 or 30 with ardanID.
-	R *big.Int `json:"r"` // First number of the ECDSA signature.
-	S *big.Int `json:"s"` // Second number of the ECDSA signature.
+	R *big.Int `json:"r"` // First coordinate of the ECDSA signature.
+	S *big.Int `json:"s"` // Second coordinate of the ECDSA signature.
 }
 
 // VerifySignature verifies the signature conforms to our standards and
