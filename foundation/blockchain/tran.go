@@ -39,22 +39,23 @@ type UserTx struct {
 
 // Sign uses the specified private key to sign the user transaction.
 func (tx UserTx) Sign(privateKey *ecdsa.PrivateKey) (SignedTx, error) {
-	data, err := json.Marshal(tx)
+
+	// Hash the user transaction for signing.
+	hash, err := tx.HashForSignature()
 	if err != nil {
 		return SignedTx{}, err
 	}
 
-	// This first hash forces the data for the digest to be 32 bytes long.
-	dataHash := crypto.Keccak256Hash(data)
-	hash := crypto.Keccak256Hash([]byte(ardanSignature), dataHash.Bytes())
-
-	sig, err := crypto.Sign(hash.Bytes(), privateKey)
+	// Sign the hash with the private key to produce a signature.
+	sig, err := crypto.Sign(hash, privateKey)
 	if err != nil {
 		return SignedTx{}, err
 	}
 
+	// Convert the 65 byte signature into the [R|S|V] format.
 	v, r, s := toSignatureValues(sig)
 
+	// Construct and returned the signed transation.
 	signedTx := SignedTx{
 		UserTx: tx,
 		V:      v,
@@ -63,6 +64,24 @@ func (tx UserTx) Sign(privateKey *ecdsa.PrivateKey) (SignedTx, error) {
 	}
 
 	return signedTx, nil
+}
+
+// Hash marshales the user transaction and hashes the data for signing.
+func (tx UserTx) HashForSignature() ([]byte, error) {
+
+	// Marshal and hash the user data to validate the signature.
+	data, err := json.Marshal(tx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Hash the transaction data for signing. The dataHash will always be
+	// 32 bytes long and match the length hardcoded in the ardan signature.
+	dataHash := crypto.Keccak256Hash(data)
+	as := []byte(ardanSignature)
+	hash := crypto.Keccak256Hash(as, dataHash.Bytes())
+
+	return hash.Bytes(), nil
 }
 
 // SignedTx is a signed version of the user transaction.
@@ -88,23 +107,24 @@ func (tx SignedTx) VerifySignature() error {
 		return errors.New("invalid signature values")
 	}
 
-	// Marshal and hash the user data to validate the signature.
-	data, err := json.Marshal(tx.UserTx)
+	// Hash the user transaction for signing.
+	hash, err := tx.HashForSignature()
 	if err != nil {
-		return fmt.Errorf("marshal data, %w", err)
+		return err
 	}
-	dataHash := crypto.Keccak256Hash(data)
-	hash := crypto.Keccak256Hash([]byte(ardanSignature), dataHash.Bytes())
 
-	// Capture the public key associated with this data and signature.
+	// Convert the [R|S|V] format into the original 65 bytes.
 	sig := toSignatureBytes(tx.V, tx.R, tx.S)
-	sigPublicKey, err := crypto.Ecrecover(hash.Bytes(), sig)
+
+	// Capture the uncompressed public key associated with this signature.
+	sigPublicKey, err := crypto.Ecrecover(hash, sig)
 	if err != nil {
 		return fmt.Errorf("ecrecover, %w", err)
 	}
 
 	// Check that the given public key created the signature over the data.
-	if !crypto.VerifySignature(sigPublicKey, hash.Bytes(), sig[:crypto.RecoveryIDOffset]) {
+	rs := sig[:crypto.RecoveryIDOffset]
+	if !crypto.VerifySignature(sigPublicKey, hash, rs) {
 		return errors.New("invalid signature")
 	}
 
@@ -121,18 +141,23 @@ type BlockTx struct {
 
 // FromAddress extracts the address for the account that signed the transaction.
 func (tx BlockTx) FromAddress() (string, error) {
-	data, err := json.Marshal(tx.UserTx)
-	if err != nil {
-		return "", err
-	}
-	dataHash := crypto.Keccak256Hash(data)
-	hash := crypto.Keccak256Hash([]byte(ardanSignature), dataHash.Bytes())
 
-	publicKey, err := crypto.SigToPub(hash.Bytes(), toSignatureBytes(tx.V, tx.R, tx.S))
+	// Hash the user transaction for signing.
+	hash, err := tx.HashForSignature()
 	if err != nil {
 		return "", err
 	}
 
+	// Convert the [R|S|V] format into the original 65 bytes.
+	sig := toSignatureBytes(tx.V, tx.R, tx.S)
+
+	// Capture the public key associated with this signature.
+	publicKey, err := crypto.SigToPub(hash, sig)
+	if err != nil {
+		return "", err
+	}
+
+	// Extra the account address from the public key.
 	return crypto.PubkeyToAddress(*publicKey).String(), nil
 }
 
