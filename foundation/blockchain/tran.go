@@ -22,8 +22,8 @@ const (
 // Ethereum and Bitcoin do this as well, but they use the value of 27.
 const ardanID = 29
 
-// This ensures that the signatures we generate cannot be used for purposes
-// outside of the Ardan blockchain. Ethereum does this.
+// This string ensures that any account signature being generated is only valid
+// for the Ardan blockchain. Ethereum does this as well.
 // "\x19Ethereum Signed Message:\n" + length(message) + message
 const ardanSignature = "\x19Ardan Signed Message:\n32"
 
