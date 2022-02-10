@@ -36,7 +36,7 @@ type UserTx struct {
 func (tx UserTx) Sign(privateKey *ecdsa.PrivateKey) (SignedTx, error) {
 
 	// Prepare the transaction for signing.
-	tran, err := tx.HashWithArdanSignature()
+	tran, err := tx.HashWithArdanStamp()
 	if err != nil {
 		return SignedTx{}, err
 	}
@@ -61,9 +61,9 @@ func (tx UserTx) Sign(privateKey *ecdsa.PrivateKey) (SignedTx, error) {
 	return signedTx, nil
 }
 
-// HashWithArdanSignature marshales the user transaction and includes the
-// Ardan signature into the final hash.
-func (tx UserTx) HashWithArdanSignature() ([]byte, error) {
+// HashWithArdanSignature returns a hash of the user transaction with the
+// Ardan stamp embedded into the final hash.
+func (tx UserTx) HashWithArdanStamp() ([]byte, error) {
 
 	// Marshal and hash the user data to validate the signature.
 	txData, err := json.Marshal(tx)
@@ -112,7 +112,7 @@ func (tx SignedTx) VerifySignature() error {
 	}
 
 	// Prepare the transaction for recovery and validation.
-	tran, err := tx.HashWithArdanSignature()
+	tran, err := tx.HashWithArdanStamp()
 	if err != nil {
 		return err
 	}
@@ -147,7 +147,7 @@ type BlockTx struct {
 func (tx BlockTx) FromAddress() (string, error) {
 
 	// Prepare the transaction for public key extraction.
-	tran, err := tx.HashWithArdanSignature()
+	tran, err := tx.HashWithArdanStamp()
 	if err != nil {
 		return "", err
 	}
