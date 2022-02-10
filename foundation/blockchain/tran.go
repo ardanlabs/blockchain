@@ -76,8 +76,8 @@ func (tx UserTx) HashWithArdanStamp() ([]byte, error) {
 	txHash := crypto.Keccak256Hash(txData)
 
 	// Convert the stamp into a slice of bytes. This stamp is
-	// used so signatures we produce to sign transactions are always
-	// unique to the Ardan blockchain.
+	// used so signatures we produce when signing transactions
+	// are always unique to the Ardan blockchain.
 	stamp := []byte("\x19Ardan Signed Message:\n32")
 
 	// Hash the stamp and txHash together in a final 32 byte array
