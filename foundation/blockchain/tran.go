@@ -22,11 +22,6 @@ const (
 // Ethereum and Bitcoin do this as well, but they use the value of 27.
 const ardanID = 29
 
-// This string ensures that any account signature being generated is only valid
-// for the Ardan blockchain. Ethereum does this as well.
-// "\x19Ethereum Signed Message:\n" + length(message) + message
-const ardanSignature = "\x19Ardan Signed Message:\n32"
-
 // =============================================================================
 
 // UserTx is the transactional data submitted by a user.
@@ -41,7 +36,7 @@ type UserTx struct {
 func (tx UserTx) Sign(privateKey *ecdsa.PrivateKey) (SignedTx, error) {
 
 	// Hash the user transaction for signing.
-	hash, err := tx.HashForSignature()
+	hash, err := tx.HashWithArdanSignature()
 	if err != nil {
 		return SignedTx{}, err
 	}
@@ -66,8 +61,14 @@ func (tx UserTx) Sign(privateKey *ecdsa.PrivateKey) (SignedTx, error) {
 	return signedTx, nil
 }
 
-// Hash marshales the user transaction and hashes the data for signing.
-func (tx UserTx) HashForSignature() ([]byte, error) {
+// HashWithArdanSignature marshales the user transaction and includes the
+// Ardan signature into the final hash.
+func (tx UserTx) HashWithArdanSignature() ([]byte, error) {
+
+	// This string ensures that any account signature being generated is only valid
+	// for the Ardan blockchain. Ethereum does this as well.
+	// "\x19Ethereum Signed Message:\n" + length(message) + message
+	const ardanSignature = "\x19Ardan Signed Message:\n32"
 
 	// Marshal and hash the user data to validate the signature.
 	data, err := json.Marshal(tx)
@@ -108,7 +109,7 @@ func (tx SignedTx) VerifySignature() error {
 	}
 
 	// Hash the user transaction for signing.
-	hash, err := tx.HashForSignature()
+	hash, err := tx.HashWithArdanSignature()
 	if err != nil {
 		return err
 	}
@@ -143,7 +144,7 @@ type BlockTx struct {
 func (tx BlockTx) FromAddress() (string, error) {
 
 	// Hash the user transaction for signing.
-	hash, err := tx.HashForSignature()
+	hash, err := tx.HashWithArdanSignature()
 	if err != nil {
 		return "", err
 	}
