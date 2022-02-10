@@ -65,24 +65,27 @@ func (tx UserTx) Sign(privateKey *ecdsa.PrivateKey) (SignedTx, error) {
 // Ardan signature into the final hash.
 func (tx UserTx) HashWithArdanSignature() ([]byte, error) {
 
-	// This string ensures that any account signature being generated is only valid
-	// for the Ardan blockchain. Ethereum does this as well.
-	// "\x19Ethereum Signed Message:\n" + length(message) + message
-	const ardanSignature = "\x19Ardan Signed Message:\n32"
-
 	// Marshal and hash the user data to validate the signature.
-	data, err := json.Marshal(tx)
+	txData, err := json.Marshal(tx)
 	if err != nil {
 		return nil, err
 	}
 
-	// Hash the transaction data for signing. The dataHash will always be
-	// 32 bytes long and match the length hardcoded in the ardan signature.
-	dataHash := crypto.Keccak256Hash(data)
-	as := []byte(ardanSignature)
-	hash := crypto.Keccak256Hash(as, dataHash.Bytes())
+	// Hash the transaction data into a 32 byte array. This will provide
+	// a data length consistency with all transactions.
+	txHash := crypto.Keccak256Hash(txData)
 
-	return hash.Bytes(), nil
+	// Convert the ardan stamp into a slice of bytes. This stamp is
+	// used so signatures we produce to sign transactions are always
+	// unique to the Ardan blockchain.
+	const ardanStamp = "\x19Ardan Signed Message:\n32"
+	as := []byte(ardanStamp)
+
+	// Hash the ardanStamp and txHash together in a final 32 byte array
+	// that represents the transaction data.
+	tran := crypto.Keccak256Hash(as, txHash.Bytes())
+
+	return tran.Bytes(), nil
 }
 
 // SignedTx is a signed version of the user transaction.
