@@ -160,7 +160,7 @@ func (tx BlockTx) FromAddress() (string, error) {
 		return "", err
 	}
 
-	// Extra the account address from the public key.
+	// Extract the account address from the public key.
 	return crypto.PubkeyToAddress(*publicKey).String(), nil
 }
 
