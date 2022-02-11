@@ -50,7 +50,7 @@ func (tx UserTx) Sign(privateKey *ecdsa.PrivateKey) (SignedTx, error) {
 	// Convert the 65 byte signature into the [R|S|V] format.
 	v, r, s := toSignatureValues(sig)
 
-	// Construct and returned the signed transation.
+	// Construct the signed transaction.
 	signedTx := SignedTx{
 		UserTx: tx,
 		V:      v,
