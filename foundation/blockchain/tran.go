@@ -105,7 +105,7 @@ func (tx SignedTx) VerifySignature() error {
 		return errors.New("invalid recovery id")
 	}
 
-	// Validate the signature values are valid.
+	// Check the signature values are valid.
 	if !crypto.ValidateSignatureValues(byte(v), tx.R, tx.S, true) {
 		return errors.New("invalid signature values")
 	}
