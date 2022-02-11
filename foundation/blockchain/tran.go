@@ -106,7 +106,7 @@ func (tx SignedTx) VerifySignature() error {
 	}
 
 	// Check the signature values are valid.
-	if !crypto.ValidateSignatureValues(byte(v), tx.R, tx.S, true) {
+	if !crypto.ValidateSignatureValues(byte(v), tx.R, tx.S, false) {
 		return errors.New("invalid signature values")
 	}
 
