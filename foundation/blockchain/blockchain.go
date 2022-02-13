@@ -1,10 +1,23 @@
 /*
-Package blockchain is the implementation of a blockchain DB.
+Package blockchain is the implementation of a blockchain DB. This overview is
+a series of notes that have helped with the development of the code.
+
+Must Read
+
+This technical discussion about blockchains and cryptocurrency by David Rosenthal.
+
+	https://blog.dshr.org/2022/02/ee380-talk.html
+
+This is a technical blog about how digital signatures work by Maarten Zuidhoorn.
+
+	https://medium.com/mycrypto/the-magic-of-digital-signatures-on-ethereum-98fe184dc9c7
+
+Notes
 
 A blockchain is a database for storing things of value.
 
 Blockchain is an immutable, transparent database. The token supply,
-initial user balances, and global blockchain settings you define
+initial user balances, and global blockchain settings are defined
 in a Genesis file.
 
 Block time refers to the time it takes to mine a new block. In Ethereum, the
@@ -48,7 +61,6 @@ general-purpose task set is, naturally, general purpose hardware and as such
 commodity desktop computers are likely to be pretty close to “specialised hardware”
 for the task. For Ethereum 1.0 we have chosen the first path.
 
-== Block Size
 Before the London Upgrade, Ethereum had fixed-sized blocks. In times of high network
 demand, these blocks operated at total capacity. As a result, users often had to wait
 for high demand to reduce to get included in a block, which led to a poor user experience.

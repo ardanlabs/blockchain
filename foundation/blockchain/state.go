@@ -22,7 +22,6 @@ import (
 	Add a name server for known account. Used for displaying information.
 	Create a block index file for query and clean up forks.
 	Publishing events. (New Blocks)
-	Implement a POS workflow. (Maybe)
 
 	-- Testing
 	Need tests.
