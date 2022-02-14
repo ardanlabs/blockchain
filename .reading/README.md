@@ -53,7 +53,8 @@ Occasionally we run into material that we feel is important. This is a section p
 [Looks Rare](https://coinmarketcap.com/currencies/looksrare/)  
 
 ### Companies
-[Aware: Biometrically Powered Visitor and Employee Management](https://www.aware.com/)  
+[0x: Professional grade liquidity aggregator enabling the future of DeFi applications](https://0x.org/)  
+[Aware: Biometrically powered visitor and employee management](https://www.aware.com/)  
 [Coinbase Cloud](https://www.coinbase.com/cloud)  
 [CoinCenter: Leading non-profit focused on the policy issues facing cryptocurrencies](https://www.coincenter.org/)  
 [CoinDesk: Integrated platform for media, events, data & indices ](https://www.coindesk.com/)  
