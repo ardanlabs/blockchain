@@ -59,6 +59,7 @@ Occasionally we run into material that we feel is important. This is a section p
 [CoinCenter: Leading non-profit focused on the policy issues facing cryptocurrencies](https://www.coincenter.org/)  
 [CoinDesk: Integrated platform for media, events, data & indices ](https://www.coindesk.com/)  
 [Infrua: The world’s most powerful blockchain development suite](https://infura.io/)  
+[Mattereum: Redefining the relationship between physical assets and distributed digital commerce.](https://mattereum.com/)  
 [Mirror: The essential web3 toolkit for sharing and funding anything](https://mirror.xyz/)  
 [NChain: We unlock the potential of enterprise data by making it reliable](https://nchain.com/)  
 [QuickNode: We make it simple to power your blockchain applications and scale up as you grow](https://www.quicknode.com/)  
