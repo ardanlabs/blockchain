@@ -18,7 +18,8 @@ import (
 	Need to verify enough money at the address before sending a transaction.
 
 	-- Blockchain
-	Use the chain id in calculating the signature.
+	Sign blockTx for delivery to another node. Use chain id as salt.
+	Add the miner1 and miner2 accounts to the zblock/wallet folder.
 	Add a name server for known account. Used for displaying information.
 	Create a block index file for query and clean up forks.
 	Publishing events. (New Blocks)
