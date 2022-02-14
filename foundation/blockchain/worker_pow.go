@@ -336,7 +336,7 @@ func (w *powWorker) runMiningOperation() {
 }
 
 // sendBlockToPeers takes the new mined block and sends it to all know peers.
-func (w *powWorker) sendBlockToPeers(block Block) error {
+func (w *powWorker) sendBlockToPeers(block SignedBlock) error {
 	w.evHandler("worker: runMiningOperation: MINING: sendBlockToPeers: started")
 	defer w.evHandler("worker: runMiningOperation: MINING: sendBlockToPeers: completed")
 
@@ -344,8 +344,8 @@ func (w *powWorker) sendBlockToPeers(block Block) error {
 		url := fmt.Sprintf("%s/block/next", fmt.Sprintf(w.baseURL, peer.Host))
 
 		var status struct {
-			Status string `json:"status"`
-			Block  Block  `json:"block"`
+			Status string      `json:"status"`
+			Block  SignedBlock `json:"signed_block"`
 		}
 
 		if err := send(http.MethodPost, url, block, &status); err != nil {
@@ -433,21 +433,21 @@ func (w *powWorker) addNewPeers(knownPeers []Peer) error {
 // writePeerBlocks queries the specified node asking for blocks this
 // node does not have, then writes them to disk.
 func (w *powWorker) writePeerBlocks(peer Peer) error {
-	w.evHandler("worker: runPeerUpdatesOperation: writePeerBlocks: **********: started: %s", peer)
-	defer w.evHandler("worker: runPeerUpdatesOperation: writePeerBlocks: **********: completed: %s", peer)
+	w.evHandler("worker: runPeerUpdatesOperation: writePeerBlocks: started: %s", peer)
+	defer w.evHandler("worker: runPeerUpdatesOperation: writePeerBlocks: completed: %s", peer)
 
 	from := w.state.CopyLatestBlock().Header.Number + 1
 	url := fmt.Sprintf("%s/block/list/%d/latest", fmt.Sprintf(w.baseURL, peer.Host), from)
 
-	var blocks []Block
+	var blocks []SignedBlock
 	if err := send(http.MethodGet, url, nil, &blocks); err != nil {
 		return err
 	}
 
-	w.evHandler("worker: runPeerUpdatesOperation: writePeerBlocks: **********: found blocks[%d]", len(blocks))
+	w.evHandler("worker: runPeerUpdatesOperation: writePeerBlocks: found blocks[%d]", len(blocks))
 
 	for _, block := range blocks {
-		w.evHandler("worker: runPeerUpdatesOperation: writePeerBlocks: **********: prevBlk[%s]: newBlk[%s]: numTrans[%d]", block.Header.ParentHash, block.Hash(), len(block.Transactions))
+		w.evHandler("worker: runPeerUpdatesOperation: writePeerBlocks: prevBlk[%s]: newBlk[%s]: numTrans[%d]", block.Header.ParentHash, block.Hash(), len(block.Transactions))
 
 		if err := w.state.WriteNextBlock(block); err != nil {
 			return err

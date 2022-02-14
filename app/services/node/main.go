@@ -14,6 +14,7 @@ import (
 	"github.com/ardanlabs/blockchain/foundation/blockchain"
 	"github.com/ardanlabs/blockchain/foundation/logger"
 	"github.com/ardanlabs/conf/v3"
+	"github.com/ethereum/go-ethereum/crypto"
 	"go.uber.org/zap"
 )
 
@@ -55,9 +56,9 @@ func run(log *zap.SugaredLogger) error {
 			PrivateHost     string        `conf:"default:0.0.0.0:9080"`
 		}
 		Node struct {
-			MinerAddress string   `conf:"default:miner1"`
-			DBPath       string   `conf:"default:zblock/blocks.db"`
-			KnownPeers   []string `conf:"default:0.0.0.0:9080;0.0.0.0:9180"`
+			MinerName  string   `conf:"default:miner1"`
+			DBPath     string   `conf:"default:zblock/blocks.db"`
+			KnownPeers []string `conf:"default:0.0.0.0:9080;0.0.0.0:9180"`
 		}
 	}{
 		Version: conf.Version{
@@ -91,6 +92,12 @@ func run(log *zap.SugaredLogger) error {
 	// =========================================================================
 	// Blockchain Support
 
+	path := fmt.Sprintf("zblock/accounts/%s.ecdsa", cfg.Node.MinerName)
+	privateKey, err := crypto.LoadECDSA(path)
+	if err != nil {
+		return fmt.Errorf("unable to load private key for node: %w", err)
+	}
+
 	peerSet := blockchain.NewPeerSet()
 	for _, host := range cfg.Node.KnownPeers {
 		peerSet.Add(blockchain.NewPeer(host))
@@ -102,11 +109,12 @@ func run(log *zap.SugaredLogger) error {
 	}
 
 	bc, err := blockchain.New(blockchain.Config{
-		MinerAddress: cfg.Node.MinerAddress,
-		Host:         cfg.Web.PrivateHost,
-		DBPath:       cfg.Node.DBPath,
-		KnownPeers:   peerSet,
-		EvHandler:    ev,
+		PrivateKey: privateKey,
+		MinerName:  cfg.Node.MinerName,
+		Host:       cfg.Web.PrivateHost,
+		DBPath:     cfg.Node.DBPath,
+		KnownPeers: peerSet,
+		EvHandler:  ev,
 	})
 	if err != nil {
 		return err

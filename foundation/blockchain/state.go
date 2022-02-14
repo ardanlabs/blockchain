@@ -2,6 +2,7 @@ package blockchain
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -47,24 +48,26 @@ type EventHandler func(v string, args ...interface{})
 // Config represents the configuration required to start
 // the blockchain node.
 type Config struct {
-	MinerAddress string
-	Host         string
-	DBPath       string
-	KnownPeers   PeerSet
-	EvHandler    EventHandler
+	PrivateKey *ecdsa.PrivateKey
+	MinerName  string
+	Host       string
+	DBPath     string
+	KnownPeers PeerSet
+	EvHandler  EventHandler
 }
 
 // State manages the blockchain database.
 type State struct {
-	minerAddress string
-	host         string
-	dbPath       string
-	knownPeers   PeerSet
-	evHandler    EventHandler
+	privateKey *ecdsa.PrivateKey
+	minerName  string
+	host       string
+	dbPath     string
+	knownPeers PeerSet
+	evHandler  EventHandler
 
 	genesis      Genesis
 	txMempool    txMempool
-	latestBlock  Block
+	latestBlock  SignedBlock
 	balanceSheet BalanceSheet
 	dbFile       *os.File
 	mu           sync.Mutex
@@ -90,7 +93,7 @@ func New(cfg Config) (*State, error) {
 	}
 
 	// Keep the latest block from the blockchain.
-	var latestBlock Block
+	var latestBlock SignedBlock
 	if len(blocks) > 0 {
 		latestBlock = blocks[len(blocks)-1]
 	}
@@ -128,11 +131,12 @@ func New(cfg Config) (*State, error) {
 
 	// Create the State to provide support for managing the blockchain.
 	state := State{
-		minerAddress: cfg.MinerAddress,
-		host:         cfg.Host,
-		dbPath:       cfg.DBPath,
-		knownPeers:   cfg.KnownPeers,
-		evHandler:    ev,
+		privateKey: cfg.PrivateKey,
+		minerName:  cfg.MinerName,
+		host:       cfg.Host,
+		dbPath:     cfg.DBPath,
+		knownPeers: cfg.KnownPeers,
+		evHandler:  ev,
 
 		genesis:      genesis,
 		txMempool:    newTxMempool(),
@@ -158,6 +162,10 @@ func (s *State) Shutdown() error {
 	s.powWorker.shutdown()
 
 	return nil
+}
+
+func (s *State) MinerName() string {
+	return s.minerName
 }
 
 // =============================================================================
@@ -207,7 +215,7 @@ func (s *State) SubmitNodeTransaction(tx BlockTx) error {
 
 // WriteNextBlock takes a block received from a peer, validates it and
 // if that passes, writes the block to disk.
-func (s *State) WriteNextBlock(block Block) error {
+func (s *State) WriteNextBlock(block SignedBlock) error {
 	s.evHandler("state: WriteNextBlock: started : block[%s]", block.Hash())
 	defer s.evHandler("state: WriteNextBlock: completed")
 
@@ -227,8 +235,8 @@ func (s *State) WriteNextBlock(block Block) error {
 	}
 
 	blockFS := blockFS{
-		Hash:  hash,
-		Block: block,
+		Hash:        hash,
+		SignedBlock: block,
 	}
 
 	// Marshal the block for writing to disk.
@@ -284,7 +292,7 @@ func (s *State) WriteNextBlock(block Block) error {
 
 // validateNextBlock takes a block and validates it to be included into
 // the blockchain.
-func (s *State) validateNextBlock(block Block) (string, error) {
+func (s *State) validateNextBlock(block SignedBlock) (string, error) {
 	s.evHandler("state: WriteNextBlock: validate: hash solved")
 
 	hash := block.Hash()
@@ -359,7 +367,7 @@ func (s *State) Truncate() error {
 	// Reset the state of the database.
 	s.genesis = genesis
 	s.txMempool = newTxMempool()
-	s.latestBlock = Block{}
+	s.latestBlock = SignedBlock{}
 	s.balanceSheet = balanceSheet
 	s.dbFile = dbFile
 
@@ -380,7 +388,7 @@ func (s *State) CopyGenesis() Genesis {
 }
 
 // CopyLatestBlock returns the current hash of the latest block.
-func (s *State) CopyLatestBlock() Block {
+func (s *State) CopyLatestBlock() SignedBlock {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -454,7 +462,7 @@ func (s *State) QueryMempoolLength() int {
 
 // QueryBlocksByNumber returns the set of blocks based on block numbers. This
 // function reads the blockchain from disk first.
-func (s *State) QueryBlocksByNumber(from uint64, to uint64) []Block {
+func (s *State) QueryBlocksByNumber(from uint64, to uint64) []SignedBlock {
 	blocks, err := loadBlocksFromDisk(s.dbPath)
 	if err != nil {
 		return nil
@@ -465,7 +473,7 @@ func (s *State) QueryBlocksByNumber(from uint64, to uint64) []Block {
 		to = from
 	}
 
-	var out []Block
+	var out []SignedBlock
 	for _, block := range blocks {
 		if block.Header.Number >= from && block.Header.Number <= to {
 			out = append(out, block)
@@ -478,13 +486,13 @@ func (s *State) QueryBlocksByNumber(from uint64, to uint64) []Block {
 // QueryBlocksByAddress returns the set of blocks by address. If the address
 // is empty, all blocks are returned. This function reads the blockchain
 // from disk first.
-func (s *State) QueryBlocksByAddress(address string) []Block {
+func (s *State) QueryBlocksByAddress(address string) []SignedBlock {
 	blocks, err := loadBlocksFromDisk(s.dbPath)
 	if err != nil {
 		return nil
 	}
 
-	var out []Block
+	var out []SignedBlock
 blocks:
 	for _, block := range blocks {
 		for _, tx := range block.Transactions {
@@ -521,7 +529,7 @@ func (s *State) addPeerNode(peer Peer) error {
 // =============================================================================
 
 // MineNewBlock writes the published transaction from the memory pool to disk.
-func (s *State) MineNewBlock(ctx context.Context) (Block, time.Duration, error) {
+func (s *State) MineNewBlock(ctx context.Context) (SignedBlock, time.Duration, error) {
 	var nb Block
 	var balanceSheet BalanceSheet
 
@@ -538,14 +546,14 @@ func (s *State) MineNewBlock(ctx context.Context) (Block, time.Duration, error) 
 		}
 
 		// Create a new block which owns it's own copy of the transactions.
-		nb = newBlock(s.minerAddress, s.genesis.Difficulty, s.genesis.TransPerBlock, s.latestBlock, s.txMempool)
+		nb = newBlock(s.MinerName(), s.genesis.Difficulty, s.genesis.TransPerBlock, s.latestBlock.Block, s.txMempool)
 
 		// Get a copy of the balance sheet.
 		balanceSheet = copyBalanceSheet(s.balanceSheet)
 
 		return nil
 	}(); err != nil {
-		return Block{}, 0, ErrNotEnoughTransactions
+		return SignedBlock{}, 0, ErrNotEnoughTransactions
 	}
 
 	s.evHandler("worker: runMiningOperation: MINING: update copy of balance sheet")
@@ -561,7 +569,7 @@ func (s *State) MineNewBlock(ctx context.Context) (Block, time.Duration, error) 
 		}
 
 		// Apply the miner tip and gas fee for this transaction.
-		applyMiningFeeToBalance(balanceSheet, s.minerAddress, tx)
+		applyMiningFeeToBalance(balanceSheet, s.MinerName(), tx)
 
 		// Update the total gas and tip fees.
 		nb.Header.TotalGas += tx.Gas
@@ -569,18 +577,18 @@ func (s *State) MineNewBlock(ctx context.Context) (Block, time.Duration, error) 
 	}
 
 	// Apply the miner reward for this block.
-	applyMiningRewardToBalance(balanceSheet, s.minerAddress, s.genesis.MiningReward)
+	applyMiningRewardToBalance(balanceSheet, s.MinerName(), s.genesis.MiningReward)
 
 	// Attempt to create a new BlockFS by solving the POW puzzle.
 	// This can be cancelled.
-	blockFS, duration, err := performPOW(ctx, s.genesis.Difficulty, nb, s.evHandler)
+	blockFS, duration, err := performPOW(ctx, s.genesis.Difficulty, nb, s.privateKey, s.evHandler)
 	if err != nil {
-		return Block{}, duration, err
+		return SignedBlock{}, duration, err
 	}
 
 	// Just check one more time we were not cancelled.
 	if ctx.Err() != nil {
-		return Block{}, duration, ctx.Err()
+		return SignedBlock{}, duration, ctx.Err()
 	}
 
 	s.evHandler("worker: runMiningOperation: MINING: marshal block for write")
@@ -588,7 +596,7 @@ func (s *State) MineNewBlock(ctx context.Context) (Block, time.Duration, error) 
 	// Marshal the block for writing to disk.
 	blockFSJson, err := json.Marshal(blockFS)
 	if err != nil {
-		return Block{}, duration, err
+		return SignedBlock{}, duration, err
 	}
 
 	// Execute this code inside a lock.
@@ -606,7 +614,7 @@ func (s *State) MineNewBlock(ctx context.Context) (Block, time.Duration, error) 
 		s.evHandler("worker: runMiningOperation: MINING: apply new balance sheet")
 
 		s.balanceSheet = balanceSheet
-		s.latestBlock = blockFS.Block
+		s.latestBlock = blockFS.SignedBlock
 
 		// Remove the transactions from this block.
 		for _, tx := range nb.Transactions {
@@ -616,8 +624,8 @@ func (s *State) MineNewBlock(ctx context.Context) (Block, time.Duration, error) 
 
 		return nil
 	}(); err != nil {
-		return Block{}, duration, err
+		return SignedBlock{}, duration, err
 	}
 
-	return blockFS.Block, duration, nil
+	return blockFS.SignedBlock, duration, nil
 }
