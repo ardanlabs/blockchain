@@ -110,7 +110,6 @@ func run(log *zap.SugaredLogger) error {
 
 	bc, err := blockchain.New(blockchain.Config{
 		PrivateKey: privateKey,
-		MinerName:  cfg.Node.MinerName,
 		Host:       cfg.Web.PrivateHost,
 		DBPath:     cfg.Node.DBPath,
 		KnownPeers: peerSet,

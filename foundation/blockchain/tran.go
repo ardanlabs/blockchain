@@ -24,7 +24,7 @@ type UserTx struct {
 func (tx UserTx) Sign(privateKey *ecdsa.PrivateKey) (SignedTx, error) {
 
 	// Sign the hash with the private key to produce a signature.
-	v, r, s, err := Sign(tx, privateKey)
+	v, r, s, err := sign(tx, privateKey)
 	if err != nil {
 		return SignedTx{}, err
 	}
@@ -51,17 +51,17 @@ type SignedTx struct {
 // VerifySignature verifies the signature conforms to our standards and
 // is associated with the data claimed to be signed.
 func (tx SignedTx) VerifySignature() error {
-	return VerifySignature(tx, tx.V, tx.R, tx.S)
+	return verifySignature(tx.UserTx, tx.V, tx.R, tx.S)
 }
 
 // FromAddress extracts the address for the account that signed the transaction.
 func (tx SignedTx) FromAddress() (string, error) {
-	return FromAddress(tx, tx.V, tx.R, tx.S)
+	return fromAddress(tx.UserTx, tx.V, tx.R, tx.S)
 }
 
 // Signature returns the signature as a string.
 func (tx SignedTx) SignatureString() string {
-	return SignatureString(tx.V, tx.R, tx.S)
+	return signatureString(tx.V, tx.R, tx.S)
 }
 
 // =============================================================================
@@ -72,7 +72,7 @@ type BlockTx struct {
 	Gas uint `json:"gas"` // Gas fee to recover computation costs paid by the sender.
 }
 
-// Hash returns a unique string for the value.
+// Hash returns the unique hash for the BlockTx.
 func (tx BlockTx) Hash() string {
-	return Hash(tx)
+	return hash(tx)
 }

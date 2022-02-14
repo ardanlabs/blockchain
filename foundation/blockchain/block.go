@@ -58,21 +58,11 @@ func newBlock(beneficiary string, difficulty int, transPerBlock int, parentBlock
 	}
 }
 
-// Hash returns the unique hash for the block by marshaling
-// the block into JSON and performing a hashing operation.
-func (b Block) Hash() string {
-	if b.Header.Number == 0 {
-		return zeroHash
-	}
-
-	return Hash(b)
-}
-
 // Sign uses the specified private key to sign the user transaction.
 func (b Block) Sign(privateKey *ecdsa.PrivateKey) (SignedBlock, error) {
 
 	// Sign the hash with the private key to produce a signature.
-	v, r, s, err := Sign(b, privateKey)
+	v, r, s, err := sign(b, privateKey)
 	if err != nil {
 		return SignedBlock{}, err
 	}
@@ -98,20 +88,29 @@ type SignedBlock struct {
 	S *big.Int `json:"s"` // Second coordinate of the ECDSA signature.
 }
 
+// Hash returns the unique hash for the Block.
+func (b Block) Hash() string {
+	if b.Header.Number == 0 {
+		return zeroHash
+	}
+
+	return hash(b)
+}
+
 // VerifySignature verifies the signature conforms to our standards and
 // is associated with the data claimed to be signed.
 func (b SignedBlock) VerifySignature() error {
-	return VerifySignature(b, b.V, b.R, b.S)
+	return verifySignature(b.Block, b.V, b.R, b.S)
 }
 
 // FromAddress extracts the address for the account that signed the transaction.
 func (b SignedBlock) FromAddress() (string, error) {
-	return FromAddress(b, b.V, b.R, b.S)
+	return fromAddress(b.Block, b.V, b.R, b.S)
 }
 
 // Signature returns the signature as a string.
 func (b SignedBlock) SignatureString() string {
-	return SignatureString(b.V, b.R, b.S)
+	return signatureString(b.V, b.R, b.S)
 }
 
 // =============================================================================

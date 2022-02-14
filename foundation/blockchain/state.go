@@ -9,6 +9,8 @@ import (
 	"os"
 	"sync"
 	"time"
+
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 /*
@@ -49,7 +51,6 @@ type EventHandler func(v string, args ...interface{})
 // the blockchain node.
 type Config struct {
 	PrivateKey *ecdsa.PrivateKey
-	MinerName  string
 	Host       string
 	DBPath     string
 	KnownPeers PeerSet
@@ -59,12 +60,12 @@ type Config struct {
 // State manages the blockchain database.
 type State struct {
 	privateKey *ecdsa.PrivateKey
-	minerName  string
 	host       string
 	dbPath     string
 	knownPeers PeerSet
 	evHandler  EventHandler
 
+	minerAddress string
 	genesis      Genesis
 	txMempool    txMempool
 	latestBlock  SignedBlock
@@ -129,15 +130,18 @@ func New(cfg Config) (*State, error) {
 		}
 	}
 
+	// Capture the address of the miner.
+	minerAddress := crypto.PubkeyToAddress(cfg.PrivateKey.PublicKey).String()
+
 	// Create the State to provide support for managing the blockchain.
 	state := State{
 		privateKey: cfg.PrivateKey,
-		minerName:  cfg.MinerName,
 		host:       cfg.Host,
 		dbPath:     cfg.DBPath,
 		knownPeers: cfg.KnownPeers,
 		evHandler:  ev,
 
+		minerAddress: minerAddress,
 		genesis:      genesis,
 		txMempool:    newTxMempool(),
 		latestBlock:  latestBlock,
@@ -162,10 +166,6 @@ func (s *State) Shutdown() error {
 	s.powWorker.shutdown()
 
 	return nil
-}
-
-func (s *State) MinerName() string {
-	return s.minerName
 }
 
 // =============================================================================
@@ -552,7 +552,7 @@ func (s *State) MineNewBlock(ctx context.Context) (SignedBlock, time.Duration, e
 		}
 
 		// Create a new block which owns it's own copy of the transactions.
-		nb = newBlock(s.MinerName(), s.genesis.Difficulty, s.genesis.TransPerBlock, s.latestBlock.Block, s.txMempool)
+		nb = newBlock(s.minerAddress, s.genesis.Difficulty, s.genesis.TransPerBlock, s.latestBlock.Block, s.txMempool)
 
 		// Get a copy of the balance sheet.
 		balanceSheet = copyBalanceSheet(s.balanceSheet)
@@ -575,7 +575,7 @@ func (s *State) MineNewBlock(ctx context.Context) (SignedBlock, time.Duration, e
 		}
 
 		// Apply the miner tip and gas fee for this transaction.
-		applyMiningFeeToBalance(balanceSheet, s.MinerName(), tx)
+		applyMiningFeeToBalance(balanceSheet, s.minerAddress, tx)
 
 		// Update the total gas and tip fees.
 		nb.Header.TotalGas += tx.Gas
@@ -583,7 +583,7 @@ func (s *State) MineNewBlock(ctx context.Context) (SignedBlock, time.Duration, e
 	}
 
 	// Apply the miner reward for this block.
-	applyMiningRewardToBalance(balanceSheet, s.MinerName(), s.genesis.MiningReward)
+	applyMiningRewardToBalance(balanceSheet, s.minerAddress, s.genesis.MiningReward)
 
 	// Attempt to create a new BlockFS by solving the POW puzzle.
 	// This can be cancelled.

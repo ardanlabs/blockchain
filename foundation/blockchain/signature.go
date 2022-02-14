@@ -17,8 +17,8 @@ import (
 // Ethereum and Bitcoin do this as well, but they use the value of 27.
 const ardanID = 29
 
-// Hash returns a unique string for the value.
-func Hash(value interface{}) string {
+// hash returns a unique string for the value.
+func hash(value interface{}) string {
 	data, err := json.Marshal(value)
 	if err != nil {
 		return zeroHash
@@ -28,9 +28,9 @@ func Hash(value interface{}) string {
 	return hex.EncodeToString(hash[:])
 }
 
-// Stamp returns a hash of 32 bytes that represents this user
+// stamp returns a hash of 32 bytes that represents this user
 // transaction with the Ardan stamp embedded into the final hash.
-func Stamp(value interface{}) ([]byte, error) {
+func stamp(value interface{}) ([]byte, error) {
 
 	// Marshal the data.
 	data, err := json.Marshal(value)
@@ -54,11 +54,11 @@ func Stamp(value interface{}) ([]byte, error) {
 	return tran.Bytes(), nil
 }
 
-// Sign uses the specified private key to sign the user transaction.
-func Sign(value interface{}, privateKey *ecdsa.PrivateKey) (v, r, s *big.Int, err error) {
+// sign uses the specified private key to sign the user transaction.
+func sign(value interface{}, privateKey *ecdsa.PrivateKey) (v, r, s *big.Int, err error) {
 
 	// Prepare the transaction for signing.
-	data, err := Stamp(value)
+	data, err := stamp(value)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -75,9 +75,9 @@ func Sign(value interface{}, privateKey *ecdsa.PrivateKey) (v, r, s *big.Int, er
 	return v, r, s, nil
 }
 
-// VerifySignature verifies the signature conforms to our standards and
+// verifySignature verifies the signature conforms to our standards and
 // is associated with the data claimed to be signed.
-func VerifySignature(value interface{}, v, r, s *big.Int) error {
+func verifySignature(value interface{}, v, r, s *big.Int) error {
 
 	// Check the recovery id is either 0 or 1.
 	uintV := v.Uint64() - ardanID
@@ -91,7 +91,7 @@ func VerifySignature(value interface{}, v, r, s *big.Int) error {
 	}
 
 	// Prepare the transaction for recovery and validation.
-	tran, err := Stamp(value)
+	tran, err := stamp(value)
 	if err != nil {
 		return err
 	}
@@ -114,11 +114,11 @@ func VerifySignature(value interface{}, v, r, s *big.Int) error {
 	return nil
 }
 
-// FromAddress extracts the address for the account that signed the transaction.
-func FromAddress(value interface{}, v, r, s *big.Int) (string, error) {
+// fromAddress extracts the address for the account that signed the transaction.
+func fromAddress(value interface{}, v, r, s *big.Int) (string, error) {
 
 	// Prepare the transaction for public key extraction.
-	tran, err := Stamp(value)
+	tran, err := stamp(value)
 	if err != nil {
 		return "", err
 	}
@@ -136,8 +136,8 @@ func FromAddress(value interface{}, v, r, s *big.Int) (string, error) {
 	return crypto.PubkeyToAddress(*publicKey).String(), nil
 }
 
-// SignatureString returns the signature as a string.
-func SignatureString(v, r, s *big.Int) string {
+// signatureString returns the signature as a string.
+func signatureString(v, r, s *big.Int) string {
 	return "0x" + hex.EncodeToString(toSignatureBytesForDisplay(v, r, s))
 }
 

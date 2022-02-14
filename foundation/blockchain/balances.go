@@ -57,7 +57,7 @@ func applyTransactionToBalance(balanceSheet BalanceSheet, tx BlockTx) error {
 	}
 
 	// Capture the address of the account that signed this transaction.
-	from, err := tx.FromAddress()
+	from, err := tx.SignedTx.FromAddress()
 	if err != nil {
 		return fmt.Errorf("invalid signature, %s", err)
 	}
