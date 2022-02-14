@@ -111,7 +111,15 @@ func (h Handlers) BlocksByAddress(ctx context.Context, w http.ResponseWriter, r 
 		}
 
 		b := block{
-			Header:       blk.Header,
+			ParentHash:   blk.Header.ParentHash,
+			Beneficiary:  blk.Header.Beneficiary,
+			Difficulty:   blk.Header.Difficulty,
+			Number:       blk.Header.Number,
+			TotalTip:     blk.Header.TotalTip,
+			TotalGas:     blk.Header.TotalGas,
+			TimeStamp:    blk.Header.TimeStamp,
+			Nonce:        blk.Header.Nonce,
+			Sig:          blk.Signature(),
 			Transactions: trans,
 		}
 

@@ -183,6 +183,11 @@ func (b SignedBlock) VerifySignature() error {
 	return nil
 }
 
+// Signature returns the signature as a string.
+func (b SignedBlock) Signature() string {
+	return "0x" + hex.EncodeToString(toSignatureBytesForDisplay(b.V, b.R, b.S))
+}
+
 // =============================================================================
 
 // blockFS represents what is written to the DB file.

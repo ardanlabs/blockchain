@@ -1,7 +1,5 @@
 package public
 
-import "github.com/ardanlabs/blockchain/foundation/blockchain"
-
 type balance struct {
 	Address string `json:"address"`
 	Balance uint   `json:"balance"`
@@ -24,6 +22,14 @@ type tx struct {
 }
 
 type block struct {
-	Header       blockchain.BlockHeader `json:"header"`
-	Transactions []tx                   `json:"txs"`
+	ParentHash   string `json:"parent_hash"`
+	Beneficiary  string `json:"beneficiary"`
+	Difficulty   int    `json:"difficulty"`
+	Number       uint64 `json:"number"`
+	TotalTip     uint   `json:"total_tip"`
+	TotalGas     uint   `json:"total_gas"`
+	TimeStamp    uint64 `json:"timestamp"`
+	Nonce        uint64 `json:"nonce"`
+	Sig          string `json:"sig"`
+	Transactions []tx   `json:"txs"`
 }
