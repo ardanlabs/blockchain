@@ -20,14 +20,13 @@ const zeroHash string = "00000000000000000000000000000000"
 
 // BlockHeader represents common information required for each block.
 type BlockHeader struct {
-	ParentHash  string `json:"parent_hash"` // Hash of the previous block in the chain.
-	Beneficiary string `json:"beneficiary"` // Address who receives the reward and gas fee.
-	Difficulty  int    `json:"difficulty"`  // Number of 0's needed to solve the hash solution.
-	Number      uint64 `json:"number"`      // Block number in the chain.
-	TotalTip    uint   `json:"total_tip"`   // Total tip paid by all senders as an incentive.
-	TotalGas    uint   `json:"total_gas"`   // Total gas fee to recover computation costs paid by the sender.
-	TimeStamp   uint64 `json:"timestamp"`   // Time the block was mined.
-	Nonce       uint64 `json:"nonce"`       // Value identified to solve the hash solution.
+	ParentHash string `json:"parent_hash"` // Hash of the previous block in the chain.
+	Difficulty int    `json:"difficulty"`  // Number of 0's needed to solve the hash solution.
+	Number     uint64 `json:"number"`      // Block number in the chain.
+	TotalTip   uint   `json:"total_tip"`   // Total tip paid by all senders as an incentive.
+	TotalGas   uint   `json:"total_gas"`   // Total gas fee to recover computation costs paid by the sender.
+	TimeStamp  uint64 `json:"timestamp"`   // Time the block was mined.
+	Nonce      uint64 `json:"nonce"`       // Value identified to solve the hash solution.
 }
 
 // Block represents a group of transactions batched together.
@@ -37,7 +36,7 @@ type Block struct {
 }
 
 // newBlock constructs a new BlockFS for persisting.
-func newBlock(beneficiary string, difficulty int, transPerBlock int, parentBlock Block, txMempool txMempool) Block {
+func newBlock(difficulty int, transPerBlock int, parentBlock Block, txMempool txMempool) Block {
 	parentHash := zeroHash
 	if parentBlock.Header.Number > 0 {
 		parentHash = parentBlock.Hash()
@@ -48,11 +47,10 @@ func newBlock(beneficiary string, difficulty int, transPerBlock int, parentBlock
 
 	return Block{
 		Header: BlockHeader{
-			ParentHash:  parentHash,
-			Beneficiary: beneficiary,
-			Difficulty:  difficulty,
-			Number:      parentBlock.Header.Number + 1,
-			TimeStamp:   uint64(time.Now().Unix()),
+			ParentHash: parentHash,
+			Difficulty: difficulty,
+			Number:     parentBlock.Header.Number + 1,
+			TimeStamp:  uint64(time.Now().Unix()),
 		},
 		Transactions: cpy,
 	}

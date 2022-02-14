@@ -8,6 +8,7 @@ import (
 
 	v1 "github.com/ardanlabs/blockchain/business/web/v1"
 	"github.com/ardanlabs/blockchain/foundation/blockchain"
+	"github.com/ardanlabs/blockchain/foundation/nameservice"
 	"github.com/ardanlabs/blockchain/foundation/web"
 	"go.uber.org/zap"
 )
@@ -16,6 +17,7 @@ import (
 type Handlers struct {
 	Log *zap.SugaredLogger
 	BC  *blockchain.State
+	NS  *nameservice.NameService
 }
 
 // SubmitWalletTransaction adds new user transactions to the mempool.
@@ -71,6 +73,7 @@ func (h Handlers) Balances(ctx context.Context, w http.ResponseWriter, r *http.R
 	for addr, dbBal := range balanceSheet {
 		bal := balance{
 			Address: addr,
+			Name:    h.NS.Lookup(addr),
 			Balance: dbBal,
 		}
 		bals = append(bals, bal)
@@ -100,19 +103,19 @@ func (h Handlers) BlocksByAddress(ctx context.Context, w http.ResponseWriter, r 
 		for i, tran := range blk.Transactions {
 			address, _ := tran.FromAddress()
 			trans[i] = tx{
-				From:  address,
-				To:    tran.To,
-				Value: tran.Value,
-				Tip:   tran.Tip,
-				Data:  tran.Data,
-				Gas:   tran.Gas,
-				Sig:   tran.SignatureString(),
+				FromAddress: address,
+				FromName:    h.NS.Lookup(address),
+				To:          tran.To,
+				Value:       tran.Value,
+				Tip:         tran.Tip,
+				Data:        tran.Data,
+				Gas:         tran.Gas,
+				Sig:         tran.SignatureString(),
 			}
 		}
 
 		b := block{
 			ParentHash:   blk.Header.ParentHash,
-			Beneficiary:  blk.Header.Beneficiary,
 			Difficulty:   blk.Header.Difficulty,
 			Number:       blk.Header.Number,
 			TotalTip:     blk.Header.TotalTip,

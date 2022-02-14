@@ -10,6 +10,7 @@ import (
 
 	v1 "github.com/ardanlabs/blockchain/business/web/v1"
 	"github.com/ardanlabs/blockchain/foundation/blockchain"
+	"github.com/ardanlabs/blockchain/foundation/nameservice"
 	"github.com/ardanlabs/blockchain/foundation/web"
 	"go.uber.org/zap"
 )
@@ -18,6 +19,7 @@ import (
 type Handlers struct {
 	Log *zap.SugaredLogger
 	BC  *blockchain.State
+	NS  *nameservice.NameService
 }
 
 // AddNextBlock accepts a new mined block from a peer, validates it, then adds it

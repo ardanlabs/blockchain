@@ -2,6 +2,7 @@ package public
 
 type balance struct {
 	Address string `json:"address"`
+	Name    string `json:"name"`
 	Balance uint   `json:"balance"`
 }
 
@@ -12,18 +13,18 @@ type balances struct {
 }
 
 type tx struct {
-	From  string `json:"from"`
-	To    string `json:"to"`
-	Value uint   `json:"value"`
-	Tip   uint   `json:"tip"`
-	Data  []byte `json:"data"`
-	Gas   uint   `json:"gas"`
-	Sig   string `json:"sig"`
+	FromAddress string `json:"from_address"`
+	FromName    string `json:"from_name"`
+	To          string `json:"to"`
+	Value       uint   `json:"value"`
+	Tip         uint   `json:"tip"`
+	Data        []byte `json:"data"`
+	Gas         uint   `json:"gas"`
+	Sig         string `json:"sig"`
 }
 
 type block struct {
 	ParentHash   string `json:"parent_hash"`
-	Beneficiary  string `json:"beneficiary"`
 	Difficulty   int    `json:"difficulty"`
 	Number       uint64 `json:"number"`
 	TotalTip     uint   `json:"total_tip"`

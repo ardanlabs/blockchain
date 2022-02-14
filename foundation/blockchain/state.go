@@ -21,7 +21,6 @@ import (
 	Need to verify enough money at the address before sending a transaction.
 
 	-- Blockchain
-	Add a name server for known account. Used for displaying information.
 	Create a block index file for query and clean up forks.
 	Publishing events. (New Blocks)
 
@@ -102,17 +101,24 @@ func New(cfg Config) (*State, error) {
 
 	// Process the blocks and transactions against the balance sheet.
 	for _, block := range blocks {
+
+		// Get the address of the miner who mined this block.
+		from, err := block.FromAddress()
+		if err != nil {
+			return nil, err
+		}
+
 		for _, tx := range block.Transactions {
 
 			// Apply the balance changes based on this transaction.
 			applyTransactionToBalance(balanceSheet, tx)
 
 			// Apply the miner tip and gas fee for this transaction.
-			applyMiningFeeToBalance(balanceSheet, block.Header.Beneficiary, tx)
+			applyMiningFeeToBalance(balanceSheet, from, tx)
 		}
 
 		// Apply the miner reward for this block.
-		applyMiningRewardToBalance(balanceSheet, block.Header.Beneficiary, genesis.MiningReward)
+		applyMiningRewardToBalance(balanceSheet, from, genesis.MiningReward)
 	}
 
 	// Open the blockchain database file for processing.
@@ -243,6 +249,12 @@ func (s *State) WriteNextBlock(block SignedBlock) error {
 		return err
 	}
 
+	// Get the address for the miner who mined this block.
+	from, err := block.FromAddress()
+	if err != nil {
+		return err
+	}
+
 	// Execute this code inside a lock.
 	if err := func() error {
 		s.mu.Lock()
@@ -264,7 +276,7 @@ func (s *State) WriteNextBlock(block SignedBlock) error {
 			applyTransactionToBalance(s.balanceSheet, tx)
 
 			// Apply the miner tip and gas fee for this transaction.
-			applyMiningFeeToBalance(s.balanceSheet, block.Header.Beneficiary, tx)
+			applyMiningFeeToBalance(s.balanceSheet, from, tx)
 
 			s.evHandler("state: WriteNextBlock: remove from mempool: tx[%s]", tx.Hash())
 
@@ -275,7 +287,7 @@ func (s *State) WriteNextBlock(block SignedBlock) error {
 		s.evHandler("state: WriteNextBlock: apply mining reward")
 
 		// Apply the miner reward for this block.
-		applyMiningRewardToBalance(s.balanceSheet, block.Header.Beneficiary, s.genesis.MiningReward)
+		applyMiningRewardToBalance(s.balanceSheet, from, s.genesis.MiningReward)
 
 		// Save this as the latest block.
 		s.latestBlock = block
@@ -550,7 +562,7 @@ func (s *State) MineNewBlock(ctx context.Context) (SignedBlock, time.Duration, e
 		}
 
 		// Create a new block which owns it's own copy of the transactions.
-		nb = newBlock(s.minerAddress, s.genesis.Difficulty, s.genesis.TransPerBlock, s.latestBlock.Block, s.txMempool)
+		nb = newBlock(s.genesis.Difficulty, s.genesis.TransPerBlock, s.latestBlock.Block, s.txMempool)
 
 		// Get a copy of the balance sheet.
 		balanceSheet = copyBalanceSheet(s.balanceSheet)
