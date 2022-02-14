@@ -15,7 +15,6 @@ import (
 
 /*
 	-- Wallet
-	Provide name resolution for name => address
 	Provide support to read a file of transactions to send.
 	Concept of connecting and receiving events.
 	Need to verify enough money at the address before sending a transaction.
