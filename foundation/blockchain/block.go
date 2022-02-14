@@ -5,17 +5,12 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"crypto/rand"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"math"
 	"math/big"
 	"os"
 	"time"
-
-	"github.com/ethereum/go-ethereum/crypto"
 )
 
 // zeroHash represents a hash code of zeros.
@@ -70,32 +65,17 @@ func (b Block) Hash() string {
 		return zeroHash
 	}
 
-	data, err := json.Marshal(b)
-	if err != nil {
-		return zeroHash
-	}
-
-	hash := sha256.Sum256(data)
-	return hex.EncodeToString(hash[:])
+	return Hash(b)
 }
 
 // Sign uses the specified private key to sign the user transaction.
 func (b Block) Sign(privateKey *ecdsa.PrivateKey) (SignedBlock, error) {
 
-	// Prepare the transaction for signing.
-	tran, err := b.HashWithArdanStamp()
-	if err != nil {
-		return SignedBlock{}, err
-	}
-
 	// Sign the hash with the private key to produce a signature.
-	sig, err := crypto.Sign(tran, privateKey)
+	v, r, s, err := Sign(b, privateKey)
 	if err != nil {
 		return SignedBlock{}, err
 	}
-
-	// Convert the 65 byte signature into the [R|S|V] format.
-	v, r, s := toSignatureValues(sig)
 
 	// Construct the signed block.
 	signedBlock := SignedBlock{
@@ -106,32 +86,6 @@ func (b Block) Sign(privateKey *ecdsa.PrivateKey) (SignedBlock, error) {
 	}
 
 	return signedBlock, nil
-}
-
-// HashWithArdanStamp returns a hash of 32 bytes that represents this user
-// transaction with the Ardan stamp embedded into the final hash.
-func (b Block) HashWithArdanStamp() ([]byte, error) {
-
-	// Marshal and hash the user data to validate the signature.
-	txData, err := json.Marshal(b)
-	if err != nil {
-		return nil, err
-	}
-
-	// Hash the transaction data into a 32 byte array. This will provide
-	// a data length consistency with all transactions.
-	txHash := crypto.Keccak256Hash(txData)
-
-	// Convert the stamp into a slice of bytes. This stamp is
-	// used so signatures we produce when signing transactions
-	// are always unique to the Ardan blockchain.
-	stamp := []byte("\x19Ardan Signed Message:\n32")
-
-	// Hash the stamp and txHash together in a final 32 byte array
-	// that represents the transaction data.
-	tran := crypto.Keccak256Hash(stamp, txHash.Bytes())
-
-	return tran.Bytes(), nil
 }
 
 // =============================================================================
@@ -147,45 +101,17 @@ type SignedBlock struct {
 // VerifySignature verifies the signature conforms to our standards and
 // is associated with the data claimed to be signed.
 func (b SignedBlock) VerifySignature() error {
+	return VerifySignature(b, b.V, b.R, b.S)
+}
 
-	// Check the recovery id is either 0 or 1.
-	v := b.V.Uint64() - ardanID
-	if v != 0 && v != 1 {
-		return errors.New("invalid recovery id")
-	}
-
-	// Check the signature values are valid.
-	if !crypto.ValidateSignatureValues(byte(v), b.R, b.S, false) {
-		return errors.New("invalid signature values")
-	}
-
-	// Prepare the transaction for recovery and validation.
-	tran, err := b.HashWithArdanStamp()
-	if err != nil {
-		return err
-	}
-
-	// Convert the [R|S|V] format into the original 65 bytes.
-	sig := toSignatureBytes(b.V, b.R, b.S)
-
-	// Capture the uncompressed public key associated with this signature.
-	sigPublicKey, err := crypto.Ecrecover(tran, sig)
-	if err != nil {
-		return fmt.Errorf("ecrecover, %w", err)
-	}
-
-	// Check that the given public key created the signature over the data.
-	rs := sig[:crypto.RecoveryIDOffset]
-	if !crypto.VerifySignature(sigPublicKey, tran, rs) {
-		return errors.New("invalid signature")
-	}
-
-	return nil
+// FromAddress extracts the address for the account that signed the transaction.
+func (b SignedBlock) FromAddress() (string, error) {
+	return FromAddress(b, b.V, b.R, b.S)
 }
 
 // Signature returns the signature as a string.
-func (b SignedBlock) Signature() string {
-	return "0x" + hex.EncodeToString(toSignatureBytesForDisplay(b.V, b.R, b.S))
+func (b SignedBlock) SignatureString() string {
+	return SignatureString(b.V, b.R, b.S)
 }
 
 // =============================================================================

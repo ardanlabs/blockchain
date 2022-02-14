@@ -106,7 +106,7 @@ func (h Handlers) BlocksByAddress(ctx context.Context, w http.ResponseWriter, r 
 				Tip:   tran.Tip,
 				Data:  tran.Data,
 				Gas:   tran.Gas,
-				Sig:   tran.Signature(),
+				Sig:   tran.SignatureString(),
 			}
 		}
 
@@ -119,7 +119,7 @@ func (h Handlers) BlocksByAddress(ctx context.Context, w http.ResponseWriter, r 
 			TotalGas:     blk.Header.TotalGas,
 			TimeStamp:    blk.Header.TimeStamp,
 			Nonce:        blk.Header.Nonce,
-			Sig:          blk.Signature(),
+			Sig:          blk.SignatureString(),
 			Transactions: trans,
 		}
 
