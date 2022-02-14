@@ -293,6 +293,12 @@ func (s *State) WriteNextBlock(block SignedBlock) error {
 // validateNextBlock takes a block and validates it to be included into
 // the blockchain.
 func (s *State) validateNextBlock(block SignedBlock) (string, error) {
+	s.evHandler("state: WriteNextBlock: validate: block signature")
+
+	if err := block.VerifySignature(); err != nil {
+		return zeroHash, fmt.Errorf("invalid block signature")
+	}
+
 	s.evHandler("state: WriteNextBlock: validate: hash solved")
 
 	hash := block.Hash()

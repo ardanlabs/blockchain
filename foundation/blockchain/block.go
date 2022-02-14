@@ -303,6 +303,10 @@ func loadBlocksFromDisk(dbPath string) ([]SignedBlock, error) {
 			return nil, fmt.Errorf("block %d has been changed", blockNum)
 		}
 
+		if err := blockFS.SignedBlock.VerifySignature(); err != nil {
+			return nil, fmt.Errorf("block %d has bad signature", blockNum)
+		}
+
 		blocks = append(blocks, blockFS.SignedBlock)
 		blockNum++
 	}

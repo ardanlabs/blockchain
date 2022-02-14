@@ -39,7 +39,7 @@ func (h Handlers) AddNextBlock(ctx context.Context, w http.ResponseWriter, r *ht
 
 	resp := struct {
 		Status string                 `json:"status"`
-		Block  blockchain.SignedBlock `json:"signed_block"`
+		Block  blockchain.SignedBlock `json:"block"`
 	}{
 		Status: "accepted",
 		Block:  block,
