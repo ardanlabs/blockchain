@@ -28,27 +28,6 @@ func Hash(value interface{}) string {
 	return hex.EncodeToString(hash[:])
 }
 
-// Sign uses the specified private key to sign the user transaction.
-func Sign(value interface{}, privateKey *ecdsa.PrivateKey) (v, r, s *big.Int, err error) {
-
-	// Prepare the transaction for signing.
-	data, err := Stamp(value)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-
-	// Sign the hash with the private key to produce a signature.
-	sig, err := crypto.Sign(data, privateKey)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-
-	// Convert the 65 byte signature into the [R|S|V] format.
-	v, r, s = toSignatureValues(sig)
-
-	return v, r, s, nil
-}
-
 // Stamp returns a hash of 32 bytes that represents this user
 // transaction with the Ardan stamp embedded into the final hash.
 func Stamp(value interface{}) ([]byte, error) {
@@ -73,6 +52,27 @@ func Stamp(value interface{}) ([]byte, error) {
 	tran := crypto.Keccak256Hash(stamp, txHash.Bytes())
 
 	return tran.Bytes(), nil
+}
+
+// Sign uses the specified private key to sign the user transaction.
+func Sign(value interface{}, privateKey *ecdsa.PrivateKey) (v, r, s *big.Int, err error) {
+
+	// Prepare the transaction for signing.
+	data, err := Stamp(value)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	// Sign the hash with the private key to produce a signature.
+	sig, err := crypto.Sign(data, privateKey)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	// Convert the 65 byte signature into the [R|S|V] format.
+	v, r, s = toSignatureValues(sig)
+
+	return v, r, s, nil
 }
 
 // VerifySignature verifies the signature conforms to our standards and
