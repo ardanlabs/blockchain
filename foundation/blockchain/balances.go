@@ -74,17 +74,20 @@ func (bs *BalanceSheet) applyValue(address string, value uint) {
 
 // applyMiningFee gives the specified miner the fee for the specified block.
 func (bs *BalanceSheet) applyMiningFee(minerAddress string, tx BlockTx) {
-	bs.mu.Lock()
-	defer bs.mu.Unlock()
 
+	// Capture the address of the account that signed this transaction.
 	from, err := tx.FromAddress()
 	if err != nil {
 		return
 	}
 
-	fee := tx.Gas + tx.Tip
-	bs.sheet[minerAddress] += fee
-	bs.sheet[from] -= fee
+	bs.mu.Lock()
+	defer bs.mu.Unlock()
+	{
+		fee := tx.Gas + tx.Tip
+		bs.sheet[minerAddress] += fee
+		bs.sheet[from] -= fee
+	}
 }
 
 // applyTransaction performs the business logic for applying a transaction
