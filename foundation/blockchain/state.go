@@ -166,6 +166,7 @@ func (s *State) Shutdown() error {
 	defer func() {
 		s.mu.Lock()
 		defer s.mu.Unlock()
+
 		s.dbFile.Close()
 	}()
 
