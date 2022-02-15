@@ -99,25 +99,26 @@ func (bs *BalanceSheet) applyTransaction(tx BlockTx) error {
 
 	bs.mu.Lock()
 	defer bs.mu.Unlock()
+	{
+		if string(tx.Data) == TxDataReward {
+			bs.sheet[tx.To] += tx.Value
+			return nil
+		}
 
-	if string(tx.Data) == TxDataReward {
+		if from == tx.To {
+			return fmt.Errorf("invalid transaction, do you mean to give a reward, from %s, to %s", from, tx.To)
+		}
+
+		if tx.Value > bs.sheet[from] {
+			return fmt.Errorf("%s has an insufficient balance", from)
+		}
+
+		bs.sheet[from] -= tx.Value
 		bs.sheet[tx.To] += tx.Value
-		return nil
-	}
 
-	if from == tx.To {
-		return fmt.Errorf("invalid transaction, do you mean to give a reward, from %s, to %s", from, tx.To)
-	}
-
-	if tx.Value > bs.sheet[from] {
-		return fmt.Errorf("%s has an insufficient balance", from)
-	}
-
-	bs.sheet[from] -= tx.Value
-	bs.sheet[tx.To] += tx.Value
-
-	if tx.Tip > 0 {
-		bs.sheet[from] -= tx.Tip
+		if tx.Tip > 0 {
+			bs.sheet[from] -= tx.Tip
+		}
 	}
 
 	return nil
