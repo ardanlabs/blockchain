@@ -92,21 +92,21 @@ func New(cfg Config) (*State, error) {
 	}
 
 	// Create a new balance sheet from the genesis balances.
-	balanceSheet := newBalanceSheetFromSheet(genesis.Balances)
+	balanceSheet := newBalanceSheet(genesis.Balances)
 
 	// Process the blocks and transactions against the balance sheet.
 	for _, block := range blocks {
 		for _, tx := range block.Transactions {
 
-			// Apply the balance changes based on this transaction.
-			balanceSheet.applyTransactionToBalance(tx)
+			// Apply the balance changes based for this transaction.
+			balanceSheet.applyTransaction(tx)
 
 			// Apply the miner tip and gas fee for this transaction.
-			balanceSheet.applyMiningFeeToBalance(block.Header.MinerAddress, tx)
+			balanceSheet.applyMiningFee(block.Header.MinerAddress, tx)
 		}
 
 		// Apply the miner reward for this block.
-		balanceSheet.applyMiningRewardToBalance(block.Header.MinerAddress, genesis.MiningReward)
+		balanceSheet.applyValue(block.Header.MinerAddress, genesis.MiningReward)
 	}
 
 	// Open the blockchain database file for processing.
@@ -248,11 +248,11 @@ func (s *State) WriteNextBlock(block Block) error {
 		// Process the transactions against the balance sheet.
 		for _, tx := range block.Transactions {
 
-			// Apply the balance changes based on this transaction.
-			s.balanceSheet.applyTransactionToBalance(tx)
+			// Apply the balance changes based for this transaction.
+			s.balanceSheet.applyTransaction(tx)
 
 			// Apply the miner tip and gas fee for this transaction.
-			s.balanceSheet.applyMiningFeeToBalance(block.Header.MinerAddress, tx)
+			s.balanceSheet.applyMiningFee(block.Header.MinerAddress, tx)
 
 			s.evHandler("state: WriteNextBlock: remove from mempool: tx[%s]", tx.Hash())
 
@@ -263,7 +263,7 @@ func (s *State) WriteNextBlock(block Block) error {
 		s.evHandler("state: WriteNextBlock: apply mining reward")
 
 		// Apply the miner reward for this block.
-		s.balanceSheet.applyMiningRewardToBalance(block.Header.MinerAddress, s.genesis.MiningReward)
+		s.balanceSheet.applyValue(block.Header.MinerAddress, s.genesis.MiningReward)
 
 		// Save this as the latest block.
 		s.latestBlock = block
@@ -338,7 +338,7 @@ func (s *State) Truncate() error {
 
 	// Reset the state of the database.
 	s.txMempool.truncate()
-	s.balanceSheet.resetFromSheet(s.genesis.Balances)
+	s.balanceSheet.reset(s.genesis.Balances)
 	s.latestBlock = Block{}
 	s.dbFile = dbFile
 
@@ -389,8 +389,9 @@ func (s *State) QueryBalances(address string) map[string]uint {
 	balanceSheet := s.balanceSheet.copy()
 	txMempool := s.txMempool.copy()
 
+	// Add transactions from the mempool for this balance statement.
 	for _, tx := range txMempool {
-		balanceSheet.applyTransactionToBalance(tx)
+		balanceSheet.applyTransaction(tx)
 	}
 
 	for addr := range balanceSheet.sheet {
@@ -493,15 +494,14 @@ func (s *State) MineNewBlock(ctx context.Context) (Block, time.Duration, error) 
 	balanceSheet := s.balanceSheet.copy()
 	for _, tx := range nb.Transactions {
 
-		// Apply the balance changes based on this transaction. Set status
-		// information for other nodes to process this correctly.
-		if err := balanceSheet.applyTransactionToBalance(tx); err != nil {
+		// Apply the balance changes based on this transaction.
+		if err := balanceSheet.applyTransaction(tx); err != nil {
 			s.evHandler("worker: runMiningOperation: MINING: WARNING : %s", err)
 			continue
 		}
 
 		// Apply the miner tip and gas fee for this transaction.
-		balanceSheet.applyMiningFeeToBalance(s.minerAddress, tx)
+		balanceSheet.applyMiningFee(s.minerAddress, tx)
 
 		// Update the total gas and tip fees.
 		nb.Header.TotalGas += tx.Gas
@@ -509,7 +509,7 @@ func (s *State) MineNewBlock(ctx context.Context) (Block, time.Duration, error) 
 	}
 
 	// Apply the miner reward for this block.
-	balanceSheet.applyMiningRewardToBalance(s.minerAddress, s.genesis.MiningReward)
+	balanceSheet.applyValue(s.minerAddress, s.genesis.MiningReward)
 
 	s.evHandler("worker: runMiningOperation: MINING: perform POW")
 

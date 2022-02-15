@@ -11,24 +11,22 @@ type BalanceSheet struct {
 	mu    sync.RWMutex
 }
 
-// newBalanceSheet constructs a new balance sheet for use.
-func newBalanceSheet() *BalanceSheet {
-	return &BalanceSheet{
+// newBalanceSheet constructs a new balance sheet for use, expects a starting
+// balance sheet usually from the genesis file.
+func newBalanceSheet(sheet map[string]uint) *BalanceSheet {
+	bs := BalanceSheet{
 		sheet: make(map[string]uint),
 	}
-}
 
-// newBalanceSheetFromSheet constructs a new balance sheet with existing values.
-func newBalanceSheetFromSheet(sheet map[string]uint) *BalanceSheet {
-	balanceSheet := newBalanceSheet()
-	for address, value := range sheet {
-		balanceSheet.sheet[address] = value
+	if sheet != nil {
+		bs.reset(sheet)
 	}
-	return balanceSheet
+
+	return &bs
 }
 
-// resetFromSheet takes the specified sheet and resets the balances.
-func (bs *BalanceSheet) resetFromSheet(sheet map[string]uint) {
+// reset takes the specified sheet and resets the balances.
+func (bs *BalanceSheet) reset(sheet map[string]uint) {
 	bs.mu.Lock()
 	defer bs.mu.Unlock()
 
@@ -59,21 +57,23 @@ func (bs *BalanceSheet) copy() *BalanceSheet {
 	bs.mu.Lock()
 	defer bs.mu.Unlock()
 
-	balanceSheet := newBalanceSheet()
+	balanceSheet := newBalanceSheet(nil)
 	for address, value := range bs.sheet {
 		balanceSheet.sheet[address] = value
 	}
 	return balanceSheet
 }
 
-func (bs *BalanceSheet) applyMiningRewardToBalance(beneficiary string, reward uint) {
+// applyValue gives the specififed address the specified value.
+func (bs *BalanceSheet) applyValue(address string, value uint) {
 	bs.mu.Lock()
 	defer bs.mu.Unlock()
 
-	bs.sheet[beneficiary] += reward
+	bs.sheet[address] += value
 }
 
-func (bs *BalanceSheet) applyMiningFeeToBalance(beneficiary string, tx BlockTx) {
+// applyMiningFee gives the specified miner the fee for the specified block.
+func (bs *BalanceSheet) applyMiningFee(minerAddress string, tx BlockTx) {
 	bs.mu.Lock()
 	defer bs.mu.Unlock()
 
@@ -83,13 +83,13 @@ func (bs *BalanceSheet) applyMiningFeeToBalance(beneficiary string, tx BlockTx) 
 	}
 
 	fee := tx.Gas + tx.Tip
-	bs.sheet[beneficiary] += fee
+	bs.sheet[minerAddress] += fee
 	bs.sheet[from] -= fee
 }
 
-// applyTransactionToBalance performs the business logic for applying a
-// transaction to the balance sheet.
-func (bs *BalanceSheet) applyTransactionToBalance(tx BlockTx) error {
+// applyTransaction performs the business logic for applying a transaction
+// to the balance sheet.
+func (bs *BalanceSheet) applyTransaction(tx BlockTx) error {
 
 	// Capture the address of the account that signed this transaction.
 	from, err := tx.FromAddress()
