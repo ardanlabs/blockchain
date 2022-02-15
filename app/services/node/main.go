@@ -113,6 +113,7 @@ func run(log *zap.SugaredLogger) error {
 	if err != nil {
 		return fmt.Errorf("unable to load private key for node: %w", err)
 	}
+	address := crypto.PubkeyToAddress(privateKey.PublicKey)
 
 	peerSet := blockchain.NewPeerSet()
 	for _, host := range cfg.Node.KnownPeers {
@@ -125,11 +126,11 @@ func run(log *zap.SugaredLogger) error {
 	}
 
 	bc, err := blockchain.New(blockchain.Config{
-		PrivateKey: privateKey,
-		Host:       cfg.Web.PrivateHost,
-		DBPath:     cfg.Node.DBPath,
-		KnownPeers: peerSet,
-		EvHandler:  ev,
+		MinerAddress: address.String(),
+		Host:         cfg.Web.PrivateHost,
+		DBPath:       cfg.Node.DBPath,
+		KnownPeers:   peerSet,
+		EvHandler:    ev,
 	})
 	if err != nil {
 		return err

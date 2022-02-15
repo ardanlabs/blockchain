@@ -25,12 +25,12 @@ type tx struct {
 
 type block struct {
 	ParentHash   string `json:"parent_hash"`
+	MinerAddress string `json:"miner_address"`
 	Difficulty   int    `json:"difficulty"`
 	Number       uint64 `json:"number"`
 	TotalTip     uint   `json:"total_tip"`
 	TotalGas     uint   `json:"total_gas"`
 	TimeStamp    uint64 `json:"timestamp"`
 	Nonce        uint64 `json:"nonce"`
-	Sig          string `json:"sig"`
 	Transactions []tx   `json:"txs"`
 }

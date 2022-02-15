@@ -336,7 +336,7 @@ func (w *powWorker) runMiningOperation() {
 }
 
 // sendBlockToPeers takes the new mined block and sends it to all know peers.
-func (w *powWorker) sendBlockToPeers(block SignedBlock) error {
+func (w *powWorker) sendBlockToPeers(block Block) error {
 	w.evHandler("worker: runMiningOperation: MINING: sendBlockToPeers: started")
 	defer w.evHandler("worker: runMiningOperation: MINING: sendBlockToPeers: completed")
 
@@ -344,8 +344,8 @@ func (w *powWorker) sendBlockToPeers(block SignedBlock) error {
 		url := fmt.Sprintf("%s/block/next", fmt.Sprintf(w.baseURL, peer.Host))
 
 		var status struct {
-			Status string      `json:"status"`
-			Block  SignedBlock `json:"signed_block"`
+			Status string `json:"status"`
+			Block  Block  `json:"block"`
 		}
 
 		if err := send(http.MethodPost, url, block, &status); err != nil {
@@ -439,7 +439,7 @@ func (w *powWorker) writePeerBlocks(peer Peer) error {
 	from := w.state.CopyLatestBlock().Header.Number + 1
 	url := fmt.Sprintf("%s/block/list/%d/latest", fmt.Sprintf(w.baseURL, peer.Host), from)
 
-	var blocks []SignedBlock
+	var blocks []Block
 	if err := send(http.MethodGet, url, nil, &blocks); err != nil {
 		return err
 	}

@@ -25,7 +25,7 @@ type Handlers struct {
 // AddNextBlock accepts a new mined block from a peer, validates it, then adds it
 // to the block chain.
 func (h Handlers) AddNextBlock(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	var block blockchain.SignedBlock
+	var block blockchain.Block
 	if err := web.Decode(r, &block); err != nil {
 		return fmt.Errorf("unable to decode payload: %w", err)
 	}
@@ -40,8 +40,8 @@ func (h Handlers) AddNextBlock(ctx context.Context, w http.ResponseWriter, r *ht
 	}
 
 	resp := struct {
-		Status string                 `json:"status"`
-		Block  blockchain.SignedBlock `json:"block"`
+		Status string           `json:"status"`
+		Block  blockchain.Block `json:"block"`
 	}{
 		Status: "accepted",
 		Block:  block,
