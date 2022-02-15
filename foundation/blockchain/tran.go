@@ -40,6 +40,8 @@ func (tx UserTx) Sign(privateKey *ecdsa.PrivateKey) (SignedTx, error) {
 	return signedTx, nil
 }
 
+// =============================================================================
+
 // SignedTx is a signed version of the user transaction.
 type SignedTx struct {
 	UserTx

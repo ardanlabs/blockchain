@@ -17,6 +17,8 @@ import (
 // Ethereum and Bitcoin do this as well, but they use the value of 27.
 const ardanID = 29
 
+// =============================================================================
+
 // hash returns a unique string for the value.
 func hash(value interface{}) string {
 	data, err := json.Marshal(value)
@@ -140,8 +142,6 @@ func fromAddress(value interface{}, v, r, s *big.Int) (string, error) {
 func signatureString(v, r, s *big.Int) string {
 	return "0x" + hex.EncodeToString(toSignatureBytesForDisplay(v, r, s))
 }
-
-// =============================================================================
 
 // toSignatureValues converts the signature into the r, s, v values.
 func toSignatureValues(sig []byte) (v, r, s *big.Int) {
