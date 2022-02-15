@@ -1,5 +1,7 @@
 package blockchain
 
+import "sync"
+
 // Peer represents information about a Node in the network.
 type Peer struct {
 	Host string
@@ -20,18 +22,41 @@ func (p Peer) match(host string) bool {
 // =============================================================================
 
 // PeerSet represents the data representation to maintain a set of known peers.
-type PeerSet map[Peer]struct{}
+type PeerSet struct {
+	set map[Peer]struct{}
+	mu  sync.RWMutex
+}
 
 // NewPeerSet constructs a new info set to manage node peer information.
-func NewPeerSet() PeerSet {
-	return make(PeerSet)
+func NewPeerSet() *PeerSet {
+	return &PeerSet{
+		set: make(map[Peer]struct{}),
+	}
 }
 
 // Add adds a new node to the set.
-func (ps PeerSet) Add(peer Peer) {
-	if _, exists := ps[peer]; !exists {
-		ps[peer] = struct{}{}
+func (ps *PeerSet) Add(peer Peer) {
+	ps.mu.Lock()
+	defer ps.mu.Unlock()
+
+	if _, exists := ps.set[peer]; !exists {
+		ps.set[peer] = struct{}{}
 	}
+}
+
+// copy returns a list of the known peers.
+func (ps *PeerSet) copy(host string) []Peer {
+	ps.mu.RLock()
+	defer ps.mu.RUnlock()
+
+	var peers []Peer
+	for peer := range ps.set {
+		if !peer.match(host) {
+			peers = append(peers, peer)
+		}
+	}
+
+	return peers
 }
 
 // =============================================================================

@@ -61,7 +61,7 @@ func (h Handlers) Mempool(ctx context.Context, w http.ResponseWriter, r *http.Re
 // Balances returns the current balances for all users.
 func (h Handlers) Balances(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	address := web.Param(r, "address")
-	var balanceSheet blockchain.BalanceSheet
+	var balanceSheet map[string]uint
 
 	if address == "" {
 		balanceSheet = h.BC.CopyBalanceSheet()

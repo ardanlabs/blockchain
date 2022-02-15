@@ -36,7 +36,7 @@ type Block struct {
 }
 
 // newBlock constructs a new BlockFS for persisting.
-func newBlock(difficulty int, transPerBlock int, parentBlock Block, txMempool txMempool) Block {
+func newBlock(difficulty int, transPerBlock int, parentBlock SignedBlock, txMempool *txMempool) Block {
 	parentHash := zeroHash
 	if parentBlock.Header.Number > 0 {
 		parentHash = parentBlock.Hash()
