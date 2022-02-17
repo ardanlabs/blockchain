@@ -16,6 +16,9 @@ import (
 	Concept of connecting and receiving events.
 	Need to verify enough money at the address before sending a transaction.
 
+	-- Web Application
+	See the different nodes, view activity.
+
 	-- Blockchain
 	Sync up mempool after blocks before starting.
 	Create a block index file for query and clean up forks.
