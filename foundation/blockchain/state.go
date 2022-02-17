@@ -17,6 +17,7 @@ import (
 	Need to verify enough money at the address before sending a transaction.
 
 	-- Blockchain
+	Sync up mempool after blocks before starting.
 	Create a block index file for query and clean up forks.
 	Publishing events. (New Blocks)
 
