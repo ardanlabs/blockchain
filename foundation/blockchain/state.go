@@ -11,21 +11,21 @@ import (
 )
 
 /*
-	-- Wallet
-	Provide support to read a file of transactions to send.
+	-- Chrome Extension Wallet
+	Get list of defined accounts (minus miner).
+	Show the balance of each account.
 	Concept of connecting and receiving events.
-	Need to verify enough money at the address before sending a transaction.
 
 	-- Web Application
+	Provide support to read a file of transactions to send.
+	Need to verify enough money at the address before sending a transaction.
 	See the different nodes, view activity.
 
 	-- Blockchain
 	Sync up mempool after blocks before starting.
 	Create a block index file for query and clean up forks.
 	Publishing events. (New Blocks)
-
-	-- Testing
-	Need tests.
+	Unit need tests.
 */
 
 // =============================================================================
