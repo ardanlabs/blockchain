@@ -54,7 +54,7 @@ func runPOWWorker(state *State, evHandler EventHandler) {
 	}
 
 	// Update this node before starting any support G's.
-	state.powWorker.runPeerUpdatesOperation()
+	state.powWorker.sync()
 
 	// Load the set of operations we need to run.
 	operations := []func(){
@@ -105,6 +105,46 @@ func (w *powWorker) shutdown() {
 
 // =============================================================================
 
+// sync updates the peer list, mempool and blocks.
+func (w *powWorker) sync() {
+	w.evHandler("worker: sync: started")
+	defer w.evHandler("worker: sync: completed")
+
+	for _, peer := range w.state.CopyKnownPeers() {
+
+		// Retrieve the status of this peer.
+		peerStatus, err := w.queryPeerStatus(peer)
+		if err != nil {
+			w.evHandler("worker: sync: queryPeerStatus: %s: ERROR: %s", peer.Host, err)
+		}
+
+		// Add new peers to this nodes list.
+		if err := w.addNewPeers(peerStatus.KnownPeers); err != nil {
+			w.evHandler("worker: sync: addNewPeers: %s: ERROR: %s", peer.Host, err)
+		}
+
+		// Update the mempool.
+		pool, err := w.queryPeerMempool(peer)
+		if err != nil {
+			w.evHandler("worker: sync: queryPeerMempool: %s: ERROR: %s", peer.Host, err)
+		}
+		for _, tx := range pool {
+			w.evHandler("worker: sync: queryPeerMempool: %s: Add Tx: %s", peer.Host, tx.SignatureString()[:16])
+			w.state.txMempool.add(tx)
+		}
+
+		// If this peer has blocks we don't have, we need to add them.
+		if peerStatus.LatestBlockNumber > w.state.CopyLatestBlock().Header.Number {
+			w.evHandler("worker: sync: writePeerBlocks: %s: latestBlockNumber[%d]", peer.Host, peerStatus.LatestBlockNumber)
+			if err := w.writePeerBlocks(peer); err != nil {
+				w.evHandler("worker: sync: writePeerBlocks: %s: ERROR %s", peer.Host, err)
+			}
+		}
+	}
+}
+
+// =============================================================================
+
 // peerOperations handles finding new peers.
 func (w *powWorker) peerOperations() {
 	w.evHandler("worker: peerOperations: G started")
@@ -114,11 +154,11 @@ func (w *powWorker) peerOperations() {
 		select {
 		case <-w.peerUpdates:
 			if !w.isShutdown() {
-				w.runPeerUpdatesOperation()
+				w.runFindNewPeersOperation()
 			}
 		case <-w.ticker.C:
 			if !w.isShutdown() {
-				w.runPeerUpdatesOperation()
+				w.runFindNewPeersOperation()
 			}
 		case <-w.shut:
 			w.evHandler("worker: peerOperations: received shut signal")
@@ -360,38 +400,41 @@ func (w *powWorker) sendBlockToPeers(block Block) error {
 
 // =============================================================================
 
-// runPeerUpdatesOperation updates the peer list and sync's up the database.
-func (w *powWorker) runPeerUpdatesOperation() {
-	w.evHandler("worker: runPeerUpdatesOperation: started")
-	defer w.evHandler("worker: runPeerUpdatesOperation: completed")
+// runFindNewPeersOperation updates the peer list.
+func (w *powWorker) runFindNewPeersOperation() {
+	w.evHandler("worker: runFindNewPeersOperation: started")
+	defer w.evHandler("worker: runFindNewPeersOperation: completed")
 
 	for _, peer := range w.state.CopyKnownPeers() {
 
 		// Retrieve the status of this peer.
 		peerStatus, err := w.queryPeerStatus(peer)
 		if err != nil {
-			w.evHandler("worker: runPeerUpdatesOperation: queryPeerStatus: %s: ERROR: %s", peer.Host, err)
+			w.evHandler("worker: runFindNewPeersOperation: queryPeerStatus: %s: ERROR: %s", peer.Host, err)
 		}
 
 		// Add new peers to this nodes list.
 		if err := w.addNewPeers(peerStatus.KnownPeers); err != nil {
-			w.evHandler("worker: runPeerUpdatesOperation: addNewPeers: %s: ERROR: %s", peer.Host, err)
-		}
-
-		// If this peer has blocks we don't have, we need to add them.
-		if peerStatus.LatestBlockNumber > w.state.CopyLatestBlock().Header.Number {
-			w.evHandler("worker: runPeerUpdatesOperation: writePeerBlocks: %s: latestBlockNumber[%d]", peer.Host, peerStatus.LatestBlockNumber)
-			if err := w.writePeerBlocks(peer); err != nil {
-				w.evHandler("worker: runPeerUpdatesOperation: writePeerBlocks: %s: ERROR %s", peer.Host, err)
-
-				// We need to correct the fork in our chain.
-				if errors.Is(err, ErrChainForked) {
-					w.state.Truncate()
-					break
-				}
-			}
+			w.evHandler("worker: runFindNewPeersOperation: addNewPeers: %s: ERROR: %s", peer.Host, err)
 		}
 	}
+}
+
+// queryPeerMempool asks the peer for their current copy of their mempool
+func (w *powWorker) queryPeerMempool(peer Peer) ([]BlockTx, error) {
+	w.evHandler("worker: runPeerUpdatesOperation: queryPeerMempool: started: %s", peer)
+	defer w.evHandler("worker: runPeerUpdatesOperation: queryPeerMempool: completed: %s", peer)
+
+	url := fmt.Sprintf("%s/tx/list", fmt.Sprintf(w.baseURL, peer.Host))
+
+	var mempool []BlockTx
+	if err := send(http.MethodGet, url, nil, &mempool); err != nil {
+		return nil, err
+	}
+
+	w.evHandler("worker: runPeerUpdatesOperation: queryPeerMempool: len[%d]", len(mempool))
+
+	return mempool, nil
 }
 
 // queryPeerStatus looks for new nodes on the blockchain by asking

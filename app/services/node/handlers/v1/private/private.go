@@ -32,10 +32,17 @@ func (h Handlers) AddNextBlock(ctx context.Context, w http.ResponseWriter, r *ht
 
 	if err := h.BC.WriteNextBlock(block); err != nil {
 
-		// We need to correct the fork in our chain.
+		// More has to be thought about here. I don't think the blockchain
+		// package can perform this activity because it doesn't understand
+		// the application layer. All activity needs to stop after this call
+		// to truncate to re-sync the state of the blockchain.
+		// So the idea for now is to truncate the state here and force a
+		// shutdown/restart of the service.
 		if errors.Is(err, blockchain.ErrChainForked) {
 			h.BC.Truncate()
+			return web.NewShutdownError(err.Error())
 		}
+
 		return v1.NewRequestError(err, http.StatusNotAcceptable)
 	}
 
@@ -120,4 +127,10 @@ func (h Handlers) BlocksByNumber(ctx context.Context, w http.ResponseWriter, r *
 	}
 
 	return web.Respond(ctx, w, dbBlocks, http.StatusOK)
+}
+
+// Mempool returns the set of uncommitted transactions.
+func (h Handlers) Mempool(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	txs := h.BC.CopyMempool()
+	return web.Respond(ctx, w, txs, http.StatusOK)
 }

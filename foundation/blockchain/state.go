@@ -346,9 +346,6 @@ func (s *State) Truncate() error {
 	s.latestBlock = Block{}
 	s.dbFile = dbFile
 
-	// Start the peer update operation.
-	s.powWorker.signalPeerUpdates()
-
 	return nil
 }
 
