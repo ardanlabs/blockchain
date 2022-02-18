@@ -2,10 +2,8 @@ package blockchain
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
 	"sync"
 	"time"
 )
@@ -63,10 +61,10 @@ type State struct {
 	evHandler    EventHandler
 
 	genesis      Genesis
+	storage      *storage
 	txMempool    *txMempool
 	latestBlock  Block
 	balanceSheet *BalanceSheet
-	dbFile       *os.File
 	mu           sync.Mutex
 
 	powWorker *powWorker
@@ -82,9 +80,15 @@ func New(cfg Config) (*State, error) {
 		return nil, err
 	}
 
-	// Load the blockchain from disk. This would not make sense
-	// with the current Ethereum blockchain. Ours is small.
-	blocks, err := loadBlocksFromDisk(cfg.DBPath)
+	// Access the storage for the blockchain.
+	storage, err := newStorage(cfg.DBPath)
+	if err != nil {
+		return nil, err
+	}
+
+	// Load all existing blocks from storage into memory for processing. This
+	// won't work in a system like Ethereum.
+	blocks, err := storage.readAllBlocks()
 	if err != nil {
 		return nil, err
 	}
@@ -113,12 +117,6 @@ func New(cfg Config) (*State, error) {
 		balanceSheet.applyValue(block.Header.MinerAddress, genesis.MiningReward)
 	}
 
-	// Open the blockchain database file for processing.
-	dbFile, err := os.OpenFile(cfg.DBPath, os.O_APPEND|os.O_RDWR, 0600)
-	if err != nil {
-		return nil, err
-	}
-
 	// Build a safe event handler function for use.
 	ev := func(v string, args ...interface{}) {
 		if cfg.EvHandler != nil {
@@ -128,17 +126,17 @@ func New(cfg Config) (*State, error) {
 
 	// Create the State to provide support for managing the blockchain.
 	state := State{
-		host:       cfg.Host,
-		dbPath:     cfg.DBPath,
-		knownPeers: cfg.KnownPeers,
-		evHandler:  ev,
-
 		minerAddress: cfg.MinerAddress,
+		host:         cfg.Host,
+		dbPath:       cfg.DBPath,
+		knownPeers:   cfg.KnownPeers,
+		evHandler:    ev,
+
 		genesis:      genesis,
+		storage:      storage,
 		txMempool:    newTxMempool(),
 		latestBlock:  latestBlock,
 		balanceSheet: balanceSheet,
-		dbFile:       dbFile,
 	}
 
 	// Run the POW worker which will assign itself to
@@ -153,10 +151,7 @@ func (s *State) Shutdown() error {
 
 	// Make sure the database file is properly closed.
 	defer func() {
-		s.mu.Lock()
-		defer s.mu.Unlock()
-
-		s.dbFile.Close()
+		s.storage.close()
 	}()
 
 	// Stop all blockchain writing activity.
@@ -230,12 +225,6 @@ func (s *State) WriteNextBlock(block Block) error {
 		Block: block,
 	}
 
-	// Marshal the block for writing to disk.
-	blockFSJson, err := json.Marshal(blockFS)
-	if err != nil {
-		return err
-	}
-
 	// I want to make sure all these state changes are done atomically.
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -243,7 +232,7 @@ func (s *State) WriteNextBlock(block Block) error {
 		s.evHandler("state: WriteNextBlock: write to disk")
 
 		// Write the new block to the chain on disk.
-		if _, err := s.dbFile.Write(append(blockFSJson, '\n')); err != nil {
+		if err := s.storage.write(blockFS); err != nil {
 			return err
 		}
 
@@ -328,23 +317,11 @@ func (s *State) Truncate() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	// Close the remove the current blockchain database file.
-	s.dbFile.Close()
-	if err := os.Remove(s.dbPath); err != nil {
-		return err
-	}
-
-	// Open a new blockchain database file for processing.
-	dbFile, err := os.OpenFile(s.dbPath, os.O_APPEND|os.O_RDWR, 0600)
-	if err != nil {
-		return err
-	}
-
 	// Reset the state of the database.
 	s.txMempool.truncate()
 	s.balanceSheet.reset(s.genesis.Balances)
 	s.latestBlock = Block{}
-	s.dbFile = dbFile
+	s.storage.reset()
 
 	return nil
 }
@@ -412,7 +389,7 @@ func (s *State) QueryMempoolLength() int {
 // QueryBlocksByNumber returns the set of blocks based on block numbers. This
 // function reads the blockchain from disk first.
 func (s *State) QueryBlocksByNumber(from uint64, to uint64) []Block {
-	blocks, err := loadBlocksFromDisk(s.dbPath)
+	blocks, err := s.storage.readAllBlocks()
 	if err != nil {
 		return nil
 	}
@@ -436,7 +413,7 @@ func (s *State) QueryBlocksByNumber(from uint64, to uint64) []Block {
 // is empty, all blocks are returned. This function reads the blockchain
 // from disk first.
 func (s *State) QueryBlocksByAddress(address string) []Block {
-	blocks, err := loadBlocksFromDisk(s.dbPath)
+	blocks, err := s.storage.readAllBlocks()
 	if err != nil {
 		return nil
 	}
@@ -526,14 +503,6 @@ func (s *State) MineNewBlock(ctx context.Context) (Block, time.Duration, error) 
 		return Block{}, duration, ctx.Err()
 	}
 
-	s.evHandler("worker: runMiningOperation: MINING: marshal block for write")
-
-	// Marshal the block for writing to disk.
-	blockFSJson, err := json.Marshal(blockFS)
-	if err != nil {
-		return Block{}, duration, err
-	}
-
 	// I want to make sure all these state changes are done atomically.
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -541,7 +510,7 @@ func (s *State) MineNewBlock(ctx context.Context) (Block, time.Duration, error) 
 		s.evHandler("worker: runMiningOperation: MINING: write to disk")
 
 		// Write the new block to the chain on disk.
-		if _, err := s.dbFile.Write(append(blockFSJson, '\n')); err != nil {
+		if err := s.storage.write(blockFS); err != nil {
 			return Block{}, duration, err
 		}
 

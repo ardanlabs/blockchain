@@ -1,14 +1,10 @@
 package blockchain
 
 import (
-	"bufio"
 	"context"
 	"crypto/rand"
-	"encoding/json"
-	"fmt"
 	"math"
 	"math/big"
-	"os"
 	"time"
 )
 
@@ -144,39 +140,4 @@ func isHashSolved(difficulty int, hash string) bool {
 	}
 
 	return hash[:difficulty] == match[:difficulty]
-}
-
-// =============================================================================
-
-// loadBlocksFromDisk the current set of blocks/transactions. In a real
-// world situation this would require a lot of memory.
-func loadBlocksFromDisk(dbPath string) ([]Block, error) {
-	dbFile, err := os.Open(dbPath)
-	if err != nil {
-		return nil, err
-	}
-	defer dbFile.Close()
-
-	var blockNum int
-	var blocks []Block
-	scanner := bufio.NewScanner(dbFile)
-	for scanner.Scan() {
-		if err := scanner.Err(); err != nil {
-			return nil, err
-		}
-
-		var blockFS blockFS
-		if err := json.Unmarshal(scanner.Bytes(), &blockFS); err != nil {
-			return nil, err
-		}
-
-		if blockFS.Block.Hash() != blockFS.Hash {
-			return nil, fmt.Errorf("block %d has been changed", blockNum)
-		}
-
-		blocks = append(blocks, blockFS.Block)
-		blockNum++
-	}
-
-	return blocks, nil
 }
