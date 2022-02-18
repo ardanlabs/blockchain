@@ -70,12 +70,12 @@ func (tm *txMempool) copy() []BlockTx {
 // copyBestByTip returns a list of the best transactions for the next
 // mining operation based on the offered tip. The caller specifies
 // how many transactions they want.
-func (tm *txMempool) copyBestByTip(amount int) []BlockTx {
+func (tm *txMempool) copyBestByTip(howMany int) []BlockTx {
 	txs := tm.copy()
 	sort.Sort(byTip(txs))
 
-	cpy := make([]BlockTx, amount)
-	for i := 0; i < amount; i++ {
+	cpy := make([]BlockTx, howMany)
+	for i := 0; i < howMany; i++ {
 		cpy[i] = txs[i]
 	}
 	return cpy
