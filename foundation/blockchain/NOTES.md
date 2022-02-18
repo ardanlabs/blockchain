@@ -1,4 +1,3 @@
-/*
 Package blockchain is the implementation of a blockchain DB. This overview is
 a series of notes that have helped with the development of the code.
 
@@ -75,5 +74,3 @@ the base fee for the following block. Similarly, the protocol will decrease
 the base fee if the block size is less than the target block size. The amount
 by which the base fee is adjusted is proportional to how far the current block
 size is from the target.
-*/
-package blockchain

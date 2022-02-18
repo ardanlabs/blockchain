@@ -1,4 +1,4 @@
-package blockchain
+package state
 
 import (
 	"bytes"
@@ -10,6 +10,9 @@ import (
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/ardanlabs/blockchain/foundation/blockchain/peer"
+	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
 )
 
 // maxTxShareRequests represents the max number of pending tx network share
@@ -25,8 +28,8 @@ const peerUpdateInterval = time.Minute
 
 // =============================================================================
 
-// powWorker manages the POW workflows for the blockchain.
-type powWorker struct {
+// worker manages the POW workflows for the blockchain.
+type worker struct {
 	state        *State
 	wg           sync.WaitGroup
 	ticker       time.Ticker
@@ -34,39 +37,42 @@ type powWorker struct {
 	peerUpdates  chan bool
 	startMining  chan bool
 	cancelMining chan chan struct{}
-	txSharing    chan BlockTx
+	txSharing    chan storage.BlockTx
 	evHandler    EventHandler
 	baseURL      string
 }
 
-// runPOWWorker creates a powWorker for starting the POW workflows.
-func runPOWWorker(state *State, evHandler EventHandler) {
-	state.powWorker = &powWorker{
+// runWorker creates a powWorker for starting the POW workflows.
+func runWorker(state *State, evHandler EventHandler) {
+
+	// Construct and register this worker to the state. During initialization
+	// this worker needs access to the state.
+	state.worker = &worker{
 		state:        state,
 		ticker:       *time.NewTicker(peerUpdateInterval),
 		shut:         make(chan struct{}),
 		peerUpdates:  make(chan bool, 1),
 		startMining:  make(chan bool, 1),
 		cancelMining: make(chan chan struct{}, 1),
-		txSharing:    make(chan BlockTx, maxTxShareRequests),
+		txSharing:    make(chan storage.BlockTx, maxTxShareRequests),
 		evHandler:    evHandler,
 		baseURL:      "http://%s/v1/node",
 	}
 
 	// Update this node before starting any support G's.
-	state.powWorker.sync()
+	state.worker.sync()
 
 	// Load the set of operations we need to run.
 	operations := []func(){
-		state.powWorker.peerOperations,
-		state.powWorker.miningOperations,
-		state.powWorker.shareTxOperations,
+		state.worker.peerOperations,
+		state.worker.miningOperations,
+		state.worker.shareTxOperations,
 	}
 
 	// Set waitgroup to match the number of G's we need for the set
 	// of operations we have.
 	g := len(operations)
-	state.powWorker.wg.Add(g)
+	state.worker.wg.Add(g)
 
 	// We don't want to return until we know all the G's are up and running.
 	hasStarted := make(chan bool)
@@ -74,7 +80,7 @@ func runPOWWorker(state *State, evHandler EventHandler) {
 	// Start all the operational G's.
 	for _, op := range operations {
 		go func(op func()) {
-			defer state.powWorker.wg.Done()
+			defer state.worker.wg.Done()
 			hasStarted <- true
 			op()
 		}(op)
@@ -87,7 +93,7 @@ func runPOWWorker(state *State, evHandler EventHandler) {
 }
 
 // shutdown terminates the goroutine performing work.
-func (w *powWorker) shutdown() {
+func (w *worker) shutdown() {
 	w.evHandler("worker: shutdown: started")
 	defer w.evHandler("worker: shutdown: completed")
 
@@ -106,7 +112,7 @@ func (w *powWorker) shutdown() {
 // =============================================================================
 
 // sync updates the peer list, mempool and blocks.
-func (w *powWorker) sync() {
+func (w *worker) sync() {
 	w.evHandler("worker: sync: started")
 	defer w.evHandler("worker: sync: completed")
 
@@ -130,7 +136,7 @@ func (w *powWorker) sync() {
 		}
 		for _, tx := range pool {
 			w.evHandler("worker: sync: queryPeerMempool: %s: Add Tx: %s", peer.Host, tx.SignatureString()[:16])
-			w.state.txMempool.add(tx)
+			w.state.mempool.Add(tx)
 		}
 
 		// If this peer has blocks we don't have, we need to add them.
@@ -146,7 +152,7 @@ func (w *powWorker) sync() {
 // =============================================================================
 
 // peerOperations handles finding new peers.
-func (w *powWorker) peerOperations() {
+func (w *worker) peerOperations() {
 	w.evHandler("worker: peerOperations: G started")
 	defer w.evHandler("worker: peerOperations: G completed")
 
@@ -168,7 +174,7 @@ func (w *powWorker) peerOperations() {
 }
 
 // miningOperations handles mining.
-func (w *powWorker) miningOperations() {
+func (w *worker) miningOperations() {
 	w.evHandler("worker: miningOperations: G started")
 	defer w.evHandler("worker: miningOperations: G completed")
 
@@ -186,7 +192,7 @@ func (w *powWorker) miningOperations() {
 }
 
 // shareTxOperations handles sharing new user transactions.
-func (w *powWorker) shareTxOperations() {
+func (w *worker) shareTxOperations() {
 	w.evHandler("worker: shareTxOperations: G started")
 	defer w.evHandler("worker: shareTxOperations: G completed")
 
@@ -204,7 +210,7 @@ func (w *powWorker) shareTxOperations() {
 }
 
 // isShutdown is used to test if a shutdown has been signaled.
-func (w *powWorker) isShutdown() bool {
+func (w *worker) isShutdown() bool {
 	select {
 	case <-w.shut:
 		return true
@@ -217,7 +223,7 @@ func (w *powWorker) isShutdown() bool {
 
 // signalPeerUpdates starts a peer operation. The caller will wait for the
 // specifed context timeout to know the operating has started.
-func (w *powWorker) signalPeerUpdates() {
+func (w *worker) signalPeerUpdates() {
 	select {
 	case w.peerUpdates <- true:
 	default:
@@ -227,7 +233,7 @@ func (w *powWorker) signalPeerUpdates() {
 
 // signalStartMining starts a mining operation. If there is already a signal
 // pending in the channel, just return since a mining operation will start.
-func (w *powWorker) signalStartMining() {
+func (w *worker) signalStartMining() {
 	select {
 	case w.startMining <- true:
 	default:
@@ -239,7 +245,7 @@ func (w *powWorker) signalStartMining() {
 // to stop immediately. That G will not return from the function until done
 // is called. This allows the caller to complete any state changes before a new
 // mining operation takes place.
-func (w *powWorker) signalCancelMining() (done func()) {
+func (w *worker) signalCancelMining() (done func()) {
 	wait := make(chan struct{})
 
 	select {
@@ -253,7 +259,7 @@ func (w *powWorker) signalCancelMining() (done func()) {
 
 // signalShareTransactions queues up a share transaction operation. If
 // maxTxShareRequests signals exist in the channel, we won't send these.
-func (w *powWorker) signalShareTransactions(blockTx BlockTx) {
+func (w *worker) signalShareTransactions(blockTx storage.BlockTx) {
 	select {
 	case w.txSharing <- blockTx:
 		w.evHandler("worker: signalShareTransactions: share Tx signaled")
@@ -265,7 +271,7 @@ func (w *powWorker) signalShareTransactions(blockTx BlockTx) {
 // =============================================================================
 
 // runShareTxOperation updates the peer list and sync's up the database.
-func (w *powWorker) runShareTxOperation(tx BlockTx) {
+func (w *worker) runShareTxOperation(tx storage.BlockTx) {
 	w.evHandler("worker: runShareTxOperation: started")
 	defer w.evHandler("worker: runShareTxOperation: completed")
 
@@ -281,7 +287,7 @@ func (w *powWorker) runShareTxOperation(tx BlockTx) {
 
 // runMiningOperation takes all the transactions from the mempool and writes a
 // new block to the database.
-func (w *powWorker) runMiningOperation() {
+func (w *worker) runMiningOperation() {
 	w.evHandler("worker: runMiningOperation: MINING: started")
 	defer w.evHandler("worker: runMiningOperation: MINING: completed")
 
@@ -376,7 +382,7 @@ func (w *powWorker) runMiningOperation() {
 }
 
 // sendBlockToPeers takes the new mined block and sends it to all know peers.
-func (w *powWorker) sendBlockToPeers(block Block) error {
+func (w *worker) sendBlockToPeers(block storage.Block) error {
 	w.evHandler("worker: runMiningOperation: MINING: sendBlockToPeers: started")
 	defer w.evHandler("worker: runMiningOperation: MINING: sendBlockToPeers: completed")
 
@@ -384,8 +390,8 @@ func (w *powWorker) sendBlockToPeers(block Block) error {
 		url := fmt.Sprintf("%s/block/next", fmt.Sprintf(w.baseURL, peer.Host))
 
 		var status struct {
-			Status string `json:"status"`
-			Block  Block  `json:"block"`
+			Status string        `json:"status"`
+			Block  storage.Block `json:"block"`
 		}
 
 		if err := send(http.MethodPost, url, block, &status); err != nil {
@@ -401,7 +407,7 @@ func (w *powWorker) sendBlockToPeers(block Block) error {
 // =============================================================================
 
 // runFindNewPeersOperation updates the peer list.
-func (w *powWorker) runFindNewPeersOperation() {
+func (w *worker) runFindNewPeersOperation() {
 	w.evHandler("worker: runFindNewPeersOperation: started")
 	defer w.evHandler("worker: runFindNewPeersOperation: completed")
 
@@ -421,13 +427,13 @@ func (w *powWorker) runFindNewPeersOperation() {
 }
 
 // queryPeerMempool asks the peer for their current copy of their mempool
-func (w *powWorker) queryPeerMempool(peer Peer) ([]BlockTx, error) {
-	w.evHandler("worker: runPeerUpdatesOperation: queryPeerMempool: started: %s", peer)
-	defer w.evHandler("worker: runPeerUpdatesOperation: queryPeerMempool: completed: %s", peer)
+func (w *worker) queryPeerMempool(pr peer.Peer) ([]storage.BlockTx, error) {
+	w.evHandler("worker: runPeerUpdatesOperation: queryPeerMempool: started: %s", pr)
+	defer w.evHandler("worker: runPeerUpdatesOperation: queryPeerMempool: completed: %s", pr)
 
-	url := fmt.Sprintf("%s/tx/list", fmt.Sprintf(w.baseURL, peer.Host))
+	url := fmt.Sprintf("%s/tx/list", fmt.Sprintf(w.baseURL, pr.Host))
 
-	var mempool []BlockTx
+	var mempool []storage.BlockTx
 	if err := send(http.MethodGet, url, nil, &mempool); err != nil {
 		return nil, err
 	}
@@ -439,25 +445,25 @@ func (w *powWorker) queryPeerMempool(peer Peer) ([]BlockTx, error) {
 
 // queryPeerStatus looks for new nodes on the blockchain by asking
 // known nodes for their peer list. New nodes are added to the list.
-func (w *powWorker) queryPeerStatus(peer Peer) (PeerStatus, error) {
-	w.evHandler("worker: runPeerUpdatesOperation: queryPeerStatus: started: %s", peer)
-	defer w.evHandler("worker: runPeerUpdatesOperation: queryPeerStatus: completed: %s", peer)
+func (w *worker) queryPeerStatus(pr peer.Peer) (peer.PeerStatus, error) {
+	w.evHandler("worker: runPeerUpdatesOperation: queryPeerStatus: started: %s", pr)
+	defer w.evHandler("worker: runPeerUpdatesOperation: queryPeerStatus: completed: %s", pr)
 
-	url := fmt.Sprintf("%s/status", fmt.Sprintf(w.baseURL, peer.Host))
+	url := fmt.Sprintf("%s/status", fmt.Sprintf(w.baseURL, pr.Host))
 
-	var ps PeerStatus
+	var ps peer.PeerStatus
 	if err := send(http.MethodGet, url, nil, &ps); err != nil {
-		return PeerStatus{}, err
+		return peer.PeerStatus{}, err
 	}
 
-	w.evHandler("worker: runPeerUpdatesOperation: queryPeerStatus: peer-node[%s]: latest-blknum[%d]: peer-list[%s]", peer, ps.LatestBlockNumber, ps.KnownPeers)
+	w.evHandler("worker: runPeerUpdatesOperation: queryPeerStatus: peer-node[%s]: latest-blknum[%d]: peer-list[%s]", pr, ps.LatestBlockNumber, ps.KnownPeers)
 
 	return ps, nil
 }
 
 // addNewPeers takes the list of known peers and makes sure they are included
 // in the nodes list of know peers.
-func (w *powWorker) addNewPeers(knownPeers []Peer) error {
+func (w *worker) addNewPeers(knownPeers []peer.Peer) error {
 	w.evHandler("worker: runPeerUpdatesOperation: addNewPeers: started")
 	defer w.evHandler("worker: runPeerUpdatesOperation: addNewPeers: completed")
 
@@ -475,14 +481,14 @@ func (w *powWorker) addNewPeers(knownPeers []Peer) error {
 
 // writePeerBlocks queries the specified node asking for blocks this
 // node does not have, then writes them to disk.
-func (w *powWorker) writePeerBlocks(peer Peer) error {
-	w.evHandler("worker: runPeerUpdatesOperation: writePeerBlocks: started: %s", peer)
-	defer w.evHandler("worker: runPeerUpdatesOperation: writePeerBlocks: completed: %s", peer)
+func (w *worker) writePeerBlocks(pr peer.Peer) error {
+	w.evHandler("worker: runPeerUpdatesOperation: writePeerBlocks: started: %s", pr)
+	defer w.evHandler("worker: runPeerUpdatesOperation: writePeerBlocks: completed: %s", pr)
 
 	from := w.state.CopyLatestBlock().Header.Number + 1
-	url := fmt.Sprintf("%s/block/list/%d/latest", fmt.Sprintf(w.baseURL, peer.Host), from)
+	url := fmt.Sprintf("%s/block/list/%d/latest", fmt.Sprintf(w.baseURL, pr.Host), from)
 
-	var blocks []Block
+	var blocks []storage.Block
 	if err := send(http.MethodGet, url, nil, &blocks); err != nil {
 		return err
 	}

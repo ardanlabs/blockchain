@@ -1,4 +1,6 @@
-package blockchain
+// Package state is the core API for the blockchain and implements all the
+// business rules and processing.
+package state
 
 import (
 	"context"
@@ -6,6 +8,13 @@ import (
 	"fmt"
 	"sync"
 	"time"
+
+	"github.com/ardanlabs/blockchain/foundation/blockchain/balance"
+	"github.com/ardanlabs/blockchain/foundation/blockchain/genesis"
+	"github.com/ardanlabs/blockchain/foundation/blockchain/mempool"
+	"github.com/ardanlabs/blockchain/foundation/blockchain/peer"
+	"github.com/ardanlabs/blockchain/foundation/blockchain/signature"
+	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
 )
 
 /*
@@ -48,7 +57,7 @@ type Config struct {
 	MinerAddress string
 	Host         string
 	DBPath       string
-	KnownPeers   *PeerSet
+	KnownPeers   *peer.PeerSet
 	EvHandler    EventHandler
 }
 
@@ -57,17 +66,17 @@ type State struct {
 	minerAddress string
 	host         string
 	dbPath       string
-	knownPeers   *PeerSet
+	knownPeers   *peer.PeerSet
 	evHandler    EventHandler
 
-	genesis      Genesis
-	storage      *storage
-	txMempool    *txMempool
-	latestBlock  Block
-	balanceSheet *BalanceSheet
+	genesis      genesis.Genesis
+	storage      *storage.Storage
+	mempool      *mempool.Mempool
+	latestBlock  storage.Block
+	balanceSheet *balance.Sheet
 	mu           sync.Mutex
 
-	powWorker *powWorker
+	worker *worker
 }
 
 // New constructs a new blockchain for data management.
@@ -75,46 +84,46 @@ func New(cfg Config) (*State, error) {
 
 	// Load the genesis file to get starting balances for
 	// founders of the block chain.
-	genesis, err := loadGenesis()
+	genesis, err := genesis.Load()
 	if err != nil {
 		return nil, err
 	}
 
 	// Access the storage for the blockchain.
-	storage, err := newStorage(cfg.DBPath)
+	strg, err := storage.New(cfg.DBPath)
 	if err != nil {
 		return nil, err
 	}
 
 	// Load all existing blocks from storage into memory for processing. This
 	// won't work in a system like Ethereum.
-	blocks, err := storage.readAllBlocks()
+	blocks, err := strg.ReadAllBlocks()
 	if err != nil {
 		return nil, err
 	}
 
 	// Keep the latest block from the blockchain.
-	var latestBlock Block
+	var latestBlock storage.Block
 	if len(blocks) > 0 {
 		latestBlock = blocks[len(blocks)-1]
 	}
 
 	// Create a new balance sheet from the genesis balances.
-	balanceSheet := newBalanceSheet(genesis.Balances)
+	sheet := balance.NewSheet(genesis.Balances)
 
 	// Process the blocks and transactions against the balance sheet.
 	for _, block := range blocks {
 		for _, tx := range block.Transactions {
 
 			// Apply the balance changes based for this transaction.
-			balanceSheet.applyTransaction(tx)
+			sheet.ApplyTransaction(tx)
 
 			// Apply the miner tip and gas fee for this transaction.
-			balanceSheet.applyMiningFee(block.Header.MinerAddress, tx)
+			sheet.ApplyMiningFee(block.Header.MinerAddress, tx)
 		}
 
 		// Apply the miner reward for this block.
-		balanceSheet.applyValue(block.Header.MinerAddress, genesis.MiningReward)
+		sheet.ApplyValue(block.Header.MinerAddress, genesis.MiningReward)
 	}
 
 	// Build a safe event handler function for use.
@@ -133,15 +142,14 @@ func New(cfg Config) (*State, error) {
 		evHandler:    ev,
 
 		genesis:      genesis,
-		storage:      storage,
-		txMempool:    newTxMempool(),
+		storage:      strg,
+		mempool:      mempool.New(),
 		latestBlock:  latestBlock,
-		balanceSheet: balanceSheet,
+		balanceSheet: sheet,
 	}
 
-	// Run the POW worker which will assign itself to
-	// this state.
-	runPOWWorker(&state, cfg.EvHandler)
+	// Run the worker which will assign itself to this state.
+	runWorker(&state, cfg.EvHandler)
 
 	return &state, nil
 }
@@ -151,11 +159,11 @@ func (s *State) Shutdown() error {
 
 	// Make sure the database file is properly closed.
 	defer func() {
-		s.storage.close()
+		s.storage.Close()
 	}()
 
 	// Stop all blockchain writing activity.
-	s.powWorker.shutdown()
+	s.worker.shutdown()
 
 	return nil
 }
@@ -163,8 +171,8 @@ func (s *State) Shutdown() error {
 // =============================================================================
 
 // SubmitWalletTransaction accepts a transaction from a wallet for inclusion.
-func (s *State) SubmitWalletTransaction(signedTx SignedTx) error {
-	tx := BlockTx{
+func (s *State) SubmitWalletTransaction(signedTx storage.SignedTx) error {
+	tx := storage.BlockTx{
 		SignedTx: signedTx,
 		Gas:      s.genesis.GasPrice,
 	}
@@ -173,25 +181,25 @@ func (s *State) SubmitWalletTransaction(signedTx SignedTx) error {
 		return err
 	}
 
-	n := s.txMempool.add(tx)
-	s.powWorker.signalShareTransactions(tx)
+	n := s.mempool.Add(tx)
+	s.worker.signalShareTransactions(tx)
 
 	if n >= s.genesis.TransPerBlock {
-		s.powWorker.signalStartMining()
+		s.worker.signalStartMining()
 	}
 
 	return nil
 }
 
 // SubmitNodeTransaction accepts a transaction from a node for inclusion.
-func (s *State) SubmitNodeTransaction(tx BlockTx) error {
+func (s *State) SubmitNodeTransaction(tx storage.BlockTx) error {
 	if err := tx.VerifySignature(); err != nil {
 		return err
 	}
 
-	n := s.txMempool.add(tx)
+	n := s.mempool.Add(tx)
 	if n >= s.genesis.TransPerBlock {
-		s.powWorker.signalStartMining()
+		s.worker.signalStartMining()
 	}
 
 	return nil
@@ -201,7 +209,7 @@ func (s *State) SubmitNodeTransaction(tx BlockTx) error {
 
 // WriteNextBlock takes a block received from a peer, validates it and
 // if that passes, writes the block to disk.
-func (s *State) WriteNextBlock(block Block) error {
+func (s *State) WriteNextBlock(block storage.Block) error {
 	s.evHandler("state: WriteNextBlock: started : block[%s]", block.Hash())
 	defer s.evHandler("state: WriteNextBlock: completed")
 
@@ -209,7 +217,7 @@ func (s *State) WriteNextBlock(block Block) error {
 	// immediately. The G executing runMiningOperation will not return from the
 	// function until done is called. That allows this function to complete
 	// its state changes before a new mining operation takes place.
-	done := s.powWorker.signalCancelMining()
+	done := s.worker.signalCancelMining()
 	defer func() {
 		s.evHandler("state: WriteNextBlock: signal runMiningOperation to terminate")
 		done()
@@ -220,7 +228,7 @@ func (s *State) WriteNextBlock(block Block) error {
 		return err
 	}
 
-	blockFS := blockFS{
+	blockFS := storage.BlockFS{
 		Hash:  hash,
 		Block: block,
 	}
@@ -232,7 +240,7 @@ func (s *State) WriteNextBlock(block Block) error {
 		s.evHandler("state: WriteNextBlock: write to disk")
 
 		// Write the new block to the chain on disk.
-		if err := s.storage.write(blockFS); err != nil {
+		if err := s.storage.Write(blockFS); err != nil {
 			return err
 		}
 
@@ -242,21 +250,21 @@ func (s *State) WriteNextBlock(block Block) error {
 		for _, tx := range block.Transactions {
 
 			// Apply the balance changes based for this transaction.
-			s.balanceSheet.applyTransaction(tx)
+			s.balanceSheet.ApplyTransaction(tx)
 
 			// Apply the miner tip and gas fee for this transaction.
-			s.balanceSheet.applyMiningFee(block.Header.MinerAddress, tx)
+			s.balanceSheet.ApplyMiningFee(block.Header.MinerAddress, tx)
 
 			s.evHandler("state: WriteNextBlock: remove from mempool: tx[%s]", tx.Hash())
 
 			// Remove the transaction from the mempool if it exists.
-			s.txMempool.delete(tx)
+			s.mempool.Delete(tx)
 		}
 
 		s.evHandler("state: WriteNextBlock: apply mining reward")
 
 		// Apply the miner reward for this block.
-		s.balanceSheet.applyValue(block.Header.MinerAddress, s.genesis.MiningReward)
+		s.balanceSheet.ApplyValue(block.Header.MinerAddress, s.genesis.MiningReward)
 
 		// Save this as the latest block.
 		s.latestBlock = block
@@ -267,12 +275,12 @@ func (s *State) WriteNextBlock(block Block) error {
 
 // validateNextBlock takes a block and validates it to be included into
 // the blockchain.
-func (s *State) validateNextBlock(block Block) (string, error) {
+func (s *State) validateNextBlock(block storage.Block) (string, error) {
 	s.evHandler("state: WriteNextBlock: validate: hash solved")
 
 	hash := block.Hash()
 	if !isHashSolved(s.genesis.Difficulty, hash) {
-		return zeroHash, fmt.Errorf("%s invalid hash", hash)
+		return signature.ZeroHash, fmt.Errorf("%s invalid hash", hash)
 	}
 
 	latestBlock := s.CopyLatestBlock()
@@ -283,26 +291,26 @@ func (s *State) validateNextBlock(block Block) (string, error) {
 	// The node who sent this block has a chain that is two or more blocks ahead
 	// of ours. This means there has been a fork and we are on the wrong side.
 	if block.Header.Number >= (nextNumber + 2) {
-		return zeroHash, ErrChainForked
+		return signature.ZeroHash, ErrChainForked
 	}
 
 	s.evHandler("state: WriteNextBlock: validate: block number")
 
 	if block.Header.Number != nextNumber {
-		return zeroHash, fmt.Errorf("this block is not the next number, got %d, exp %d", block.Header.Number, nextNumber)
+		return signature.ZeroHash, fmt.Errorf("this block is not the next number, got %d, exp %d", block.Header.Number, nextNumber)
 	}
 
 	s.evHandler("state: WriteNextBlock: validate: parent hash")
 
 	if block.Header.ParentHash != latestBlock.Hash() {
-		return zeroHash, fmt.Errorf("prev block doesn't match our latest, got %s, exp %s", block.Header.ParentHash, latestBlock.Hash())
+		return signature.ZeroHash, fmt.Errorf("prev block doesn't match our latest, got %s, exp %s", block.Header.ParentHash, latestBlock.Hash())
 	}
 
 	s.evHandler("state: WriteNextBlock: validate: transaction signatures")
 
 	for _, tx := range block.Transactions {
 		if err := tx.VerifySignature(); err != nil {
-			return zeroHash, fmt.Errorf("transaction has invalid signature, %w, tx[%v]", err, tx)
+			return signature.ZeroHash, fmt.Errorf("transaction has invalid signature, %w, tx[%v]", err, tx)
 		}
 	}
 
@@ -318,10 +326,10 @@ func (s *State) Truncate() error {
 	defer s.mu.Unlock()
 
 	// Reset the state of the database.
-	s.txMempool.truncate()
-	s.balanceSheet.reset(s.genesis.Balances)
-	s.latestBlock = Block{}
-	s.storage.reset()
+	s.mempool.Truncate()
+	s.balanceSheet.Reset(s.genesis.Balances)
+	s.latestBlock = storage.Block{}
+	s.storage.Reset()
 
 	return nil
 }
@@ -329,12 +337,12 @@ func (s *State) Truncate() error {
 // =============================================================================
 
 // CopyGenesis returns a copy of the genesis information.
-func (s *State) CopyGenesis() Genesis {
+func (s *State) CopyGenesis() genesis.Genesis {
 	return s.genesis
 }
 
 // CopyLatestBlock returns the current hash of the latest block.
-func (s *State) CopyLatestBlock() Block {
+func (s *State) CopyLatestBlock() storage.Block {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -342,19 +350,19 @@ func (s *State) CopyLatestBlock() Block {
 }
 
 // CopyMempool returns a copy of the mempool.
-func (s *State) CopyMempool() []BlockTx {
-	return s.txMempool.copy()
+func (s *State) CopyMempool() []storage.BlockTx {
+	return s.mempool.Copy()
 }
 
 // CopyBalanceSheet returns a copy of the balance sheet.
 func (s *State) CopyBalanceSheet() map[string]uint {
-	return s.balanceSheet.copy().sheet
+	return s.balanceSheet.Copy()
 }
 
 // CopyKnownPeers retrieves information about the peer for updating
 // the known peer list and their current block number.
-func (s *State) CopyKnownPeers() []Peer {
-	return s.knownPeers.copy(s.host)
+func (s *State) CopyKnownPeers() []peer.Peer {
+	return s.knownPeers.Copy(s.host)
 }
 
 // =============================================================================
@@ -364,32 +372,33 @@ const QueryLastest = ^uint64(0) >> 1
 
 // QueryBalances returns a copy of the set of balances by address.
 func (s *State) QueryBalances(address string) map[string]uint {
-	balanceSheet := s.balanceSheet.copy()
-	txMempool := s.txMempool.copy()
+	balanceSheet := s.balanceSheet.Clone()
+	mempool := s.mempool.Copy()
 
 	// Add transactions from the mempool for this balance statement.
-	for _, tx := range txMempool {
-		balanceSheet.applyTransaction(tx)
+	for _, tx := range mempool {
+		balanceSheet.ApplyTransaction(tx)
 	}
 
-	for addr := range balanceSheet.sheet {
+	cpy := balanceSheet.Copy()
+	for addr := range cpy {
 		if address != addr {
-			balanceSheet.remove(addr)
+			balanceSheet.Remove(addr)
 		}
 	}
 
-	return balanceSheet.sheet
+	return cpy
 }
 
 // QueryMempoolLength returns the current length of the mempool.
 func (s *State) QueryMempoolLength() int {
-	return s.txMempool.count()
+	return s.mempool.Count()
 }
 
 // QueryBlocksByNumber returns the set of blocks based on block numbers. This
 // function reads the blockchain from disk first.
-func (s *State) QueryBlocksByNumber(from uint64, to uint64) []Block {
-	blocks, err := s.storage.readAllBlocks()
+func (s *State) QueryBlocksByNumber(from uint64, to uint64) []storage.Block {
+	blocks, err := s.storage.ReadAllBlocks()
 	if err != nil {
 		return nil
 	}
@@ -399,7 +408,7 @@ func (s *State) QueryBlocksByNumber(from uint64, to uint64) []Block {
 		to = from
 	}
 
-	var out []Block
+	var out []storage.Block
 	for _, block := range blocks {
 		if block.Header.Number >= from && block.Header.Number <= to {
 			out = append(out, block)
@@ -412,13 +421,13 @@ func (s *State) QueryBlocksByNumber(from uint64, to uint64) []Block {
 // QueryBlocksByAddress returns the set of blocks by address. If the address
 // is empty, all blocks are returned. This function reads the blockchain
 // from disk first.
-func (s *State) QueryBlocksByAddress(address string) []Block {
-	blocks, err := s.storage.readAllBlocks()
+func (s *State) QueryBlocksByAddress(address string) []storage.Block {
+	blocks, err := s.storage.ReadAllBlocks()
 	if err != nil {
 		return nil
 	}
 
-	var out []Block
+	var out []storage.Block
 blocks:
 	for _, block := range blocks {
 		for _, tx := range block.Transactions {
@@ -439,10 +448,10 @@ blocks:
 // =============================================================================
 
 // addPeerNode adds an address to the list of peers.
-func (s *State) addPeerNode(peer Peer) error {
+func (s *State) addPeerNode(peer peer.Peer) error {
 
 	// Don't add this node to the known peer list.
-	if peer.match(s.host) {
+	if peer.Match(s.host) {
 		return errors.New("already exists")
 	}
 
@@ -453,33 +462,34 @@ func (s *State) addPeerNode(peer Peer) error {
 // =============================================================================
 
 // MineNewBlock writes the published transaction from the memory pool to disk.
-func (s *State) MineNewBlock(ctx context.Context) (Block, time.Duration, error) {
+func (s *State) MineNewBlock(ctx context.Context) (storage.Block, time.Duration, error) {
 	s.evHandler("worker: runMiningOperation: MINING: check mempool count")
 
 	// Are there enough transactions in the pool.
-	if s.txMempool.count() < s.genesis.TransPerBlock {
-		return Block{}, 0, ErrNotEnoughTransactions
+	if s.mempool.Count() < s.genesis.TransPerBlock {
+		return storage.Block{}, 0, ErrNotEnoughTransactions
 	}
 
 	s.evHandler("worker: runMiningOperation: MINING: create new block")
 
 	// Create a new block which owns it's own copy of the transactions.
-	nb := newBlock(s.minerAddress, s.genesis.Difficulty, s.genesis.TransPerBlock, s.CopyLatestBlock(), s.txMempool)
+	trans := s.mempool.CopyBestByTip(s.genesis.TransPerBlock)
+	nb := storage.NewBlock(s.minerAddress, s.genesis.Difficulty, s.genesis.TransPerBlock, s.CopyLatestBlock(), trans)
 
 	s.evHandler("worker: runMiningOperation: MINING: copy balance sheet and update")
 
 	// Process the transactions against the balance sheet.
-	balanceSheet := s.balanceSheet.copy()
+	balanceSheet := s.balanceSheet.Clone()
 	for _, tx := range nb.Transactions {
 
 		// Apply the balance changes based on this transaction.
-		if err := balanceSheet.applyTransaction(tx); err != nil {
+		if err := balanceSheet.ApplyTransaction(tx); err != nil {
 			s.evHandler("worker: runMiningOperation: MINING: WARNING : %s", err)
 			continue
 		}
 
 		// Apply the miner tip and gas fee for this transaction.
-		balanceSheet.applyMiningFee(s.minerAddress, tx)
+		balanceSheet.ApplyMiningFee(s.minerAddress, tx)
 
 		// Update the total gas and tip fees.
 		nb.Header.TotalGas += tx.Gas
@@ -487,7 +497,7 @@ func (s *State) MineNewBlock(ctx context.Context) (Block, time.Duration, error) 
 	}
 
 	// Apply the miner reward for this block.
-	balanceSheet.applyValue(s.minerAddress, s.genesis.MiningReward)
+	balanceSheet.ApplyValue(s.minerAddress, s.genesis.MiningReward)
 
 	s.evHandler("worker: runMiningOperation: MINING: perform POW")
 
@@ -495,12 +505,12 @@ func (s *State) MineNewBlock(ctx context.Context) (Block, time.Duration, error) 
 	// This can be cancelled.
 	blockFS, duration, err := performPOW(ctx, s.genesis.Difficulty, nb, s.evHandler)
 	if err != nil {
-		return Block{}, duration, err
+		return storage.Block{}, duration, err
 	}
 
 	// Just check one more time we were not cancelled.
 	if ctx.Err() != nil {
-		return Block{}, duration, ctx.Err()
+		return storage.Block{}, duration, ctx.Err()
 	}
 
 	// I want to make sure all these state changes are done atomically.
@@ -510,19 +520,19 @@ func (s *State) MineNewBlock(ctx context.Context) (Block, time.Duration, error) 
 		s.evHandler("worker: runMiningOperation: MINING: write to disk")
 
 		// Write the new block to the chain on disk.
-		if err := s.storage.write(blockFS); err != nil {
-			return Block{}, duration, err
+		if err := s.storage.Write(blockFS); err != nil {
+			return storage.Block{}, duration, err
 		}
 
 		s.evHandler("worker: runMiningOperation: MINING: apply new balance sheet")
 
-		s.balanceSheet.replace(balanceSheet)
+		s.balanceSheet.Replace(balanceSheet)
 		s.latestBlock = blockFS.Block
 
 		// Remove the transactions from this block.
 		for _, tx := range nb.Transactions {
 			s.evHandler("worker: runMiningOperation: MINING: remove from mempool: tx[%s]", tx.Hash())
-			s.txMempool.delete(tx)
+			s.mempool.Delete(tx)
 		}
 	}
 

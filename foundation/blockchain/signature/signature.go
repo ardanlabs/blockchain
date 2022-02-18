@@ -1,4 +1,6 @@
-package blockchain
+// Package signature provides helper functions for handling the blockchain
+// signature needs.
+package signature
 
 import (
 	"crypto/ecdsa"
@@ -12,6 +14,9 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
+// ZeroHash represents a hash code of zeros.
+const ZeroHash string = "00000000000000000000000000000000"
+
 // ardanID is an arbitrary number for signing messages. This will make it
 // clear that the signature comes from the Ardan blockchain.
 // Ethereum and Bitcoin do this as well, but they use the value of 27.
@@ -20,44 +25,18 @@ const ardanID = 29
 // =============================================================================
 
 // hash returns a unique string for the value.
-func hash(value interface{}) string {
+func Hash(value interface{}) string {
 	data, err := json.Marshal(value)
 	if err != nil {
-		return zeroHash
+		return ZeroHash
 	}
 
 	hash := sha256.Sum256(data)
 	return hex.EncodeToString(hash[:])
 }
 
-// stamp returns a hash of 32 bytes that represents this user
-// transaction with the Ardan stamp embedded into the final hash.
-func stamp(value interface{}) ([]byte, error) {
-
-	// Marshal the data.
-	data, err := json.Marshal(value)
-	if err != nil {
-		return nil, err
-	}
-
-	// Hash the transaction data into a 32 byte array. This will provide
-	// a data length consistency with all transactions.
-	txHash := crypto.Keccak256Hash(data)
-
-	// Convert the stamp into a slice of bytes. This stamp is
-	// used so signatures we produce when signing transactions
-	// are always unique to the Ardan blockchain.
-	stamp := []byte("\x19Ardan Signed Message:\n32")
-
-	// Hash the stamp and txHash together in a final 32 byte array
-	// that represents the transaction data.
-	tran := crypto.Keccak256Hash(stamp, txHash.Bytes())
-
-	return tran.Bytes(), nil
-}
-
-// sign uses the specified private key to sign the user transaction.
-func sign(value interface{}, privateKey *ecdsa.PrivateKey) (v, r, s *big.Int, err error) {
+// Sign uses the specified private key to sign the user transaction.
+func Sign(value interface{}, privateKey *ecdsa.PrivateKey) (v, r, s *big.Int, err error) {
 
 	// Prepare the transaction for signing.
 	data, err := stamp(value)
@@ -77,9 +56,9 @@ func sign(value interface{}, privateKey *ecdsa.PrivateKey) (v, r, s *big.Int, er
 	return v, r, s, nil
 }
 
-// verifySignature verifies the signature conforms to our standards and
+// VerifySignature verifies the signature conforms to our standards and
 // is associated with the data claimed to be signed.
-func verifySignature(value interface{}, v, r, s *big.Int) error {
+func VerifySignature(value interface{}, v, r, s *big.Int) error {
 
 	// Check the recovery id is either 0 or 1.
 	uintV := v.Uint64() - ardanID
@@ -116,8 +95,8 @@ func verifySignature(value interface{}, v, r, s *big.Int) error {
 	return nil
 }
 
-// fromAddress extracts the address for the account that signed the transaction.
-func fromAddress(value interface{}, v, r, s *big.Int) (string, error) {
+// FromAddress extracts the address for the account that signed the transaction.
+func FromAddress(value interface{}, v, r, s *big.Int) (string, error) {
 
 	// Prepare the transaction for public key extraction.
 	tran, err := stamp(value)
@@ -138,9 +117,37 @@ func fromAddress(value interface{}, v, r, s *big.Int) (string, error) {
 	return crypto.PubkeyToAddress(*publicKey).String(), nil
 }
 
-// signatureString returns the signature as a string.
-func signatureString(v, r, s *big.Int) string {
+// SignatureString returns the signature as a string.
+func SignatureString(v, r, s *big.Int) string {
 	return "0x" + hex.EncodeToString(toSignatureBytesForDisplay(v, r, s))
+}
+
+// =============================================================================
+
+// stamp returns a hash of 32 bytes that represents this user
+// transaction with the Ardan stamp embedded into the final hash.
+func stamp(value interface{}) ([]byte, error) {
+
+	// Marshal the data.
+	data, err := json.Marshal(value)
+	if err != nil {
+		return nil, err
+	}
+
+	// Hash the transaction data into a 32 byte array. This will provide
+	// a data length consistency with all transactions.
+	txHash := crypto.Keccak256Hash(data)
+
+	// Convert the stamp into a slice of bytes. This stamp is
+	// used so signatures we produce when signing transactions
+	// are always unique to the Ardan blockchain.
+	stamp := []byte("\x19Ardan Signed Message:\n32")
+
+	// Hash the stamp and txHash together in a final 32 byte array
+	// that represents the transaction data.
+	tran := crypto.Keccak256Hash(stamp, txHash.Bytes())
+
+	return tran.Bytes(), nil
 }
 
 // toSignatureValues converts the signature into the r, s, v values.

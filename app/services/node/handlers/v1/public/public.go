@@ -7,7 +7,8 @@ import (
 	"net/http"
 
 	v1 "github.com/ardanlabs/blockchain/business/web/v1"
-	"github.com/ardanlabs/blockchain/foundation/blockchain"
+	"github.com/ardanlabs/blockchain/foundation/blockchain/state"
+	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
 	"github.com/ardanlabs/blockchain/foundation/nameservice"
 	"github.com/ardanlabs/blockchain/foundation/web"
 	"go.uber.org/zap"
@@ -15,9 +16,9 @@ import (
 
 // Handlers manages the set of bar ledger endpoints.
 type Handlers struct {
-	Log *zap.SugaredLogger
-	BC  *blockchain.State
-	NS  *nameservice.NameService
+	Log   *zap.SugaredLogger
+	State *state.State
+	NS    *nameservice.NameService
 }
 
 // SubmitWalletTransaction adds new user transactions to the mempool.
@@ -27,13 +28,13 @@ func (h Handlers) SubmitWalletTransaction(ctx context.Context, w http.ResponseWr
 		return web.NewShutdownError("web value missing from context")
 	}
 
-	var signedTx blockchain.SignedTx
+	var signedTx storage.SignedTx
 	if err := web.Decode(r, &signedTx); err != nil {
 		return fmt.Errorf("unable to decode payload: %w", err)
 	}
 
 	h.Log.Infow("add user tran", "traceid", v.TraceID, "tx", signedTx.SignatureString()[:16])
-	if err := h.BC.SubmitWalletTransaction(signedTx); err != nil {
+	if err := h.State.SubmitWalletTransaction(signedTx); err != nil {
 		return v1.NewRequestError(err, http.StatusBadRequest)
 	}
 
@@ -48,13 +49,13 @@ func (h Handlers) SubmitWalletTransaction(ctx context.Context, w http.ResponseWr
 
 // Genesis returns the genesis information.
 func (h Handlers) Genesis(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	gen := h.BC.CopyGenesis()
+	gen := h.State.CopyGenesis()
 	return web.Respond(ctx, w, gen, http.StatusOK)
 }
 
 // Mempool returns the set of uncommitted transactions.
 func (h Handlers) Mempool(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	txs := h.BC.CopyMempool()
+	txs := h.State.CopyMempool()
 	return web.Respond(ctx, w, txs, http.StatusOK)
 }
 
@@ -64,9 +65,9 @@ func (h Handlers) Balances(ctx context.Context, w http.ResponseWriter, r *http.R
 	var balanceSheet map[string]uint
 
 	if address == "" {
-		balanceSheet = h.BC.CopyBalanceSheet()
+		balanceSheet = h.State.CopyBalanceSheet()
 	} else {
-		balanceSheet = h.BC.QueryBalances(address)
+		balanceSheet = h.State.QueryBalances(address)
 	}
 
 	bals := make([]balance, 0, len(balanceSheet))
@@ -80,8 +81,8 @@ func (h Handlers) Balances(ctx context.Context, w http.ResponseWriter, r *http.R
 	}
 
 	balances := balances{
-		LastestBlock: h.BC.CopyLatestBlock().Hash(),
-		Uncommitted:  len(h.BC.CopyMempool()),
+		LastestBlock: h.State.CopyLatestBlock().Hash(),
+		Uncommitted:  len(h.State.CopyMempool()),
 		Balances:     bals,
 	}
 
@@ -92,7 +93,7 @@ func (h Handlers) Balances(ctx context.Context, w http.ResponseWriter, r *http.R
 func (h Handlers) BlocksByAddress(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	address := web.Param(r, "address")
 
-	dbBlocks := h.BC.QueryBlocksByAddress(address)
+	dbBlocks := h.State.QueryBlocksByAddress(address)
 	if len(dbBlocks) == 0 {
 		return web.Respond(ctx, w, nil, http.StatusNoContent)
 	}

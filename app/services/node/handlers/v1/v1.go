@@ -7,7 +7,7 @@ import (
 
 	"github.com/ardanlabs/blockchain/app/services/node/handlers/v1/private"
 	"github.com/ardanlabs/blockchain/app/services/node/handlers/v1/public"
-	"github.com/ardanlabs/blockchain/foundation/blockchain"
+	"github.com/ardanlabs/blockchain/foundation/blockchain/state"
 	"github.com/ardanlabs/blockchain/foundation/nameservice"
 	"github.com/ardanlabs/blockchain/foundation/web"
 	"go.uber.org/zap"
@@ -17,17 +17,17 @@ const version = "v1"
 
 // Config contains all the mandatory systems required by handlers.
 type Config struct {
-	Log *zap.SugaredLogger
-	BC  *blockchain.State
-	NS  *nameservice.NameService
+	Log   *zap.SugaredLogger
+	State *state.State
+	NS    *nameservice.NameService
 }
 
 // PublicRoutes binds all the version 1 public routes.
 func PublicRoutes(app *web.App, cfg Config) {
 	pbl := public.Handlers{
-		Log: cfg.Log,
-		BC:  cfg.BC,
-		NS:  cfg.NS,
+		Log:   cfg.Log,
+		State: cfg.State,
+		NS:    cfg.NS,
 	}
 
 	app.Handle(http.MethodGet, version, "/genesis/list", pbl.Genesis)
@@ -42,9 +42,9 @@ func PublicRoutes(app *web.App, cfg Config) {
 // PrivateRoutes binds all the version 1 private routes.
 func PrivateRoutes(app *web.App, cfg Config) {
 	prv := private.Handlers{
-		Log: cfg.Log,
-		BC:  cfg.BC,
-		NS:  cfg.NS,
+		Log:   cfg.Log,
+		State: cfg.State,
+		NS:    cfg.NS,
 	}
 
 	app.Handle(http.MethodGet, version, "/node/status", prv.Status)

@@ -8,7 +8,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/ardanlabs/blockchain/foundation/blockchain"
+	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/spf13/cobra"
 )
@@ -45,7 +45,7 @@ func sendWithFile(privateKey *ecdsa.PrivateKey) {
 }
 
 func sendWithDetails(privateKey *ecdsa.PrivateKey) {
-	userTx := blockchain.UserTx{
+	userTx := storage.UserTx{
 		To:    to,
 		Value: value,
 		Tip:   tip,

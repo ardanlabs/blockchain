@@ -1,4 +1,6 @@
-package blockchain
+// Package peer maintains the peer related information such as the set
+// of know peers and their status.
+package peer
 
 import "sync"
 
@@ -7,15 +9,15 @@ type Peer struct {
 	Host string
 }
 
-// NewPeer contructs a new info value.
-func NewPeer(host string) Peer {
+// New contructs a new info value.
+func New(host string) Peer {
 	return Peer{
 		Host: host,
 	}
 }
 
-// match validates if the specified host matches this node.
-func (p Peer) match(host string) bool {
+// Match validates if the specified host matches this node.
+func (p Peer) Match(host string) bool {
 	return p.Host == host
 }
 
@@ -54,14 +56,14 @@ func (ps *PeerSet) Add(peer Peer) {
 	}
 }
 
-// copy returns a list of the known peers.
-func (ps *PeerSet) copy(host string) []Peer {
+// Copy returns a list of the known peers.
+func (ps *PeerSet) Copy(host string) []Peer {
 	ps.mu.RLock()
 	defer ps.mu.RUnlock()
 
 	var peers []Peer
 	for peer := range ps.set {
-		if !peer.match(host) {
+		if !peer.Match(host) {
 			peers = append(peers, peer)
 		}
 	}

@@ -11,7 +11,8 @@ import (
 	"time"
 
 	"github.com/ardanlabs/blockchain/app/services/node/handlers"
-	"github.com/ardanlabs/blockchain/foundation/blockchain"
+	"github.com/ardanlabs/blockchain/foundation/blockchain/peer"
+	"github.com/ardanlabs/blockchain/foundation/blockchain/state"
 	"github.com/ardanlabs/blockchain/foundation/logger"
 	"github.com/ardanlabs/blockchain/foundation/nameservice"
 	"github.com/ardanlabs/conf/v3"
@@ -115,9 +116,9 @@ func run(log *zap.SugaredLogger) error {
 	}
 	address := crypto.PubkeyToAddress(privateKey.PublicKey)
 
-	peerSet := blockchain.NewPeerSet()
+	peerSet := peer.NewPeerSet()
 	for _, host := range cfg.Node.KnownPeers {
-		peerSet.Add(blockchain.NewPeer(host))
+		peerSet.Add(peer.New(host))
 	}
 
 	ev := func(v string, args ...interface{}) {
@@ -125,7 +126,7 @@ func run(log *zap.SugaredLogger) error {
 		log.Infow(s, "traceid", "00000000-0000-0000-0000-000000000000")
 	}
 
-	bc, err := blockchain.New(blockchain.Config{
+	state, err := state.New(state.Config{
 		MinerAddress: address.String(),
 		Host:         cfg.Web.PrivateHost,
 		DBPath:       cfg.Node.DBPath,
@@ -135,7 +136,7 @@ func run(log *zap.SugaredLogger) error {
 	if err != nil {
 		return err
 	}
-	defer bc.Shutdown()
+	defer state.Shutdown()
 
 	// =========================================================================
 	// Start Debug Service
@@ -177,7 +178,7 @@ func run(log *zap.SugaredLogger) error {
 	publicMux := handlers.PublicMux(handlers.MuxConfig{
 		Shutdown: shutdown,
 		Log:      log,
-		BC:       bc,
+		State:    state,
 		NS:       ns,
 	})
 
@@ -206,7 +207,7 @@ func run(log *zap.SugaredLogger) error {
 	privateMux := handlers.PrivateMux(handlers.MuxConfig{
 		Shutdown: shutdown,
 		Log:      log,
-		BC:       bc,
+		State:    state,
 	})
 
 	// Construct a server to service the requests against the mux.

@@ -1,4 +1,6 @@
-package blockchain
+// Package storage handles all the lower level support for maintaining the
+// blockchain on disk.
+package storage
 
 import (
 	"bufio"
@@ -8,15 +10,15 @@ import (
 	"sync"
 )
 
-// storage manages reading and writing of blocks to storage.
-type storage struct {
+// Storage manages reading and writing of blocks to storage.
+type Storage struct {
 	dbPath string
 	dbFile *os.File
 	mu     sync.Mutex
 }
 
-// newStorage provides access to blockchain storage.
-func newStorage(dbPath string) (*storage, error) {
+// New provides access to blockchain storage.
+func New(dbPath string) (*Storage, error) {
 
 	// Open the blockchain database file with append.
 	dbFile, err := os.OpenFile(dbPath, os.O_APPEND|os.O_RDWR, 0600)
@@ -24,7 +26,7 @@ func newStorage(dbPath string) (*storage, error) {
 		return nil, err
 	}
 
-	strg := storage{
+	strg := Storage{
 		dbPath: dbPath,
 		dbFile: dbFile,
 	}
@@ -33,7 +35,7 @@ func newStorage(dbPath string) (*storage, error) {
 }
 
 // Close cleanly releases the storage area.
-func (str *storage) close() {
+func (str *Storage) Close() {
 	str.mu.Lock()
 	defer str.mu.Unlock()
 
@@ -42,8 +44,8 @@ func (str *storage) close() {
 
 // =============================================================================
 
-// reset create a new storage area for the blockchain to start new.
-func (str *storage) reset() error {
+// Reset create a new storage area for the blockchain to start new.
+func (str *Storage) Reset() error {
 	str.mu.Lock()
 	defer str.mu.Unlock()
 
@@ -62,8 +64,8 @@ func (str *storage) reset() error {
 	return nil
 }
 
-// write adds a new block to the chain.
-func (str *storage) write(block blockFS) error {
+// Write adds a new block to the chain.
+func (str *Storage) Write(block BlockFS) error {
 	str.mu.Lock()
 	defer str.mu.Unlock()
 
@@ -83,9 +85,9 @@ func (str *storage) write(block blockFS) error {
 
 // =============================================================================
 
-// readAllBlocks loads all existing blocks from storage into memory. In a real
+// ReadAllBlocks loads all existing blocks from storage into memory. In a real
 // world situation this would require a lot of memory.
-func (str *storage) readAllBlocks() ([]Block, error) {
+func (str *Storage) ReadAllBlocks() ([]Block, error) {
 	dbFile, err := os.Open(str.dbPath)
 	if err != nil {
 		return nil, err
@@ -100,7 +102,7 @@ func (str *storage) readAllBlocks() ([]Block, error) {
 			return nil, err
 		}
 
-		var blockFS blockFS
+		var blockFS BlockFS
 		if err := json.Unmarshal(scanner.Bytes(), &blockFS); err != nil {
 			return nil, err
 		}

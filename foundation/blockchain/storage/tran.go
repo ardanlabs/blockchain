@@ -1,8 +1,10 @@
-package blockchain
+package storage
 
 import (
 	"crypto/ecdsa"
 	"math/big"
+
+	"github.com/ardanlabs/blockchain/foundation/blockchain/signature"
 )
 
 // Set of transaction data types.
@@ -24,7 +26,7 @@ type UserTx struct {
 func (tx UserTx) Sign(privateKey *ecdsa.PrivateKey) (SignedTx, error) {
 
 	// Sign the hash with the private key to produce a signature.
-	v, r, s, err := sign(tx, privateKey)
+	v, r, s, err := signature.Sign(tx, privateKey)
 	if err != nil {
 		return SignedTx{}, err
 	}
@@ -53,17 +55,17 @@ type SignedTx struct {
 // VerifySignature verifies the signature conforms to our standards and
 // is associated with the data claimed to be signed.
 func (tx SignedTx) VerifySignature() error {
-	return verifySignature(tx.UserTx, tx.V, tx.R, tx.S)
+	return signature.VerifySignature(tx.UserTx, tx.V, tx.R, tx.S)
 }
 
 // FromAddress extracts the address for the account that signed the transaction.
 func (tx SignedTx) FromAddress() (string, error) {
-	return fromAddress(tx.UserTx, tx.V, tx.R, tx.S)
+	return signature.FromAddress(tx.UserTx, tx.V, tx.R, tx.S)
 }
 
 // Signature returns the signature as a string.
 func (tx SignedTx) SignatureString() string {
-	return signatureString(tx.V, tx.R, tx.S)
+	return signature.SignatureString(tx.V, tx.R, tx.S)
 }
 
 // =============================================================================
@@ -76,5 +78,5 @@ type BlockTx struct {
 
 // Hash returns the unique hash for the BlockTx.
 func (tx BlockTx) Hash() string {
-	return hash(tx)
+	return signature.Hash(tx)
 }

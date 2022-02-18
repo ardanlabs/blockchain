@@ -1,4 +1,5 @@
-package blockchain
+// Package genesis maintains access to the genesis file.
+package genesis
 
 import (
 	"encoding/json"
@@ -19,8 +20,8 @@ type Genesis struct {
 
 // =============================================================================
 
-// loadGenesis opens and consumes the genesis file.
-func loadGenesis() (Genesis, error) {
+// Load opens and consumes the genesis file.
+func Load() (Genesis, error) {
 	path := "zblock/genesis.json"
 	content, err := os.ReadFile(path)
 	if err != nil {
