@@ -67,8 +67,8 @@ func (bs *Sheet) Clone() *Sheet {
 	return balanceSheet
 }
 
-// Copy makes a copy of the current balance sheet but returns the raw data.
-func (bs *Sheet) Copy() map[string]uint {
+// Values makes a copy of the current balance sheet but returns the raw values.
+func (bs *Sheet) Values() map[string]uint {
 	bs.mu.Lock()
 	defer bs.mu.Unlock()
 

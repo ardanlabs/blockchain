@@ -283,7 +283,7 @@ func (s *State) validateNextBlock(block storage.Block) (string, error) {
 		return signature.ZeroHash, fmt.Errorf("%s invalid hash", hash)
 	}
 
-	latestBlock := s.CopyLatestBlock()
+	latestBlock := s.RetrieveLatestBlock()
 	nextNumber := latestBlock.Header.Number + 1
 
 	s.evHandler("state: WriteNextBlock: validate: chain not forked")
@@ -336,32 +336,31 @@ func (s *State) Truncate() error {
 
 // =============================================================================
 
-// CopyGenesis returns a copy of the genesis information.
-func (s *State) CopyGenesis() genesis.Genesis {
+// RetrieveGenesis returns a copy of the genesis information.
+func (s *State) RetrieveGenesis() genesis.Genesis {
 	return s.genesis
 }
 
-// CopyLatestBlock returns the current hash of the latest block.
-func (s *State) CopyLatestBlock() storage.Block {
+// RetrieveLatestBlock returns a copy the current latest block.
+func (s *State) RetrieveLatestBlock() storage.Block {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	return s.latestBlock
 }
 
-// CopyMempool returns a copy of the mempool.
-func (s *State) CopyMempool() []storage.BlockTx {
+// RetrieveMempool returns a copy of the mempool.
+func (s *State) RetrieveMempool() []storage.BlockTx {
 	return s.mempool.Copy()
 }
 
-// CopyBalanceSheet returns a copy of the balance sheet.
-func (s *State) CopyBalanceSheet() map[string]uint {
-	return s.balanceSheet.Copy()
+// RetrieveBalanceSheetValues returns a copy of the balance sheet values.
+func (s *State) RetrieveBalanceSheetValues() map[string]uint {
+	return s.balanceSheet.Values()
 }
 
-// CopyKnownPeers retrieves information about the peer for updating
-// the known peer list and their current block number.
-func (s *State) CopyKnownPeers() []peer.Peer {
+// RetrieveKnownPeers retrieves a copy of the known peer list.
+func (s *State) RetrieveKnownPeers() []peer.Peer {
 	return s.knownPeers.Copy(s.host)
 }
 
@@ -380,7 +379,7 @@ func (s *State) QueryBalances(address string) map[string]uint {
 		balanceSheet.ApplyTransaction(tx)
 	}
 
-	cpy := balanceSheet.Copy()
+	cpy := balanceSheet.Values()
 	for addr := range cpy {
 		if address != addr {
 			balanceSheet.Remove(addr)
@@ -474,7 +473,7 @@ func (s *State) MineNewBlock(ctx context.Context) (storage.Block, time.Duration,
 
 	// Create a new block which owns it's own copy of the transactions.
 	trans := s.mempool.CopyBestByTip(s.genesis.TransPerBlock)
-	nb := storage.NewBlock(s.minerAddress, s.genesis.Difficulty, s.genesis.TransPerBlock, s.CopyLatestBlock(), trans)
+	nb := storage.NewBlock(s.minerAddress, s.genesis.Difficulty, s.genesis.TransPerBlock, s.RetrieveLatestBlock(), trans)
 
 	s.evHandler("worker: runMiningOperation: MINING: copy balance sheet and update")
 

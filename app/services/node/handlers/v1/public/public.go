@@ -49,13 +49,13 @@ func (h Handlers) SubmitWalletTransaction(ctx context.Context, w http.ResponseWr
 
 // Genesis returns the genesis information.
 func (h Handlers) Genesis(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	gen := h.State.CopyGenesis()
+	gen := h.State.RetrieveGenesis()
 	return web.Respond(ctx, w, gen, http.StatusOK)
 }
 
 // Mempool returns the set of uncommitted transactions.
 func (h Handlers) Mempool(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	txs := h.State.CopyMempool()
+	txs := h.State.RetrieveMempool()
 	return web.Respond(ctx, w, txs, http.StatusOK)
 }
 
@@ -65,7 +65,7 @@ func (h Handlers) Balances(ctx context.Context, w http.ResponseWriter, r *http.R
 	var balanceSheet map[string]uint
 
 	if address == "" {
-		balanceSheet = h.State.CopyBalanceSheet()
+		balanceSheet = h.State.RetrieveBalanceSheetValues()
 	} else {
 		balanceSheet = h.State.QueryBalances(address)
 	}
@@ -81,8 +81,8 @@ func (h Handlers) Balances(ctx context.Context, w http.ResponseWriter, r *http.R
 	}
 
 	balances := balances{
-		LastestBlock: h.State.CopyLatestBlock().Hash(),
-		Uncommitted:  len(h.State.CopyMempool()),
+		LastestBlock: h.State.RetrieveLatestBlock().Hash(),
+		Uncommitted:  len(h.State.RetrieveMempool()),
 		Balances:     bals,
 	}
 

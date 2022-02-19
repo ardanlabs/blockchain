@@ -116,7 +116,7 @@ func (w *worker) sync() {
 	w.evHandler("worker: sync: started")
 	defer w.evHandler("worker: sync: completed")
 
-	for _, peer := range w.state.CopyKnownPeers() {
+	for _, peer := range w.state.RetrieveKnownPeers() {
 
 		// Retrieve the status of this peer.
 		peerStatus, err := w.queryPeerStatus(peer)
@@ -140,7 +140,7 @@ func (w *worker) sync() {
 		}
 
 		// If this peer has blocks we don't have, we need to add them.
-		if peerStatus.LatestBlockNumber > w.state.CopyLatestBlock().Header.Number {
+		if peerStatus.LatestBlockNumber > w.state.RetrieveLatestBlock().Header.Number {
 			w.evHandler("worker: sync: writePeerBlocks: %s: latestBlockNumber[%d]", peer.Host, peerStatus.LatestBlockNumber)
 			if err := w.writePeerBlocks(peer); err != nil {
 				w.evHandler("worker: sync: writePeerBlocks: %s: ERROR %s", peer.Host, err)
@@ -275,7 +275,7 @@ func (w *worker) runShareTxOperation(tx storage.BlockTx) {
 	w.evHandler("worker: runShareTxOperation: started")
 	defer w.evHandler("worker: runShareTxOperation: completed")
 
-	for _, peer := range w.state.CopyKnownPeers() {
+	for _, peer := range w.state.RetrieveKnownPeers() {
 		url := fmt.Sprintf("%s/tx/submit", fmt.Sprintf(w.baseURL, peer.Host))
 		if err := send(http.MethodPost, url, tx, nil); err != nil {
 			w.evHandler("worker: runShareTxOperation: WARNING: %s", err)
@@ -386,7 +386,7 @@ func (w *worker) sendBlockToPeers(block storage.Block) error {
 	w.evHandler("worker: runMiningOperation: MINING: sendBlockToPeers: started")
 	defer w.evHandler("worker: runMiningOperation: MINING: sendBlockToPeers: completed")
 
-	for _, peer := range w.state.CopyKnownPeers() {
+	for _, peer := range w.state.RetrieveKnownPeers() {
 		url := fmt.Sprintf("%s/block/next", fmt.Sprintf(w.baseURL, peer.Host))
 
 		var status struct {
@@ -411,7 +411,7 @@ func (w *worker) runFindNewPeersOperation() {
 	w.evHandler("worker: runFindNewPeersOperation: started")
 	defer w.evHandler("worker: runFindNewPeersOperation: completed")
 
-	for _, peer := range w.state.CopyKnownPeers() {
+	for _, peer := range w.state.RetrieveKnownPeers() {
 
 		// Retrieve the status of this peer.
 		peerStatus, err := w.queryPeerStatus(peer)
@@ -485,7 +485,7 @@ func (w *worker) writePeerBlocks(pr peer.Peer) error {
 	w.evHandler("worker: runPeerUpdatesOperation: writePeerBlocks: started: %s", pr)
 	defer w.evHandler("worker: runPeerUpdatesOperation: writePeerBlocks: completed: %s", pr)
 
-	from := w.state.CopyLatestBlock().Header.Number + 1
+	from := w.state.RetrieveLatestBlock().Header.Number + 1
 	url := fmt.Sprintf("%s/block/list/%d/latest", fmt.Sprintf(w.baseURL, pr.Host), from)
 
 	var blocks []storage.Block
