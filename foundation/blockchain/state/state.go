@@ -109,7 +109,7 @@ func New(cfg Config) (*State, error) {
 	}
 
 	// Create a new balance sheet from the genesis balances.
-	sheet := balance.NewSheet(genesis.Balances)
+	sheet := balance.NewSheet(genesis.MiningReward, genesis.Balances)
 
 	// Process the blocks and transactions against the balance sheet.
 	for _, block := range blocks {
@@ -119,8 +119,8 @@ func New(cfg Config) (*State, error) {
 			sheet.ApplyTransaction(block.Header.MinerAddress, tx)
 		}
 
-		// Apply the miner reward for this block.
-		sheet.ApplyValue(block.Header.MinerAddress, genesis.MiningReward)
+		// Apply the mining reward for this block.
+		sheet.ApplyMiningReward(block.Header.MinerAddress)
 	}
 
 	// Build a safe event handler function for use.
@@ -257,8 +257,8 @@ func (s *State) WriteNextBlock(block storage.Block) error {
 
 		s.evHandler("state: WriteNextBlock: apply mining reward")
 
-		// Apply the miner reward for this block.
-		s.balanceSheet.ApplyValue(block.Header.MinerAddress, s.genesis.MiningReward)
+		// Apply the mining reward for this block.
+		s.balanceSheet.ApplyMiningReward(block.Header.MinerAddress)
 
 		// Save this as the latest block.
 		s.latestBlock = block
@@ -480,8 +480,8 @@ func (s *State) MineNewBlock(ctx context.Context) (storage.Block, time.Duration,
 		nb.Header.TotalTip += tx.Tip
 	}
 
-	// Apply the miner reward for this block.
-	balanceSheet.ApplyValue(s.minerAddress, s.genesis.MiningReward)
+	// Apply the mining reward for this block.
+	balanceSheet.ApplyMiningReward(s.minerAddress)
 
 	s.evHandler("worker: runMiningOperation: MINING: perform POW")
 

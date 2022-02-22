@@ -10,15 +10,17 @@ import (
 
 // Sheet represents the data representation to maintain address balances.
 type Sheet struct {
-	sheet map[string]uint
-	mu    sync.RWMutex
+	miningReward uint
+	sheet        map[string]uint
+	mu           sync.RWMutex
 }
 
 // NewSheet constructs a new balance sheet for use, expects a starting
 // balance sheet usually from a genesis file.
-func NewSheet(sheet map[string]uint) *Sheet {
+func NewSheet(miningReward uint, sheet map[string]uint) *Sheet {
 	bs := Sheet{
-		sheet: make(map[string]uint),
+		miningReward: miningReward,
+		sheet:        make(map[string]uint),
 	}
 
 	if sheet != nil {
@@ -60,7 +62,7 @@ func (bs *Sheet) Clone() *Sheet {
 	bs.mu.Lock()
 	defer bs.mu.Unlock()
 
-	balanceSheet := NewSheet(nil)
+	balanceSheet := NewSheet(bs.miningReward, nil)
 	for address, value := range bs.sheet {
 		balanceSheet.sheet[address] = value
 	}
@@ -79,12 +81,12 @@ func (bs *Sheet) Values() map[string]uint {
 	return sheet
 }
 
-// ApplyValue gives the specififed address the specified value.
-func (bs *Sheet) ApplyValue(address string, value uint) {
+// ApplyMiningReward gives the specififed address the mining reward.
+func (bs *Sheet) ApplyMiningReward(minerAddress string) {
 	bs.mu.Lock()
 	defer bs.mu.Unlock()
 
-	bs.sheet[address] += value
+	bs.sheet[minerAddress] += bs.miningReward
 }
 
 // ApplyTransaction performs the business logic for applying a transaction
