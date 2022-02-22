@@ -87,27 +87,9 @@ func (bs *Sheet) ApplyValue(address string, value uint) {
 	bs.sheet[address] += value
 }
 
-// ApplyMiningFee gives the specified miner the fee for the specified block.
-func (bs *Sheet) ApplyMiningFee(minerAddress string, tx storage.BlockTx) {
-
-	// Capture the address of the account that signed this transaction.
-	from, err := tx.FromAddress()
-	if err != nil {
-		return
-	}
-
-	bs.mu.Lock()
-	defer bs.mu.Unlock()
-	{
-		fee := tx.Gas + tx.Tip
-		bs.sheet[minerAddress] += fee
-		bs.sheet[from] -= fee
-	}
-}
-
 // ApplyTransaction performs the business logic for applying a transaction
 // to the balance sheet.
-func (bs *Sheet) ApplyTransaction(tx storage.BlockTx) error {
+func (bs *Sheet) ApplyTransaction(minerAddress string, tx storage.BlockTx) error {
 
 	// Capture the address of the account that signed this transaction.
 	from, err := tx.FromAddress()
@@ -118,13 +100,8 @@ func (bs *Sheet) ApplyTransaction(tx storage.BlockTx) error {
 	bs.mu.Lock()
 	defer bs.mu.Unlock()
 	{
-		if string(tx.Data) == storage.TxDataReward {
-			bs.sheet[tx.To] += tx.Value
-			return nil
-		}
-
 		if from == tx.To {
-			return fmt.Errorf("invalid transaction, do you mean to give a reward, from %s, to %s", from, tx.To)
+			return fmt.Errorf("invalid transaction, sending money to yourself, from %s, to %s", from, tx.To)
 		}
 
 		if tx.Value > bs.sheet[from] {
@@ -134,9 +111,9 @@ func (bs *Sheet) ApplyTransaction(tx storage.BlockTx) error {
 		bs.sheet[from] -= tx.Value
 		bs.sheet[tx.To] += tx.Value
 
-		if tx.Tip > 0 {
-			bs.sheet[from] -= tx.Tip
-		}
+		fee := tx.Gas + tx.Tip
+		bs.sheet[minerAddress] += fee
+		bs.sheet[from] -= fee
 	}
 
 	return nil

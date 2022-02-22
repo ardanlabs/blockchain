@@ -7,11 +7,6 @@ import (
 	"github.com/ardanlabs/blockchain/foundation/blockchain/signature"
 )
 
-// Set of transaction data types.
-const (
-	TxDataReward = "reward"
-)
-
 // =============================================================================
 
 // UserTx is the transactional data submitted by a user.

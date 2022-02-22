@@ -116,10 +116,7 @@ func New(cfg Config) (*State, error) {
 		for _, tx := range block.Transactions {
 
 			// Apply the balance changes based for this transaction.
-			sheet.ApplyTransaction(tx)
-
-			// Apply the miner tip and gas fee for this transaction.
-			sheet.ApplyMiningFee(block.Header.MinerAddress, tx)
+			sheet.ApplyTransaction(block.Header.MinerAddress, tx)
 		}
 
 		// Apply the miner reward for this block.
@@ -250,10 +247,7 @@ func (s *State) WriteNextBlock(block storage.Block) error {
 		for _, tx := range block.Transactions {
 
 			// Apply the balance changes based for this transaction.
-			s.balanceSheet.ApplyTransaction(tx)
-
-			// Apply the miner tip and gas fee for this transaction.
-			s.balanceSheet.ApplyMiningFee(block.Header.MinerAddress, tx)
+			s.balanceSheet.ApplyTransaction(block.Header.MinerAddress, tx)
 
 			s.evHandler("state: WriteNextBlock: remove from mempool: tx[%s]", tx.Hash())
 
@@ -372,12 +366,6 @@ const QueryLastest = ^uint64(0) >> 1
 // QueryBalances returns a copy of the set of balances by address.
 func (s *State) QueryBalances(address string) map[string]uint {
 	balanceSheet := s.balanceSheet.Clone()
-	mempool := s.mempool.Copy()
-
-	// Add transactions from the mempool for this balance statement.
-	for _, tx := range mempool {
-		balanceSheet.ApplyTransaction(tx)
-	}
 
 	cpy := balanceSheet.Values()
 	for addr := range cpy {
@@ -482,13 +470,10 @@ func (s *State) MineNewBlock(ctx context.Context) (storage.Block, time.Duration,
 	for _, tx := range nb.Transactions {
 
 		// Apply the balance changes based on this transaction.
-		if err := balanceSheet.ApplyTransaction(tx); err != nil {
+		if err := balanceSheet.ApplyTransaction(s.minerAddress, tx); err != nil {
 			s.evHandler("worker: runMiningOperation: MINING: WARNING : %s", err)
 			continue
 		}
-
-		// Apply the miner tip and gas fee for this transaction.
-		balanceSheet.ApplyMiningFee(s.minerAddress, tx)
 
 		// Update the total gas and tip fees.
 		nb.Header.TotalGas += tx.Gas
