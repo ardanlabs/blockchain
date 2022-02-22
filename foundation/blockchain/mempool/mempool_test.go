@@ -43,7 +43,7 @@ func TestCRUD(t *testing.T) {
 
 					for _, tx := range tst.txs {
 						mp.Add(tx)
-						t.Logf("\t%s\tTest %d:\tShould be able to add new transaction.", success, testID)
+						t.Logf("\t%s\tTest %d:\tShould be able to add new transaction: %s", success, testID, tx.Hash()[:6])
 					}
 
 					for i, tx := range mp.Copy() {
@@ -52,7 +52,7 @@ func TestCRUD(t *testing.T) {
 							t.Logf("\t%s\tTest %d:\texp: %s", failed, testID, tst.txs[i].To)
 							t.Fatalf("\t%s\tTest %d:\tShould get back the right account.", failed, testID)
 						}
-						t.Logf("\t%s\tTest %d:\tShould get back the right account: %s.", success, testID, tx.To)
+						t.Logf("\t%s\tTest %d:\tShould get back the right account: %s", success, testID, tx.To[:6])
 					}
 
 					for i, tx := range mp.CopyBestByTip(4) {
@@ -61,7 +61,7 @@ func TestCRUD(t *testing.T) {
 							t.Logf("\t%s\tTest %d:\texp: %d", failed, testID, tst.best[i])
 							t.Fatalf("\t%s\tTest %d:\tShould get back the right tip.", failed, testID)
 						}
-						t.Logf("\t%s\tTest %d:\tShould get back the right tip: %d.", success, testID, tx.Tip)
+						t.Logf("\t%s\tTest %d:\tShould get back the right tip: %d", success, testID, tx.Tip)
 					}
 
 					mp.Delete(tst.txs[2])
