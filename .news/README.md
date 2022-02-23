@@ -2,6 +2,10 @@
 
 Occasionally we run into new articles that we feel are important. This is a section place for those new articles. If you have new articles we should add, please send us an email.
 
+### Feb 2022
+
+[Ethereum Founder Buterin Says Crypto ‘Welcomes’ Another Winter](https://www.bloomberg.com/news/articles/2022-02-19/ethereum-founder-buterin-says-crypto-welcomes-another-winter) - Muyao Shen and Matthew Hill  
+
 ### Jan 2022
 
 [How do we solve bitcoin’s carbon problem?](https://www.theguardian.com/technology/2022/jan/30/how-do-we-solve-bitcoins-carbon-problem) - Laurie Clarke  

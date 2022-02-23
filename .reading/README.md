@@ -22,6 +22,8 @@ Occasionally we run into material that we feel is important. This is a section p
 
 ### Articles (General)
 [5 Differences between Cosmos & Polkadot](https://juliankoh.medium.com/5-differences-between-cosmos-polkadot-67f09535594b) - Julian Koh  
+[Money, Bitcoin and Time: Part 1 of 3](https://breedlove22.medium.com/money-bitcoin-and-time-part-1-of-3-b4f6bb036c04) - Robert Breedlove  
+[All Smart Contracts Are Ambiguous](https://scholarship.law.upenn.edu/cgi/viewcontent.cgi?article=1006&context=jli) - James Grimmelmann  
 
 ### Bitcoin
 [Bitcoin in Go: libsv](https://github.com/libsv)  
@@ -55,6 +57,7 @@ Occasionally we run into material that we feel is important. This is a section p
 ### Companies
 [0x: Professional grade liquidity aggregator enabling the future of DeFi applications](https://0x.org/)  
 [Aware: Biometrically powered visitor and employee management](https://www.aware.com/)  
+[Breadcrumbs: Tools that empowers you to trace and monitor crypto transactions.](https://www.breadcrumbs.app/)  
 [Coinbase Cloud](https://www.coinbase.com/cloud)  
 [CoinCenter: Leading non-profit focused on the policy issues facing cryptocurrencies](https://www.coincenter.org/)  
 [CoinDesk: Integrated platform for media, events, data & indices ](https://www.coindesk.com/)  
@@ -96,7 +99,8 @@ Occasionally we run into material that we feel is important. This is a section p
 [All Smart Contracts are Ambiguous](https://scholarship.law.upenn.edu/cgi/viewcontent.cgi?article=1006&context=jli) - James Grimmelmann  
 [UCL Centre for Blockchain Technologies](http://blockchain.cs.ucl.ac.uk/)  
 [Paper Review - GHOST Protocol](http://ajainuary.com/2019/10/17/need-for-speed/) -  Anurag Jain  
-[WEF Digital Currency Governance Consortium White Paper Series](https://www.weforum.org/reports/digital-currency-governance-consortium-white-paper-series) - World Economic Forum    
+[WEF Digital Currency Governance Consortium White Paper Series](https://www.weforum.org/reports/digital-currency-governance-consortium-white-paper-series) - World Economic Forum  
+[Blockchain software patterns for the design of decentralized applications: A systematic literature review](https://www.sciencedirect.com/science/article/pii/S209672092200001X) - ScienceDirect  
 
 ### Code Examples
 [Basic Proof of Wallet Code](https://go.dev/play/p/A_66_Kz9tpl) - Pavel Aborilov  
