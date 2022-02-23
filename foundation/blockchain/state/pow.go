@@ -45,9 +45,6 @@ func performPOW(ctx context.Context, difficulty int, b storage.Block, ev EventHa
 		// Hash the block and check if we have solved the puzzle.
 		hash := b.Hash()
 		if !isHashSolved(difficulty, hash) {
-
-			// I may want to track these nonce's to make sure I
-			// don't try the same one twice.
 			b.Header.Nonce++
 			continue
 		}

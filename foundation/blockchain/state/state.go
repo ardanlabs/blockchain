@@ -32,7 +32,7 @@ import (
 	Sync up mempool after blocks before starting.
 	Create a block index file for query and clean up forks.
 	Publishing events. (New Blocks)
-	Unit need tests for all packages.
+	Add integration test for the state package.
 */
 
 // =============================================================================
