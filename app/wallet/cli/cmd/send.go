@@ -45,12 +45,7 @@ func sendWithFile(privateKey *ecdsa.PrivateKey) {
 }
 
 func sendWithDetails(privateKey *ecdsa.PrivateKey) {
-	userTx := storage.UserTx{
-		To:    to,
-		Value: value,
-		Tip:   tip,
-		Data:  data,
-	}
+	userTx := storage.NewUserTx(to, value, tip, data)
 
 	signedTx, err := userTx.Sign(privateKey)
 	if err != nil {

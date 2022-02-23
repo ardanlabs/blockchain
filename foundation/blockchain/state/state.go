@@ -169,10 +169,7 @@ func (s *State) Shutdown() error {
 
 // SubmitWalletTransaction accepts a transaction from a wallet for inclusion.
 func (s *State) SubmitWalletTransaction(signedTx storage.SignedTx) error {
-	tx := storage.BlockTx{
-		SignedTx: signedTx,
-		Gas:      s.genesis.GasPrice,
-	}
+	tx := storage.NewBlockTx(signedTx, s.genesis.GasPrice)
 
 	if err := tx.VerifySignature(); err != nil {
 		return err

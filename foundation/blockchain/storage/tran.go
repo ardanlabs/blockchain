@@ -17,6 +17,16 @@ type UserTx struct {
 	Data  []byte `json:"data"`  // Extra data related to the transaction.
 }
 
+// NewUserTx constructs a new user transaction.
+func NewUserTx(to string, value uint, tip uint, data []byte) UserTx {
+	return UserTx{
+		To:    to,
+		Value: value,
+		Tip:   tip,
+		Data:  data,
+	}
+}
+
 // Sign uses the specified private key to sign the user transaction.
 func (tx UserTx) Sign(privateKey *ecdsa.PrivateKey) (SignedTx, error) {
 
@@ -69,6 +79,14 @@ func (tx SignedTx) SignatureString() string {
 type BlockTx struct {
 	SignedTx
 	Gas uint `json:"gas"` // Gas fee to recover computation costs paid by the sender.
+}
+
+// NewBlockTx constructs a new block transaction.
+func NewBlockTx(signedTx SignedTx, gas uint) BlockTx {
+	return BlockTx{
+		SignedTx: signedTx,
+		Gas:      gas,
+	}
 }
 
 // Hash returns the unique hash for the BlockTx.

@@ -25,12 +25,7 @@ func sign(tx storage.UserTx, gas uint) (storage.BlockTx, error) {
 		return storage.BlockTx{}, err
 	}
 
-	blockTx := storage.BlockTx{
-		SignedTx: signedTx,
-		Gas:      gas,
-	}
-
-	return blockTx, nil
+	return storage.NewBlockTx(signedTx, gas), nil
 }
 
 func TestTransactions(t *testing.T) {
