@@ -3,7 +3,7 @@ module github.com/ardanlabs/blockchain
 go 1.17
 
 require (
-	github.com/ardanlabs/conf/v3 v3.1.1
+	github.com/ardanlabs/conf/v3 v3.1.2
 	github.com/dimfeld/httptreemux/v5 v5.4.0
 	github.com/ethereum/go-ethereum v1.10.16
 	github.com/go-playground/locales v0.14.0
@@ -22,6 +22,6 @@ require (
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.7.0 // indirect
 	golang.org/x/crypto v0.0.0-20220214200702-86341886e292 // indirect
-	golang.org/x/sys v0.0.0-20220209214540-3681064d5158 // indirect
+	golang.org/x/sys v0.0.0-20220222200937-f2425489ef4c // indirect
 	golang.org/x/text v0.3.7 // indirect
 )
