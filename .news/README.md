@@ -5,6 +5,7 @@ Occasionally we run into new articles that we feel are important. This is a sect
 ### Feb 2022
 
 [Ethereum Founder Buterin Says Crypto ‘Welcomes’ Another Winter](https://www.bloomberg.com/news/articles/2022-02-19/ethereum-founder-buterin-says-crypto-welcomes-another-winter) - Muyao Shen and Matthew Hill  
+[Microsoft Warns of 'Ice Phishing' Threat on Web3 and Decentralized Networks](https://thehackernews.com/2022/02/microsoft-warns-of-ice-phishing-threat.html) - Ravie Lakshmanan  
 
 ### Jan 2022
 
