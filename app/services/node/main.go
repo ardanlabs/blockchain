@@ -72,7 +72,7 @@ func run(log *zap.SugaredLogger) error {
 		},
 	}
 
-	const prefix = "BARLED"
+	const prefix = "ARDLED"
 	help, err := conf.Parse(prefix, &cfg)
 	if err != nil {
 		if errors.Is(err, conf.ErrHelpWanted) {
