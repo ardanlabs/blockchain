@@ -29,7 +29,7 @@ import (
 	See the different nodes, view activity.
 
 	-- Blockchain
-	Sync up mempool after blocks before starting.
+	Batch new transactions to send across the network.
 	Create a block index file for query and clean up forks.
 	Publishing events. (New Blocks)
 	Add integration test for the state package.
