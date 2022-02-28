@@ -24,6 +24,32 @@ type Handlers struct {
 	NS    *nameservice.NameService
 }
 
+// SubmitNodeTransaction adds new node transactions to the mempool.
+func (h Handlers) SubmitNodeTransaction(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	v, err := web.GetValues(ctx)
+	if err != nil {
+		return web.NewShutdownError("web value missing from context")
+	}
+
+	var tx storage.BlockTx
+	if err := web.Decode(r, &tx); err != nil {
+		return fmt.Errorf("unable to decode payload: %w", err)
+	}
+
+	h.Log.Infow("add user tran", "traceid", v.TraceID, "tx", tx.UniqueKey())
+	if err := h.State.SubmitNodeTransaction(tx); err != nil {
+		return v1.NewRequestError(err, http.StatusBadRequest)
+	}
+
+	resp := struct {
+		Status string `json:"status"`
+	}{
+		Status: "transactions added to mempool",
+	}
+
+	return web.Respond(ctx, w, resp, http.StatusOK)
+}
+
 // AddNextBlock accepts a new mined block from a peer, validates it, then adds it
 // to the block chain.
 func (h Handlers) AddNextBlock(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
@@ -54,32 +80,6 @@ func (h Handlers) AddNextBlock(ctx context.Context, w http.ResponseWriter, r *ht
 	}{
 		Status: "accepted",
 		Block:  block,
-	}
-
-	return web.Respond(ctx, w, resp, http.StatusOK)
-}
-
-// SubmitNodeTransaction adds new node transactions to the mempool.
-func (h Handlers) SubmitNodeTransaction(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	v, err := web.GetValues(ctx)
-	if err != nil {
-		return web.NewShutdownError("web value missing from context")
-	}
-
-	var tx storage.BlockTx
-	if err := web.Decode(r, &tx); err != nil {
-		return fmt.Errorf("unable to decode payload: %w", err)
-	}
-
-	h.Log.Infow("add node tran", "traceid", v.TraceID, "tx", tx)
-	if err := h.State.SubmitNodeTransaction(tx); err != nil {
-		return v1.NewRequestError(err, http.StatusBadRequest)
-	}
-
-	resp := struct {
-		Status string `json:"status"`
-	}{
-		Status: "added",
 	}
 
 	return web.Respond(ctx, w, resp, http.StatusOK)

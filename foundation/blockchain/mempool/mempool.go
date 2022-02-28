@@ -29,15 +29,14 @@ func (mp *Mempool) Count() int {
 	return len(mp.pool)
 }
 
-// Add adds a new transaction to the mempool.
-func (mp *Mempool) Add(tx storage.BlockTx) int {
+// Upsert adds or replaces a transaction from the mempool.
+func (mp *Mempool) Upsert(tx storage.BlockTx) int {
 	mp.mu.Lock()
 	defer mp.mu.Unlock()
 
-	hash := tx.Hash()
-	if _, exists := mp.pool[hash]; !exists {
-		mp.pool[hash] = tx
-	}
+	hash := tx.UniqueKey()
+	mp.pool[hash] = tx
+
 	return len(mp.pool)
 }
 
@@ -46,7 +45,7 @@ func (mp *Mempool) Delete(tx storage.BlockTx) {
 	mp.mu.Lock()
 	defer mp.mu.Unlock()
 
-	hash := tx.Hash()
+	hash := tx.UniqueKey()
 	delete(mp.pool, hash)
 }
 

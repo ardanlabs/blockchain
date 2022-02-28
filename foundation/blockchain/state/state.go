@@ -174,7 +174,7 @@ func (s *State) SubmitWalletTransaction(signedTx storage.SignedTx) error {
 	}
 
 	tx := storage.NewBlockTx(signedTx, s.genesis.GasPrice)
-	n := s.mempool.Add(tx)
+	n := s.mempool.Upsert(tx)
 	s.worker.signalShareTransactions(tx)
 
 	if n >= s.genesis.TransPerBlock {
@@ -190,7 +190,7 @@ func (s *State) SubmitNodeTransaction(tx storage.BlockTx) error {
 		return err
 	}
 
-	n := s.mempool.Add(tx)
+	n := s.mempool.Upsert(tx)
 	if n >= s.genesis.TransPerBlock {
 		s.worker.signalStartMining()
 	}
@@ -245,7 +245,7 @@ func (s *State) WriteNextBlock(block storage.Block) error {
 			// Apply the balance changes based for this transaction.
 			s.balanceSheet.ApplyTransaction(block.Header.MinerAddress, tx)
 
-			s.evHandler("state: WriteNextBlock: remove from mempool: tx[%s]", tx.Hash())
+			s.evHandler("state: WriteNextBlock: remove from mempool: tx[%s]", tx.UniqueKey())
 
 			// Remove the transaction from the mempool if it exists.
 			s.mempool.Delete(tx)
@@ -511,7 +511,7 @@ func (s *State) MineNewBlock(ctx context.Context) (storage.Block, time.Duration,
 
 		// Remove the transactions from this block.
 		for _, tx := range nb.Transactions {
-			s.evHandler("worker: runMiningOperation: MINING: remove from mempool: tx[%s]", tx.Hash())
+			s.evHandler("worker: runMiningOperation: MINING: remove from mempool: tx[%s]", tx.UniqueKey())
 			s.mempool.Delete(tx)
 		}
 	}

@@ -15,11 +15,11 @@ import (
 
 var (
 	url   string
+	id    uint
 	to    string
 	value uint
 	tip   uint
 	data  []byte
-	file  string
 )
 
 // sendCmd represents the send command
@@ -32,20 +32,12 @@ var sendCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		if file == "" {
-			sendWithDetails(privateKey)
-			return
-		}
-
-		sendWithFile(privateKey)
+		sendWithDetails(privateKey)
 	},
 }
 
-func sendWithFile(privateKey *ecdsa.PrivateKey) {
-}
-
 func sendWithDetails(privateKey *ecdsa.PrivateKey) {
-	userTx := storage.NewUserTx(to, value, tip, data)
+	userTx := storage.NewUserTx(id, to, value, tip, data)
 
 	signedTx, err := userTx.Sign(privateKey)
 	if err != nil {
@@ -66,10 +58,9 @@ func sendWithDetails(privateKey *ecdsa.PrivateKey) {
 func init() {
 	rootCmd.AddCommand(sendCmd)
 	sendCmd.Flags().StringVarP(&url, "url", "u", "http://localhost:8080", "Url of the node.")
+	sendCmd.Flags().UintVarP(&id, "id", "i", 0, "Unique id for the transaction.")
 	sendCmd.Flags().StringVarP(&to, "to", "t", "", "Url of the node.")
-	sendCmd.MarkFlagRequired("to")
 	sendCmd.Flags().UintVarP(&value, "value", "v", 0, "Value to send.")
 	sendCmd.Flags().UintVarP(&tip, "tip", "c", 0, "Tip to send.")
 	sendCmd.Flags().BytesHexVarP(&data, "data", "d", nil, "Data to send.")
-	sendCmd.Flags().BytesHexVarP(&data, "file", "f", nil, "File to read for transactions.")
 }

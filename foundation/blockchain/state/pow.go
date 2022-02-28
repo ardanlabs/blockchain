@@ -17,7 +17,7 @@ func performPOW(ctx context.Context, difficulty int, b storage.Block, ev EventHa
 	defer ev("worker: runMiningOperation: MINING: POW: completed")
 
 	for _, tx := range b.Transactions {
-		ev("worker: runMiningOperation: MINING: POW: tx[%s]", tx.Hash())
+		ev("worker: runMiningOperation: MINING: POW: tx[%s]", tx.UniqueKey())
 	}
 
 	t := time.Now()

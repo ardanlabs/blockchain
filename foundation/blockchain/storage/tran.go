@@ -2,6 +2,7 @@ package storage
 
 import (
 	"crypto/ecdsa"
+	"fmt"
 	"math/big"
 
 	"github.com/ardanlabs/blockchain/foundation/blockchain/signature"
@@ -11,6 +12,7 @@ import (
 
 // UserTx is the transactional data submitted by a user.
 type UserTx struct {
+	ID    uint   `json:"id"`    // Unique id for the transaction supplied by the user.
 	To    string `json:"to"`    // Address receiving the benefit of the transaction.
 	Value uint   `json:"value"` // Monetary value received from this transaction.
 	Tip   uint   `json:"tip"`   // Tip offered by the sender as an incentive to mine this transaction.
@@ -18,8 +20,9 @@ type UserTx struct {
 }
 
 // NewUserTx constructs a new user transaction.
-func NewUserTx(to string, value uint, tip uint, data []byte) UserTx {
+func NewUserTx(id uint, to string, value uint, tip uint, data []byte) UserTx {
 	return UserTx{
+		ID:    id,
 		To:    to,
 		Value: value,
 		Tip:   tip,
@@ -73,6 +76,17 @@ func (tx SignedTx) SignatureString() string {
 	return signature.SignatureString(tx.V, tx.R, tx.S)
 }
 
+// UniqueKey is used to generate a unique key for mempool activity. The key is
+// generated based on the UserTx ID field and from address.
+func (tx SignedTx) UniqueKey() string {
+	from, err := signature.FromAddress(tx.UserTx, tx.V, tx.R, tx.S)
+	if err != nil {
+		from = "unknown"
+	}
+
+	return fmt.Sprintf("%s:%d", from, tx.ID)
+}
+
 // =============================================================================
 
 // BlockTx represents the transaction recorded inside the blockchain.
@@ -87,9 +101,4 @@ func NewBlockTx(signedTx SignedTx, gas uint) BlockTx {
 		SignedTx: signedTx,
 		Gas:      gas,
 	}
-}
-
-// Hash returns the unique hash for the BlockTx.
-func (tx BlockTx) Hash() string {
-	return signature.Hash(tx)
 }

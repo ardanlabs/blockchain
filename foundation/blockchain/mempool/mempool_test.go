@@ -42,8 +42,8 @@ func TestCRUD(t *testing.T) {
 					mp := mempool.New()
 
 					for _, tx := range tst.txs {
-						mp.Add(tx)
-						t.Logf("\t%s\tTest %d:\tShould be able to add new transaction: %s", success, testID, tx.Hash()[:6])
+						mp.Upsert(tx)
+						t.Logf("\t%s\tTest %d:\tShould be able to add new transaction: %s", success, testID, tx.UniqueKey())
 					}
 
 					for i, tx := range mp.Copy() {

@@ -136,7 +136,7 @@ func (w *worker) sync() {
 		}
 		for _, tx := range pool {
 			w.evHandler("worker: sync: queryPeerMempool: %s: Add Tx: %s", peer.Host, tx.SignatureString()[:16])
-			w.state.mempool.Add(tx)
+			w.state.mempool.Upsert(tx)
 		}
 
 		// If this peer has blocks we don't have, we need to add them.
