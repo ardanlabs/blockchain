@@ -93,8 +93,13 @@ func (bt byTip) Len() int {
 	return len(bt)
 }
 
-// Less returns true or false based on the tip value between two transactions.
+// Less returns true or false based on the tip and id values
+// between two transactions.
 func (bt byTip) Less(i, j int) bool {
+	if bt[j].Tip == bt[i].Tip {
+		return bt[j].ID < bt[i].ID
+	}
+
 	return bt[j].Tip < bt[i].Tip
 }
 
