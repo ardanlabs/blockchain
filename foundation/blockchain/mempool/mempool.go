@@ -93,14 +93,21 @@ func (bt byTip) Len() int {
 	return len(bt)
 }
 
-// Less returns true or false based on the tip and id values
-// between two transactions.
+// Less helps to sort the list by descending tip first. When their are multiple
+// transactions by the same account, the list is sorted ascending by ID.
 func (bt byTip) Less(i, j int) bool {
-	if bt[j].Tip == bt[i].Tip {
-		return bt[j].ID < bt[i].ID
+	switch {
+	case bt[j].Tip < bt[i].Tip:
+		return true
+	case bt[j].Tip == bt[i].Tip:
+		fromJ, _ := bt[j].FromAddress()
+		fromI, _ := bt[i].FromAddress()
+		if fromJ == fromI {
+			return bt[i].ID < bt[j].ID
+		}
+		return false
 	}
-
-	return bt[j].Tip < bt[i].Tip
+	return false
 }
 
 // Swap moves transactions in the order of the tip value.

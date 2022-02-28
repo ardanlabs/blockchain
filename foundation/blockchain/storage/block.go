@@ -39,7 +39,7 @@ func NewBlock(minerAddress string, difficulty int, transPerBlock int, parentBloc
 			MinerAddress: minerAddress,
 			Difficulty:   difficulty,
 			Number:       parentBlock.Header.Number + 1,
-			TimeStamp:    uint64(time.Now().Unix()),
+			TimeStamp:    uint64(time.Now().UTC().Unix()),
 		},
 		Transactions: trans,
 	}

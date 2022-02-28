@@ -14,7 +14,21 @@ const (
 	failed  = "\u2717"
 )
 
-func sign(tx storage.UserTx, gas uint) (storage.BlockTx, error) {
+func signBill(tx storage.UserTx, gas uint) (storage.BlockTx, error) {
+	pk, err := crypto.HexToECDSA("9f332e3700d8fc2446eaf6d15034cf96e0c2745e40353deef032a5dbf1dfed93")
+	if err != nil {
+		return storage.BlockTx{}, err
+	}
+
+	signedTx, err := tx.Sign(pk)
+	if err != nil {
+		return storage.BlockTx{}, err
+	}
+
+	return storage.NewBlockTx(signedTx, gas), nil
+}
+
+func signPavel(tx storage.UserTx, gas uint) (storage.BlockTx, error) {
 	pk, err := crypto.HexToECDSA("fae85851bdf5c9f49923722ce38f3c1defcfd3619ef5453230a58ad805499959")
 	if err != nil {
 		return storage.BlockTx{}, err
@@ -39,16 +53,20 @@ func TestCRUD(t *testing.T) {
 		{
 			name: "basic",
 			txs: []storage.UserTx{
-				{ID: 2, To: "0xF01813E4B85e178A83e29B8E7bF26BD830a25f32", Tip: 10},
-				{ID: 3, To: "0xdd6B972ffcc631a62CAE1BB9d80b7ff429c8ebA4", Tip: 50},
-				{ID: 4, To: "0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76", Tip: 100},
-				{ID: 1, To: "0x6Fe6CF3c8fF57c58d24BfC869668F48BCbDb3BD9", Tip: 10},
+				{ID: 1, To: "0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76", Tip: 100},
+				{ID: 1, To: "0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76", Tip: 75},
+				{ID: 2, To: "0x6Fe6CF3c8fF57c58d24BfC869668F48BCbDb3BD9", Tip: 150},
+				{ID: 2, To: "0x6Fe6CF3c8fF57c58d24BfC869668F48BCbDb3BD9", Tip: 250},
+				{ID: 3, To: "0xa988b1866EaBF72B4c53b592c97aAD8e4b9bDCC0", Tip: 200},
+				{ID: 3, To: "0xa988b1866EaBF72B4c53b592c97aAD8e4b9bDCC0", Tip: 75},
 			},
 			best: []storage.UserTx{
-				{ID: 4, To: "0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76", Tip: 100},
-				{ID: 3, To: "0xdd6B972ffcc631a62CAE1BB9d80b7ff429c8ebA4", Tip: 50},
-				{ID: 2, To: "0xF01813E4B85e178A83e29B8E7bF26BD830a25f32", Tip: 10},
-				{ID: 1, To: "0x6Fe6CF3c8fF57c58d24BfC869668F48BCbDb3BD9", Tip: 10},
+				{ID: 2, To: "0x6Fe6CF3c8fF57c58d24BfC869668F48BCbDb3BD9", Tip: 250},
+				{ID: 3, To: "0xa988b1866EaBF72B4c53b592c97aAD8e4b9bDCC0", Tip: 200},
+				{ID: 2, To: "0x6Fe6CF3c8fF57c58d24BfC869668F48BCbDb3BD9", Tip: 150},
+				{ID: 1, To: "0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76", Tip: 100},
+				{ID: 1, To: "0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76", Tip: 75},
+				{ID: 3, To: "0xa988b1866EaBF72B4c53b592c97aAD8e4b9bDCC0", Tip: 75},
 			},
 		},
 	}
@@ -61,8 +79,15 @@ func TestCRUD(t *testing.T) {
 				f := func(t *testing.T) {
 					mp := mempool.New()
 
-					for _, userTx := range tst.txs {
-						tx, err := sign(userTx, 0)
+					for i, userTx := range tst.txs {
+						var tx storage.BlockTx
+						var err error
+						if i%2 == 0 {
+							tx, err = signBill(userTx, 0)
+						} else {
+							tx, err = signPavel(userTx, 0)
+						}
+
 						if err != nil {
 							t.Fatalf("\t%s\tTest %d:\tShould be able to sign transaction.", failed, testID)
 						}
@@ -72,22 +97,20 @@ func TestCRUD(t *testing.T) {
 						t.Logf("\t%s\tTest %d:\tShould be able to add new transaction: %s", success, testID, tx.UniqueKey())
 					}
 
-					for i, tx := range mp.Copy() {
-						if tx.To != tst.txs[i].To {
-							t.Logf("\t%s\tTest %d:\tgot: %s", failed, testID, tx.To)
-							t.Logf("\t%s\tTest %d:\texp: %s", failed, testID, tst.txs[i].To)
-							t.Fatalf("\t%s\tTest %d:\tShould get back the right account.", failed, testID)
-						}
-						t.Logf("\t%s\tTest %d:\tShould get back the right account: %s", success, testID, tx.To[:6])
+					if len(mp.Copy()) != len(tst.txs) {
+						t.Logf("\t%s\tTest %d:\tgot: %d", failed, testID, len(mp.Copy()))
+						t.Logf("\t%s\tTest %d:\texp: %d", failed, testID, len(tst.txs))
+						t.Fatalf("\t%s\tTest %d:\tShould get back the right number of transactions.", failed, testID)
 					}
+					t.Logf("\t%s\tTest %d:\tShould get back the right number of transactions.", success, testID)
 
-					for i, tx := range mp.CopyBestByTip(4) {
+					for i, tx := range mp.CopyBestByTip(6) {
 						if tx.To != tst.best[i].To {
-							t.Logf("\t%s\tTest %d:\tgot: %s", failed, testID, tx.To)
-							t.Logf("\t%s\tTest %d:\texp: %s", failed, testID, tst.best[i].To)
-							t.Fatalf("\t%s\tTest %d:\tShould get back the right tip.", failed, testID)
+							t.Logf("\t%s\tTest %d:\tgot: %s, idx: %d", failed, testID, tx.To, i)
+							t.Logf("\t%s\tTest %d:\texp: %s, idx: %d", failed, testID, tst.best[i].To, i)
+							t.Fatalf("\t%s\tTest %d:\tShould get back the right tip/id.", failed, testID)
 						}
-						t.Logf("\t%s\tTest %d:\tShould get back the right tip: %d", success, testID, tx.Tip)
+						t.Logf("\t%s\tTest %d:\tShould get back the right tip/id: %d/%d", success, testID, tx.Tip, tx.ID)
 					}
 
 					mp.Delete(mp.Copy()[1])
