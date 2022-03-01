@@ -44,6 +44,7 @@ func (mp *Mempool) Upsert(tx storage.BlockTx) int {
 	if err != nil {
 		from = "unknown"
 	}
+
 	if mp.pool[from] == nil {
 		mp.pool[from] = make(map[uint]storage.BlockTx)
 	}
@@ -78,9 +79,11 @@ func (mp *Mempool) Truncate() {
 	mp.pool = make(map[string]map[uint]storage.BlockTx)
 }
 
-// CopyBestByTip returns a list of the best transactions for the next
-// mining operation based on the offered tip. The caller specifies
-// how many transactions they want. Pass -1 for all the transactions.
+// PickBest returns a list of the best transactions for the next
+// mining operation. The caller specifies how many transactions they want.
+// Pass -1 for all the transactions.
+// The algorithm focuses on the transactions with the best tip while
+// respecting the nonce for each address/transaction.
 func (mp *Mempool) PickBest(howMany int) []storage.BlockTx {
 
 	// Convert the transactions by address to a slice.
@@ -187,13 +190,13 @@ func (bn byNonce) Len() int {
 	return len(bn)
 }
 
-// Less helps to sort the list by ID in ascending order to keep the transactions
-// in the right order of processing based on accounts choosing.
+// Less helps to sort the list by nonce in ascending order to keep the
+// transactions in the right order of processing.
 func (bn byNonce) Less(i, j int) bool {
 	return bn[i].Nonce < bn[j].Nonce
 }
 
-// Swap moves transactions in the order of the id value.
+// Swap moves transactions in the order of the nonce value.
 func (bn byNonce) Swap(i, j int) {
 	bn[i], bn[j] = bn[j], bn[i]
 }
