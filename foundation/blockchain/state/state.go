@@ -341,7 +341,7 @@ func (s *State) RetrieveLatestBlock() storage.Block {
 
 // RetrieveMempool returns a copy of the mempool.
 func (s *State) RetrieveMempool() []storage.BlockTx {
-	return s.mempool.Copy()
+	return s.mempool.CopyBestByTip(-1)
 }
 
 // RetrieveBalanceSheetValues returns a copy of the balance sheet values.

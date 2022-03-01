@@ -76,10 +76,16 @@ func (mp *Mempool) CopyBestByTip(howMany int) []storage.BlockTx {
 	txs := mp.Copy()
 	sort.Sort(byTip(txs))
 
+	if howMany == -1 {
+		howMany = len(txs)
+	}
+
 	cpy := make([]storage.BlockTx, howMany)
 	for i := 0; i < howMany; i++ {
 		cpy[i] = txs[i]
 	}
+
+	sort.Sort(byID(cpy))
 	return cpy
 }
 
@@ -93,24 +99,34 @@ func (bt byTip) Len() int {
 	return len(bt)
 }
 
-// Less helps to sort the list by descending tip first. When their are multiple
-// transactions by the same account, the list is sorted ascending by ID.
+// Less helps to sort the list by tip in descending order to choose the
+// transactions with the best tip first.
 func (bt byTip) Less(i, j int) bool {
-	switch {
-	case bt[j].Tip < bt[i].Tip:
-		return true
-	case bt[j].Tip == bt[i].Tip:
-		fromJ, _ := bt[j].FromAddress()
-		fromI, _ := bt[i].FromAddress()
-		if fromJ == fromI {
-			return bt[i].ID < bt[j].ID
-		}
-		return false
-	}
-	return false
+	return bt[j].Tip < bt[i].Tip
 }
 
 // Swap moves transactions in the order of the tip value.
 func (bt byTip) Swap(i, j int) {
 	bt[i], bt[j] = bt[j], bt[i]
+}
+
+// =============================================================================
+
+// byID provides sorting support by the transaction id value.
+type byID []storage.BlockTx
+
+// Len returns the number of transactions in the list.
+func (bi byID) Len() int {
+	return len(bi)
+}
+
+// Less helps to sort the list by ID in ascending order to keep the transactions
+// in the right order of processing based on accounts choosing.
+func (bi byID) Less(i, j int) bool {
+	return bi[i].ID < bi[j].ID
+}
+
+// Swap moves transactions in the order of the id value.
+func (bi byID) Swap(i, j int) {
+	bi[i], bi[j] = bi[j], bi[i]
 }
