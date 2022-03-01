@@ -42,6 +42,20 @@ func signPavel(tx storage.UserTx, gas uint) (storage.BlockTx, error) {
 	return storage.NewBlockTx(signedTx, gas), nil
 }
 
+func signEd(tx storage.UserTx, gas uint) (storage.BlockTx, error) {
+	pk, err := crypto.HexToECDSA("aed31b6b5a341af8f27e66fb0b7633cf20fc27049e3eb7f6f623a4655b719ebb")
+	if err != nil {
+		return storage.BlockTx{}, err
+	}
+
+	signedTx, err := tx.Sign(pk)
+	if err != nil {
+		return storage.BlockTx{}, err
+	}
+
+	return storage.NewBlockTx(signedTx, gas), nil
+}
+
 func TestCRUD(t *testing.T) {
 	type table struct {
 		name string
@@ -53,33 +67,18 @@ func TestCRUD(t *testing.T) {
 		{
 			name: "tip",
 			txs: []storage.UserTx{
+				{Nonce: 2, To: "0x6Fe6CF3c8fF57c58d24BfC869668F48BCbDb3BD9", Tip: 250},
+				{Nonce: 2, To: "0xa988b1866EaBF72B4c53b592c97aAD8e4b9bDCC0", Tip: 200},
+				{Nonce: 2, To: "0xa988b1866EaBF72B4c53b592c97aAD8e4b9bDCC0", Tip: 75},
 				{Nonce: 1, To: "0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76", Tip: 150},
 				{Nonce: 1, To: "0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76", Tip: 75},
-				{Nonce: 2, To: "0x6Fe6CF3c8fF57c58d24BfC869668F48BCbDb3BD9", Tip: 100},
-				{Nonce: 2, To: "0x6Fe6CF3c8fF57c58d24BfC869668F48BCbDb3BD9", Tip: 250},
-				{Nonce: 3, To: "0xa988b1866EaBF72B4c53b592c97aAD8e4b9bDCC0", Tip: 200},
-				{Nonce: 3, To: "0xa988b1866EaBF72B4c53b592c97aAD8e4b9bDCC0", Tip: 75},
+				{Nonce: 1, To: "0x6Fe6CF3c8fF57c58d24BfC869668F48BCbDb3BD9", Tip: 100},
 			},
 			best: []storage.UserTx{
 				{Nonce: 1, To: "0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76", Tip: 150},
+				{Nonce: 1, To: "0x6Fe6CF3c8fF57c58d24BfC869668F48BCbDb3BD9", Tip: 100},
+				{Nonce: 1, To: "0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76", Tip: 75},
 				{Nonce: 2, To: "0x6Fe6CF3c8fF57c58d24BfC869668F48BCbDb3BD9", Tip: 250},
-				{Nonce: 2, To: "0x6Fe6CF3c8fF57c58d24BfC869668F48BCbDb3BD9", Tip: 100},
-				{Nonce: 3, To: "0xa988b1866EaBF72B4c53b592c97aAD8e4b9bDCC0", Tip: 200},
-			},
-		},
-		{
-			name: "notip",
-			txs: []storage.UserTx{
-				{Nonce: 4, To: "0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76", Tip: 0},
-				{Nonce: 1, To: "0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76", Tip: 0},
-				{Nonce: 3, To: "0xFef311483Cc040e1A89fb9bb469eeB8A70935EF8", Tip: 0},
-				{Nonce: 2, To: "0xa988b1866EaBF72B4c53b592c97aAD8e4b9bDCC0", Tip: 0},
-			},
-			best: []storage.UserTx{
-				{Nonce: 1, To: "0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76", Tip: 0},
-				{Nonce: 2, To: "0xa988b1866EaBF72B4c53b592c97aAD8e4b9bDCC0", Tip: 0},
-				{Nonce: 3, To: "0xFef311483Cc040e1A89fb9bb469eeB8A70935EF8", Tip: 0},
-				{Nonce: 4, To: "0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76", Tip: 0},
 			},
 		},
 	}
@@ -92,32 +91,38 @@ func TestCRUD(t *testing.T) {
 				f := func(t *testing.T) {
 					mp := mempool.New()
 
-					for i, userTx := range tst.txs {
+					sign := []func(tx storage.UserTx, gas uint) (storage.BlockTx, error){
+						signBill,
+						signPavel,
+						signEd,
+					}
+
+					var signIdx int
+					for _, userTx := range tst.txs {
 						var tx storage.BlockTx
 						var err error
-						if i%2 == 0 {
-							tx, err = signBill(userTx, 0)
-						} else {
-							tx, err = signPavel(userTx, 0)
+
+						tx, err = sign[signIdx](userTx, 0)
+						signIdx++
+						if signIdx == 3 {
+							signIdx = 0
 						}
 
 						if err != nil {
-							t.Fatalf("\t%s\tTest %d:\tShould be able to sign transaction.", failed, testID)
+							t.Fatalf("\t%s\tTest %d:\tShould be able to sign/upsert transaction: %s", failed, testID, tx)
 						}
-						t.Logf("\t%s\tTest %d:\tShould be able to sign transaction.", success, testID)
+						t.Logf("\t%s\tTest %d:\tShould be able to sign/upsert transaction: %s", success, testID, tx)
 
 						mp.Upsert(tx)
-						t.Logf("\t%s\tTest %d:\tShould be able to add new transaction: %s", success, testID, tx.UniqueKey())
 					}
 
-					if len(mp.Copy()) != len(tst.txs) {
-						t.Logf("\t%s\tTest %d:\tgot: %d", failed, testID, len(mp.Copy()))
-						t.Logf("\t%s\tTest %d:\texp: %d", failed, testID, len(tst.txs))
-						t.Fatalf("\t%s\tTest %d:\tShould get back the right number of transactions.", failed, testID)
+					txs := mp.PickBest(4)
+					if len(txs) != 4 {
+						t.Fatalf("\t%s\tTest %d:\tShould get back the 4 transactions.", failed, testID)
 					}
-					t.Logf("\t%s\tTest %d:\tShould get back the right number of transactions.", success, testID)
+					t.Logf("\t%s\tTest %d:\tShould get back the 4 transactions", success, testID)
 
-					for i, tx := range mp.CopyBestByTip(4) {
+					for i, tx := range txs {
 						if tx.To != tst.best[i].To {
 							t.Logf("\t%s\tTest %d:\tgot: %s, Nonce: %d", failed, testID, tx.To, tx.Nonce)
 							t.Logf("\t%s\tTest %d:\texp: %s, Nonce: %d", failed, testID, tst.best[i].To, tst.best[i].Nonce)
@@ -126,16 +131,18 @@ func TestCRUD(t *testing.T) {
 						t.Logf("\t%s\tTest %d:\tShould get back the right tip/Nonce: %d/%d", success, testID, tx.Tip, tx.Nonce)
 					}
 
-					mp.Delete(mp.Copy()[1])
-					l := len(mp.Copy())
-					if l != len(tst.txs)-1 {
+					mp.Delete(txs[1])
+					txs = mp.PickBest(-1)
+					if len(txs) != len(tst.txs)-1 {
+						t.Logf("\t%s\tTest %d:\tgot: %d", failed, testID, len(txs))
+						t.Logf("\t%s\tTest %d:\texp: %d", failed, testID, len(tst.txs)-1)
 						t.Fatalf("\t%s\tTest %d:\tShould be able to remove a transaction.", failed, testID)
 					}
 					t.Logf("\t%s\tTest %d:\tShould be able to remove a transaction.", success, testID)
 
 					mp.Truncate()
-					l = len(mp.Copy())
-					if l != 0 {
+					txs = mp.PickBest(-1)
+					if len(txs) != 0 {
 						t.Fatalf("\t%s\tTest %d:\tShould be able to truncate mempool.", failed, testID)
 					}
 					t.Logf("\t%s\tTest %d:\tShould be able to truncate mempool.", success, testID)

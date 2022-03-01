@@ -294,7 +294,7 @@ func (w *worker) runMiningOperation() {
 	// Make sure there are at least transPerBlock in the mempool.
 	length := w.state.QueryMempoolLength()
 	if length < w.state.genesis.TransPerBlock {
-		w.evHandler("worker: runMiningOperation: MINING: not enough transactions to mine: len[%d]", length)
+		w.evHandler("worker: runMiningOperation: MINING: not enough transactions to mine: Txs[%d]", length)
 		return
 	}
 
@@ -303,7 +303,7 @@ func (w *worker) runMiningOperation() {
 	defer func() {
 		length := w.state.QueryMempoolLength()
 		if length >= w.state.genesis.TransPerBlock {
-			w.evHandler("worker: runMiningOperation: MINING: signal new mining operation: len[%d]", length)
+			w.evHandler("worker: runMiningOperation: MINING: signal new mining operation: Txs[%d]", length)
 			w.signalStartMining()
 		}
 	}()

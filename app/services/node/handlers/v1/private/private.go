@@ -36,7 +36,7 @@ func (h Handlers) SubmitNodeTransaction(ctx context.Context, w http.ResponseWrit
 		return fmt.Errorf("unable to decode payload: %w", err)
 	}
 
-	h.Log.Infow("add user tran", "traceid", v.TraceID, "tx", tx.UniqueKey())
+	h.Log.Infow("add user tran", "traceid", v.TraceID, "tx", tx)
 	if err := h.State.SubmitNodeTransaction(tx); err != nil {
 		return v1.NewRequestError(err, http.StatusBadRequest)
 	}

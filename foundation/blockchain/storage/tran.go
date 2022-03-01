@@ -77,9 +77,8 @@ func (tx SignedTx) SignatureString() string {
 	return signature.SignatureString(tx.V, tx.R, tx.S)
 }
 
-// UniqueKey is used to generate a unique key for mempool activity. The key is
-// generated based on the UserTx ID field and from address.
-func (tx SignedTx) UniqueKey() string {
+// String implements the fmt.Stringer interface for logging.
+func (tx SignedTx) String() string {
 	from, err := signature.FromAddress(tx.UserTx, tx.V, tx.R, tx.S)
 	if err != nil {
 		from = "unknown"

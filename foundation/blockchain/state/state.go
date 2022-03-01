@@ -29,6 +29,7 @@ import (
 	See the different nodes, view activity.
 
 	-- Blockchain
+	Store the nonce with the balance to validate the nonce.
 	Batch new transactions to send across the network.
 	Create a block index file for query and clean up forks.
 	Publishing events. (New Blocks)
@@ -245,7 +246,7 @@ func (s *State) WriteNextBlock(block storage.Block) error {
 			// Apply the balance changes based for this transaction.
 			s.balanceSheet.ApplyTransaction(block.Header.MinerAddress, tx)
 
-			s.evHandler("state: WriteNextBlock: remove from mempool: tx[%s]", tx.UniqueKey())
+			s.evHandler("state: WriteNextBlock: remove from mempool: tx[%s]", tx)
 
 			// Remove the transaction from the mempool if it exists.
 			s.mempool.Delete(tx)
@@ -341,7 +342,7 @@ func (s *State) RetrieveLatestBlock() storage.Block {
 
 // RetrieveMempool returns a copy of the mempool.
 func (s *State) RetrieveMempool() []storage.BlockTx {
-	return s.mempool.CopyBestByTip(-1)
+	return s.mempool.PickBest(-1)
 }
 
 // RetrieveBalanceSheetValues returns a copy of the balance sheet values.
@@ -453,10 +454,10 @@ func (s *State) MineNewBlock(ctx context.Context) (storage.Block, time.Duration,
 		return storage.Block{}, 0, ErrNotEnoughTransactions
 	}
 
-	s.evHandler("worker: runMiningOperation: MINING: create new block")
+	s.evHandler("worker: runMiningOperation: MINING: create new block: pick %d", s.genesis.TransPerBlock)
 
 	// Create a new block which owns it's own copy of the transactions.
-	trans := s.mempool.CopyBestByTip(s.genesis.TransPerBlock)
+	trans := s.mempool.PickBest(s.genesis.TransPerBlock)
 	nb := storage.NewBlock(s.minerAddress, s.genesis.Difficulty, s.genesis.TransPerBlock, s.RetrieveLatestBlock(), trans)
 
 	s.evHandler("worker: runMiningOperation: MINING: copy balance sheet and update")
@@ -511,7 +512,7 @@ func (s *State) MineNewBlock(ctx context.Context) (storage.Block, time.Duration,
 
 		// Remove the transactions from this block.
 		for _, tx := range nb.Transactions {
-			s.evHandler("worker: runMiningOperation: MINING: remove from mempool: tx[%s]", tx.UniqueKey())
+			s.evHandler("worker: runMiningOperation: MINING: remove from mempool: tx[%s]", tx)
 			s.mempool.Delete(tx)
 		}
 	}
