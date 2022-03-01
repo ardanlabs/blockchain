@@ -15,7 +15,7 @@ import (
 
 var (
 	url   string
-	id    uint
+	nonce uint
 	to    string
 	value uint
 	tip   uint
@@ -37,7 +37,7 @@ var sendCmd = &cobra.Command{
 }
 
 func sendWithDetails(privateKey *ecdsa.PrivateKey) {
-	userTx := storage.NewUserTx(id, to, value, tip, data)
+	userTx := storage.NewUserTx(nonce, to, value, tip, data)
 
 	signedTx, err := userTx.Sign(privateKey)
 	if err != nil {
@@ -58,7 +58,7 @@ func sendWithDetails(privateKey *ecdsa.PrivateKey) {
 func init() {
 	rootCmd.AddCommand(sendCmd)
 	sendCmd.Flags().StringVarP(&url, "url", "u", "http://localhost:8080", "Url of the node.")
-	sendCmd.Flags().UintVarP(&id, "id", "i", 0, "Unique id for the transaction.")
+	sendCmd.Flags().UintVarP(&nonce, "nonce", "n", 0, "id for the transaction.")
 	sendCmd.Flags().StringVarP(&to, "to", "t", "", "Url of the node.")
 	sendCmd.Flags().UintVarP(&value, "value", "v", 0, "Value to send.")
 	sendCmd.Flags().UintVarP(&tip, "tip", "c", 0, "Tip to send.")

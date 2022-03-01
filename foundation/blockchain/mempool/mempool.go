@@ -85,7 +85,7 @@ func (mp *Mempool) CopyBestByTip(howMany int) []storage.BlockTx {
 		cpy[i] = txs[i]
 	}
 
-	sort.Sort(byID(cpy))
+	sort.Sort(byNonce(cpy))
 	return cpy
 }
 
@@ -112,21 +112,21 @@ func (bt byTip) Swap(i, j int) {
 
 // =============================================================================
 
-// byID provides sorting support by the transaction id value.
-type byID []storage.BlockTx
+// byNonce provides sorting support by the transaction id value.
+type byNonce []storage.BlockTx
 
 // Len returns the number of transactions in the list.
-func (bi byID) Len() int {
-	return len(bi)
+func (bn byNonce) Len() int {
+	return len(bn)
 }
 
 // Less helps to sort the list by ID in ascending order to keep the transactions
 // in the right order of processing based on accounts choosing.
-func (bi byID) Less(i, j int) bool {
-	return bi[i].ID < bi[j].ID
+func (bn byNonce) Less(i, j int) bool {
+	return bn[i].Nonce < bn[j].Nonce
 }
 
 // Swap moves transactions in the order of the id value.
-func (bi byID) Swap(i, j int) {
-	bi[i], bi[j] = bi[j], bi[i]
+func (bn byNonce) Swap(i, j int) {
+	bn[i], bn[j] = bn[j], bn[i]
 }

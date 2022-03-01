@@ -106,6 +106,7 @@ func (h Handlers) BlocksByAddress(ctx context.Context, w http.ResponseWriter, r 
 			trans[i] = tx{
 				FromAddress: address,
 				FromName:    h.NS.Lookup(address),
+				Nonce:       tran.Nonce,
 				To:          tran.To,
 				Value:       tran.Value,
 				Tip:         tran.Tip,

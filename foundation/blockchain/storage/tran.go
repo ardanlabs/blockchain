@@ -13,7 +13,7 @@ import (
 
 // UserTx is the transactional data submitted by a user.
 type UserTx struct {
-	ID    uint   `json:"id"`    // Unique id for the transaction supplied by the user.
+	Nonce uint   `json:"nonce"` // Unique id for the transaction supplied by the user.
 	To    string `json:"to"`    // Address receiving the benefit of the transaction.
 	Value uint   `json:"value"` // Monetary value received from this transaction.
 	Tip   uint   `json:"tip"`   // Tip offered by the sender as an incentive to mine this transaction.
@@ -21,9 +21,9 @@ type UserTx struct {
 }
 
 // NewUserTx constructs a new user transaction.
-func NewUserTx(id uint, to string, value uint, tip uint, data []byte) UserTx {
+func NewUserTx(nonce uint, to string, value uint, tip uint, data []byte) UserTx {
 	return UserTx{
-		ID:    id,
+		Nonce: nonce,
 		To:    to,
 		Value: value,
 		Tip:   tip,
@@ -85,7 +85,7 @@ func (tx SignedTx) UniqueKey() string {
 		from = "unknown"
 	}
 
-	return fmt.Sprintf("%s:%d", from, tx.ID)
+	return fmt.Sprintf("%s:%d", from, tx.Nonce)
 }
 
 // =============================================================================

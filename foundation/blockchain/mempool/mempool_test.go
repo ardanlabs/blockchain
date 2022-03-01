@@ -53,33 +53,33 @@ func TestCRUD(t *testing.T) {
 		{
 			name: "tip",
 			txs: []storage.UserTx{
-				{ID: 1, To: "0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76", Tip: 150},
-				{ID: 1, To: "0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76", Tip: 75},
-				{ID: 2, To: "0x6Fe6CF3c8fF57c58d24BfC869668F48BCbDb3BD9", Tip: 100},
-				{ID: 2, To: "0x6Fe6CF3c8fF57c58d24BfC869668F48BCbDb3BD9", Tip: 250},
-				{ID: 3, To: "0xa988b1866EaBF72B4c53b592c97aAD8e4b9bDCC0", Tip: 200},
-				{ID: 3, To: "0xa988b1866EaBF72B4c53b592c97aAD8e4b9bDCC0", Tip: 75},
+				{Nonce: 1, To: "0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76", Tip: 150},
+				{Nonce: 1, To: "0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76", Tip: 75},
+				{Nonce: 2, To: "0x6Fe6CF3c8fF57c58d24BfC869668F48BCbDb3BD9", Tip: 100},
+				{Nonce: 2, To: "0x6Fe6CF3c8fF57c58d24BfC869668F48BCbDb3BD9", Tip: 250},
+				{Nonce: 3, To: "0xa988b1866EaBF72B4c53b592c97aAD8e4b9bDCC0", Tip: 200},
+				{Nonce: 3, To: "0xa988b1866EaBF72B4c53b592c97aAD8e4b9bDCC0", Tip: 75},
 			},
 			best: []storage.UserTx{
-				{ID: 1, To: "0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76", Tip: 150},
-				{ID: 2, To: "0x6Fe6CF3c8fF57c58d24BfC869668F48BCbDb3BD9", Tip: 250},
-				{ID: 2, To: "0x6Fe6CF3c8fF57c58d24BfC869668F48BCbDb3BD9", Tip: 100},
-				{ID: 3, To: "0xa988b1866EaBF72B4c53b592c97aAD8e4b9bDCC0", Tip: 200},
+				{Nonce: 1, To: "0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76", Tip: 150},
+				{Nonce: 2, To: "0x6Fe6CF3c8fF57c58d24BfC869668F48BCbDb3BD9", Tip: 250},
+				{Nonce: 2, To: "0x6Fe6CF3c8fF57c58d24BfC869668F48BCbDb3BD9", Tip: 100},
+				{Nonce: 3, To: "0xa988b1866EaBF72B4c53b592c97aAD8e4b9bDCC0", Tip: 200},
 			},
 		},
 		{
 			name: "notip",
 			txs: []storage.UserTx{
-				{ID: 4, To: "0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76", Tip: 0},
-				{ID: 1, To: "0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76", Tip: 0},
-				{ID: 3, To: "0xFef311483Cc040e1A89fb9bb469eeB8A70935EF8", Tip: 0},
-				{ID: 2, To: "0xa988b1866EaBF72B4c53b592c97aAD8e4b9bDCC0", Tip: 0},
+				{Nonce: 4, To: "0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76", Tip: 0},
+				{Nonce: 1, To: "0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76", Tip: 0},
+				{Nonce: 3, To: "0xFef311483Cc040e1A89fb9bb469eeB8A70935EF8", Tip: 0},
+				{Nonce: 2, To: "0xa988b1866EaBF72B4c53b592c97aAD8e4b9bDCC0", Tip: 0},
 			},
 			best: []storage.UserTx{
-				{ID: 1, To: "0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76", Tip: 0},
-				{ID: 2, To: "0xa988b1866EaBF72B4c53b592c97aAD8e4b9bDCC0", Tip: 0},
-				{ID: 3, To: "0xFef311483Cc040e1A89fb9bb469eeB8A70935EF8", Tip: 0},
-				{ID: 4, To: "0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76", Tip: 0},
+				{Nonce: 1, To: "0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76", Tip: 0},
+				{Nonce: 2, To: "0xa988b1866EaBF72B4c53b592c97aAD8e4b9bDCC0", Tip: 0},
+				{Nonce: 3, To: "0xFef311483Cc040e1A89fb9bb469eeB8A70935EF8", Tip: 0},
+				{Nonce: 4, To: "0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76", Tip: 0},
 			},
 		},
 	}
@@ -119,11 +119,11 @@ func TestCRUD(t *testing.T) {
 
 					for i, tx := range mp.CopyBestByTip(4) {
 						if tx.To != tst.best[i].To {
-							t.Logf("\t%s\tTest %d:\tgot: %s, id: %d", failed, testID, tx.To, tx.ID)
-							t.Logf("\t%s\tTest %d:\texp: %s, id: %d", failed, testID, tst.best[i].To, tst.best[i].ID)
+							t.Logf("\t%s\tTest %d:\tgot: %s, Nonce: %d", failed, testID, tx.To, tx.Nonce)
+							t.Logf("\t%s\tTest %d:\texp: %s, Nonce: %d", failed, testID, tst.best[i].To, tst.best[i].Nonce)
 							t.Fatalf("\t%s\tTest %d:\tShould get back the right tip/id.", failed, testID)
 						}
-						t.Logf("\t%s\tTest %d:\tShould get back the right tip/id: %d/%d", success, testID, tx.Tip, tx.ID)
+						t.Logf("\t%s\tTest %d:\tShould get back the right tip/Nonce: %d/%d", success, testID, tx.Tip, tx.Nonce)
 					}
 
 					mp.Delete(mp.Copy()[1])

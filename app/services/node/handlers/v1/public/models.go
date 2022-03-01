@@ -15,6 +15,7 @@ type balances struct {
 type tx struct {
 	FromAddress string `json:"from_address"`
 	FromName    string `json:"from_name"`
+	Nonce       uint   `json:"nonce"`
 	To          string `json:"to"`
 	Value       uint   `json:"value"`
 	Tip         uint   `json:"tip"`
