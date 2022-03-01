@@ -19,6 +19,7 @@ type tx struct {
 	Value       uint   `json:"value"`
 	Tip         uint   `json:"tip"`
 	Data        []byte `json:"data"`
+	TimeStamp   uint64 `json:"timestamp"`
 	Gas         uint   `json:"gas"`
 	Sig         string `json:"sig"`
 }

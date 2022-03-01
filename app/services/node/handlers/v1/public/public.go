@@ -110,6 +110,7 @@ func (h Handlers) BlocksByAddress(ctx context.Context, w http.ResponseWriter, r 
 				Value:       tran.Value,
 				Tip:         tran.Tip,
 				Data:        tran.Data,
+				TimeStamp:   tran.TimeStamp,
 				Gas:         tran.Gas,
 				Sig:         tran.SignatureString(),
 			}
