@@ -156,9 +156,10 @@ func (mp *Mempool) PickBest(howMany int) []storage.BlockTx {
 		}
 	}
 
-	// Sort each row by tip and then try to select the number of requested
-	// transactions. Keep pulling transactions from each row until the
-	// amount of fulfilled or there are no more transactions.
+	// Sort each row by tip unless we will take all transactions from that row
+	// anyway. Then try to select the number of requested transactions. Keep
+	// pulling transactions from each row until the amount of fulfilled or
+	// there are no more transactions.
 	var final []storage.BlockTx
 done:
 	for _, row := range rows {
