@@ -83,6 +83,10 @@ func (mp *Mempool) PickBest(howMany int) []storage.BlockTx {
 	m := make(map[string][]storage.BlockTx)
 	mp.mu.RLock()
 	{
+		if howMany == -1 {
+			howMany = len(mp.pool)
+		}
+
 		for key, tx := range mp.pool {
 			fromAddr := strings.Split(key, ":")[0]
 			m[fromAddr] = append(m[fromAddr], tx)
@@ -142,13 +146,6 @@ func (mp *Mempool) PickBest(howMany int) []storage.BlockTx {
 		1: Edua: {Nonce: 2, To: "0xa988b1866EaBF72B4c53b592c97aAD8e4b9bDCC0", Tip: 75},
 	*/
 
-	if howMany == -1 {
-		howMany = 0
-		for k := range m {
-			howMany += len(m[k])
-		}
-	}
-
 	// Sort each row by tip unless we will take all transactions from that row
 	// anyway. Then try to select the number of requested transactions. Keep
 	// pulling transactions from each row until the amount of fulfilled or
@@ -159,13 +156,10 @@ done:
 		need := howMany - len(final)
 		if len(row) > need {
 			sort.Sort(byTip(row))
+			final = append(final, row[:need]...)
+			break done
 		}
-		for _, tx := range row {
-			final = append(final, tx)
-			if len(final) == howMany {
-				break done
-			}
-		}
+		final = append(final, row...)
 	}
 
 	/*
