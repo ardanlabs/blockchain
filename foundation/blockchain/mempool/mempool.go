@@ -2,7 +2,9 @@
 package mempool
 
 import (
+	"fmt"
 	"sort"
+	"strings"
 	"sync"
 
 	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
@@ -11,14 +13,14 @@ import (
 // Mempool represents a cache of transactions organized by address
 // with a second key on the transaction nonce.
 type Mempool struct {
-	pool map[string]map[uint]storage.BlockTx
+	pool map[string]storage.BlockTx
 	mu   sync.RWMutex
 }
 
 // New constructs a new mempool to manage pending transactions.
 func New() *Mempool {
 	return &Mempool{
-		pool: make(map[string]map[uint]storage.BlockTx),
+		pool: make(map[string]storage.BlockTx),
 	}
 }
 
@@ -27,12 +29,7 @@ func (mp *Mempool) Count() int {
 	mp.mu.RLock()
 	defer mp.mu.RUnlock()
 
-	var total int
-	for k := range mp.pool {
-		total += len(mp.pool[k])
-	}
-
-	return total
+	return len(mp.pool)
 }
 
 // Upsert adds or replaces a transaction from the mempool.
@@ -45,10 +42,8 @@ func (mp *Mempool) Upsert(tx storage.BlockTx) (int, error) {
 		return 0, err
 	}
 
-	if _, exists := mp.pool[from]; !exists {
-		mp.pool[from] = make(map[uint]storage.BlockTx)
-	}
-	mp.pool[from][tx.Nonce] = tx
+	key := fmt.Sprintf("%s:%d", from, tx.Nonce)
+	mp.pool[key] = tx
 
 	return len(mp.pool), nil
 }
@@ -63,12 +58,8 @@ func (mp *Mempool) Delete(tx storage.BlockTx) error {
 		return err
 	}
 
-	if addr, exists := mp.pool[from]; exists {
-		delete(addr, tx.Nonce)
-		if len(addr) == 0 {
-			delete(mp.pool, from)
-		}
-	}
+	key := fmt.Sprintf("%s:%d", from, tx.Nonce)
+	delete(mp.pool, key)
 
 	return nil
 }
@@ -78,7 +69,7 @@ func (mp *Mempool) Truncate() {
 	mp.mu.Lock()
 	defer mp.mu.Unlock()
 
-	mp.pool = make(map[string]map[uint]storage.BlockTx)
+	mp.pool = make(map[string]storage.BlockTx)
 }
 
 // PickBest returns a list of the best transactions for the next
@@ -88,14 +79,13 @@ func (mp *Mempool) Truncate() {
 // respecting the nonce for each address/transaction.
 func (mp *Mempool) PickBest(howMany int) []storage.BlockTx {
 
-	// Convert the transactions by address to a slice.
+	// Group the transaction by address.
 	m := make(map[string][]storage.BlockTx)
 	mp.mu.RLock()
 	{
-		for from, trans := range mp.pool {
-			for _, tx := range trans {
-				m[from] = append(m[from], tx)
-			}
+		for key, tx := range mp.pool {
+			fromAddr := strings.Split(key, ":")[0]
+			m[fromAddr] = append(m[fromAddr], tx)
 		}
 	}
 	mp.mu.RUnlock()
