@@ -5,7 +5,6 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/ardanlabs/blockchain/foundation/blockchain/signature"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
 )
 
@@ -41,7 +40,7 @@ func (mp *Mempool) Upsert(tx storage.BlockTx) int {
 	mp.mu.Lock()
 	defer mp.mu.Unlock()
 
-	from, err := signature.FromAddress(tx.UserTx, tx.V, tx.R, tx.S)
+	from, err := tx.FromAddress()
 	if err != nil {
 		from = "unknown"
 	}
@@ -59,7 +58,7 @@ func (mp *Mempool) Delete(tx storage.BlockTx) {
 	mp.mu.Lock()
 	defer mp.mu.Unlock()
 
-	from, err := signature.FromAddress(tx.UserTx, tx.V, tx.R, tx.S)
+	from, err := tx.FromAddress()
 	if err != nil {
 		from = "unknown"
 	}
