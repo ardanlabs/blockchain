@@ -37,7 +37,7 @@ func (mp *Mempool) Upsert(tx storage.BlockTx) (int, error) {
 	mp.mu.Lock()
 	defer mp.mu.Unlock()
 
-	key, err := key(tx)
+	key, err := mapKey(tx)
 	if err != nil {
 		return 0, err
 	}
@@ -52,7 +52,7 @@ func (mp *Mempool) Delete(tx storage.BlockTx) error {
 	mp.mu.Lock()
 	defer mp.mu.Unlock()
 
-	key, err := key(tx)
+	key, err := mapKey(tx)
 	if err != nil {
 		return err
 	}
@@ -172,8 +172,8 @@ done:
 
 // =============================================================================
 
-// key is used to generate the map key.
-func key(tx storage.BlockTx) (string, error) {
+// mapKey is used to generate the map key.
+func mapKey(tx storage.BlockTx) (string, error) {
 	addr, err := tx.FromAddress()
 	if err != nil {
 		return "", err
