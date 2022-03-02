@@ -167,7 +167,7 @@ func (mp *Mempool) PickBest(howMany int) []storage.BlockTx {
 done:
 	for _, row := range rows {
 		need := howMany - len(final)
-		if need <= len(row) {
+		if len(row) > need {
 			sort.Sort(byTip(row))
 		}
 		for _, tx := range row {
