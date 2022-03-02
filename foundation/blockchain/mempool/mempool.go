@@ -9,7 +9,8 @@ import (
 	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
 )
 
-// Mempool represents a cache of transactions each with a unique id.
+// Mempool represents a cache of transactions organized by address
+// with a second key on the transaction nonce.
 type Mempool struct {
 	pool map[string]map[uint]storage.BlockTx
 	mu   sync.RWMutex
@@ -161,7 +162,9 @@ func (mp *Mempool) PickBest(howMany int) []storage.BlockTx {
 	var final []storage.BlockTx
 done:
 	for _, row := range rows {
-		sort.Sort(byTip(row))
+		if len(final)+len(row) > howMany {
+			sort.Sort(byTip(row))
+		}
 		for _, tx := range row {
 			final = append(final, tx)
 			if len(final) == howMany {
