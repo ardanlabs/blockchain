@@ -36,13 +36,13 @@ func (mp *Mempool) Count() int {
 }
 
 // Upsert adds or replaces a transaction from the mempool.
-func (mp *Mempool) Upsert(tx storage.BlockTx) int {
+func (mp *Mempool) Upsert(tx storage.BlockTx) (int, error) {
 	mp.mu.Lock()
 	defer mp.mu.Unlock()
 
 	from, err := tx.FromAddress()
 	if err != nil {
-		from = "unknown"
+		return 0, err
 	}
 
 	if mp.pool[from] == nil {
@@ -50,17 +50,17 @@ func (mp *Mempool) Upsert(tx storage.BlockTx) int {
 	}
 	mp.pool[from][tx.Nonce] = tx
 
-	return len(mp.pool)
+	return len(mp.pool), nil
 }
 
 // Delete removed a transaction from the mempool.
-func (mp *Mempool) Delete(tx storage.BlockTx) {
+func (mp *Mempool) Delete(tx storage.BlockTx) error {
 	mp.mu.Lock()
 	defer mp.mu.Unlock()
 
 	from, err := tx.FromAddress()
 	if err != nil {
-		from = "unknown"
+		return err
 	}
 
 	if _, exists := mp.pool[from]; exists {
@@ -69,6 +69,8 @@ func (mp *Mempool) Delete(tx storage.BlockTx) {
 			delete(mp.pool, from)
 		}
 	}
+
+	return nil
 }
 
 // Truncate clears all the transactions from the pool.

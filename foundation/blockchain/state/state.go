@@ -175,7 +175,12 @@ func (s *State) SubmitWalletTransaction(signedTx storage.SignedTx) error {
 	}
 
 	tx := storage.NewBlockTx(signedTx, s.genesis.GasPrice)
-	n := s.mempool.Upsert(tx)
+
+	n, err := s.mempool.Upsert(tx)
+	if err != nil {
+		return err
+	}
+
 	s.worker.signalShareTransactions(tx)
 
 	if n >= s.genesis.TransPerBlock {
@@ -191,7 +196,11 @@ func (s *State) SubmitNodeTransaction(tx storage.BlockTx) error {
 		return err
 	}
 
-	n := s.mempool.Upsert(tx)
+	n, err := s.mempool.Upsert(tx)
+	if err != nil {
+		return err
+	}
+
 	if n >= s.genesis.TransPerBlock {
 		s.worker.signalStartMining()
 	}
