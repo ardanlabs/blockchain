@@ -86,8 +86,8 @@ func (mp *Mempool) PickBest(howMany int) []storage.BlockTx {
 		}
 
 		for key, tx := range mp.pool {
-			fromAddr := strings.Split(key, ":")[0]
-			m[fromAddr] = append(m[fromAddr], tx)
+			addr := strings.Split(key, ":")[0]
+			m[addr] = append(m[addr], tx)
 		}
 	}
 	mp.mu.RUnlock()
@@ -174,12 +174,12 @@ done:
 
 // key is used to generate the map key.
 func key(tx storage.BlockTx) (string, error) {
-	from, err := tx.FromAddress()
+	addr, err := tx.FromAddress()
 	if err != nil {
 		return "", err
 	}
 
-	return fmt.Sprintf("%s:%d", from, tx.Nonce), nil
+	return fmt.Sprintf("%s:%d", addr, tx.Nonce), nil
 }
 
 // =============================================================================
