@@ -79,7 +79,7 @@ func (mp *Mempool) Truncate() {
 // respecting the nonce for each address/transaction.
 func (mp *Mempool) PickBest(howMany int) []storage.BlockTx {
 
-	// Group the transaction by address.
+	// Group the transactions by address.
 	m := make(map[string][]storage.BlockTx)
 	mp.mu.RLock()
 	{
