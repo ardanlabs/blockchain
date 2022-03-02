@@ -37,12 +37,11 @@ func (mp *Mempool) Upsert(tx storage.BlockTx) (int, error) {
 	mp.mu.Lock()
 	defer mp.mu.Unlock()
 
-	from, err := tx.FromAddress()
+	key, err := key(tx)
 	if err != nil {
 		return 0, err
 	}
 
-	key := fmt.Sprintf("%s:%d", from, tx.Nonce)
 	mp.pool[key] = tx
 
 	return len(mp.pool), nil
@@ -53,12 +52,11 @@ func (mp *Mempool) Delete(tx storage.BlockTx) error {
 	mp.mu.Lock()
 	defer mp.mu.Unlock()
 
-	from, err := tx.FromAddress()
+	key, err := key(tx)
 	if err != nil {
 		return err
 	}
 
-	key := fmt.Sprintf("%s:%d", from, tx.Nonce)
 	delete(mp.pool, key)
 
 	return nil
@@ -170,6 +168,18 @@ done:
 	*/
 
 	return final
+}
+
+// =============================================================================
+
+// key is used to generate the map key.
+func key(tx storage.BlockTx) (string, error) {
+	from, err := tx.FromAddress()
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%s:%d", from, tx.Nonce), nil
 }
 
 // =============================================================================
