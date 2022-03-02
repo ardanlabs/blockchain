@@ -45,7 +45,7 @@ func (mp *Mempool) Upsert(tx storage.BlockTx) (int, error) {
 		return 0, err
 	}
 
-	if mp.pool[from] == nil {
+	if _, exists := mp.pool[from]; !exists {
 		mp.pool[from] = make(map[uint]storage.BlockTx)
 	}
 	mp.pool[from][tx.Nonce] = tx
@@ -63,9 +63,9 @@ func (mp *Mempool) Delete(tx storage.BlockTx) error {
 		return err
 	}
 
-	if _, exists := mp.pool[from]; exists {
-		delete(mp.pool[from], tx.Nonce)
-		if len(mp.pool[from]) == 0 {
+	if addr, exists := mp.pool[from]; exists {
+		delete(addr, tx.Nonce)
+		if len(addr) == 0 {
 			delete(mp.pool, from)
 		}
 	}
@@ -166,7 +166,8 @@ func (mp *Mempool) PickBest(howMany int) []storage.BlockTx {
 	var final []storage.BlockTx
 done:
 	for _, row := range rows {
-		if len(final)+len(row) > howMany {
+		need := howMany - len(final)
+		if need <= len(row) {
 			sort.Sort(byTip(row))
 		}
 		for _, tx := range row {

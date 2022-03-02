@@ -60,25 +60,25 @@ func TestCRUD(t *testing.T) {
 	type table struct {
 		name string
 		txs  []storage.UserTx
-		best []storage.UserTx
+		best map[string]storage.UserTx
 	}
 
 	tt := []table{
 		{
 			name: "tip",
 			txs: []storage.UserTx{
-				{Nonce: 2, To: "0x6Fe6CF3c8fF57c58d24BfC869668F48BCbDb3BD9", Tip: 250},
-				{Nonce: 2, To: "0xa988b1866EaBF72B4c53b592c97aAD8e4b9bDCC0", Tip: 200},
-				{Nonce: 2, To: "0xa988b1866EaBF72B4c53b592c97aAD8e4b9bDCC0", Tip: 75},
-				{Nonce: 1, To: "0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76", Tip: 150},
-				{Nonce: 1, To: "0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76", Tip: 75},
-				{Nonce: 1, To: "0x6Fe6CF3c8fF57c58d24BfC869668F48BCbDb3BD9", Tip: 100},
+				{Nonce: 2, To: "0x0000000000000000000000000000000000000000", Tip: 250},
+				{Nonce: 2, To: "0x1111111111111111111111111111111111111111", Tip: 200},
+				{Nonce: 2, To: "0x2222222222222222222222222222222222222222", Tip: 75},
+				{Nonce: 1, To: "0x3333333333333333333333333333333333333333", Tip: 150},
+				{Nonce: 1, To: "0x4444444444444444444444444444444444444444", Tip: 75},
+				{Nonce: 1, To: "0x5555555555555555555555555555555555555555", Tip: 100},
 			},
-			best: []storage.UserTx{
-				{Nonce: 1, To: "0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76", Tip: 150},
-				{Nonce: 1, To: "0x6Fe6CF3c8fF57c58d24BfC869668F48BCbDb3BD9", Tip: 100},
-				{Nonce: 1, To: "0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76", Tip: 75},
-				{Nonce: 2, To: "0x6Fe6CF3c8fF57c58d24BfC869668F48BCbDb3BD9", Tip: 250},
+			best: map[string]storage.UserTx{
+				"0x3333333333333333333333333333333333333333": {Nonce: 1, Tip: 150},
+				"0x5555555555555555555555555555555555555555": {Nonce: 1, Tip: 100},
+				"0x4444444444444444444444444444444444444444": {Nonce: 1, Tip: 75},
+				"0x0000000000000000000000000000000000000000": {Nonce: 2, Tip: 250},
 			},
 		},
 	}
@@ -122,13 +122,11 @@ func TestCRUD(t *testing.T) {
 					}
 					t.Logf("\t%s\tTest %d:\tShould get back the 4 transactions", success, testID)
 
-					for i, tx := range txs {
-						if tx.To != tst.best[i].To {
-							t.Logf("\t%s\tTest %d:\tgot: %s, Nonce: %d", failed, testID, tx.To, tx.Nonce)
-							t.Logf("\t%s\tTest %d:\texp: %s, Nonce: %d", failed, testID, tst.best[i].To, tst.best[i].Nonce)
-							t.Fatalf("\t%s\tTest %d:\tShould get back the right tip/id.", failed, testID)
+					for _, tx := range txs {
+						if _, exists := tst.best[tx.To]; !exists {
+							t.Fatalf("\t%s\tTest %d:\tShould get back the right addr/tip: %s/%d", failed, testID, tx.To, tx.Tip)
 						}
-						t.Logf("\t%s\tTest %d:\tShould get back the right tip/Nonce: %d/%d", success, testID, tx.Tip, tx.Nonce)
+						t.Logf("\t%s\tTest %d:\tShould get back the right addr/tip: %s/%d", success, testID, tx.To, tx.Tip)
 					}
 
 					mp.Delete(txs[1])
