@@ -12,6 +12,7 @@ import (
 const (
 	success = "\u2713"
 	failed  = "\u2717"
+	to      = "0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76"
 )
 
 func sign(hexKey string, tx storage.UserTx, gas uint) (storage.BlockTx, error) {
