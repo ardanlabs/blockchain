@@ -14,36 +14,8 @@ const (
 	failed  = "\u2717"
 )
 
-func signBill(tx storage.UserTx, gas uint) (storage.BlockTx, error) {
-	pk, err := crypto.HexToECDSA("9f332e3700d8fc2446eaf6d15034cf96e0c2745e40353deef032a5dbf1dfed93")
-	if err != nil {
-		return storage.BlockTx{}, err
-	}
-
-	signedTx, err := tx.Sign(pk)
-	if err != nil {
-		return storage.BlockTx{}, err
-	}
-
-	return storage.NewBlockTx(signedTx, gas), nil
-}
-
-func signPavel(tx storage.UserTx, gas uint) (storage.BlockTx, error) {
-	pk, err := crypto.HexToECDSA("fae85851bdf5c9f49923722ce38f3c1defcfd3619ef5453230a58ad805499959")
-	if err != nil {
-		return storage.BlockTx{}, err
-	}
-
-	signedTx, err := tx.Sign(pk)
-	if err != nil {
-		return storage.BlockTx{}, err
-	}
-
-	return storage.NewBlockTx(signedTx, gas), nil
-}
-
-func signEd(tx storage.UserTx, gas uint) (storage.BlockTx, error) {
-	pk, err := crypto.HexToECDSA("aed31b6b5a341af8f27e66fb0b7633cf20fc27049e3eb7f6f623a4655b719ebb")
+func sign(hexKey string, tx storage.UserTx, gas uint) (storage.BlockTx, error) {
+	pk, err := crypto.HexToECDSA(hexKey)
 	if err != nil {
 		return storage.BlockTx{}, err
 	}
@@ -57,22 +29,44 @@ func signEd(tx storage.UserTx, gas uint) (storage.BlockTx, error) {
 }
 
 func TestCRUD(t *testing.T) {
+	type user struct {
+		userTx storage.UserTx
+		hexKey string
+	}
 	type table struct {
 		name string
-		txs  []storage.UserTx
+		txs  []user
 		best map[string]storage.UserTx
 	}
 
 	tt := []table{
 		{
 			name: "tip",
-			txs: []storage.UserTx{
-				{Nonce: 2, To: "0x0000000000000000000000000000000000000000", Tip: 250},
-				{Nonce: 2, To: "0x1111111111111111111111111111111111111111", Tip: 200},
-				{Nonce: 2, To: "0x2222222222222222222222222222222222222222", Tip: 75},
-				{Nonce: 1, To: "0x3333333333333333333333333333333333333333", Tip: 150},
-				{Nonce: 1, To: "0x4444444444444444444444444444444444444444", Tip: 75},
-				{Nonce: 1, To: "0x5555555555555555555555555555555555555555", Tip: 100},
+			txs: []user{
+				{
+					userTx: storage.UserTx{Nonce: 2, To: "0x0000000000000000000000000000000000000000", Tip: 250},
+					hexKey: "9f332e3700d8fc2446eaf6d15034cf96e0c2745e40353deef032a5dbf1dfed93",
+				},
+				{
+					userTx: storage.UserTx{Nonce: 2, To: "0x1111111111111111111111111111111111111111", Tip: 200},
+					hexKey: "fae85851bdf5c9f49923722ce38f3c1defcfd3619ef5453230a58ad805499959",
+				},
+				{
+					userTx: storage.UserTx{Nonce: 2, To: "0x2222222222222222222222222222222222222222", Tip: 75},
+					hexKey: "aed31b6b5a341af8f27e66fb0b7633cf20fc27049e3eb7f6f623a4655b719ebb",
+				},
+				{
+					userTx: storage.UserTx{Nonce: 1, To: "0x3333333333333333333333333333333333333333", Tip: 150},
+					hexKey: "9f332e3700d8fc2446eaf6d15034cf96e0c2745e40353deef032a5dbf1dfed93",
+				},
+				{
+					userTx: storage.UserTx{Nonce: 1, To: "0x4444444444444444444444444444444444444444", Tip: 75},
+					hexKey: "fae85851bdf5c9f49923722ce38f3c1defcfd3619ef5453230a58ad805499959",
+				},
+				{
+					userTx: storage.UserTx{Nonce: 1, To: "0x5555555555555555555555555555555555555555", Tip: 100},
+					hexKey: "aed31b6b5a341af8f27e66fb0b7633cf20fc27049e3eb7f6f623a4655b719ebb",
+				},
 			},
 			best: map[string]storage.UserTx{
 				"0x3333333333333333333333333333333333333333": {Nonce: 1, Tip: 150},
@@ -91,23 +85,8 @@ func TestCRUD(t *testing.T) {
 				f := func(t *testing.T) {
 					mp := mempool.New()
 
-					sign := []func(tx storage.UserTx, gas uint) (storage.BlockTx, error){
-						signBill,
-						signPavel,
-						signEd,
-					}
-
-					var signIdx int
-					for _, userTx := range tst.txs {
-						var tx storage.BlockTx
-						var err error
-
-						tx, err = sign[signIdx](userTx, 0)
-						signIdx++
-						if signIdx == 3 {
-							signIdx = 0
-						}
-
+					for _, user := range tst.txs {
+						tx, err := sign(user.hexKey, user.userTx, 0)
 						if err != nil {
 							t.Fatalf("\t%s\tTest %d:\tShould be able to sign/upsert transaction: %s", failed, testID, tx)
 						}
