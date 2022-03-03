@@ -25,7 +25,7 @@ const ardanID = 29
 
 // =============================================================================
 
-// hash returns a unique string for the value.
+// Hash returns a unique string for the value.
 func Hash(value interface{}) string {
 	data, err := json.Marshal(value)
 	if err != nil {

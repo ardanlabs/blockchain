@@ -83,7 +83,7 @@ func (tx SignedTx) FromAddress() (string, error) {
 	return signature.FromAddress(tx.UserTx, tx.V, tx.R, tx.S)
 }
 
-// Signature returns the signature as a string.
+// SignatureString returns the signature as a string.
 func (tx SignedTx) SignatureString() string {
 	return signature.SignatureString(tx.V, tx.R, tx.S)
 }
