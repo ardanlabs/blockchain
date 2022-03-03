@@ -60,35 +60,35 @@ func (h Handlers) Mempool(ctx context.Context, w http.ResponseWriter, r *http.Re
 	return web.Respond(ctx, w, txs, http.StatusOK)
 }
 
-// Balances returns the current balances for all users.
-func (h Handlers) Balances(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+// Accounts returns the current balances for all users.
+func (h Handlers) Accounts(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	address := web.Param(r, "address")
-	var accounts map[string]accounts.Info
 
+	var blkActs map[string]accounts.Info
 	if address == "" {
-		accounts = h.State.RetrieveAccounts()
+		blkActs = h.State.RetrieveAccounts()
 	} else {
-		accounts = h.State.QueryAccounts(address)
+		blkActs = h.State.QueryAccounts(address)
 	}
 
-	bals := make([]bal, 0, len(accounts))
-	for addr, info := range accounts {
-		bal := bal{
+	acts := make([]info, 0, len(blkActs))
+	for addr, blkInfo := range blkActs {
+		act := info{
 			Address: addr,
 			Name:    h.NS.Lookup(addr),
-			Balance: info.Balance,
-			Nonce:   info.Nonce,
+			Balance: blkInfo.Balance,
+			Nonce:   blkInfo.Nonce,
 		}
-		bals = append(bals, bal)
+		acts = append(acts, act)
 	}
 
-	balances := balances{
+	ai := actInfo{
 		LastestBlock: h.State.RetrieveLatestBlock().Hash(),
 		Uncommitted:  len(h.State.RetrieveMempool()),
-		Balances:     bals,
+		Accounts:     acts,
 	}
 
-	return web.Respond(ctx, w, balances, http.StatusOK)
+	return web.Respond(ctx, w, ai, http.StatusOK)
 }
 
 // BlocksByAddress returns all the blocks and their details.
