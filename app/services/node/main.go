@@ -11,9 +11,9 @@ import (
 	"time"
 
 	"github.com/ardanlabs/blockchain/app/services/node/handlers"
-	"github.com/ardanlabs/blockchain/foundation/blockchain/mempool"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/peer"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/state"
+	"github.com/ardanlabs/blockchain/foundation/blockchain/strategy"
 	"github.com/ardanlabs/blockchain/foundation/logger"
 	"github.com/ardanlabs/blockchain/foundation/nameservice"
 	"github.com/ardanlabs/conf/v3"
@@ -128,7 +128,7 @@ func run(log *zap.SugaredLogger) error {
 		log.Infow(s, "traceid", "00000000-0000-0000-0000-000000000000")
 	}
 
-	sort, err := mempool.RetrieveSortStrategy(cfg.Node.SortStrategy)
+	sort, err := strategy.RetrieveSorter(cfg.Node.SortStrategy)
 	if err != nil {
 		return fmt.Errorf("unable to find the sort strategy %q: %w", cfg.Node.SortStrategy, err)
 	}

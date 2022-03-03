@@ -1,15 +1,38 @@
-package mempool_test
+package strategy_test
 
 import (
 	"testing"
 	"time"
 
-	"github.com/ardanlabs/blockchain/foundation/blockchain/mempool"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
+	"github.com/ardanlabs/blockchain/foundation/blockchain/strategy"
+	"github.com/ethereum/go-ethereum/crypto"
 )
+
+// Success and failure markers.
+const (
+	success = "\u2713"
+	failed  = "\u2717"
+)
+
+func sign(hexKey string, tx storage.UserTx, gas uint) (storage.BlockTx, error) {
+	pk, err := crypto.HexToECDSA(hexKey)
+	if err != nil {
+		return storage.BlockTx{}, err
+	}
+
+	signedTx, err := tx.Sign(pk)
+	if err != nil {
+		return storage.BlockTx{}, err
+	}
+
+	return storage.NewBlockTx(signedTx, gas), nil
+}
 
 func TestSimpleSort(t *testing.T) {
 	tran := func(nonce uint, hexKey string, tip uint, ts time.Time) storage.BlockTx {
+		const to = "0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76"
+
 		tx, err := sign(hexKey, storage.UserTx{Nonce: nonce, To: to, Tip: tip}, 0)
 		if err != nil {
 			t.Fatalf("\t%s \tShould be able to sign transaction: %s", failed, tx)
@@ -141,7 +164,7 @@ func TestSimpleSort(t *testing.T) {
 						m[from] = append(m[from], tx)
 					}
 
-					txs := mempool.BestTipSort(m, tst.howMany)
+					txs := strategy.SortByTip(m, tst.howMany)
 					for _, tx := range txs {
 						fromAddress, err := tx.FromAddress()
 						if err != nil {

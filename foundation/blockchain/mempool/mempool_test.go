@@ -12,7 +12,6 @@ import (
 const (
 	success = "\u2713"
 	failed  = "\u2717"
-	to      = "0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76"
 )
 
 func sign(hexKey string, tx storage.UserTx, gas uint) (storage.BlockTx, error) {
@@ -84,7 +83,7 @@ func TestCRUD(t *testing.T) {
 			t.Logf("\tTest %d:\tWhen handling a set of transaction.", testID)
 			{
 				f := func(t *testing.T) {
-					mp := mempool.New(mempool.BestTipSort)
+					mp := mempool.New()
 
 					for _, user := range tst.txs {
 						tx, err := sign(user.hexKey, user.userTx, 0)

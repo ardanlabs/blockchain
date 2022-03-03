@@ -15,6 +15,7 @@ import (
 	"github.com/ardanlabs/blockchain/foundation/blockchain/peer"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/signature"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
+	"github.com/ardanlabs/blockchain/foundation/blockchain/strategy"
 )
 
 /*
@@ -58,7 +59,7 @@ type Config struct {
 	MinerAddress string
 	Host         string
 	DBPath       string
-	SortStrategy mempool.SortStrategy
+	SortStrategy strategy.SortFunc
 	KnownPeers   *peer.PeerSet
 	EvHandler    EventHandler
 }
@@ -143,7 +144,7 @@ func New(cfg Config) (*State, error) {
 
 		genesis:      genesis,
 		storage:      strg,
-		mempool:      mempool.New(cfg.SortStrategy),
+		mempool:      mempool.NewWithStrategy(cfg.SortStrategy),
 		latestBlock:  latestBlock,
 		balanceSheet: sheet,
 	}

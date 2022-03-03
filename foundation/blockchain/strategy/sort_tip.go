@@ -1,41 +1,15 @@
-package mempool
+package strategy
 
 import (
-	"fmt"
 	"sort"
 
 	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
 )
 
-// List of different sort strategies.
-const (
-	SortBestTip = "BestTipSort"
-)
-
-// Map of different sort strategies with functions.
-var sortStrategies = map[string]SortStrategy{
-	SortBestTip: BestTipSort,
-}
-
-// SortStrategy defines a function that takes a mempool of transactions and
-// sorts them, returned the specified number.
-type SortStrategy func(transactions map[string][]storage.BlockTx, howMany int) []storage.BlockTx
-
-// RetrieveSortStrategy returns the specified sort strategy function.
-func RetrieveSortStrategy(strategy string) (SortStrategy, error) {
-	sort, exists := sortStrategies[strategy]
-	if !exists {
-		return nil, fmt.Errorf("strategy %q does not exist", strategy)
-	}
-	return sort, nil
-}
-
-// =============================================================================
-
-// BestTipSort returns transactions with the best tip while respecting the nonce
+// SortByTip returns transactions with the best tip while respecting the nonce
 // for each address/transaction. The caller specifies how many transactions they want.
 // Pass -1 for all the transactions.
-var BestTipSort SortStrategy = func(m map[string][]storage.BlockTx, howMany int) []storage.BlockTx {
+var SortByTip = func(m map[string][]storage.BlockTx, howMany int) []storage.BlockTx {
 
 	/*
 		Bill: {Nonce: 2, To: "0x6Fe6CF3c8fF57c58d24BfC869668F48BCbDb3BD9", Tip: 250},
