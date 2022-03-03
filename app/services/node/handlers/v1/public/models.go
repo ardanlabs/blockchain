@@ -7,7 +7,7 @@ type info struct {
 	Nonce   uint   `json:"nonce"`
 }
 
-type acctInfo struct {
+type actInfo struct {
 	LastestBlock string `json:"lastest_block"`
 	Uncommitted  int    `json:"uncommitted"`
 	Accounts     []info `json:"accounts"`
