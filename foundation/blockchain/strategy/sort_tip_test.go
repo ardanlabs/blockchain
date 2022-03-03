@@ -29,7 +29,7 @@ func sign(hexKey string, tx storage.UserTx, gas uint) (storage.BlockTx, error) {
 	return storage.NewBlockTx(signedTx, gas), nil
 }
 
-func TestSimpleSort(t *testing.T) {
+func TestTipSort(t *testing.T) {
 	tran := func(nonce uint, hexKey string, tip uint, ts time.Time) storage.BlockTx {
 		const to = "0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76"
 
