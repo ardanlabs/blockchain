@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ardanlabs/blockchain/foundation/blockchain/balance"
+	"github.com/ardanlabs/blockchain/foundation/blockchain/accounts"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/genesis"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/mempool"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/peer"
@@ -29,7 +29,6 @@ import (
 	See the different nodes, view activity.
 
 	-- Blockchain
-	Store the nonce with the balance to validate the nonce.
 	Batch new transactions to send across the network.
 	Create a block index file for query and clean up forks.
 	Publishing events. (New Blocks)
@@ -72,12 +71,12 @@ type State struct {
 
 	evHandler EventHandler
 
-	genesis      genesis.Genesis
-	storage      *storage.Storage
-	mempool      *mempool.Mempool
-	latestBlock  storage.Block
-	balanceSheet *balance.Sheet
-	mu           sync.Mutex
+	genesis     genesis.Genesis
+	storage     *storage.Storage
+	mempool     *mempool.Mempool
+	latestBlock storage.Block
+	accounts    *accounts.Accounts
+	mu          sync.Mutex
 
 	worker *worker
 }
@@ -111,19 +110,20 @@ func New(cfg Config) (*State, error) {
 		latestBlock = blocks[len(blocks)-1]
 	}
 
-	// Create a new balance sheet from the genesis balances.
-	sheet := balance.NewSheet(genesis.MiningReward, genesis.Balances)
+	// Create a new accounts value to manage accounts who transact on
+	// the blockchain.
+	accounts := accounts.New(genesis)
 
 	// Process the blocks and transactions against the balance sheet.
 	for _, block := range blocks {
 		for _, tx := range block.Transactions {
 
 			// Apply the balance changes based for this transaction.
-			sheet.ApplyTransaction(block.Header.MinerAddress, tx)
+			accounts.ApplyTransaction(block.Header.MinerAddress, tx)
 		}
 
 		// Apply the mining reward for this block.
-		sheet.ApplyMiningReward(block.Header.MinerAddress)
+		accounts.ApplyMiningReward(block.Header.MinerAddress)
 	}
 
 	// Build a safe event handler function for use.
@@ -147,11 +147,11 @@ func New(cfg Config) (*State, error) {
 		knownPeers:   cfg.KnownPeers,
 		evHandler:    ev,
 
-		genesis:      genesis,
-		storage:      strg,
-		mempool:      mempool,
-		latestBlock:  latestBlock,
-		balanceSheet: sheet,
+		genesis:     genesis,
+		storage:     strg,
+		mempool:     mempool,
+		latestBlock: latestBlock,
+		accounts:    accounts,
 	}
 
 	// Run the worker which will assign itself to this state.
@@ -179,6 +179,10 @@ func (s *State) Shutdown() error {
 // SubmitWalletTransaction accepts a transaction from a wallet for inclusion.
 func (s *State) SubmitWalletTransaction(signedTx storage.SignedTx) error {
 	if err := signedTx.VerifySignature(); err != nil {
+		return err
+	}
+
+	if err := s.accounts.ValidateNonce(signedTx); err != nil {
 		return err
 	}
 
@@ -261,7 +265,7 @@ func (s *State) WriteNextBlock(block storage.Block) error {
 		for _, tx := range block.Transactions {
 
 			// Apply the balance changes based for this transaction.
-			s.balanceSheet.ApplyTransaction(block.Header.MinerAddress, tx)
+			s.accounts.ApplyTransaction(block.Header.MinerAddress, tx)
 
 			s.evHandler("state: WriteNextBlock: remove from mempool: tx[%s]", tx)
 
@@ -272,7 +276,7 @@ func (s *State) WriteNextBlock(block storage.Block) error {
 		s.evHandler("state: WriteNextBlock: apply mining reward")
 
 		// Apply the mining reward for this block.
-		s.balanceSheet.ApplyMiningReward(block.Header.MinerAddress)
+		s.accounts.ApplyMiningReward(block.Header.MinerAddress)
 
 		// Save this as the latest block.
 		s.latestBlock = block
@@ -335,7 +339,7 @@ func (s *State) Truncate() error {
 
 	// Reset the state of the database.
 	s.mempool.Truncate()
-	s.balanceSheet.Reset(s.genesis.Balances)
+	s.accounts.Reset()
 	s.latestBlock = storage.Block{}
 	s.storage.Reset()
 
@@ -362,9 +366,9 @@ func (s *State) RetrieveMempool() []storage.BlockTx {
 	return s.mempool.PickBest(-1)
 }
 
-// RetrieveBalanceSheetValues returns a copy of the balance sheet values.
-func (s *State) RetrieveBalanceSheetValues() map[string]uint {
-	return s.balanceSheet.Values()
+// RetrieveAccounts returns a copy of the set of account information.
+func (s *State) RetrieveAccounts() map[string]accounts.Info {
+	return s.accounts.Copy()
 }
 
 // RetrieveKnownPeers retrieves a copy of the known peer list.
@@ -377,14 +381,14 @@ func (s *State) RetrieveKnownPeers() []peer.Peer {
 // QueryLastest represents to query the latest block in the chain.
 const QueryLastest = ^uint64(0) >> 1
 
-// QueryBalances returns a copy of the set of balances by address.
-func (s *State) QueryBalances(address string) map[string]uint {
-	balanceSheet := s.balanceSheet.Clone()
+// QueryAccounts returns a copy of the set of account information by address.
+func (s *State) QueryAccounts(address string) map[string]accounts.Info {
+	accounts := s.accounts.Clone()
 
-	cpy := balanceSheet.Values()
+	cpy := accounts.Copy()
 	for addr := range cpy {
 		if address != addr {
-			balanceSheet.Remove(addr)
+			accounts.Remove(addr)
 		}
 	}
 
@@ -480,7 +484,7 @@ func (s *State) MineNewBlock(ctx context.Context) (storage.Block, time.Duration,
 	s.evHandler("worker: runMiningOperation: MINING: copy balance sheet and update")
 
 	// Process the transactions against the balance sheet.
-	balanceSheet := s.balanceSheet.Clone()
+	balanceSheet := s.accounts.Clone()
 	for _, tx := range nb.Transactions {
 
 		// Apply the balance changes based on this transaction.
@@ -524,7 +528,7 @@ func (s *State) MineNewBlock(ctx context.Context) (storage.Block, time.Duration,
 
 		s.evHandler("worker: runMiningOperation: MINING: apply new balance sheet")
 
-		s.balanceSheet.Replace(balanceSheet)
+		s.accounts.Replace(balanceSheet)
 		s.latestBlock = blockFS.Block
 
 		// Remove the transactions from this block.

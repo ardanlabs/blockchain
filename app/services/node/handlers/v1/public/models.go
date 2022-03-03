@@ -1,15 +1,16 @@
 package public
 
-type balance struct {
+type bal struct {
 	Address string `json:"address"`
 	Name    string `json:"name"`
 	Balance uint   `json:"balance"`
+	Nonce   uint   `json:"nonce"`
 }
 
 type balances struct {
-	LastestBlock string    `json:"lastest_block"`
-	Uncommitted  int       `json:"uncommitted"`
-	Balances     []balance `json:"balances"`
+	LastestBlock string `json:"lastest_block"`
+	Uncommitted  int    `json:"uncommitted"`
+	Balances     []bal  `json:"balances"`
 }
 
 type tx struct {

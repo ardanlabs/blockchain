@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	v1 "github.com/ardanlabs/blockchain/business/web/v1"
+	"github.com/ardanlabs/blockchain/foundation/blockchain/accounts"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/state"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
 	"github.com/ardanlabs/blockchain/foundation/nameservice"
@@ -62,20 +63,21 @@ func (h Handlers) Mempool(ctx context.Context, w http.ResponseWriter, r *http.Re
 // Balances returns the current balances for all users.
 func (h Handlers) Balances(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	address := web.Param(r, "address")
-	var balanceSheet map[string]uint
+	var accounts map[string]accounts.Info
 
 	if address == "" {
-		balanceSheet = h.State.RetrieveBalanceSheetValues()
+		accounts = h.State.RetrieveAccounts()
 	} else {
-		balanceSheet = h.State.QueryBalances(address)
+		accounts = h.State.QueryAccounts(address)
 	}
 
-	bals := make([]balance, 0, len(balanceSheet))
-	for addr, dbBal := range balanceSheet {
-		bal := balance{
+	bals := make([]bal, 0, len(accounts))
+	for addr, info := range accounts {
+		bal := bal{
 			Address: addr,
 			Name:    h.NS.Lookup(addr),
-			Balance: dbBal,
+			Balance: info.Balance,
+			Nonce:   info.Nonce,
 		}
 		bals = append(bals, bal)
 	}
