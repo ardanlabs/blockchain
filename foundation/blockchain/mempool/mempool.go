@@ -9,6 +9,12 @@ import (
 	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
 )
 
+// SortStrategy defines a function that takes a mempool of transactions and
+// sorts them, returned the specified number.
+type SortStrategy func(transactions map[string][]storage.BlockTx, howMany int) []storage.BlockTx
+
+// =============================================================================
+
 // Mempool represents a cache of transactions organized by address
 // with a second key on the transaction nonce.
 type Mempool struct {
@@ -18,8 +24,8 @@ type Mempool struct {
 }
 
 // New constructs a new mempool to manage pending transactions.
-func New() *Mempool {
-	return NewWithSort(SimpleSort)
+func New(ss SortStrategy) *Mempool {
+	return NewWithSort(ss)
 }
 
 // NewWithSort constructs a new mempool with specified sort strategy.
@@ -76,6 +82,8 @@ func (mp *Mempool) Truncate() {
 	mp.pool = make(map[string]storage.BlockTx)
 }
 
+// PickBest uses the configured sort strategy to return the next set
+// of transactions for the next block.
 func (mp *Mempool) PickBest(howMany int) []storage.BlockTx {
 
 	// Group the transactions by address.
@@ -92,6 +100,7 @@ func (mp *Mempool) PickBest(howMany int) []storage.BlockTx {
 		}
 	}
 	mp.mu.RUnlock()
+
 	return mp.sort(m, howMany)
 }
 

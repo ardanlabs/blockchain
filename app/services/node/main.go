@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/ardanlabs/blockchain/app/services/node/handlers"
+	"github.com/ardanlabs/blockchain/foundation/blockchain/mempool"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/peer"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/state"
 	"github.com/ardanlabs/blockchain/foundation/logger"
@@ -130,6 +131,7 @@ func run(log *zap.SugaredLogger) error {
 		MinerAddress: address.String(),
 		Host:         cfg.Web.PrivateHost,
 		DBPath:       cfg.Node.DBPath,
+		SortStrategy: mempool.BestTipSort,
 		KnownPeers:   peerSet,
 		EvHandler:    ev,
 	})

@@ -58,6 +58,7 @@ type Config struct {
 	MinerAddress string
 	Host         string
 	DBPath       string
+	SortStrategy mempool.SortStrategy
 	KnownPeers   *peer.PeerSet
 	EvHandler    EventHandler
 }
@@ -68,7 +69,8 @@ type State struct {
 	host         string
 	dbPath       string
 	knownPeers   *peer.PeerSet
-	evHandler    EventHandler
+
+	evHandler EventHandler
 
 	genesis      genesis.Genesis
 	storage      *storage.Storage
@@ -141,7 +143,7 @@ func New(cfg Config) (*State, error) {
 
 		genesis:      genesis,
 		storage:      strg,
-		mempool:      mempool.New(),
+		mempool:      mempool.New(cfg.SortStrategy),
 		latestBlock:  latestBlock,
 		balanceSheet: sheet,
 	}

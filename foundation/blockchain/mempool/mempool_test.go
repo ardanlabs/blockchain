@@ -84,7 +84,7 @@ func TestCRUD(t *testing.T) {
 			t.Logf("\tTest %d:\tWhen handling a set of transaction.", testID)
 			{
 				f := func(t *testing.T) {
-					mp := mempool.New()
+					mp := mempool.New(mempool.BestTipSort)
 
 					for _, user := range tst.txs {
 						tx, err := sign(user.hexKey, user.userTx, 0)

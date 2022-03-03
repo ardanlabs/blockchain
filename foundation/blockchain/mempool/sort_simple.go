@@ -6,14 +6,10 @@ import (
 	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
 )
 
-type SortStrategy func(transactions map[string][]storage.BlockTx, howMany int) []storage.BlockTx
-
-// SimpleSort returns a list of the best transactions for the next
-// mining operation. The caller specifies how many transactions they want.
+// BestTipSort returns transactions with the best tip while respecting the nonce
+// for each address/transaction. The caller specifies how many transactions they want.
 // Pass -1 for all the transactions.
-// The algorithm focuses on the transactions with the best tip while
-// respecting the nonce for each address/transaction.
-var SimpleSort SortStrategy = func(m map[string][]storage.BlockTx, howMany int) []storage.BlockTx {
+var BestTipSort SortStrategy = func(m map[string][]storage.BlockTx, howMany int) []storage.BlockTx {
 
 	/*
 		Bill: {Nonce: 2, To: "0x6Fe6CF3c8fF57c58d24BfC869668F48BCbDb3BD9", Tip: 250},
@@ -92,61 +88,3 @@ done:
 
 	return final
 }
-
-// batch_size = 6
-//
-// transactions = [
-//     {"from": 1, "fee": 1, "number": 1},
-//     {"from": 1, "fee": 2, "number": 2},
-//     {"from": 1, "fee": 3, "number": 3},
-//     {"from": 1, "fee": 3, "number": 4},
-//     {"from": 2, "fee": 1, "number": 1},
-//     {"from": 2, "fee": 4, "number": 2},
-//     {"from": 2, "fee": 1, "number": 3},
-// ]
-//
-// grouped_transactions = dict()
-// for t in transactions:
-//     # group by "from"
-//     grouped_transactions.setdefault(t["from"], list()).append(t)
-//
-// for v in grouped_transactions.values():
-//     # order by "number"
-//     v.sort(key=lambda x: x["number"])
-//
-// groups = list(grouped_transactions.keys())
-// group_fees = [[0] for _ in range(len(groups))]
-// for idx, group_name in enumerate(groups):
-//     g_fees = group_fees[idx]
-//     for i, t in enumerate(grouped_transactions[group_name]):
-//         if i >= batch_size:
-//             break
-//         g_fees.append(t["fee"] + g_fees[-1])
-//
-// print(group_fees)
-//
-// ctx = dict(best_position=[0] * len(groups), best_fee=-1)
-//
-// print("group_fees", group_fees)
-
-// def find_best_fee(group_idx, remainder, current_position, prev_fee):
-//     if group_idx >= len(group_fees):
-//         return
-//     if remainder <= 0:
-//         return
-//     for pos, g_fee in enumerate(group_fees[group_idx]):
-//         new_remainder = remainder - pos
-//         if new_remainder < 0:
-//             break
-//         position = list(current_position)
-//         position[group_idx] = pos
-//         fee = prev_fee + group_fees[group_idx][pos]
-//         if fee > ctx["best_fee"]:
-//             ctx["best_fee"] = fee
-//             ctx["best_position"] = position
-//         find_best_fee(group_idx + 1, new_remainder, position, fee)
-//
-//
-// find_best_fee(0, batch_size, [0] * len(groups), 0)
-//
-// print(ctx)
