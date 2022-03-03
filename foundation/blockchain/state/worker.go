@@ -221,16 +221,6 @@ func (w *worker) isShutdown() bool {
 
 // =============================================================================
 
-// signalPeerUpdates starts a peer operation. The caller will wait for the
-// specifed context timeout to know the operating has started.
-// func (w *worker) signalPeerUpdates() {
-// select {
-// case w.peerUpdates <- true:
-// default:
-// }
-// w.evHandler("worker: signalPeerUpdates: peer updates signaled")
-// }
-
 // signalStartMining starts a mining operation. If there is already a signal
 // pending in the channel, just return since a mining operation will start.
 func (w *worker) signalStartMining() {

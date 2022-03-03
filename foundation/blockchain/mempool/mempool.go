@@ -43,12 +43,11 @@ func (mp *Mempool) Upsert(tx storage.BlockTx) (int, error) {
 	mp.mu.Lock()
 	defer mp.mu.Unlock()
 
-	from, err := tx.FromAddress()
+	key, err := mapKey(tx)
 	if err != nil {
 		return 0, err
 	}
 
-	key := fmt.Sprintf("%s:%d", from, tx.Nonce)
 	mp.pool[key] = tx
 
 	return len(mp.pool), nil
@@ -59,12 +58,11 @@ func (mp *Mempool) Delete(tx storage.BlockTx) error {
 	mp.mu.Lock()
 	defer mp.mu.Unlock()
 
-	from, err := tx.FromAddress()
+	key, err := mapKey(tx)
 	if err != nil {
 		return err
 	}
 
-	key := fmt.Sprintf("%s:%d", from, tx.Nonce)
 	delete(mp.pool, key)
 
 	return nil
@@ -89,12 +87,24 @@ func (mp *Mempool) PickBest(howMany int) []storage.BlockTx {
 		}
 
 		for key, tx := range mp.pool {
-			fromAddr := strings.Split(key, ":")[0]
-			m[fromAddr] = append(m[fromAddr], tx)
+			addr := strings.Split(key, ":")[0]
+			m[addr] = append(m[addr], tx)
 		}
 	}
 	mp.mu.RUnlock()
 	return mp.sort(m, howMany)
+}
+
+// =============================================================================
+
+// mapKey is used to generate the map key.
+func mapKey(tx storage.BlockTx) (string, error) {
+	addr, err := tx.FromAddress()
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%s:%d", addr, tx.Nonce), nil
 }
 
 // =============================================================================

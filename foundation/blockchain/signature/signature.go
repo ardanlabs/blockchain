@@ -4,6 +4,7 @@ package signature
 
 import (
 	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -107,14 +108,27 @@ func FromAddress(value interface{}, v, r, s *big.Int) (string, error) {
 	// Convert the [R|S|V] format into the original 65 bytes.
 	sig := toSignatureBytes(v, r, s)
 
-	// Capture the public key associated with this signature.
-	publicKey, err := crypto.SigToPub(tran, sig)
-	if err != nil {
-		return "", err
+	// Validate the signature since there can be conversion issues
+	// between [R|S|V] to []bytes. Leading 0's are truncated by big package.
+	var sigPublicKey []byte
+	{
+		sigPublicKey, err = crypto.Ecrecover(tran, sig)
+		if err != nil {
+			return "", err
+		}
+
+		rs := sig[:crypto.RecoveryIDOffset]
+		if !crypto.VerifySignature(sigPublicKey, tran, rs) {
+			return "", errors.New("invalid signature")
+		}
 	}
 
+	// Capture the public key associated with this signature.
+	x, y := elliptic.Unmarshal(crypto.S256(), sigPublicKey)
+	publicKey := ecdsa.PublicKey{Curve: crypto.S256(), X: x, Y: y}
+
 	// Extract the account address from the public key.
-	return crypto.PubkeyToAddress(*publicKey).String(), nil
+	return crypto.PubkeyToAddress(publicKey).String(), nil
 }
 
 // SignatureString returns the signature as a string.

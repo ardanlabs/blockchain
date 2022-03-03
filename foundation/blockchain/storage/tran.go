@@ -21,18 +21,29 @@ type UserTx struct {
 }
 
 // NewUserTx constructs a new user transaction.
-func NewUserTx(nonce uint, to string, value uint, tip uint, data []byte) UserTx {
-	return UserTx{
+func NewUserTx(nonce uint, to string, value uint, tip uint, data []byte) (UserTx, error) {
+	if !isAddress(to) {
+		return UserTx{}, fmt.Errorf("to address is not properly formatted")
+	}
+
+	userTx := UserTx{
 		Nonce: nonce,
 		To:    to,
 		Value: value,
 		Tip:   tip,
 		Data:  data,
 	}
+
+	return userTx, nil
 }
 
 // Sign uses the specified private key to sign the user transaction.
 func (tx UserTx) Sign(privateKey *ecdsa.PrivateKey) (SignedTx, error) {
+
+	// Validate the to address incase the UserTx value was hand constructed.
+	if !isAddress(tx.To) {
+		return SignedTx{}, fmt.Errorf("to address is not properly formatted")
+	}
 
 	// Sign the hash with the private key to produce a signature.
 	v, r, s, err := signature.Sign(tx, privateKey)
