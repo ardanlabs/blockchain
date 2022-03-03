@@ -9,9 +9,28 @@ import (
 	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
 )
 
+// List of different sort strategies.
+const (
+	SortBestTip = "BestTipSort"
+)
+
+// Map of different sort strategies with functions.
+var sortStrategies = map[string]SortStrategy{
+	SortBestTip: BestTipSort,
+}
+
 // SortStrategy defines a function that takes a mempool of transactions and
 // sorts them, returned the specified number.
 type SortStrategy func(transactions map[string][]storage.BlockTx, howMany int) []storage.BlockTx
+
+// RetrieveSortStrategy returns the specified sort strategy function.
+func RetrieveSortStrategy(strategy string) (SortStrategy, error) {
+	sort, exists := sortStrategies[strategy]
+	if !exists {
+		return nil, fmt.Errorf("strategy %q does not exist", strategy)
+	}
+	return sort, nil
+}
 
 // =============================================================================
 

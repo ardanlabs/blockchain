@@ -59,9 +59,10 @@ func run(log *zap.SugaredLogger) error {
 			PrivateHost     string        `conf:"default:0.0.0.0:9080"`
 		}
 		Node struct {
-			MinerName  string   `conf:"default:miner1"`
-			DBPath     string   `conf:"default:zblock/blocks.db"`
-			KnownPeers []string `conf:"default:0.0.0.0:9080;0.0.0.0:9180"`
+			MinerName    string   `conf:"default:miner1"`
+			DBPath       string   `conf:"default:zblock/blocks.db"`
+			SortStrategy string   `conf:"default:BestTipSort"`
+			KnownPeers   []string `conf:"default:0.0.0.0:9080;0.0.0.0:9180"`
 		}
 		NameService struct {
 			Folder string `conf:"default:zblock/accounts/"`
@@ -127,11 +128,16 @@ func run(log *zap.SugaredLogger) error {
 		log.Infow(s, "traceid", "00000000-0000-0000-0000-000000000000")
 	}
 
+	sort, err := mempool.RetrieveSortStrategy(cfg.Node.SortStrategy)
+	if err != nil {
+		return fmt.Errorf("unable to find the sort strategy %q: %w", cfg.Node.SortStrategy, err)
+	}
+
 	state, err := state.New(state.Config{
 		MinerAddress: address.String(),
 		Host:         cfg.Web.PrivateHost,
 		DBPath:       cfg.Node.DBPath,
-		SortStrategy: mempool.BestTipSort,
+		SortStrategy: sort,
 		KnownPeers:   peerSet,
 		EvHandler:    ev,
 	})
