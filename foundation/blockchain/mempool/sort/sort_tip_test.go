@@ -1,11 +1,11 @@
-package strategy_test
+package sort_test
 
 import (
 	"testing"
 	"time"
 
+	"github.com/ardanlabs/blockchain/foundation/blockchain/mempool/sort"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
-	"github.com/ardanlabs/blockchain/foundation/blockchain/strategy"
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
@@ -164,7 +164,12 @@ func TestTipSort(t *testing.T) {
 						m[from] = append(m[from], tx)
 					}
 
-					txs := strategy.SortByTip(m, tst.howMany)
+					sort, err := sort.RetrieveStrategy(sort.StrategyTipSort)
+					if err != nil {
+						t.Fatalf("\t%s\tTest %d:\tShould be able to get sort strategy function: %s", failed, testID, err)
+					}
+
+					txs := sort(m, tst.howMany)
 					for _, tx := range txs {
 						fromAddress, err := tx.FromAddress()
 						if err != nil {

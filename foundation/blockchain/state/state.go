@@ -15,7 +15,6 @@ import (
 	"github.com/ardanlabs/blockchain/foundation/blockchain/peer"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/signature"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
-	"github.com/ardanlabs/blockchain/foundation/blockchain/strategy"
 )
 
 /*
@@ -59,7 +58,7 @@ type Config struct {
 	MinerAddress string
 	Host         string
 	DBPath       string
-	SortStrategy strategy.SortFunc
+	SortStrategy string
 	KnownPeers   *peer.PeerSet
 	EvHandler    EventHandler
 }
@@ -134,6 +133,12 @@ func New(cfg Config) (*State, error) {
 		}
 	}
 
+	// Construct a mempool with the specified sort strategy.
+	mempool, err := mempool.NewWithStrategy(cfg.SortStrategy)
+	if err != nil {
+		return nil, err
+	}
+
 	// Create the State to provide support for managing the blockchain.
 	state := State{
 		minerAddress: cfg.MinerAddress,
@@ -144,7 +149,7 @@ func New(cfg Config) (*State, error) {
 
 		genesis:      genesis,
 		storage:      strg,
-		mempool:      mempool.NewWithStrategy(cfg.SortStrategy),
+		mempool:      mempool,
 		latestBlock:  latestBlock,
 		balanceSheet: sheet,
 	}

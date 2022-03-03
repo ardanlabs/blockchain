@@ -6,8 +6,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/ardanlabs/blockchain/foundation/blockchain/mempool/sort"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
-	"github.com/ardanlabs/blockchain/foundation/blockchain/strategy"
 )
 
 // Mempool represents a cache of transactions organized by address
@@ -15,20 +15,27 @@ import (
 type Mempool struct {
 	pool map[string]storage.BlockTx
 	mu   sync.RWMutex
-	sort strategy.SortFunc
+	sort sort.Func
 }
 
 // New constructs a new mempool using the default sort strategy.
-func New() *Mempool {
-	return NewWithStrategy(strategy.SortByTip)
+func New() (*Mempool, error) {
+	return NewWithStrategy(sort.StrategyTipSort)
 }
 
 // NewWithStrategy constructs a new mempool with specified sort strategy.
-func NewWithStrategy(sortFunc strategy.SortFunc) *Mempool {
-	return &Mempool{
-		pool: make(map[string]storage.BlockTx),
-		sort: sortFunc,
+func NewWithStrategy(strategy string) (*Mempool, error) {
+	sort, err := sort.RetrieveStrategy(strategy)
+	if err != nil {
+		return nil, err
 	}
+
+	mp := Mempool{
+		pool: make(map[string]storage.BlockTx),
+		sort: sort,
+	}
+
+	return &mp, nil
 }
 
 // Count returns the current number of transaction in the pool.

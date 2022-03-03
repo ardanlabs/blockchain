@@ -1,5 +1,5 @@
-// Package strategy provides different transaction sorting algorithms.
-package strategy
+// Package sort provides different transaction sorting algorithms.
+package sort
 
 import (
 	"fmt"
@@ -9,20 +9,20 @@ import (
 
 // List of different sort strategies.
 const (
-	TipSort = "TipSort"
+	StrategyTipSort = "TipSort"
 )
 
 // Map of different sort strategies with functions.
-var sortStrategies = map[string]SortFunc{
-	TipSort: SortByTip,
+var sortStrategies = map[string]Func{
+	StrategyTipSort: tipSort,
 }
 
-// SortFunc defines a function that takes a mempool of transactions and
+// Func defines a function that takes a mempool of transactions and
 // sorts them, returned the specified number.
-type SortFunc func(transactions map[string][]storage.BlockTx, howMany int) []storage.BlockTx
+type Func func(transactions map[string][]storage.BlockTx, howMany int) []storage.BlockTx
 
-// RetrieveSorter returns the specified sort strategy function.
-func RetrieveSorter(strategy string) (SortFunc, error) {
+// RetrieveStrategy returns the specified sort strategy function.
+func RetrieveStrategy(strategy string) (Func, error) {
 	sort, exists := sortStrategies[strategy]
 	if !exists {
 		return nil, fmt.Errorf("strategy %q does not exist", strategy)

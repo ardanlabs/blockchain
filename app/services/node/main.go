@@ -13,7 +13,6 @@ import (
 	"github.com/ardanlabs/blockchain/app/services/node/handlers"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/peer"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/state"
-	"github.com/ardanlabs/blockchain/foundation/blockchain/strategy"
 	"github.com/ardanlabs/blockchain/foundation/logger"
 	"github.com/ardanlabs/blockchain/foundation/nameservice"
 	"github.com/ardanlabs/conf/v3"
@@ -61,7 +60,7 @@ func run(log *zap.SugaredLogger) error {
 		Node struct {
 			MinerName    string   `conf:"default:miner1"`
 			DBPath       string   `conf:"default:zblock/blocks.db"`
-			SortStrategy string   `conf:"default:BestTipSort"`
+			SortStrategy string   `conf:"default:TipSort"`
 			KnownPeers   []string `conf:"default:0.0.0.0:9080;0.0.0.0:9180"`
 		}
 		NameService struct {
@@ -128,16 +127,11 @@ func run(log *zap.SugaredLogger) error {
 		log.Infow(s, "traceid", "00000000-0000-0000-0000-000000000000")
 	}
 
-	sort, err := strategy.RetrieveSorter(cfg.Node.SortStrategy)
-	if err != nil {
-		return fmt.Errorf("unable to find the sort strategy %q: %w", cfg.Node.SortStrategy, err)
-	}
-
 	state, err := state.New(state.Config{
 		MinerAddress: address.String(),
 		Host:         cfg.Web.PrivateHost,
 		DBPath:       cfg.Node.DBPath,
-		SortStrategy: sort,
+		SortStrategy: cfg.Node.SortStrategy,
 		KnownPeers:   peerSet,
 		EvHandler:    ev,
 	})
