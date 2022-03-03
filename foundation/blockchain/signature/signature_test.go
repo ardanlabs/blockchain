@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/ardanlabs/blockchain/foundation/blockchain/signature"
+	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
@@ -100,4 +101,41 @@ func TestHash(t *testing.T) {
 			t.Logf("\t%s\tTest %d:\tShould get back the same hash twice: %s", success, testID, h[:6])
 		}
 	}
+}
+
+// Found a bug with converting signatures from the slice of bytes to [R|S|V].
+// The S value for this data produces a leading 0 in the slice of bytes. The
+// big package truncates that 0, causing a signature issue.
+func TestFromAddress(t *testing.T) {
+	t.Log("Given the need to validate FromAddress validates signatures.")
+	{
+		testID := 0
+		t.Logf("\tTest %d:\tWhen handling a specific value.", testID)
+		{
+			tx, err := sign(storage.UserTx{Nonce: 2, To: "space", Tip: 75}, 0)
+			if err != nil {
+				t.Fatalf("\t%s \tShould be able to sign transaction: %s", failed, err)
+			}
+			t.Logf("\t%s \tShould be able to sign transaction.", success)
+
+			if _, err = tx.FromAddress(); err == nil {
+				t.Fatalf("\t%s \tShould be able to catch bad signature.", failed)
+			}
+			t.Logf("\t%s \tShould be able to to catch bad signature: %s", success, err)
+		}
+	}
+}
+
+func sign(tx storage.UserTx, gas uint) (storage.BlockTx, error) {
+	pk, err := crypto.HexToECDSA("9f332e3700d8fc2446eaf6d15034cf96e0c2745e40353deef032a5dbf1dfed93")
+	if err != nil {
+		return storage.BlockTx{}, err
+	}
+
+	signedTx, err := tx.Sign(pk)
+	if err != nil {
+		return storage.BlockTx{}, err
+	}
+
+	return storage.NewBlockTx(signedTx, gas), nil
 }
