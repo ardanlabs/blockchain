@@ -9,11 +9,11 @@ import (
 )
 
 func TestSign(t *testing.T) {
-	tx1, err := signBill(storage.UserTx{Nonce: 2, To: to, Tip: 50}, 0)
+	tx1, err := sign("9f332e3700d8fc2446eaf6d15034cf96e0c2745e40353deef032a5dbf1dfed93", storage.UserTx{Nonce: 2, To: to, Tip: 50}, 0)
 	if err != nil {
-		t.Fatalf("\t%s \tShould be able to sign transaction: %s", failed, tx1)
+		t.Fatalf("\t%s \tShould be able to sign transaction: %s %+v", failed, tx1, err)
 	}
-	tx2, err := signBill(storage.UserTx{Nonce: 2, To: to, Tip: 75}, 0)
+	tx2, err := sign("9f332e3700d8fc2446eaf6d15034cf96e0c2745e40353deef032a5dbf1dfed93", storage.UserTx{Nonce: 2, To: to, Tip: 75}, 0)
 	if err != nil {
 		t.Fatalf("\t%s \tShould be able to sign transaction: %s", failed, tx1)
 	}
@@ -31,9 +31,9 @@ func TestSign(t *testing.T) {
 }
 
 func TestSimpleSort(t *testing.T) {
-	tran := func(nonce uint, sign func(tx storage.UserTx, gas uint) (storage.BlockTx, error), tip uint, ts time.Time) storage.BlockTx {
+	tran := func(nonce uint, hexKey string, tip uint, ts time.Time) storage.BlockTx {
 
-		tx, err := sign(storage.UserTx{Nonce: nonce, To: to, Tip: tip}, 0)
+		tx, err := sign(hexKey, storage.UserTx{Nonce: nonce, To: to, Tip: tip}, 0)
 		if err != nil {
 			t.Fatalf("\t%s \tShould be able to sign transaction: %s", failed, tx)
 		}
@@ -45,6 +45,9 @@ func TestSimpleSort(t *testing.T) {
 		howMany int
 		best    []storage.BlockTx
 	}
+	signPavel := "9f332e3700d8fc2446eaf6d15034cf96e0c2745e40353deef032a5dbf1dfed93"
+	signBill := "fae85851bdf5c9f49923722ce38f3c1defcfd3619ef5453230a58ad805499959"
+	signEd := "aed31b6b5a341af8f27e66fb0b7633cf20fc27049e3eb7f6f623a4655b719ebb"
 
 	now := time.Now()
 	tt := []test{
