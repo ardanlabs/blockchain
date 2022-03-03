@@ -37,7 +37,10 @@ var sendCmd = &cobra.Command{
 }
 
 func sendWithDetails(privateKey *ecdsa.PrivateKey) {
-	userTx := storage.NewUserTx(nonce, to, value, tip, data)
+	userTx, err := storage.NewUserTx(nonce, to, value, tip, data)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	signedTx, err := userTx.Sign(privateKey)
 	if err != nil {
