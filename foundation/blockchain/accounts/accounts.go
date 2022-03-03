@@ -9,7 +9,7 @@ import (
 	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
 )
 
-// Info represents information stored in the balance sheet.
+// Info represents information stored for an individual account.
 type Info struct {
 	Balance uint
 	Nonce   uint
@@ -36,7 +36,7 @@ func New(genesis genesis.Genesis) *Accounts {
 	return &accts
 }
 
-// Reset re-initalizes the balance sheet from the genesis information.
+// Reset re-initalizes the accounts back to the genesis information.
 func (act *Accounts) Reset() {
 	act.mu.Lock()
 	defer act.mu.Unlock()
@@ -47,7 +47,7 @@ func (act *Accounts) Reset() {
 	}
 }
 
-// Replace updates the balance sheet for a new version.
+// Replace updates the accounts based on the specified accounts.
 func (act *Accounts) Replace(accounts *Accounts) {
 	act.mu.Lock()
 	defer act.mu.Unlock()
@@ -55,15 +55,15 @@ func (act *Accounts) Replace(accounts *Accounts) {
 	act.info = accounts.info
 }
 
-// Remove deletes the addr from the balance sheet.
-func (act *Accounts) Remove(addr string) {
+// Remove deletes an account from the accounts.
+func (act *Accounts) Remove(address string) {
 	act.mu.Lock()
 	defer act.mu.Unlock()
 
-	delete(act.info, addr)
+	delete(act.info, address)
 }
 
-// Clone makes a copy of the current balance sheet.
+// Clone makes a copy of the current accounts.
 func (act *Accounts) Clone() *Accounts {
 	act.mu.RLock()
 	defer act.mu.RUnlock()
@@ -121,7 +121,7 @@ func (act *Accounts) ApplyMiningReward(minerAddr string) {
 }
 
 // ApplyTransaction performs the business logic for applying a transaction
-// to the balance sheet.
+// to the accounts information.
 func (act *Accounts) ApplyTransaction(minerAddr string, tx storage.BlockTx) error {
 	from, err := tx.FromAddress()
 	if err != nil {

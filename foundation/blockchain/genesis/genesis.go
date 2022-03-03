@@ -15,7 +15,7 @@ type Genesis struct {
 	TransPerBlock int             `json:"transactions_per_block"` // Number of transactions recorded in every block.
 	MiningReward  uint            `json:"mining_reward"`          // Reward for mining a block.
 	GasPrice      uint            `json:"gas_price"`              // Fee paid for each transaction mined into a block.
-	Balances      map[string]uint `json:"balance_sheet"`
+	Balances      map[string]uint `json:"balances"`
 }
 
 // =============================================================================

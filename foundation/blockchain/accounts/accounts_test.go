@@ -36,7 +36,7 @@ func TestTransactions(t *testing.T) {
 		miner       string
 		minerReward uint
 		gas         uint
-		sheet       map[string]uint
+		balances    map[string]uint
 		final       map[string]uint
 		txs         []storage.UserTx
 	}
@@ -47,7 +47,7 @@ func TestTransactions(t *testing.T) {
 			miner:       "miner",
 			minerReward: 100,
 			gas:         80,
-			sheet: map[string]uint{
+			balances: map[string]uint{
 				"0xdd6B972ffcc631a62CAE1BB9d80b7ff429c8ebA4": 1000,
 				"0xF01813E4B85e178A83e29B8E7bF26BD830a25f32": 0,
 				"miner": 0,
@@ -78,7 +78,7 @@ func TestTransactions(t *testing.T) {
 			t.Logf("\tTest %d:\tWhen handling a set of accounts.", testID)
 			{
 				f := func(t *testing.T) {
-					accounts := accounts.New(genesis.Genesis{MiningReward: tst.minerReward, Balances: tst.sheet})
+					accounts := accounts.New(genesis.Genesis{MiningReward: tst.minerReward, Balances: tst.balances})
 
 					for _, tx := range tst.txs {
 						blktx, err := sign(tx, tst.gas)
@@ -126,7 +126,7 @@ func TestNonceValidation(t *testing.T) {
 		name        string
 		minerReward uint
 		gas         uint
-		sheet       map[string]uint
+		balances    map[string]uint
 		txs         []storage.UserTx
 		results     []error
 	}
@@ -135,7 +135,7 @@ func TestNonceValidation(t *testing.T) {
 		{
 			name:        "basic",
 			minerReward: 100,
-			sheet:       map[string]uint{},
+			balances:    map[string]uint{},
 			txs: []storage.UserTx{
 				{
 					Nonce: 5,
@@ -159,7 +159,7 @@ func TestNonceValidation(t *testing.T) {
 		for testID, tst := range tt {
 			t.Logf("\tTest %d:\tWhen handling a set of transactions.", testID)
 			{
-				sheet := accounts.New(genesis.Genesis{MiningReward: tst.minerReward, Balances: tst.sheet})
+				accounts := accounts.New(genesis.Genesis{MiningReward: tst.minerReward, Balances: tst.balances})
 
 				for i, tx := range tst.txs {
 					blktx, err := sign(tx, tst.gas)
@@ -168,13 +168,13 @@ func TestNonceValidation(t *testing.T) {
 					}
 					t.Logf("\t%s\tTest %d:\tShould be able to sign transaction.", success, testID)
 
-					err = sheet.ValidateNonce(blktx.SignedTx)
+					err = accounts.ValidateNonce(blktx.SignedTx)
 					if (tst.results[i] == nil && err != nil) || (tst.results[i] != nil && err == nil) {
 						t.Fatalf("\t%s\tTest %d:\tShould be able to validate nonce correctly.", failed, testID)
 					}
 					t.Logf("\t%s\tTest %d:\tShould be able to validate nonce correctly.", success, testID)
 
-					err = sheet.ApplyTransaction("test", blktx)
+					err = accounts.ApplyTransaction("test", blktx)
 					if (tst.results[i] == nil && err != nil) || (tst.results[i] != nil && err == nil) {
 						t.Fatalf("\t%s\tTest %d:\tShould be able to apply transaction.", failed, testID)
 					}

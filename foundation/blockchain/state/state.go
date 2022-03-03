@@ -114,7 +114,7 @@ func New(cfg Config) (*State, error) {
 	// the blockchain.
 	accounts := accounts.New(genesis)
 
-	// Process the blocks and transactions against the balance sheet.
+	// Process the blocks and transactions for each account.
 	for _, block := range blocks {
 		for _, tx := range block.Transactions {
 
@@ -261,7 +261,7 @@ func (s *State) WriteNextBlock(block storage.Block) error {
 
 		s.evHandler("state: WriteNextBlock: apply transactions to balance")
 
-		// Process the transactions against the balance sheet.
+		// Process the transactions and update the accounts.
 		for _, tx := range block.Transactions {
 
 			// Apply the balance changes based for this transaction.
@@ -481,14 +481,14 @@ func (s *State) MineNewBlock(ctx context.Context) (storage.Block, time.Duration,
 	trans := s.mempool.PickBest(s.genesis.TransPerBlock)
 	nb := storage.NewBlock(s.minerAddress, s.genesis.Difficulty, s.genesis.TransPerBlock, s.RetrieveLatestBlock(), trans)
 
-	s.evHandler("worker: runMiningOperation: MINING: copy balance sheet and update")
+	s.evHandler("worker: runMiningOperation: MINING: copy accounts and update")
 
-	// Process the transactions against the balance sheet.
-	balanceSheet := s.accounts.Clone()
+	// Process the transactions against a copy of the accounts.
+	accounts := s.accounts.Clone()
 	for _, tx := range nb.Transactions {
 
 		// Apply the balance changes based on this transaction.
-		if err := balanceSheet.ApplyTransaction(s.minerAddress, tx); err != nil {
+		if err := accounts.ApplyTransaction(s.minerAddress, tx); err != nil {
 			s.evHandler("worker: runMiningOperation: MINING: WARNING : %s", err)
 			continue
 		}
@@ -499,7 +499,7 @@ func (s *State) MineNewBlock(ctx context.Context) (storage.Block, time.Duration,
 	}
 
 	// Apply the mining reward for this block.
-	balanceSheet.ApplyMiningReward(s.minerAddress)
+	accounts.ApplyMiningReward(s.minerAddress)
 
 	s.evHandler("worker: runMiningOperation: MINING: perform POW")
 
@@ -526,9 +526,9 @@ func (s *State) MineNewBlock(ctx context.Context) (storage.Block, time.Duration,
 			return storage.Block{}, duration, err
 		}
 
-		s.evHandler("worker: runMiningOperation: MINING: apply new balance sheet")
+		s.evHandler("worker: runMiningOperation: MINING: apply new account updates")
 
-		s.accounts.Replace(balanceSheet)
+		s.accounts.Replace(accounts)
 		s.latestBlock = blockFS.Block
 
 		// Remove the transactions from this block.

@@ -5,7 +5,7 @@
     "transactions_per_block": 2,
 	"mining_reward": 700,
 	"gas_price": 15,
-    "balance_sheet": {
+    "balances": {
         "0xF01813E4B85e178A83e29B8E7bF26BD830a25f32": 1000000,
         "0xdd6B972ffcc631a62CAE1BB9d80b7ff429c8ebA4": 1000000
     }
