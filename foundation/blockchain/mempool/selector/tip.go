@@ -7,7 +7,7 @@ import (
 )
 
 // tipSelect returns transactions with the best tip while respecting the nonce
-// for each address/transaction. Pass -1 for all the transactions.
+// for each address/transaction.
 var tipSelect = func(m map[storage.Address][]storage.BlockTx, howMany int) []storage.BlockTx {
 
 	/*
