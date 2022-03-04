@@ -64,24 +64,24 @@ func (h Handlers) Mempool(ctx context.Context, w http.ResponseWriter, r *http.Re
 func (h Handlers) Accounts(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	account := web.Param(r, "account")
 
-	var blkActs map[storage.Account]accounts.Info
+	var blkAccounts map[storage.Account]accounts.Info
 	switch account {
 	case "":
-		blkActs = h.State.RetrieveAccounts()
+		blkAccounts = h.State.RetrieveAccounts()
 
 	default:
 		account, err := storage.ToAccount(account)
 		if err != nil {
 			return err
 		}
-		blkActs = h.State.QueryAccounts(account)
+		blkAccounts = h.State.QueryAccounts(account)
 	}
 
-	acts := make([]info, 0, len(blkActs))
-	for addr, blkInfo := range blkActs {
+	acts := make([]info, 0, len(blkAccounts))
+	for account, blkInfo := range blkAccounts {
 		act := info{
-			Account: addr,
-			Name:    h.NS.Lookup(addr),
+			Account: account,
+			Name:    h.NS.Lookup(account),
 			Balance: blkInfo.Balance,
 			Nonce:   blkInfo.Nonce,
 		}

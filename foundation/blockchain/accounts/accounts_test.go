@@ -97,20 +97,20 @@ func TestTransactions(t *testing.T) {
 					t.Logf("\t%s\tTest %d:\tShould be able to apply miner reward.", success, testID)
 
 					cpyAccount := accounts.Copy()
-					for addr, info := range cpyAccount {
-						finalValue, exists := tst.final[addr]
+					for account, info := range cpyAccount {
+						finalValue, exists := tst.final[account]
 						if !exists {
-							t.Errorf("\t%s\tTest %d:\tShould have account %s in balances.", failed, testID, addr)
+							t.Errorf("\t%s\tTest %d:\tShould have account %s in balances.", failed, testID, account)
 						} else {
-							t.Logf("\t%s\tTest %d:\tShould have account %s in balances.", success, testID, addr)
+							t.Logf("\t%s\tTest %d:\tShould have account %s in balances.", success, testID, account)
 						}
 
 						if finalValue != info.Balance {
-							t.Errorf("\t%s\tTest %d:\tShould have correct balances for %s.", failed, testID, addr)
+							t.Errorf("\t%s\tTest %d:\tShould have correct balances for %s.", failed, testID, account)
 							t.Logf("\t%s\tTest %d:\tgot: %d", failed, testID, info.Balance)
 							t.Logf("\t%s\tTest %d:\texp: %d", failed, testID, finalValue)
 						} else {
-							t.Logf("\t%s\tTest %d:\tShould have correct balances for %s.", success, testID, addr)
+							t.Logf("\t%s\tTest %d:\tShould have correct balances for %s.", success, testID, account)
 						}
 					}
 				}

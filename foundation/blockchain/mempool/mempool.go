@@ -96,8 +96,8 @@ func (mp *Mempool) PickBest(howMany int) []storage.BlockTx {
 		}
 
 		for key, tx := range mp.pool {
-			addr := storage.Account(strings.Split(key, ":")[0])
-			m[addr] = append(m[addr], tx)
+			account := storage.Account(strings.Split(key, ":")[0])
+			m[account] = append(m[account], tx)
 		}
 	}
 	mp.mu.RUnlock()

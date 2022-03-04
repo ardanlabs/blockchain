@@ -29,8 +29,8 @@ func New(genesis genesis.Genesis) *Accounts {
 		info:    make(map[storage.Account]Info),
 	}
 
-	for addr, balance := range genesis.Balances {
-		accounts.info[addr] = Info{Balance: balance}
+	for account, balance := range genesis.Balances {
+		accounts.info[account] = Info{Balance: balance}
 	}
 
 	return &accounts
@@ -42,8 +42,8 @@ func (act *Accounts) Reset() {
 	defer act.mu.Unlock()
 
 	act.info = make(map[storage.Account]Info)
-	for addr, balance := range act.genesis.Balances {
-		act.info[addr] = Info{Balance: balance}
+	for account, balance := range act.genesis.Balances {
+		act.info[account] = Info{Balance: balance}
 	}
 }
 
@@ -69,8 +69,8 @@ func (act *Accounts) Clone() *Accounts {
 	defer act.mu.RUnlock()
 
 	accounts := New(act.genesis)
-	for addr, value := range act.info {
-		accounts.info[addr] = value
+	for account, value := range act.info {
+		accounts.info[account] = value
 	}
 	return accounts
 }
@@ -81,8 +81,8 @@ func (act *Accounts) Copy() map[storage.Account]Info {
 	defer act.mu.RUnlock()
 
 	accounts := make(map[storage.Account]Info)
-	for addr, info := range act.info {
-		accounts[addr] = info
+	for account, info := range act.info {
+		accounts[account] = info
 	}
 	return accounts
 }
@@ -109,20 +109,20 @@ func (act *Accounts) ValidateNonce(tx storage.SignedTx) error {
 	return nil
 }
 
-// ApplyMiningReward gives the specififed addr the mining reward.
-func (act *Accounts) ApplyMiningReward(minerAddr storage.Account) {
+// ApplyMiningReward gives the specififed account the mining reward.
+func (act *Accounts) ApplyMiningReward(minerAccount storage.Account) {
 	act.mu.Lock()
 	defer act.mu.Unlock()
 
-	info := act.info[minerAddr]
+	info := act.info[minerAccount]
 	info.Balance += act.genesis.MiningReward
 
-	act.info[minerAddr] = info
+	act.info[minerAccount] = info
 }
 
 // ApplyTransaction performs the business logic for applying a transaction
 // to the accounts information.
-func (act *Accounts) ApplyTransaction(minerAddr storage.Account, tx storage.BlockTx) error {
+func (act *Accounts) ApplyTransaction(minerAccount storage.Account, tx storage.BlockTx) error {
 	from, err := tx.FromAccount()
 	if err != nil {
 		return fmt.Errorf("invalid signature, %s", err)
@@ -145,7 +145,7 @@ func (act *Accounts) ApplyTransaction(minerAddr storage.Account, tx storage.Bloc
 		}
 
 		toInfo := act.info[tx.To]
-		minerInfo := act.info[minerAddr]
+		minerInfo := act.info[minerAccount]
 
 		fromInfo.Balance -= tx.Value
 		toInfo.Balance += tx.Value
@@ -158,7 +158,7 @@ func (act *Accounts) ApplyTransaction(minerAddr storage.Account, tx storage.Bloc
 
 		act.info[from] = fromInfo
 		act.info[tx.To] = toInfo
-		act.info[minerAddr] = minerInfo
+		act.info[minerAccount] = minerInfo
 	}
 
 	return nil

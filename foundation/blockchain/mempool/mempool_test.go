@@ -106,9 +106,9 @@ func TestCRUD(t *testing.T) {
 
 					for _, tx := range txs {
 						if _, exists := tst.best[tx.To]; !exists {
-							t.Fatalf("\t%s\tTest %d:\tShould get back the right addr/tip: %s/%d", failed, testID, tx.To, tx.Tip)
+							t.Fatalf("\t%s\tTest %d:\tShould get back the right account/tip: %s/%d", failed, testID, tx.To, tx.Tip)
 						}
-						t.Logf("\t%s\tTest %d:\tShould get back the right addr/tip: %s/%d", success, testID, tx.To, tx.Tip)
+						t.Logf("\t%s\tTest %d:\tShould get back the right account/tip: %s/%d", success, testID, tx.To, tx.Tip)
 					}
 
 					mp.Delete(txs[1])
