@@ -1,10 +1,10 @@
-package sort_test
+package selector_test
 
 import (
 	"testing"
 	"time"
 
-	"github.com/ardanlabs/blockchain/foundation/blockchain/mempool/sort"
+	"github.com/ardanlabs/blockchain/foundation/blockchain/mempool/selector"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
 	"github.com/ethereum/go-ethereum/crypto"
 )
@@ -164,7 +164,7 @@ func TestTipSort(t *testing.T) {
 						m[from] = append(m[from], tx)
 					}
 
-					sort, err := sort.RetrieveStrategy(sort.StrategyTipSort)
+					sort, err := selector.Retrieve(selector.StrategyTip)
 					if err != nil {
 						t.Fatalf("\t%s\tTest %d:\tShould be able to get sort strategy function: %s", failed, testID, err)
 					}

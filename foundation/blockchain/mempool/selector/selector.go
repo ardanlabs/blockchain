@@ -1,5 +1,5 @@
-// Package sort provides different transaction sorting algorithms.
-package sort
+// Package selector provides different transaction selecting algorithms.
+package selector
 
 import (
 	"fmt"
@@ -7,27 +7,27 @@ import (
 	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
 )
 
-// List of different sort strategies.
+// List of different select strategies.
 const (
-	StrategyTipSort = "TipSort"
+	StrategyTip = "tip"
 )
 
-// Map of different sort strategies with functions.
-var sortStrategies = map[string]Func{
-	StrategyTipSort: tipSort,
+// Map of different select strategies with functions.
+var strategies = map[string]Func{
+	StrategyTip: tipSelect,
 }
 
 // Func defines a function that takes a mempool of transactions and
-// sorts them, returned the specified number.
+// selects `howMany` of them in a specified order based on a strategy.
 type Func func(transactions map[storage.Address][]storage.BlockTx, howMany int) []storage.BlockTx
 
-// RetrieveStrategy returns the specified sort strategy function.
-func RetrieveStrategy(strategy string) (Func, error) {
-	sort, exists := sortStrategies[strategy]
+// Retrieve returns the specified select strategy function.
+func Retrieve(strategy string) (Func, error) {
+	fn, exists := strategies[strategy]
 	if !exists {
 		return nil, fmt.Errorf("strategy %q does not exist", strategy)
 	}
-	return sort, nil
+	return fn, nil
 }
 
 // =============================================================================

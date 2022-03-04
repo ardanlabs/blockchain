@@ -6,7 +6,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/ardanlabs/blockchain/foundation/blockchain/mempool/sort"
+	"github.com/ardanlabs/blockchain/foundation/blockchain/mempool/selector"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
 )
 
@@ -15,17 +15,17 @@ import (
 type Mempool struct {
 	pool map[string]storage.BlockTx
 	mu   sync.RWMutex
-	sort sort.Func
+	sort selector.Func
 }
 
 // New constructs a new mempool using the default sort strategy.
 func New() (*Mempool, error) {
-	return NewWithStrategy(sort.StrategyTipSort)
+	return NewWithStrategy(selector.StrategyTip)
 }
 
 // NewWithStrategy constructs a new mempool with specified sort strategy.
 func NewWithStrategy(strategy string) (*Mempool, error) {
-	sort, err := sort.RetrieveStrategy(strategy)
+	sort, err := selector.Retrieve(strategy)
 	if err != nil {
 		return nil, err
 	}
