@@ -54,7 +54,7 @@ type EventHandler func(v string, args ...interface{})
 // Config represents the configuration required to start
 // the blockchain node.
 type Config struct {
-	MinerAddress string
+	MinerAddress storage.Address
 	Host         string
 	DBPath       string
 	SortStrategy string
@@ -64,7 +64,7 @@ type Config struct {
 
 // State manages the blockchain database.
 type State struct {
-	minerAddress string
+	minerAddress storage.Address
 	host         string
 	dbPath       string
 	knownPeers   *peer.PeerSet
@@ -178,11 +178,7 @@ func (s *State) Shutdown() error {
 
 // SubmitWalletTransaction accepts a transaction from a wallet for inclusion.
 func (s *State) SubmitWalletTransaction(signedTx storage.SignedTx) error {
-	if err := signedTx.VerifySignature(); err != nil {
-		return err
-	}
-
-	if err := s.accounts.ValidateNonce(signedTx); err != nil {
+	if err := s.validateTransaction(signedTx); err != nil {
 		return err
 	}
 
@@ -204,7 +200,7 @@ func (s *State) SubmitWalletTransaction(signedTx storage.SignedTx) error {
 
 // SubmitNodeTransaction accepts a transaction from a node for inclusion.
 func (s *State) SubmitNodeTransaction(tx storage.BlockTx) error {
-	if err := tx.VerifySignature(); err != nil {
+	if err := s.validateTransaction(tx.SignedTx); err != nil {
 		return err
 	}
 
@@ -238,7 +234,7 @@ func (s *State) WriteNextBlock(block storage.Block) error {
 		done()
 	}()
 
-	hash, err := s.validateNextBlock(block)
+	hash, err := s.validateBlock(block)
 	if err != nil {
 		return err
 	}
@@ -285,9 +281,9 @@ func (s *State) WriteNextBlock(block storage.Block) error {
 	return nil
 }
 
-// validateNextBlock takes a block and validates it to be included into
+// validateBlock takes a block and validates it to be included into
 // the blockchain.
-func (s *State) validateNextBlock(block storage.Block) (string, error) {
+func (s *State) validateBlock(block storage.Block) (string, error) {
 	s.evHandler("state: WriteNextBlock: validate: hash solved")
 
 	hash := block.Hash()
@@ -321,12 +317,26 @@ func (s *State) validateNextBlock(block storage.Block) (string, error) {
 	s.evHandler("state: WriteNextBlock: validate: transaction signatures")
 
 	for _, tx := range block.Transactions {
-		if err := tx.VerifySignature(); err != nil {
-			return signature.ZeroHash, fmt.Errorf("transaction has invalid signature, %w, tx[%v]", err, tx)
+		if err := s.validateTransaction(tx.SignedTx); err != nil {
+			return signature.ZeroHash, fmt.Errorf("transaction has invalid signature or other problems, %w, tx[%v]", err, tx)
 		}
 	}
 
 	return hash, nil
+}
+
+// validateTransaction takes the signed transaction and validates it has
+// a proper signature and other aspects of the data.
+func (s *State) validateTransaction(signedTx storage.SignedTx) error {
+	if err := signedTx.Validate(); err != nil {
+		return err
+	}
+
+	if err := s.accounts.ValidateNonce(signedTx); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // =============================================================================
@@ -367,7 +377,7 @@ func (s *State) RetrieveMempool() []storage.BlockTx {
 }
 
 // RetrieveAccounts returns a copy of the set of account information.
-func (s *State) RetrieveAccounts() map[string]accounts.Info {
+func (s *State) RetrieveAccounts() map[storage.Address]accounts.Info {
 	return s.accounts.Copy()
 }
 
@@ -382,7 +392,7 @@ func (s *State) RetrieveKnownPeers() []peer.Peer {
 const QueryLastest = ^uint64(0) >> 1
 
 // QueryAccounts returns a copy of the set of account information by address.
-func (s *State) QueryAccounts(address string) map[string]accounts.Info {
+func (s *State) QueryAccounts(address storage.Address) map[storage.Address]accounts.Info {
 	accounts := s.accounts.Clone()
 
 	cpy := accounts.Copy()
@@ -426,7 +436,7 @@ func (s *State) QueryBlocksByNumber(from uint64, to uint64) []storage.Block {
 // QueryBlocksByAddress returns the set of blocks by address. If the address
 // is empty, all blocks are returned. This function reads the blockchain
 // from disk first.
-func (s *State) QueryBlocksByAddress(address string) []storage.Block {
+func (s *State) QueryBlocksByAddress(address storage.Address) []storage.Block {
 	blocks, err := s.storage.ReadAllBlocks()
 	if err != nil {
 		return nil

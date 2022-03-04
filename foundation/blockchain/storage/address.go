@@ -16,28 +16,45 @@
 
 package storage
 
-// AddressLength is the expected length of the address.
-const AddressLength = 20
+import "errors"
 
-// isAddress verifies whether the specified string represents a valid
-// hex-encoded address.
-func isAddress(s string) bool {
-	if has0xPrefix(s) {
-		s = s[2:]
+// Address represents an account address in the system.
+type Address string
+
+// ToAddress converts a hex-encoded string to an address and validates the
+// hex-encoded string is formatted correctly.
+func ToAddress(hex string) (Address, error) {
+	a := Address(hex)
+	if !a.IsAddress() {
+		return "", errors.New("invalid address format")
 	}
-	return len(s) == 2*AddressLength && isHex(s)
+
+	return a, nil
 }
 
-func has0xPrefix(str string) bool {
-	return len(str) >= 2 && str[0] == '0' && (str[1] == 'x' || str[1] == 'X')
+// IsAddress verifies whether the specified string represents a valid
+// hex-encoded address.
+func (a Address) IsAddress() bool {
+	const addressLength = 20
+
+	if has0xPrefix(a) {
+		a = a[2:]
+	}
+	return len(a) == 2*addressLength && isHex(a)
+}
+
+// =============================================================================
+
+func has0xPrefix(a Address) bool {
+	return len(a) >= 2 && a[0] == '0' && (a[1] == 'x' || a[1] == 'X')
 }
 
 // isHex validates whether each byte is valid hexadecimal string.
-func isHex(str string) bool {
-	if len(str)%2 != 0 {
+func isHex(a Address) bool {
+	if len(a)%2 != 0 {
 		return false
 	}
-	for _, c := range []byte(str) {
+	for _, c := range []byte(a) {
 		if !isHexCharacter(c) {
 			return false
 		}

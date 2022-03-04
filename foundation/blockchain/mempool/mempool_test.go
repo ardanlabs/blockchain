@@ -36,7 +36,7 @@ func TestCRUD(t *testing.T) {
 	type table struct {
 		name string
 		txs  []user
-		best map[string]storage.UserTx
+		best map[storage.Address]storage.UserTx
 	}
 
 	tt := []table{
@@ -68,7 +68,7 @@ func TestCRUD(t *testing.T) {
 					hexKey: "aed31b6b5a341af8f27e66fb0b7633cf20fc27049e3eb7f6f623a4655b719ebb",
 				},
 			},
-			best: map[string]storage.UserTx{
+			best: map[storage.Address]storage.UserTx{
 				"0x3333333333333333333333333333333333333333": {Nonce: 1, Tip: 150},
 				"0x5555555555555555555555555555555555555555": {Nonce: 1, Tip: 100},
 				"0x4444444444444444444444444444444444444444": {Nonce: 1, Tip: 75},

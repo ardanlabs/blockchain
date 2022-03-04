@@ -9,18 +9,19 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
 // NameService maintains a map for account name to account address.
 type NameService struct {
-	accounts map[string]string
+	accounts map[storage.Address]string
 }
 
 // New constructs an Ardan Name Service with accounts from the zblock/accounts folder.
 func New(root string) (*NameService, error) {
 	ns := NameService{
-		accounts: make(map[string]string),
+		accounts: make(map[storage.Address]string),
 	}
 
 	fn := func(fileName string, info fs.FileInfo, err error) error {
@@ -38,7 +39,7 @@ func New(root string) (*NameService, error) {
 		}
 		address := crypto.PubkeyToAddress(privateKey.PublicKey)
 
-		ns.accounts[address.String()] = strings.TrimSuffix(path.Base(fileName), ".ecdsa")
+		ns.accounts[storage.Address(address.String())] = strings.TrimSuffix(path.Base(fileName), ".ecdsa")
 		return nil
 	}
 
@@ -50,17 +51,17 @@ func New(root string) (*NameService, error) {
 }
 
 // Lookup returns the name for the specified address.
-func (ns *NameService) Lookup(address string) string {
+func (ns *NameService) Lookup(address storage.Address) string {
 	name, exists := ns.accounts[address]
 	if !exists {
-		return address
+		return string(address)
 	}
 	return name
 }
 
 // Copy returns a copy of the map of names and accounts.
-func (ns *NameService) Copy() map[string]string {
-	cpy := make(map[string]string, len(ns.accounts))
+func (ns *NameService) Copy() map[storage.Address]string {
+	cpy := make(map[storage.Address]string, len(ns.accounts))
 	for address, name := range ns.accounts {
 		cpy[address] = name
 	}

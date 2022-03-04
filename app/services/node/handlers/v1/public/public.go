@@ -64,11 +64,17 @@ func (h Handlers) Mempool(ctx context.Context, w http.ResponseWriter, r *http.Re
 func (h Handlers) Accounts(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	address := web.Param(r, "address")
 
-	var blkActs map[string]accounts.Info
-	if address == "" {
+	var blkActs map[storage.Address]accounts.Info
+	switch address {
+	case "":
 		blkActs = h.State.RetrieveAccounts()
-	} else {
-		blkActs = h.State.QueryAccounts(address)
+
+	default:
+		addr, err := storage.ToAddress(address)
+		if err != nil {
+			return err
+		}
+		blkActs = h.State.QueryAccounts(addr)
 	}
 
 	acts := make([]info, 0, len(blkActs))
@@ -93,7 +99,10 @@ func (h Handlers) Accounts(ctx context.Context, w http.ResponseWriter, r *http.R
 
 // BlocksByAddress returns all the blocks and their details.
 func (h Handlers) BlocksByAddress(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	address := web.Param(r, "address")
+	address, err := storage.ToAddress(web.Param(r, "address"))
+	if err != nil {
+		return err
+	}
 
 	dbBlocks := h.State.QueryBlocksByAddress(address)
 	if len(dbBlocks) == 0 {

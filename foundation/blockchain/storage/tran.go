@@ -2,6 +2,7 @@ package storage
 
 import (
 	"crypto/ecdsa"
+	"errors"
 	"fmt"
 	"math/big"
 	"time"
@@ -13,16 +14,16 @@ import (
 
 // UserTx is the transactional data submitted by a user.
 type UserTx struct {
-	Nonce uint   `json:"nonce"` // Unique id for the transaction supplied by the user.
-	To    string `json:"to"`    // Address receiving the benefit of the transaction.
-	Value uint   `json:"value"` // Monetary value received from this transaction.
-	Tip   uint   `json:"tip"`   // Tip offered by the sender as an incentive to mine this transaction.
-	Data  []byte `json:"data"`  // Extra data related to the transaction.
+	Nonce uint    `json:"nonce"` // Unique id for the transaction supplied by the user.
+	To    Address `json:"to"`    // Address receiving the benefit of the transaction.
+	Value uint    `json:"value"` // Monetary value received from this transaction.
+	Tip   uint    `json:"tip"`   // Tip offered by the sender as an incentive to mine this transaction.
+	Data  []byte  `json:"data"`  // Extra data related to the transaction.
 }
 
 // NewUserTx constructs a new user transaction.
-func NewUserTx(nonce uint, to string, value uint, tip uint, data []byte) (UserTx, error) {
-	if !isAddress(to) {
+func NewUserTx(nonce uint, to Address, value uint, tip uint, data []byte) (UserTx, error) {
+	if !to.IsAddress() {
 		return UserTx{}, fmt.Errorf("to address is not properly formatted")
 	}
 
@@ -41,7 +42,7 @@ func NewUserTx(nonce uint, to string, value uint, tip uint, data []byte) (UserTx
 func (tx UserTx) Sign(privateKey *ecdsa.PrivateKey) (SignedTx, error) {
 
 	// Validate the to address incase the UserTx value was hand constructed.
-	if !isAddress(tx.To) {
+	if !tx.To.IsAddress() {
 		return SignedTx{}, fmt.Errorf("to address is not properly formatted")
 	}
 
@@ -72,15 +73,25 @@ type SignedTx struct {
 	S *big.Int `json:"s"` // Second coordinate of the ECDSA signature.
 }
 
-// VerifySignature verifies the signature conforms to our standards and
-// is associated with the data claimed to be signed.
-func (tx SignedTx) VerifySignature() error {
-	return signature.VerifySignature(tx.UserTx, tx.V, tx.R, tx.S)
+// Validate verifies the transaction has a proper signature that conforms to our
+// standards and is associated with the data claimed to be signed. It also
+// checks the format of the to address.
+func (tx SignedTx) Validate() error {
+	if err := signature.VerifySignature(tx.UserTx, tx.V, tx.R, tx.S); err != nil {
+		return err
+	}
+
+	if !tx.To.IsAddress() {
+		return errors.New("invalid address for to account")
+	}
+
+	return nil
 }
 
 // FromAddress extracts the address for the account that signed the transaction.
-func (tx SignedTx) FromAddress() (string, error) {
-	return signature.FromAddress(tx.UserTx, tx.V, tx.R, tx.S)
+func (tx SignedTx) FromAddress() (Address, error) {
+	addr, err := signature.FromAddress(tx.UserTx, tx.V, tx.R, tx.S)
+	return Address(addr), err
 }
 
 // SignatureString returns the signature as a string.

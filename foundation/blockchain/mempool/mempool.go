@@ -89,7 +89,7 @@ func (mp *Mempool) Truncate() {
 func (mp *Mempool) PickBest(howMany int) []storage.BlockTx {
 
 	// Group the transactions by address.
-	m := make(map[string][]storage.BlockTx)
+	m := make(map[storage.Address][]storage.BlockTx)
 	mp.mu.RLock()
 	{
 		if howMany == -1 {
@@ -97,7 +97,7 @@ func (mp *Mempool) PickBest(howMany int) []storage.BlockTx {
 		}
 
 		for key, tx := range mp.pool {
-			addr := strings.Split(key, ":")[0]
+			addr := storage.Address(strings.Split(key, ":")[0])
 			m[addr] = append(m[addr], tx)
 		}
 	}

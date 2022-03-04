@@ -9,7 +9,7 @@ import (
 // tipSort returns transactions with the best tip while respecting the nonce
 // for each address/transaction. The caller specifies how many transactions they want.
 // Pass -1 for all the transactions.
-var tipSort = func(m map[string][]storage.BlockTx, howMany int) []storage.BlockTx {
+var tipSort = func(m map[storage.Address][]storage.BlockTx, howMany int) []storage.BlockTx {
 
 	/*
 		Bill: {Nonce: 2, To: "0x6Fe6CF3c8fF57c58d24BfC869668F48BCbDb3BD9", Tip: 250},

@@ -19,14 +19,14 @@ type Info struct {
 // the blockchain.
 type Accounts struct {
 	genesis genesis.Genesis
-	info    map[string]Info
+	info    map[storage.Address]Info
 	mu      sync.RWMutex
 }
 
 func New(genesis genesis.Genesis) *Accounts {
 	accts := Accounts{
 		genesis: genesis,
-		info:    make(map[string]Info),
+		info:    make(map[storage.Address]Info),
 	}
 
 	for addr, balance := range genesis.Balances {
@@ -41,7 +41,7 @@ func (act *Accounts) Reset() {
 	act.mu.Lock()
 	defer act.mu.Unlock()
 
-	act.info = make(map[string]Info)
+	act.info = make(map[storage.Address]Info)
 	for addr, balance := range act.genesis.Balances {
 		act.info[addr] = Info{Balance: balance}
 	}
@@ -56,7 +56,7 @@ func (act *Accounts) Replace(accounts *Accounts) {
 }
 
 // Remove deletes an account from the accounts.
-func (act *Accounts) Remove(address string) {
+func (act *Accounts) Remove(address storage.Address) {
 	act.mu.Lock()
 	defer act.mu.Unlock()
 
@@ -76,11 +76,11 @@ func (act *Accounts) Clone() *Accounts {
 }
 
 // Copy makes a copy of the current information for all accounts.
-func (act *Accounts) Copy() map[string]Info {
+func (act *Accounts) Copy() map[storage.Address]Info {
 	act.mu.RLock()
 	defer act.mu.RUnlock()
 
-	accounts := make(map[string]Info)
+	accounts := make(map[storage.Address]Info)
 	for addr, info := range act.info {
 		accounts[addr] = info
 	}
@@ -110,7 +110,7 @@ func (act *Accounts) ValidateNonce(tx storage.SignedTx) error {
 }
 
 // ApplyMiningReward gives the specififed addr the mining reward.
-func (act *Accounts) ApplyMiningReward(minerAddr string) {
+func (act *Accounts) ApplyMiningReward(minerAddr storage.Address) {
 	act.mu.Lock()
 	defer act.mu.Unlock()
 
@@ -122,7 +122,7 @@ func (act *Accounts) ApplyMiningReward(minerAddr string) {
 
 // ApplyTransaction performs the business logic for applying a transaction
 // to the accounts information.
-func (act *Accounts) ApplyTransaction(minerAddr string, tx storage.BlockTx) error {
+func (act *Accounts) ApplyTransaction(minerAddr storage.Address, tx storage.BlockTx) error {
 	from, err := tx.FromAddress()
 	if err != nil {
 		return fmt.Errorf("invalid signature, %s", err)

@@ -33,11 +33,11 @@ func sign(tx storage.UserTx, gas uint) (storage.BlockTx, error) {
 func TestTransactions(t *testing.T) {
 	type table struct {
 		name        string
-		miner       string
+		miner       storage.Address
 		minerReward uint
 		gas         uint
-		balances    map[string]uint
-		final       map[string]uint
+		balances    map[storage.Address]uint
+		final       map[storage.Address]uint
 		txs         []storage.UserTx
 	}
 
@@ -47,12 +47,12 @@ func TestTransactions(t *testing.T) {
 			miner:       "miner",
 			minerReward: 100,
 			gas:         80,
-			balances: map[string]uint{
+			balances: map[storage.Address]uint{
 				"0xdd6B972ffcc631a62CAE1BB9d80b7ff429c8ebA4": 1000,
 				"0xF01813E4B85e178A83e29B8E7bF26BD830a25f32": 0,
 				"miner": 0,
 			},
-			final: map[string]uint{
+			final: map[storage.Address]uint{
 				"0xdd6B972ffcc631a62CAE1BB9d80b7ff429c8ebA4": 540,
 				"0xF01813E4B85e178A83e29B8E7bF26BD830a25f32": 200,
 				"miner": 360,
@@ -126,7 +126,7 @@ func TestNonceValidation(t *testing.T) {
 		name        string
 		minerReward uint
 		gas         uint
-		balances    map[string]uint
+		balances    map[storage.Address]uint
 		txs         []storage.UserTx
 		results     []error
 	}
@@ -135,7 +135,7 @@ func TestNonceValidation(t *testing.T) {
 		{
 			name:        "basic",
 			minerReward: 100,
-			balances:    map[string]uint{},
+			balances:    map[storage.Address]uint{},
 			txs: []storage.UserTx{
 				{
 					Nonce: 5,

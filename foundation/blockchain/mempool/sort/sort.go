@@ -19,7 +19,7 @@ var sortStrategies = map[string]Func{
 
 // Func defines a function that takes a mempool of transactions and
 // sorts them, returned the specified number.
-type Func func(transactions map[string][]storage.BlockTx, howMany int) []storage.BlockTx
+type Func func(transactions map[storage.Address][]storage.BlockTx, howMany int) []storage.BlockTx
 
 // RetrieveStrategy returns the specified sort strategy function.
 func RetrieveStrategy(strategy string) (Func, error) {

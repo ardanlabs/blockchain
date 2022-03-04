@@ -154,7 +154,7 @@ func TestTipSort(t *testing.T) {
 			t.Logf("\tTest %d:\tWhen handling a set of transaction.", testID)
 			{
 				f := func(t *testing.T) {
-					m := make(map[string][]storage.BlockTx)
+					m := make(map[storage.Address][]storage.BlockTx)
 					for _, tx := range tst.txs {
 						from, err := tx.FromAddress()
 						if err != nil {
