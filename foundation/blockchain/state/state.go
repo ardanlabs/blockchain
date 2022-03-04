@@ -25,7 +25,7 @@ import (
 
 	-- Web Application
 	Provide support to read a file of transactions to send.
-	Need to verify enough money at the address before sending a transaction.
+	Need to verify enough money at the account before sending a transaction.
 	See the different nodes, view activity.
 
 	-- Blockchain
@@ -54,17 +54,17 @@ type EventHandler func(v string, args ...interface{})
 // Config represents the configuration required to start
 // the blockchain node.
 type Config struct {
-	MinerAddress storage.Address
-	Host         string
-	DBPath       string
-	SortStrategy string
-	KnownPeers   *peer.PeerSet
-	EvHandler    EventHandler
+	MinerAccount   storage.Account
+	Host           string
+	DBPath         string
+	SelectStrategy string
+	KnownPeers     *peer.PeerSet
+	EvHandler      EventHandler
 }
 
 // State manages the blockchain database.
 type State struct {
-	minerAddress storage.Address
+	minerAccount storage.Account
 	host         string
 	dbPath       string
 	knownPeers   *peer.PeerSet
@@ -119,11 +119,11 @@ func New(cfg Config) (*State, error) {
 		for _, tx := range block.Transactions {
 
 			// Apply the balance changes based for this transaction.
-			accounts.ApplyTransaction(block.Header.MinerAddress, tx)
+			accounts.ApplyTransaction(block.Header.MinerAccount, tx)
 		}
 
 		// Apply the mining reward for this block.
-		accounts.ApplyMiningReward(block.Header.MinerAddress)
+		accounts.ApplyMiningReward(block.Header.MinerAccount)
 	}
 
 	// Build a safe event handler function for use.
@@ -134,14 +134,14 @@ func New(cfg Config) (*State, error) {
 	}
 
 	// Construct a mempool with the specified sort strategy.
-	mempool, err := mempool.NewWithStrategy(cfg.SortStrategy)
+	mempool, err := mempool.NewWithStrategy(cfg.SelectStrategy)
 	if err != nil {
 		return nil, err
 	}
 
 	// Create the State to provide support for managing the blockchain.
 	state := State{
-		minerAddress: cfg.MinerAddress,
+		minerAccount: cfg.MinerAccount,
 		host:         cfg.Host,
 		dbPath:       cfg.DBPath,
 		knownPeers:   cfg.KnownPeers,
@@ -261,7 +261,7 @@ func (s *State) WriteNextBlock(block storage.Block) error {
 		for _, tx := range block.Transactions {
 
 			// Apply the balance changes based for this transaction.
-			s.accounts.ApplyTransaction(block.Header.MinerAddress, tx)
+			s.accounts.ApplyTransaction(block.Header.MinerAccount, tx)
 
 			s.evHandler("state: WriteNextBlock: remove from mempool: tx[%s]", tx)
 
@@ -272,7 +272,7 @@ func (s *State) WriteNextBlock(block storage.Block) error {
 		s.evHandler("state: WriteNextBlock: apply mining reward")
 
 		// Apply the mining reward for this block.
-		s.accounts.ApplyMiningReward(block.Header.MinerAddress)
+		s.accounts.ApplyMiningReward(block.Header.MinerAccount)
 
 		// Save this as the latest block.
 		s.latestBlock = block
@@ -377,7 +377,7 @@ func (s *State) RetrieveMempool() []storage.BlockTx {
 }
 
 // RetrieveAccounts returns a copy of the set of account information.
-func (s *State) RetrieveAccounts() map[storage.Address]accounts.Info {
+func (s *State) RetrieveAccounts() map[storage.Account]accounts.Info {
 	return s.accounts.Copy()
 }
 
@@ -391,14 +391,14 @@ func (s *State) RetrieveKnownPeers() []peer.Peer {
 // QueryLastest represents to query the latest block in the chain.
 const QueryLastest = ^uint64(0) >> 1
 
-// QueryAccounts returns a copy of the set of account information by address.
-func (s *State) QueryAccounts(address storage.Address) map[storage.Address]accounts.Info {
+// QueryAccounts returns a copy of the account information by account.
+func (s *State) QueryAccounts(account storage.Account) map[storage.Account]accounts.Info {
 	accounts := s.accounts.Clone()
 
 	cpy := accounts.Copy()
-	for addr := range cpy {
-		if address != addr {
-			accounts.Remove(addr)
+	for existingAccount := range cpy {
+		if account != existingAccount {
+			accounts.Remove(account)
 		}
 	}
 
@@ -433,10 +433,10 @@ func (s *State) QueryBlocksByNumber(from uint64, to uint64) []storage.Block {
 	return out
 }
 
-// QueryBlocksByAddress returns the set of blocks by address. If the address
+// QueryBlocksByAccount returns the set of blocks by account. If the account
 // is empty, all blocks are returned. This function reads the blockchain
 // from disk first.
-func (s *State) QueryBlocksByAddress(address storage.Address) []storage.Block {
+func (s *State) QueryBlocksByAccount(account storage.Account) []storage.Block {
 	blocks, err := s.storage.ReadAllBlocks()
 	if err != nil {
 		return nil
@@ -446,11 +446,11 @@ func (s *State) QueryBlocksByAddress(address storage.Address) []storage.Block {
 blocks:
 	for _, block := range blocks {
 		for _, tx := range block.Transactions {
-			from, err := tx.FromAddress()
+			from, err := tx.FromAccount()
 			if err != nil {
 				continue
 			}
-			if address == "" || from == address || tx.To == address {
+			if account == "" || from == account || tx.To == account {
 				out = append(out, block)
 				continue blocks
 			}
@@ -462,7 +462,7 @@ blocks:
 
 // =============================================================================
 
-// addPeerNode adds an address to the list of peers.
+// addPeerNode adds an peer to the list of peers.
 func (s *State) addPeerNode(peer peer.Peer) error {
 
 	// Don't add this node to the known peer list.
@@ -489,7 +489,7 @@ func (s *State) MineNewBlock(ctx context.Context) (storage.Block, time.Duration,
 
 	// Create a new block which owns it's own copy of the transactions.
 	trans := s.mempool.PickBest(s.genesis.TransPerBlock)
-	nb := storage.NewBlock(s.minerAddress, s.genesis.Difficulty, s.genesis.TransPerBlock, s.RetrieveLatestBlock(), trans)
+	nb := storage.NewBlock(s.minerAccount, s.genesis.Difficulty, s.genesis.TransPerBlock, s.RetrieveLatestBlock(), trans)
 
 	s.evHandler("worker: runMiningOperation: MINING: copy accounts and update")
 
@@ -498,7 +498,7 @@ func (s *State) MineNewBlock(ctx context.Context) (storage.Block, time.Duration,
 	for _, tx := range nb.Transactions {
 
 		// Apply the balance changes based on this transaction.
-		if err := accounts.ApplyTransaction(s.minerAddress, tx); err != nil {
+		if err := accounts.ApplyTransaction(s.minerAccount, tx); err != nil {
 			s.evHandler("worker: runMiningOperation: MINING: WARNING : %s", err)
 			continue
 		}
@@ -509,7 +509,7 @@ func (s *State) MineNewBlock(ctx context.Context) (storage.Block, time.Duration,
 	}
 
 	// Apply the mining reward for this block.
-	accounts.ApplyMiningReward(s.minerAddress)
+	accounts.ApplyMiningReward(s.minerAccount)
 
 	s.evHandler("worker: runMiningOperation: MINING: perform POW")
 

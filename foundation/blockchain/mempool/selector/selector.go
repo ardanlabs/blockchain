@@ -3,6 +3,7 @@ package selector
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
 )
@@ -18,14 +19,14 @@ var strategies = map[string]Func{
 }
 
 // Func defines a function that takes a mempool of transactions grouped by
-// address and selects howMany of them in an order based on the functions
+// account and selects howMany of them in an order based on the functions
 // strategy. All selector functions MUST respect nonce ordering. Receiving -1
 // for howMany must return all the transactions in the strategies ordering.
-type Func func(transactions map[storage.Address][]storage.BlockTx, howMany int) []storage.BlockTx
+type Func func(transactions map[storage.Account][]storage.BlockTx, howMany int) []storage.BlockTx
 
 // Retrieve returns the specified select strategy function.
 func Retrieve(strategy string) (Func, error) {
-	fn, exists := strategies[strategy]
+	fn, exists := strategies[strings.ToLower(strategy)]
 	if !exists {
 		return nil, fmt.Errorf("strategy %q does not exist", strategy)
 	}

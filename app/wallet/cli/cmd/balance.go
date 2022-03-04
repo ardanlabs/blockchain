@@ -6,12 +6,13 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/spf13/cobra"
 )
 
 type balance struct {
-	Address string `json:"address"`
+	Account string `json:"account"`
 	Balance uint   `json:"balance"`
 }
 
@@ -30,9 +31,9 @@ var balanceCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal(err)
 		}
-		address := crypto.PubkeyToAddress(privateKey.PublicKey)
-		fmt.Println("For Address:", address)
-		resp, err := http.Get(fmt.Sprintf("%s/v1/balances/list/%s", url, address))
+		account := storage.PublicKeyToAccount(privateKey.PublicKey)
+		fmt.Println("For Account:", account)
+		resp, err := http.Get(fmt.Sprintf("%s/v1/balances/list/%s", url, account))
 		if err != nil {
 			log.Fatal(err)
 		}

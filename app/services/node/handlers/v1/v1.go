@@ -32,9 +32,9 @@ func PublicRoutes(app *web.App, cfg Config) {
 
 	app.Handle(http.MethodGet, version, "/genesis/list", pbl.Genesis)
 	app.Handle(http.MethodGet, version, "/accounts/list", pbl.Accounts)
-	app.Handle(http.MethodGet, version, "/accounts/list/:address", pbl.Accounts)
-	app.Handle(http.MethodGet, version, "/blocks/list", pbl.BlocksByAddress)
-	app.Handle(http.MethodGet, version, "/blocks/list/:address", pbl.BlocksByAddress)
+	app.Handle(http.MethodGet, version, "/accounts/list/:account", pbl.Accounts)
+	app.Handle(http.MethodGet, version, "/blocks/list", pbl.BlocksByAccount)
+	app.Handle(http.MethodGet, version, "/blocks/list/:account", pbl.BlocksByAccount)
 	app.Handle(http.MethodGet, version, "/tx/uncommitted/list", pbl.Mempool)
 	app.Handle(http.MethodPost, version, "/tx/submit", pbl.SubmitWalletTransaction)
 }

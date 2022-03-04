@@ -62,25 +62,25 @@ func (h Handlers) Mempool(ctx context.Context, w http.ResponseWriter, r *http.Re
 
 // Accounts returns the current balances for all users.
 func (h Handlers) Accounts(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	address := web.Param(r, "address")
+	account := web.Param(r, "account")
 
-	var blkActs map[storage.Address]accounts.Info
-	switch address {
+	var blkActs map[storage.Account]accounts.Info
+	switch account {
 	case "":
 		blkActs = h.State.RetrieveAccounts()
 
 	default:
-		addr, err := storage.ToAddress(address)
+		account, err := storage.ToAccount(account)
 		if err != nil {
 			return err
 		}
-		blkActs = h.State.QueryAccounts(addr)
+		blkActs = h.State.QueryAccounts(account)
 	}
 
 	acts := make([]info, 0, len(blkActs))
 	for addr, blkInfo := range blkActs {
 		act := info{
-			Address: addr,
+			Account: addr,
 			Name:    h.NS.Lookup(addr),
 			Balance: blkInfo.Balance,
 			Nonce:   blkInfo.Nonce,
@@ -97,14 +97,14 @@ func (h Handlers) Accounts(ctx context.Context, w http.ResponseWriter, r *http.R
 	return web.Respond(ctx, w, ai, http.StatusOK)
 }
 
-// BlocksByAddress returns all the blocks and their details.
-func (h Handlers) BlocksByAddress(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	address, err := storage.ToAddress(web.Param(r, "address"))
+// BlocksByAccount returns all the blocks and their details.
+func (h Handlers) BlocksByAccount(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	account, err := storage.ToAccount(web.Param(r, "account"))
 	if err != nil {
 		return err
 	}
 
-	dbBlocks := h.State.QueryBlocksByAddress(address)
+	dbBlocks := h.State.QueryBlocksByAccount(account)
 	if len(dbBlocks) == 0 {
 		return web.Respond(ctx, w, nil, http.StatusNoContent)
 	}
@@ -113,10 +113,10 @@ func (h Handlers) BlocksByAddress(ctx context.Context, w http.ResponseWriter, r 
 	for j, blk := range dbBlocks {
 		trans := make([]tx, len(blk.Transactions))
 		for i, tran := range blk.Transactions {
-			address, _ := tran.FromAddress()
+			account, _ := tran.FromAccount()
 			trans[i] = tx{
-				FromAddress: address,
-				FromName:    h.NS.Lookup(address),
+				FromAccount: account,
+				FromName:    h.NS.Lookup(account),
 				Nonce:       tran.Nonce,
 				To:          tran.To,
 				Value:       tran.Value,
@@ -130,7 +130,7 @@ func (h Handlers) BlocksByAddress(ctx context.Context, w http.ResponseWriter, r 
 
 		b := block{
 			ParentHash:   blk.Header.ParentHash,
-			MinerAddress: blk.Header.MinerAddress,
+			MinerAccount: blk.Header.MinerAccount,
 			Difficulty:   blk.Header.Difficulty,
 			Number:       blk.Header.Number,
 			TotalTip:     blk.Header.TotalTip,

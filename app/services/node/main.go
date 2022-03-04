@@ -59,10 +59,10 @@ func run(log *zap.SugaredLogger) error {
 			PrivateHost     string        `conf:"default:0.0.0.0:9080"`
 		}
 		Node struct {
-			MinerName    string   `conf:"default:miner1"`
-			DBPath       string   `conf:"default:zblock/blocks.db"`
-			SortStrategy string   `conf:"default:TipSort"`
-			KnownPeers   []string `conf:"default:0.0.0.0:9080;0.0.0.0:9180"`
+			MinerName      string   `conf:"default:miner1"`
+			DBPath         string   `conf:"default:zblock/blocks.db"`
+			SelectStrategy string   `conf:"default:Tip"`
+			KnownPeers     []string `conf:"default:0.0.0.0:9080;0.0.0.0:9180"`
 		}
 		NameService struct {
 			Folder string `conf:"default:zblock/accounts/"`
@@ -104,8 +104,8 @@ func run(log *zap.SugaredLogger) error {
 		return fmt.Errorf("unable to load account name service: %w", err)
 	}
 
-	for name, address := range ns.Copy() {
-		log.Infow("startup", "status", "nameservce", "name", name, "address", address)
+	for account, name := range ns.Copy() {
+		log.Infow("startup", "status", "nameservce", "name", name, "account", account)
 	}
 
 	// =========================================================================
@@ -116,7 +116,8 @@ func run(log *zap.SugaredLogger) error {
 	if err != nil {
 		return fmt.Errorf("unable to load private key for node: %w", err)
 	}
-	address := crypto.PubkeyToAddress(privateKey.PublicKey)
+
+	account := storage.PublicKeyToAccount(privateKey.PublicKey)
 
 	peerSet := peer.NewPeerSet()
 	for _, host := range cfg.Node.KnownPeers {
@@ -128,18 +129,13 @@ func run(log *zap.SugaredLogger) error {
 		log.Infow(s, "traceid", "00000000-0000-0000-0000-000000000000")
 	}
 
-	addr, err := storage.ToAddress(address.String())
-	if err != nil {
-		return fmt.Errorf("unable to convert address: %w", err)
-	}
-
 	state, err := state.New(state.Config{
-		MinerAddress: addr,
-		Host:         cfg.Web.PrivateHost,
-		DBPath:       cfg.Node.DBPath,
-		SortStrategy: cfg.Node.SortStrategy,
-		KnownPeers:   peerSet,
-		EvHandler:    ev,
+		MinerAccount:   account,
+		Host:           cfg.Web.PrivateHost,
+		DBPath:         cfg.Node.DBPath,
+		SelectStrategy: cfg.Node.SelectStrategy,
+		KnownPeers:     peerSet,
+		EvHandler:      ev,
 	})
 	if err != nil {
 		return err

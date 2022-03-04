@@ -3,7 +3,7 @@ package public
 import "github.com/ardanlabs/blockchain/foundation/blockchain/storage"
 
 type info struct {
-	Address storage.Address `json:"address"`
+	Account storage.Account `json:"account"`
 	Name    string          `json:"name"`
 	Balance uint            `json:"balance"`
 	Nonce   uint            `json:"nonce"`
@@ -16,10 +16,10 @@ type actInfo struct {
 }
 
 type tx struct {
-	FromAddress storage.Address `json:"from_address"`
+	FromAccount storage.Account `json:"from_account"`
 	FromName    string          `json:"from_name"`
 	Nonce       uint            `json:"nonce"`
-	To          storage.Address `json:"to"`
+	To          storage.Account `json:"to"`
 	Value       uint            `json:"value"`
 	Tip         uint            `json:"tip"`
 	Data        []byte          `json:"data"`
@@ -30,7 +30,7 @@ type tx struct {
 
 type block struct {
 	ParentHash   string          `json:"parent_hash"`
-	MinerAddress storage.Address `json:"miner_address"`
+	MinerAccount storage.Account `json:"miner_account"`
 	Difficulty   int             `json:"difficulty"`
 	Number       uint64          `json:"number"`
 	TotalTip     uint            `json:"total_tip"`

@@ -19,21 +19,21 @@ type Info struct {
 // the blockchain.
 type Accounts struct {
 	genesis genesis.Genesis
-	info    map[storage.Address]Info
+	info    map[storage.Account]Info
 	mu      sync.RWMutex
 }
 
 func New(genesis genesis.Genesis) *Accounts {
-	accts := Accounts{
+	accounts := Accounts{
 		genesis: genesis,
-		info:    make(map[storage.Address]Info),
+		info:    make(map[storage.Account]Info),
 	}
 
 	for addr, balance := range genesis.Balances {
-		accts.info[addr] = Info{Balance: balance}
+		accounts.info[addr] = Info{Balance: balance}
 	}
 
-	return &accts
+	return &accounts
 }
 
 // Reset re-initalizes the accounts back to the genesis information.
@@ -41,7 +41,7 @@ func (act *Accounts) Reset() {
 	act.mu.Lock()
 	defer act.mu.Unlock()
 
-	act.info = make(map[storage.Address]Info)
+	act.info = make(map[storage.Account]Info)
 	for addr, balance := range act.genesis.Balances {
 		act.info[addr] = Info{Balance: balance}
 	}
@@ -56,11 +56,11 @@ func (act *Accounts) Replace(accounts *Accounts) {
 }
 
 // Remove deletes an account from the accounts.
-func (act *Accounts) Remove(address storage.Address) {
+func (act *Accounts) Remove(account storage.Account) {
 	act.mu.Lock()
 	defer act.mu.Unlock()
 
-	delete(act.info, address)
+	delete(act.info, account)
 }
 
 // Clone makes a copy of the current accounts.
@@ -76,11 +76,11 @@ func (act *Accounts) Clone() *Accounts {
 }
 
 // Copy makes a copy of the current information for all accounts.
-func (act *Accounts) Copy() map[storage.Address]Info {
+func (act *Accounts) Copy() map[storage.Account]Info {
 	act.mu.RLock()
 	defer act.mu.RUnlock()
 
-	accounts := make(map[storage.Address]Info)
+	accounts := make(map[storage.Account]Info)
 	for addr, info := range act.info {
 		accounts[addr] = info
 	}
@@ -90,7 +90,7 @@ func (act *Accounts) Copy() map[storage.Address]Info {
 // ValidateNonce validates the nonce for the specified transaction is larger
 // than the last nonce used by the account who signed the transaction.
 func (act *Accounts) ValidateNonce(tx storage.SignedTx) error {
-	from, err := tx.FromAddress()
+	from, err := tx.FromAccount()
 	if err != nil {
 		return err
 	}
@@ -110,7 +110,7 @@ func (act *Accounts) ValidateNonce(tx storage.SignedTx) error {
 }
 
 // ApplyMiningReward gives the specififed addr the mining reward.
-func (act *Accounts) ApplyMiningReward(minerAddr storage.Address) {
+func (act *Accounts) ApplyMiningReward(minerAddr storage.Account) {
 	act.mu.Lock()
 	defer act.mu.Unlock()
 
@@ -122,8 +122,8 @@ func (act *Accounts) ApplyMiningReward(minerAddr storage.Address) {
 
 // ApplyTransaction performs the business logic for applying a transaction
 // to the accounts information.
-func (act *Accounts) ApplyTransaction(minerAddr storage.Address, tx storage.BlockTx) error {
-	from, err := tx.FromAddress()
+func (act *Accounts) ApplyTransaction(minerAddr storage.Account, tx storage.BlockTx) error {
+	from, err := tx.FromAccount()
 	if err != nil {
 		return fmt.Errorf("invalid signature, %s", err)
 	}

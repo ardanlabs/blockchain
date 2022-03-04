@@ -23,7 +23,7 @@ SHELL := /bin/bash
 #
 # Wallet Stuff
 # go run app/wallet/cli/main.go generate
-# go run app/wallet/cli/main.go address -a kennedy
+# go run app/wallet/cli/main.go account -a kennedy
 # go run app/wallet/cli/main.go balance -a kennedy
 
 # ==============================================================================

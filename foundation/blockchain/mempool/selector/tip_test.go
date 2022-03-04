@@ -154,11 +154,11 @@ func TestTipSort(t *testing.T) {
 			t.Logf("\tTest %d:\tWhen handling a set of transaction.", testID)
 			{
 				f := func(t *testing.T) {
-					m := make(map[storage.Address][]storage.BlockTx)
+					m := make(map[storage.Account][]storage.BlockTx)
 					for _, tx := range tst.txs {
-						from, err := tx.FromAddress()
+						from, err := tx.FromAccount()
 						if err != nil {
-							t.Fatalf("\t%s\tTest %d:\tShould be able to get from address: %s", failed, testID, err)
+							t.Fatalf("\t%s\tTest %d:\tShould be able to get from account: %s", failed, testID, err)
 						}
 
 						m[from] = append(m[from], tx)
@@ -171,28 +171,28 @@ func TestTipSort(t *testing.T) {
 
 					txs := sort(m, tst.howMany)
 					for _, tx := range txs {
-						fromAddress, err := tx.FromAddress()
+						gotFrom, err := tx.FromAccount()
 						if err != nil {
-							t.Fatalf("\t%s\tTest %d:\tShould be able to get from address: %s", failed, testID, err)
+							t.Fatalf("\t%s\tTest %d:\tShould be able to get from account: %s", failed, testID, err)
 						}
 
 						found := false
 						for _, exp := range tst.best {
-							expFrom, err := exp.FromAddress()
+							expFrom, err := exp.FromAccount()
 							if err != nil {
-								t.Fatalf("\t%s\tTest %d:\tShould be able to get from address: %s", failed, testID, err)
+								t.Fatalf("\t%s\tTest %d:\tShould be able to get from account: %s", failed, testID, err)
 							}
 
-							if exp.Nonce == tx.Nonce && expFrom == fromAddress {
+							if exp.Nonce == tx.Nonce && expFrom == gotFrom {
 								found = true
 								break
 							}
 						}
 
 						if !found {
-							t.Fatalf("\t%s\tTest %d:\tShould get back the right from/nonce: %s/%d", failed, testID, fromAddress, tx.Nonce)
+							t.Fatalf("\t%s\tTest %d:\tShould get back the right from/nonce: %s/%d", failed, testID, gotFrom, tx.Nonce)
 						}
-						t.Logf("\t%s\tTest %d:\tShould get back the right from/nonce: %s/%d", success, testID, fromAddress, tx.Nonce)
+						t.Logf("\t%s\tTest %d:\tShould get back the right from/nonce: %s/%d", success, testID, gotFrom, tx.Nonce)
 					}
 				}
 

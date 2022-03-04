@@ -7,8 +7,8 @@ import (
 )
 
 // tipSelect returns transactions with the best tip while respecting the nonce
-// for each address/transaction.
-var tipSelect = func(m map[storage.Address][]storage.BlockTx, howMany int) []storage.BlockTx {
+// for each account/transaction.
+var tipSelect = func(m map[storage.Account][]storage.BlockTx, howMany int) []storage.BlockTx {
 
 	/*
 		Bill: {Nonce: 2, To: "0x6Fe6CF3c8fF57c58d24BfC869668F48BCbDb3BD9", Tip: 250},
@@ -19,7 +19,7 @@ var tipSelect = func(m map[storage.Address][]storage.BlockTx, howMany int) []sto
 			  {Nonce: 1, To: "0x6Fe6CF3c8fF57c58d24BfC869668F48BCbDb3BD9", Tip: 100},
 	*/
 
-	// Sort the transactions per address by nonce.
+	// Sort the transactions per account by nonce.
 	for key := range m {
 		if len(m[key]) > 1 {
 			sort.Sort(byNonce(m[key]))
@@ -35,7 +35,7 @@ var tipSelect = func(m map[storage.Address][]storage.BlockTx, howMany int) []sto
 		      {Nonce: 2, To: "0xa988b1866EaBF72B4c53b592c97aAD8e4b9bDCC0", Tip: 75},
 	*/
 
-	// Pick the first transaction in the slice for each address. Each iteration
+	// Pick the first transaction in the slice for each account. Each iteration
 	// represents a new row of selections. Keep doing that until all the
 	// transactions have been selected.
 	var rows [][]storage.BlockTx

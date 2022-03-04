@@ -10,7 +10,7 @@ import (
 	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
 )
 
-// Mempool represents a cache of transactions organized by address
+// Mempool represents a cache of transactions organized by account:nonce
 // with a second key on the transaction nonce.
 type Mempool struct {
 	pool     map[string]storage.BlockTx
@@ -88,8 +88,8 @@ func (mp *Mempool) Truncate() {
 // of transactions for the next block.
 func (mp *Mempool) PickBest(howMany int) []storage.BlockTx {
 
-	// Group the transactions by address.
-	m := make(map[storage.Address][]storage.BlockTx)
+	// Group the transactions by account.
+	m := make(map[storage.Account][]storage.BlockTx)
 	mp.mu.RLock()
 	{
 		if howMany == -1 {
@@ -97,7 +97,7 @@ func (mp *Mempool) PickBest(howMany int) []storage.BlockTx {
 		}
 
 		for key, tx := range mp.pool {
-			addr := storage.Address(strings.Split(key, ":")[0])
+			addr := storage.Account(strings.Split(key, ":")[0])
 			m[addr] = append(m[addr], tx)
 		}
 	}
@@ -110,10 +110,10 @@ func (mp *Mempool) PickBest(howMany int) []storage.BlockTx {
 
 // mapKey is used to generate the map key.
 func mapKey(tx storage.BlockTx) (string, error) {
-	addr, err := tx.FromAddress()
+	account, err := tx.FromAccount()
 	if err != nil {
 		return "", err
 	}
 
-	return fmt.Sprintf("%s:%d", addr, tx.Nonce), nil
+	return fmt.Sprintf("%s:%d", account, tx.Nonce), nil
 }

@@ -11,7 +11,7 @@ import (
 // BlockHeader represents common information required for each block.
 type BlockHeader struct {
 	ParentHash   string  `json:"parent_hash"`   // Hash of the previous block in the chain.
-	MinerAddress Address `json:"miner_address"` // The address of the miner who mined the block.
+	MinerAccount Account `json:"miner_account"` // The account of the miner who mined the block.
 	Difficulty   int     `json:"difficulty"`    // Number of 0's needed to solve the hash solution.
 	Number       uint64  `json:"number"`        // Block number in the chain.
 	TotalTip     uint    `json:"total_tip"`     // Total tip paid by all senders as an incentive.
@@ -27,7 +27,7 @@ type Block struct {
 }
 
 // NewBlock constructs a new BlockFS for persisting.
-func NewBlock(minerAddress Address, difficulty int, transPerBlock int, parentBlock Block, trans []BlockTx) Block {
+func NewBlock(minerAccount Account, difficulty int, transPerBlock int, parentBlock Block, trans []BlockTx) Block {
 	parentHash := signature.ZeroHash
 	if parentBlock.Header.Number > 0 {
 		parentHash = parentBlock.Hash()
@@ -36,7 +36,7 @@ func NewBlock(minerAddress Address, difficulty int, transPerBlock int, parentBlo
 	return Block{
 		Header: BlockHeader{
 			ParentHash:   parentHash,
-			MinerAddress: minerAddress,
+			MinerAccount: minerAccount,
 			Difficulty:   difficulty,
 			Number:       parentBlock.Header.Number + 1,
 			TimeStamp:    uint64(time.Now().UTC().Unix()),

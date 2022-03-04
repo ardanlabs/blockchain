@@ -33,11 +33,11 @@ func sign(tx storage.UserTx, gas uint) (storage.BlockTx, error) {
 func TestTransactions(t *testing.T) {
 	type table struct {
 		name        string
-		miner       storage.Address
+		miner       storage.Account
 		minerReward uint
 		gas         uint
-		balances    map[storage.Address]uint
-		final       map[storage.Address]uint
+		balances    map[storage.Account]uint
+		final       map[storage.Account]uint
 		txs         []storage.UserTx
 	}
 
@@ -47,12 +47,12 @@ func TestTransactions(t *testing.T) {
 			miner:       "miner",
 			minerReward: 100,
 			gas:         80,
-			balances: map[storage.Address]uint{
+			balances: map[storage.Account]uint{
 				"0xdd6B972ffcc631a62CAE1BB9d80b7ff429c8ebA4": 1000,
 				"0xF01813E4B85e178A83e29B8E7bF26BD830a25f32": 0,
 				"miner": 0,
 			},
-			final: map[storage.Address]uint{
+			final: map[storage.Account]uint{
 				"0xdd6B972ffcc631a62CAE1BB9d80b7ff429c8ebA4": 540,
 				"0xF01813E4B85e178A83e29B8E7bF26BD830a25f32": 200,
 				"miner": 360,
@@ -96,8 +96,8 @@ func TestTransactions(t *testing.T) {
 					accounts.ApplyMiningReward(tst.miner)
 					t.Logf("\t%s\tTest %d:\tShould be able to apply miner reward.", success, testID)
 
-					cpyAccts := accounts.Copy()
-					for addr, info := range cpyAccts {
+					cpyAccount := accounts.Copy()
+					for addr, info := range cpyAccount {
 						finalValue, exists := tst.final[addr]
 						if !exists {
 							t.Errorf("\t%s\tTest %d:\tShould have account %s in balances.", failed, testID, addr)
@@ -126,7 +126,7 @@ func TestNonceValidation(t *testing.T) {
 		name        string
 		minerReward uint
 		gas         uint
-		balances    map[storage.Address]uint
+		balances    map[storage.Account]uint
 		txs         []storage.UserTx
 		results     []error
 	}
@@ -135,7 +135,7 @@ func TestNonceValidation(t *testing.T) {
 		{
 			name:        "basic",
 			minerReward: 100,
-			balances:    map[storage.Address]uint{},
+			balances:    map[storage.Account]uint{},
 			txs: []storage.UserTx{
 				{
 					Nonce: 5,
