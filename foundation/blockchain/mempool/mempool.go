@@ -13,9 +13,9 @@ import (
 // Mempool represents a cache of transactions organized by address
 // with a second key on the transaction nonce.
 type Mempool struct {
-	pool map[string]storage.BlockTx
-	mu   sync.RWMutex
-	sort selector.Func
+	pool     map[string]storage.BlockTx
+	mu       sync.RWMutex
+	selectFn selector.Func
 }
 
 // New constructs a new mempool using the default sort strategy.
@@ -25,14 +25,14 @@ func New() (*Mempool, error) {
 
 // NewWithStrategy constructs a new mempool with specified sort strategy.
 func NewWithStrategy(strategy string) (*Mempool, error) {
-	sort, err := selector.Retrieve(strategy)
+	selectFn, err := selector.Retrieve(strategy)
 	if err != nil {
 		return nil, err
 	}
 
 	mp := Mempool{
-		pool: make(map[string]storage.BlockTx),
-		sort: sort,
+		pool:     make(map[string]storage.BlockTx),
+		selectFn: selectFn,
 	}
 
 	return &mp, nil
@@ -103,7 +103,7 @@ func (mp *Mempool) PickBest(howMany int) []storage.BlockTx {
 	}
 	mp.mu.RUnlock()
 
-	return mp.sort(m, howMany)
+	return mp.selectFn(m, howMany)
 }
 
 // =============================================================================
