@@ -10,8 +10,7 @@ import (
 	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
 )
 
-// Mempool represents a cache of transactions organized by account:nonce
-// with a second key on the transaction nonce.
+// Mempool represents a cache of transactions organized by account:nonce.
 type Mempool struct {
 	pool     map[string]storage.BlockTx
 	mu       sync.RWMutex
