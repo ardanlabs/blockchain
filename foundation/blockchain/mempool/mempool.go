@@ -87,7 +87,7 @@ func (mp *Mempool) Truncate() {
 // of transactions for the next block.
 func (mp *Mempool) PickBest(howMany int) []storage.BlockTx {
 
-	// Group the transactions by account.
+	// Flatten out the transactions for each account into a slice.
 	m := make(map[storage.Account][]storage.BlockTx)
 	mp.mu.RLock()
 	{
