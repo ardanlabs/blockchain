@@ -4,7 +4,8 @@ Occasionally we run into material that we feel is important. This is a section p
 
 ### Must Read
 
-[Technical discussion about blockchains and cryptocurrency](https://blog.dshr.org/2022/02/ee380-talk.html) - David Rosenthal  
+[Technical Discussion About Blockchains and Cryptocurrency](https://blog.dshr.org/2022/02/ee380-talk.html) - David Rosenthal  
+[The Technological Case Against Bitcoin and Blockchain](https://lukeplant.me.uk/blog/posts/the-technological-case-against-bitcoin-and-blockchain/) - Luke Plant  
 [The Magic of Digital Signatures on Ethereum](https://medium.com/mycrypto/the-magic-of-digital-signatures-on-ethereum-98fe184dc9c7) - Maarten Zuidhoorn  
 [Transparent Logs for Skeptical Clients](https://research.swtch.com/tlog) - Russ Cox  
 
