@@ -98,7 +98,7 @@ func (mp *Mempool) PickBest(howMany int) []storage.BlockTx {
 		}
 
 		for key, tx := range mp.pool {
-			account := storage.Account(strings.Split(key, ":")[0])
+			account := accountFromMapKey(key)
 			m[account] = append(m[account], tx)
 		}
 	}
@@ -117,4 +117,9 @@ func mapKey(tx storage.BlockTx) (string, error) {
 	}
 
 	return fmt.Sprintf("%s:%d", account, tx.Nonce), nil
+}
+
+// accountFromMapKey extracts the account information from the mapkey.
+func accountFromMapKey(key string) storage.Account {
+	return storage.Account(strings.Split(key, ":")[0])
 }
