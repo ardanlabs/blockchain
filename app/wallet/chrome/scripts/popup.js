@@ -7,6 +7,12 @@ $.ajaxSetup({
 });
 
 window.onload = function () {
+    wireEvents();
+    showInfoTab("send");
+    connect();
+}
+
+function wireEvents() {
     const from = document.getElementById("from");
     from.addEventListener(
         'change',
@@ -21,7 +27,19 @@ window.onload = function () {
         false
     );
 
-    connect();
+    const send = document.getElementById("sendbutton");
+    send.addEventListener(
+        'click',
+        showInfoTabSend,
+        false
+    );
+
+    const tran = document.getElementById("tranbutton");
+    tran.addEventListener(
+        'click',
+        showInfoTabTran,
+        false
+    );
 }
 
 function connect() {
@@ -81,4 +99,35 @@ var formatter = new Intl.NumberFormat('en-US', {
     // These options are needed to round to whole numbers if that's what you want.
     //minimumFractionDigits: 0, // (this suffices for whole numbers, but will print 2500.10 as $2,500.1)
     //maximumFractionDigits: 0, // (causes 2500.99 to be printed as $2,501)
-  });
+});
+
+function showInfoTabSend() {
+    showInfoTab("send");
+}
+
+function showInfoTabTran() {
+    showInfoTab("tran");
+}
+
+function showInfoTab(which) {
+    const sendBox = document.querySelector("div.sendbox");
+    const tranBox = document.querySelector("div.tranbox");
+
+    const sendBut = document.getElementById("sendbutton");
+    const tranBut = document.getElementById("tranbutton");
+
+    switch (which) {
+        case "send":
+            sendBox.style.display = "block";
+            tranBox.style.display = "none";
+            sendBut.style.backgroundColor = "#faf9f5";
+            tranBut.style.backgroundColor = "#d9d8d4";
+            break;
+        case "tran":
+            sendBox.style.display = "none";
+            tranBox.style.display = "block";
+            sendBut.style.backgroundColor = "#d9d8d4";
+            tranBut.style.backgroundColor = "#faf9f5";
+            break;
+    }
+}

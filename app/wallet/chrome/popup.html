@@ -12,7 +12,7 @@
         <div class="title">Ardan Wallet</div>
         <div id="connected" class="notconnected">NOT CONNECTED</div>
       </div>
-      <div class="framebox">
+      <div class="infobox">
         <div class="dropbox">
           <div class="label">Account:</div>
           <select class="accounts" id="from">
@@ -27,23 +27,32 @@
             <span id="frombal">Not Available</span>
           </div>
         </div>
-      </div>
-      <div class="framebox">
-        <div class="dropbox">
-          <div class="label">To:</div>
-          <select class="accounts" id="to">
-            <option value="0xF01813E4B85e178A83e29B8E7bF26BD830a25f32">Bill</option>
-            <option selected="selected" value="0xdd6B972ffcc631a62CAE1BB9d80b7ff429c8ebA4">Pavel</option>
-            <option value="0xa988b1866EaBF72B4c53b592c97aAD8e4b9bDCC0">Ed</option>
-            <option value="0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76">Cesar</option>
-            <option value="0x6Fe6CF3c8fF57c58d24BfC869668F48BCbDb3BD9">Baba</option>
-          </select>
-          <div class="balance">
-            <div class="label">Balance:</div>
-            <span id="tobal">Not Available</span>
+
+        <div class="tabsection">
+          <div class="tabbox">
+            <div type="button" id="sendbutton" class="tab">Send</div>
+            <div type="button" id="tranbutton" class="tab">Trans</div>
+          </div>
+
+          <div class="sendbox">
+            <div class="label">To:</div>
+            <select class="accounts" id="to">
+              <option value="0xF01813E4B85e178A83e29B8E7bF26BD830a25f32">Bill</option>
+              <option selected="selected" value="0xdd6B972ffcc631a62CAE1BB9d80b7ff429c8ebA4">Pavel</option>
+              <option value="0xa988b1866EaBF72B4c53b592c97aAD8e4b9bDCC0">Ed</option>
+              <option value="0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76">Cesar</option>
+              <option value="0x6Fe6CF3c8fF57c58d24BfC869668F48BCbDb3BD9">Baba</option>
+            </select>
+            <div class="balance">
+              <div class="label">Balance:</div>
+              <span id="tobal">Not Available</span>
+            </div>
+          </div>
+
+          <div class="tranbox">
+            <pre id="trans"></pre>
           </div>
         </div>
       </div>
-    </div>
   </body>
 </html>
