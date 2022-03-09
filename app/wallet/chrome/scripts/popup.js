@@ -7,23 +7,69 @@ $.ajaxSetup({
 });
 
 window.onload = function () {
-    const url = "http://localhost:8080/v1/accounts/list/0xF01813E4B85e178A83e29B8E7bF26BD830a25f32";
+    const from = document.getElementById("from");
+    from.addEventListener(
+        'change',
+        fromBalance,
+        false
+    );
+
+    const to = document.getElementById("to");
+    to.addEventListener(
+        'change',
+        toBalance,
+        false
+    );
+
+    connect();
+}
+
+function connect() {
+    const url = "http://localhost:8080/v1/genesis/list"
+
     $.get(url, function (o, status) {
         const conn = document.getElementById("connected");
+
+        if ((typeof o.errors != "undefined") && (o.errors.length > 0)) {    
+            conn.className = "notconnected";
+            conn.innerHTML = "NOT CONNECTED";
+            return;
+        }
+
         conn.className = "connected";
         conn.innerHTML = "CONNECTED";
 
+        fromBalance();
+        toBalance();
+
+        return
+    });
+}
+
+function fromBalance() {
+    const url = "http://localhost:8080/v1/accounts/list/" + document.getElementById("from").value;
+
+    $.get(url, function (o, status) {
         if ((typeof o.errors != "undefined") && (o.errors.length > 0)) {    
-            conn.innerHTML = "NOT CONNECTED";
             window.alert("ERROR: " + o.errors[0].message);
             return;
         }
 
-        if (o.accounts.length != 1) {
-            window.alert("ERROR: Account Not Found");
+        const bal = document.getElementById("frombal");
+        bal.innerHTML = formatter.format(o.accounts[0].balance);
+    });
+}
+
+function toBalance() {
+    const url = "http://localhost:8080/v1/accounts/list/" + document.getElementById("to").value;
+
+    $.get(url, function (o, status) {
+        if ((typeof o.errors != "undefined") && (o.errors.length > 0)) {    
+            window.alert("ERROR: " + o.errors[0].message);
+            return;
         }
 
-        const bal = document.getElementById("balance");
+        const bal = document.getElementById("tobal");
         bal.innerHTML = formatter.format(o.accounts[0].balance);
     });
 }
