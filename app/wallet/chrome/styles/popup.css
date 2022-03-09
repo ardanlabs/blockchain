@@ -1,0 +1,40 @@
+#outerbox {
+  width: 300px;
+  font-family: verdana;
+  overflow: auto;
+}
+
+#titlebox {
+  overflow: auto;
+}
+
+.title {
+  width: 50%;
+  float: left;
+  font-size: 14px;
+}
+
+.connected {
+  color: red;
+  float: right;
+  font-size: 12px;
+}
+
+.framebox {
+  overflow: auto;
+  border: 1px solid #333;
+  margin-top: 5px;
+}
+
+#accounts {
+  width: 65%;
+  margin: 0px 5px;
+}
+
+.dropbox {
+  margin: 10px 10px;
+}
+
+.balance {
+  margin: 10px 10px;
+}
