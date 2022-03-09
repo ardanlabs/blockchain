@@ -115,6 +115,7 @@ Occasionally we run into material that we feel is important. This is a section p
 [Blockchain Primitives: Cryptography and Consensus](https://www.youtube.com/watch?v=3jPYk7ucrjo) - Dan Boneh  
 [Chris Dixon and Naval Ravikant: The Wonders of Web3 And Much More](https://www.youtube.com/watch?v=DlNDYMNJ5zQ)  
 [Mechanism Design 101](https://www.youtube.com/watch?v=gCFlGLbI_kE) - Sam Williams  
+[Blockchain 101 - A Visual Demo](https://www.youtube.com/watch?v=_160oMzblY8) - Anders Brownworth  
 
 ### Vitalik Buterin (Creater of Ethereum)
 [Lex Fridman Podcast: Vitalik Buterin: Ethereum, Cryptocurrency, and the Future of Money](https://www.youtube.com/watch?v=3x1b_S6Qp2Q)  
