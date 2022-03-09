@@ -393,16 +393,14 @@ const QueryLastest = ^uint64(0) >> 1
 
 // QueryAccounts returns a copy of the account information by account.
 func (s *State) QueryAccounts(account storage.Account) map[storage.Account]accounts.Info {
-	accounts := s.accounts.Clone()
+	cpy := s.accounts.Copy()
 
-	cpy := accounts.Copy()
-	for existingAccount := range cpy {
-		if account != existingAccount {
-			accounts.Remove(account)
-		}
+	final := make(map[storage.Account]accounts.Info)
+	if info, exists := cpy[account]; exists {
+		final[account] = info
 	}
 
-	return cpy
+	return final
 }
 
 // QueryMempoolLength returns the current length of the mempool.
