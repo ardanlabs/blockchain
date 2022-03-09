@@ -34,6 +34,7 @@ func PublicMux(cfg MuxConfig) http.Handler {
 		mid.Errors(cfg.Log),
 		mid.Metrics(),
 		mid.Panics(),
+		mid.Cors("*"),
 	)
 
 	// Load the v1 routes.

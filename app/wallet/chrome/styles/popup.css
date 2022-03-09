@@ -14,8 +14,14 @@
   font-size: 14px;
 }
 
-.connected {
+.notconnected {
   color: red;
+  float: right;
+  font-size: 12px;
+}
+
+.connected {
+  color: green;
   float: right;
   font-size: 12px;
 }
