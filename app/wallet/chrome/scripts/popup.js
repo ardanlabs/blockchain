@@ -131,6 +131,8 @@ function submitTran() {
 
     alert(key.derive(key.getPublic()).toString());
 
+    // https://gist.github.com/nakov/1dcbe26988e18f7a4d013b65d8803ffc
+
     // // Sign the message's hash (input must be an array, or a hex-string)
     // var msgHash = [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ];
     // var signature = key.sign(msgHash);
