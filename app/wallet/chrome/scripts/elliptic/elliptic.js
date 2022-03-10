@@ -1,3 +1,6 @@
+// Code came from https://cdn.skypack.dev/elliptic@v6.5.4
+// import Elliptic from 'https://cdn.skypack.dev/elliptic@v6.5.4';
+
 import BN from './bnjs.js';
 import minAssert from "./minimalistic-assert.js";
 import minUtils from "./minimalistic-crypto-utils.js";
