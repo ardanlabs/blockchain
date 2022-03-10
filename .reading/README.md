@@ -122,6 +122,7 @@ Occasionally we run into material that we feel is important. This is a section p
 [Mechanism Design 101](https://www.youtube.com/watch?v=gCFlGLbI_kE) - Sam Williams  
 [Blockchain 101 - A Visual Demo](https://www.youtube.com/watch?v=_160oMzblY8) - Anders Brownworth  
 [Abuse on the Blockchain](https://www.youtube.com/watch?v=hXBZ-BXfCSY) - Molly White  
+[Cryptocurrency Regulation, Enforcement and Litigation](https://www.youtube.com/watch?v=aK-UzcJF5bI) - Docket Media LLC  
 
 ### Vitalik Buterin (Creater of Ethereum)
 [Lex Fridman Podcast: Vitalik Buterin: Ethereum, Cryptocurrency, and the Future of Money](https://www.youtube.com/watch?v=3x1b_S6Qp2Q)  
