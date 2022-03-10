@@ -4,7 +4,15 @@
     <title>Ardan Wallet</title>
     <link rel="stylesheet" href="styles/popup.css">
     <script src="scripts/jquery-3.6.0.min.js"></script>
-    <script src="scripts/popup.js?v1"></script>
+    <script type="module" src="scripts/elliptic/elliptic.js"></script>
+    <script type="module" src="scripts/elliptic/bnjs.js"></script>
+    <script type="module" src="scripts/elliptic/brorand.js"></script>
+    <script type="module" src="scripts/elliptic/hashjs.js"></script>
+    <script type="module" src="scripts/elliptic/hmac-drbg.js"></script>
+    <script type="module" src="scripts/elliptic/inherits.js"></script>
+    <script type="module" src="scripts/elliptic/minimalistic-assert.js"></script>
+    <script type="module" src="scripts/elliptic/minimallistic-crypto-utils.js"></script>
+    <script type="module" src="scripts/popup.js?v1"></script>
   </head>
   <body>
     <div id="outerbox">
@@ -48,7 +56,7 @@
               <span id="tobal">Not Available</span>
             </div>
             <div class="labelamt">Amount:</div>
-            <div><input id="sendamount" type="text" pattern="^\$\d{1,3}(,\d{3})*(\.\d+)?$" value="" data-type="currency" placeholder="$1,000.00"/></div>
+            <div><input id="sendamount" type="text" pattern="^\$\d{1,3}(,\d{3})*(\.\d+)?$" value="" data-type="currency" placeholder="$1,000.00 ARD"/></div>
             <div id="sendsubmit" type="button" class="button">Submit</div>
           </div>
 

@@ -85,6 +85,8 @@ function connect() {
     });
 }
 
+// =============================================================================
+
 function fromBalance() {
     const url = "http://localhost:8080/v1/accounts/list/" + document.getElementById("from").value;
 
@@ -95,7 +97,7 @@ function fromBalance() {
         }
 
         const bal = document.getElementById("frombal");
-        bal.innerHTML = formatter.format(o.accounts[0].balance);
+        bal.innerHTML = formatter.format(o.accounts[0].balance) + " ARD";
     });
 }
 
@@ -109,13 +111,38 @@ function toBalance() {
         }
 
         const bal = document.getElementById("tobal");
-        bal.innerHTML = formatter.format(o.accounts[0].balance);
+        bal.innerHTML = formatter.format(o.accounts[0].balance) + " ARD";
     });
 }
 
+// =============================================================================
+
+import Elliptic from './elliptic/elliptic.js';
+
 function submitTran() {
     const amount = document.getElementById("sendamount");
-    alert("submit transaction:"+amount.value);
+
+    // Create and initialize EC context
+    // (better do it once and reuse it)
+    var ec = new Elliptic.ec('curve25519');
+
+    // Generate keys
+    var key = ec.genKeyPair();
+
+    alert(key.derive(key.getPublic()).toString());
+
+    // // Sign the message's hash (input must be an array, or a hex-string)
+    // var msgHash = [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ];
+    // var signature = key.sign(msgHash);
+
+    // // Export DER encoded signature in Array
+    // var derSign = signature.toDER();
+
+    // // Verify signature
+    // alert(key.verify(msgHash, derSign));
+
+    // const url = "http://localhost:8080/v1/accounts/list/" + document.getElementById("to").value;
+    // alert("submit transaction:"+amount.value);
 }
 
 // =============================================================================
