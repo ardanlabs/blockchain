@@ -3,7 +3,6 @@
   font-family: verdana;
   overflow: auto;
 }
-
 #titlebox {
   overflow: auto;
 }
@@ -13,40 +12,43 @@
   float: left;
   font-size: 14px;
 }
-
 .notconnected {
   color: red;
   float: right;
   font-size: 12px;
 }
-
 .connected {
   color: green;
   float: right;
   font-size: 12px;
 }
-
 .framebox {
   overflow: auto;
   border: 1px solid #333;
   margin-top: 5px;
 }
-
 .label {
   width: 50px;
   float: left;
   margin: 0px 10px;
 }
-
+.labelto{
+  width: 50px;
+  float: left;
+  margin: 3px 10px;
+}
+.labelamt{
+  width: 50px;
+  float: left;
+  margin: 3px 10px;
+}
 .accounts {
   width: 60%;
-  margin: 0px 5px;
+  margin: 0px 0px;
 }
-
 .balance {
   margin: 10px 0px;
 }
-
 .infobox {
   height: var(--main-height);
   border: 1px solid #333;
@@ -93,4 +95,18 @@
   font-family: verdana;
   margin: 0px 5px;
   cursor: pointer;
+}
+.button {
+  background-color: #faf9f5;
+  border: 1px solid #333;
+  color: black;
+  padding: 5px 10px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 12px;
+  font-family: verdana;
+  margin: 0px 5px;
+  cursor: pointer;
+  float: right;
 }
