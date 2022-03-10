@@ -116,11 +116,12 @@ Occasionally we run into material that we feel is important. This is a section p
 
 ### Video
 [Is It Possible To Get The Same 24 BIP39 Seed Words?](https://www.youtube.com/watch?v=hjRntYh0ot8) - John Chow  
-[What the hell are NFT's?](https://www.youtube.com/watch?v=XwMjPWOailQ) - Josh Strife Hayes  
+[What the Hell are NFT's?](https://www.youtube.com/watch?v=XwMjPWOailQ) - Josh Strife Hayes  
 [Blockchain Primitives: Cryptography and Consensus](https://www.youtube.com/watch?v=3jPYk7ucrjo) - Dan Boneh  
 [Chris Dixon and Naval Ravikant: The Wonders of Web3 And Much More](https://www.youtube.com/watch?v=DlNDYMNJ5zQ)  
 [Mechanism Design 101](https://www.youtube.com/watch?v=gCFlGLbI_kE) - Sam Williams  
 [Blockchain 101 - A Visual Demo](https://www.youtube.com/watch?v=_160oMzblY8) - Anders Brownworth  
+[Abuse on the Blockchain](https://www.youtube.com/watch?v=hXBZ-BXfCSY) - Molly White  
 
 ### Vitalik Buterin (Creater of Ethereum)
 [Lex Fridman Podcast: Vitalik Buterin: Ethereum, Cryptocurrency, and the Future of Money](https://www.youtube.com/watch?v=3x1b_S6Qp2Q)  
