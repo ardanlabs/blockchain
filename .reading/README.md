@@ -9,6 +9,10 @@ Occasionally we run into material that we feel is important. This is a section p
 [The Magic of Digital Signatures on Ethereum](https://medium.com/mycrypto/the-magic-of-digital-signatures-on-ethereum-98fe184dc9c7) - Maarten Zuidhoorn  
 [Transparent Logs for Skeptical Clients](https://research.swtch.com/tlog) - Russ Cox  
 
+### Documentation
+[Digital Accounts, Signatures and Verification](https://www.ardanlabs.com/blog/2022/02/blockchain-01-digital-accounts-signatures-verification.html) - Bill Kennedy  
+[Transaction Distribution and Synchronization](https://www.ardanlabs.com/blog/2022/03/blockchain-02-transaction-distribution-synchronization.html) - Bill Kennedy  
+
 ### Apps
 [END Domains](https://app.ens.domains/)  
 [Etherscan](https://etherscan.io/)  
