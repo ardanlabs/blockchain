@@ -136,6 +136,21 @@ func SignatureString(v, r, s *big.Int) string {
 	return "0x" + hex.EncodeToString(toSignatureBytesForDisplay(v, r, s))
 }
 
+// ToVRSFromHexSignature converts a hex representation of the signature into
+// its R, S and V parts.
+func ToVRSFromHexSignature(sigStr string) (v, r, s *big.Int, err error) {
+	sig, err := hex.DecodeString(sigStr[2:])
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	r = new(big.Int).SetBytes(sig[:32])
+	s = new(big.Int).SetBytes(sig[32:64])
+	v = new(big.Int).SetBytes([]byte{sig[64]})
+
+	return v, r, s, nil
+}
+
 // =============================================================================
 
 // stamp returns a hash of 32 bytes that represents this user

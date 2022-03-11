@@ -1,9 +1,6 @@
 package public
 
 import (
-	"encoding/hex"
-	"math/big"
-
 	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
 )
 
@@ -43,44 +40,4 @@ type block struct {
 	TimeStamp    uint64          `json:"timestamp"`
 	Nonce        uint64          `json:"nonce"`
 	Transactions []tx            `json:"txs"`
-}
-
-type walletTx struct {
-	Nonce uint   `json:"nonce"` // Unique id for the transaction supplied by the user.
-	To    string `json:"to"`    // Account receiving the benefit of the transaction.
-	Value uint   `json:"value"` // Monetary value received from this transaction.
-	Tip   uint   `json:"tip"`   // Tip offered by the sender as an incentive to mine this transaction.
-	Data  []byte `json:"data"`  // Extra data related to the transaction.
-	Sig   string `json:"sig"`   // Raw signature of the account who signed the transaction.
-}
-
-func (w walletTx) toSignedTx() (storage.SignedTx, error) {
-	to, err := storage.ToAccount(w.To)
-	if err != nil {
-		return storage.SignedTx{}, err
-	}
-
-	sig, err := hex.DecodeString(w.Sig[2:])
-	if err != nil {
-		return storage.SignedTx{}, err
-	}
-
-	r := new(big.Int).SetBytes(sig[:32])
-	s := new(big.Int).SetBytes(sig[32:64])
-	v := new(big.Int).SetBytes([]byte{sig[64]})
-
-	signedTx := storage.SignedTx{
-		UserTx: storage.UserTx{
-			Nonce: w.Nonce,
-			To:    to,
-			Value: w.Value,
-			Tip:   w.Tip,
-			Data:  w.Data,
-		},
-		R: r,
-		S: s,
-		V: v,
-	}
-
-	return signedTx, nil
 }

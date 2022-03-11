@@ -39,25 +39,48 @@ func NewUserTx(nonce uint, to Account, value uint, tip uint, data []byte) (UserT
 }
 
 // Sign uses the specified private key to sign the user transaction.
-func (tx UserTx) Sign(privateKey *ecdsa.PrivateKey) (SignedTx, error) {
+func (tx UserTx) Sign(privateKey *ecdsa.PrivateKey) (WalletTx, error) {
 
 	// Validate the to account incase the UserTx value was hand constructed.
 	if !tx.To.IsAccount() {
-		return SignedTx{}, fmt.Errorf("to account is not properly formatted")
+		return WalletTx{}, fmt.Errorf("to account is not properly formatted")
 	}
 
 	// Sign the hash with the private key to produce a signature.
 	v, r, s, err := signature.Sign(tx, privateKey)
 	if err != nil {
-		return SignedTx{}, err
+		return WalletTx{}, err
 	}
 
 	// Construct the signed transaction.
-	signedTx := SignedTx{
+	walletTx := WalletTx{
 		UserTx: tx,
-		V:      v,
+		Sig:    signature.SignatureString(v, r, s),
+	}
+
+	return walletTx, nil
+}
+
+// =============================================================================
+
+// WalletTx is a signed version of the user transaction that is submitted by wallets.
+type WalletTx struct {
+	UserTx
+	Sig string `json:"sig"` // Raw hex signature of the account who signed the transaction.
+}
+
+// ToSignedTx converts the WalletTx to a SignedTx.
+func (tx WalletTx) ToSignedTx() (SignedTx, error) {
+	v, r, s, err := signature.ToVRSFromHexSignature(tx.Sig)
+	if err != nil {
+		return SignedTx{}, err
+	}
+
+	signedTx := SignedTx{
+		UserTx: tx.UserTx,
 		R:      r,
 		S:      s,
+		V:      v,
 	}
 
 	return signedTx, nil
@@ -65,7 +88,8 @@ func (tx UserTx) Sign(privateKey *ecdsa.PrivateKey) (SignedTx, error) {
 
 // =============================================================================
 
-// SignedTx is a signed version of the user transaction.
+// SignedTx is a signed version of the user transaction used internally by
+// the blockchain.
 type SignedTx struct {
 	UserTx
 	V *big.Int `json:"v"` // Recovery identifier, either 29 or 30 with ardanID.

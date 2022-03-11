@@ -148,11 +148,7 @@ function sendTran(tx, sig) {
         sig: sig
     };
 
-    // go run app/wallet/cli/main.go send -a kennedy -n 10 -c 10 -t 0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76 -v 100
-    alert(sig);
-
     const data = JSON.stringify(signedTx);
-
     const url = "http://localhost:8080/v1/tx/submit";
 
     $.post(url, data, function (o, status) {

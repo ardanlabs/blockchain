@@ -47,32 +47,12 @@ func sendWithDetails(privateKey *ecdsa.PrivateKey) {
 		log.Fatal(err)
 	}
 
-	signedTx, err := userTx.Sign(privateKey)
+	walletTx, err := userTx.Sign(privateKey)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	type walletTx struct {
-		Nonce uint   `json:"nonce"` // Unique id for the transaction supplied by the user.
-		To    string `json:"to"`    // Account receiving the benefit of the transaction.
-		Value uint   `json:"value"` // Monetary value received from this transaction.
-		Tip   uint   `json:"tip"`   // Tip offered by the sender as an incentive to mine this transaction.
-		Data  []byte `json:"data"`  // Extra data related to the transaction.
-		Sig   string `json:"sig"`   // Raw signature of the account who signed the transaction.
-	}
-
-	w := walletTx{
-		Nonce: signedTx.Nonce,
-		To:    string(signedTx.To),
-		Value: signedTx.Value,
-		Tip:   signedTx.Tip,
-		Data:  signedTx.Data,
-		Sig:   signedTx.SignatureString(),
-	}
-
-	fmt.Println(w.Sig)
-
-	data, err := json.Marshal(w)
+	data, err := json.Marshal(walletTx)
 	if err != nil {
 		log.Fatal(err)
 	}
