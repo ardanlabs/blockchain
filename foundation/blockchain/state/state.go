@@ -19,8 +19,10 @@ import (
 
 /*
 	-- Chrome Extension Wallet
-	Get list of defined accounts (minus miner).
-	Show the balance of each account.
+	Show the balance of each account (more work).
+	Add tip and data fields to form.
+	Validate all input before sending.
+	Show a better way to the transaction being sent.
 	Concept of connecting and receiving events.
 
 	-- Web Application
