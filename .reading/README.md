@@ -74,6 +74,7 @@ Occasionally we run into material that we feel is important. This is a section p
 [NChain: We unlock the potential of enterprise data by making it reliable](https://nchain.com/)  
 [QuickNode: We make it simple to power your blockchain applications and scale up as you grow](https://www.quicknode.com/)  
 [Strike: Bitcoin Wallet](https://strike.me/en/)  
+[Tendermint: Building the most powerful tools for distributed networks](https://tendermint.com/)  
 [The Graph: The Graph is an indexing protocol for querying networks like Ethereum and IPFS](https://thegraph.com/en/)  
 
 ### Conferences
@@ -123,6 +124,7 @@ Occasionally we run into material that we feel is important. This is a section p
 [Blockchain 101 - A Visual Demo](https://www.youtube.com/watch?v=_160oMzblY8) - Anders Brownworth  
 [Abuse on the Blockchain](https://www.youtube.com/watch?v=hXBZ-BXfCSY) - Molly White  
 [Cryptocurrency Regulation, Enforcement and Litigation](https://www.youtube.com/watch?v=aK-UzcJF5bI) - Docket Media LLC  
+[All Together Now: An Introduction to Distributed Consensus](https://www.youtube.com/watch?v=vMz3q8Mm1uY) - Tess Rinearson  
 
 ### Vitalik Buterin (Creater of Ethereum)
 [Lex Fridman Podcast: Vitalik Buterin: Ethereum, Cryptocurrency, and the Future of Money](https://www.youtube.com/watch?v=3x1b_S6Qp2Q)  
@@ -161,5 +163,7 @@ Ethereum documentation that helps to better understand that blockchain project.
 [What Is Eth Build](https://www.youtube.com/watch?v=30pa790tIIA) - Austin Griffith  
 
 ### Proposals
-
 [EIP-3668: CCIP Read: Secure offchain data retrieval](https://eips.ethereum.org/EIPS/eip-3668)  
+
+### Zero Address
+[Etherscan Address Zero](https://etherscan.io/address/0x0000000000000000000000000000000000000000)  
