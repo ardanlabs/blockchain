@@ -144,11 +144,25 @@ function sendTran(tx, sig) {
         to: "0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76",
         value: 100,
         tip: 10,
-        data: "",
+        data: null,
         sig: sig
     };
-    
-    alert(JSON.stringify(signedTx));
+
+    // go run app/wallet/cli/main.go send -a kennedy -n 10 -c 10 -t 0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76 -v 100
+    alert(sig);
+
+    const data = JSON.stringify(signedTx);
+
+    const url = "http://localhost:8080/v1/tx/submit";
+
+    $.post(url, data, function (o, status) {
+        if ((typeof o.errors != "undefined") && (o.errors.length > 0)) {    
+            window.alert("ERROR: " + o.errors[0].message);
+            return;
+        }
+
+        alert("SENT");
+    });
 }
 
 // =============================================================================
