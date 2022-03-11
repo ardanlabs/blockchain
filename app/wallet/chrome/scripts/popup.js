@@ -2,6 +2,7 @@ $.ajaxSetup({
     contentType: "application/json; charset=utf-8",
     error: function (xhr) {
         const conn = document.getElementById("connected");
+        conn.className = "notconnected";
         conn.innerHTML = "NOT CONNECTED";
       }
 });
@@ -117,34 +118,37 @@ function toBalance() {
 
 // =============================================================================
 
-import Elliptic from './elliptic/elliptic.js';
-
 function submitTran() {
     const amount = document.getElementById("sendamount");
 
-    // Create and initialize EC context
-    // (better do it once and reuse it)
-    var ec = new Elliptic.ec('curve25519');
+    var wallet = new ethers.Wallet("9f332e3700d8fc2446eaf6d15034cf96e0c2745e40353deef032a5dbf1dfed93");
+        
+    const tx = {
+        nonce: 10,
+        to: "0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76",
+        value: 100,
+        tip: 10,
+        data: null,
+    };
 
-    // Generate keys
-    var key = ec.genKeyPair();
+    const txHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(JSON.stringify(tx)));
+    const bytes = ethers.utils.arrayify(txHash);
 
-    alert(key.derive(key.getPublic()).toString());
+    signature = wallet.signMessage(bytes);
+    signature.then((sig) => sendTran(tx, sig));
+}
 
-    // https://gist.github.com/nakov/1dcbe26988e18f7a4d013b65d8803ffc
-
-    // // Sign the message's hash (input must be an array, or a hex-string)
-    // var msgHash = [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ];
-    // var signature = key.sign(msgHash);
-
-    // // Export DER encoded signature in Array
-    // var derSign = signature.toDER();
-
-    // // Verify signature
-    // alert(key.verify(msgHash, derSign));
-
-    // const url = "http://localhost:8080/v1/accounts/list/" + document.getElementById("to").value;
-    // alert("submit transaction:"+amount.value);
+function sendTran(tx, sig) {
+    const signedTx = {
+        nonce: 10,
+        to: "0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76",
+        value: 100,
+        tip: 10,
+        data: "",
+        sig: sig
+    };
+    
+    alert(JSON.stringify(signedTx));
 }
 
 // =============================================================================
