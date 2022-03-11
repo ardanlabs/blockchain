@@ -120,8 +120,11 @@ function toBalance() {
 // =============================================================================
 
 function submitTran() {
+
+    // Capture the amount to send.
     const amount = document.getElementById("sendamount").value.replace(/\$|,/g, '');
     
+    // Construct a walletTx with all the information.
     const walletTx = {
         nonce: 10,
         to: document.getElementById("to").value,
@@ -130,20 +133,35 @@ function submitTran() {
         data: null,
     };
 
-    const txHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(JSON.stringify(walletTx)));
+    // Marshal the walletTx to a string and convert the string to bytes.
+    const marshal = JSON.stringify(walletTx);
+    const marshalBytes = ethers.utils.toUtf8Bytes(marshal);
+
+    // Hash the transaction data into a 32 byte array. This will provide
+	// a data length consistency with all transactions.
+    const txHash = ethers.utils.keccak256(marshalBytes);
     const bytes = ethers.utils.arrayify(txHash);
 
+    // Now sign the data. The underlying code will apply the Ardan stamp and
+    // ID to the signature thanks to changes made to the ether.js api.
     const wallet = new ethers.Wallet(document.getElementById("from").value);
     signature = wallet.signMessage(bytes);
+
+    // Since everything is built on promises, wait for the signature to
+    // be calculated and then send the transaction to the node.
     signature.then((sig) => sendTran(walletTx, sig));
 }
 
 function sendTran(walletTx, sig) {
+
+    // Add the signature to the document.
     walletTx.sig = sig;
 
+    // Marshal the walletTX with the signature for sending.
     const data = JSON.stringify(walletTx);
-    const url = "http://localhost:8080/v1/tx/submit";
 
+    // Make a call to the node.
+    const url = "http://localhost:8080/v1/tx/submit";
     $.post(url, data, function (o, status) {
         if ((typeof o.errors != "undefined") && (o.errors.length > 0)) {    
             window.alert("ERROR: " + o.errors[0].message);
