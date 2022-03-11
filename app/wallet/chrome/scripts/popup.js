@@ -89,7 +89,8 @@ function connect() {
 // =============================================================================
 
 function fromBalance() {
-    const url = "http://localhost:8080/v1/accounts/list/" + document.getElementById("from").value;
+    var wallet = new ethers.Wallet(document.getElementById("from").value);
+    const url = "http://localhost:8080/v1/accounts/list/" + wallet.address;
 
     $.get(url, function (o, status) {
         if ((typeof o.errors != "undefined") && (o.errors.length > 0)) {    
@@ -119,36 +120,28 @@ function toBalance() {
 // =============================================================================
 
 function submitTran() {
-    const amount = document.getElementById("sendamount");
-
-    var wallet = new ethers.Wallet("9f332e3700d8fc2446eaf6d15034cf96e0c2745e40353deef032a5dbf1dfed93");
-        
-    const tx = {
+    const amount = document.getElementById("sendamount").value.replace(/\$|,/g, '');
+    
+    const walletTx = {
         nonce: 10,
-        to: "0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76",
-        value: 100,
+        to: document.getElementById("to").value,
+        value: Number(amount),
         tip: 10,
         data: null,
     };
 
-    const txHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(JSON.stringify(tx)));
+    const txHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(JSON.stringify(walletTx)));
     const bytes = ethers.utils.arrayify(txHash);
 
+    const wallet = new ethers.Wallet(document.getElementById("from").value);
     signature = wallet.signMessage(bytes);
-    signature.then((sig) => sendTran(tx, sig));
+    signature.then((sig) => sendTran(walletTx, sig));
 }
 
-function sendTran(tx, sig) {
-    const signedTx = {
-        nonce: 10,
-        to: "0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76",
-        value: 100,
-        tip: 10,
-        data: null,
-        sig: sig
-    };
+function sendTran(walletTx, sig) {
+    walletTx.sig = sig;
 
-    const data = JSON.stringify(signedTx);
+    const data = JSON.stringify(walletTx);
     const url = "http://localhost:8080/v1/tx/submit";
 
     $.post(url, data, function (o, status) {
@@ -168,8 +161,8 @@ var formatter = new Intl.NumberFormat('en-US', {
     currency: 'USD',
   
     // These options are needed to round to whole numbers if that's what you want.
-    //minimumFractionDigits: 0, // (this suffices for whole numbers, but will print 2500.10 as $2,500.1)
-    //maximumFractionDigits: 0, // (causes 2500.99 to be printed as $2,501)
+    // minimumFractionDigits: 0, // (this suffices for whole numbers, but will print 2500.10 as $2,500.1)
+    maximumFractionDigits: 0, // (causes 2500.99 to be printed as $2,501)
 });
 
 // =============================================================================
@@ -212,7 +205,7 @@ function formatCurrencyKeyup() {
 }
 
 function formatCurrencyBlur() {
-    formatCurrency($(this), "blur");
+    formatCurrency($(this));
 }
 
 function formatNumber(n) {
@@ -220,7 +213,7 @@ function formatNumber(n) {
   return n.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ",")
 }
 
-function formatCurrency(input, blur) {
+function formatCurrency(input) {
     // appends $ to value, validates decimal side
     // and puts cursor back in right position.
   
@@ -235,49 +228,14 @@ function formatCurrency(input, blur) {
 
     // initial caret position 
     var caret_pos = input.prop("selectionStart");
+
+    if (input_val.indexOf(".") == 0) { return; }
     
-    // check for decimal
-    if (input_val.indexOf(".") >= 0) {
-      
-        // get position of first decimal
-        // this prevents multiple decimals from
-        // being entered
-        var decimal_pos = input_val.indexOf(".");
-
-        // split number by decimal point
-        var left_side = input_val.substring(0, decimal_pos);
-        var right_side = input_val.substring(decimal_pos);
-
-        // add commas to left side of number
-        left_side = formatNumber(left_side);
-
-        // validate right side
-        right_side = formatNumber(right_side);
-        
-        // On blur make sure 2 numbers after decimal
-        if (blur === "blur") {
-        right_side += "00";
-        }
-    
-        // Limit decimal to only 2 digits
-        right_side = right_side.substring(0, 2);
-
-        // join number by .
-        input_val = "$" + left_side + "." + right_side;
-
-    } else {
-        
-        // no decimal entered
-        // add commas to number
-        // remove all non-digits
-        input_val = formatNumber(input_val);
-        input_val = "$" + input_val;
-        
-        // final formatting
-        if (blur === "blur") {
-            input_val += ".00";
-        }
-    }
+    // no decimal entered
+    // add commas to number
+    // remove all non-digits
+    input_val = formatNumber(input_val);
+    input_val = "$" + input_val;
   
     // send updated string to input
     input.val(input_val);
