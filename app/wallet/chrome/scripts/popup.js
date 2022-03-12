@@ -180,7 +180,7 @@ function sendTran(userTx, sig) {
             return;
         }
 
-        alert("SENT");
+        alert("Transaction Sent");
     });
 }
 
