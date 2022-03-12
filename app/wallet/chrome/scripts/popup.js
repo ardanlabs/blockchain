@@ -124,17 +124,17 @@ function submitTran() {
     // Capture the amount to send.
     const amount = document.getElementById("sendamount").value.replace(/\$|,/g, '');
     
-    // Construct a walletTx with all the information.
-    const walletTx = {
-        nonce: 10,
+    // Construct a userTx with all the information.
+    const userTx = {
+        nonce: 11,
         to: document.getElementById("to").value,
         value: Number(amount),
         tip: 10,
         data: null,
     };
 
-    // Marshal the walletTx to a string and convert the string to bytes.
-    const marshal = JSON.stringify(walletTx);
+    // Marshal the userTx to a string and convert the string to bytes.
+    const marshal = JSON.stringify(userTx);
     const marshalBytes = ethers.utils.toUtf8Bytes(marshal);
 
     // Hash the transaction data into a 32 byte array. This will provide
@@ -149,16 +149,28 @@ function submitTran() {
 
     // Since everything is built on promises, wait for the signature to
     // be calculated and then send the transaction to the node.
-    signature.then((sig) => sendTran(walletTx, sig));
+    signature.then((sig) => sendTran(userTx, sig));
 }
 
-function sendTran(walletTx, sig) {
+function sendTran(userTx, sig) {
 
-    // Add the signature to the document.
-    walletTx.sig = sig;
+    // Need to break out the R and S bytes from the signature.
+    const byt = ethers.utils.arrayify(sig);
+    const rSlice = byt.slice(0, 32);
+    const sSlice = byt.slice(32, 64);
 
-    // Marshal the walletTX with the signature for sending.
-    const data = JSON.stringify(walletTx);
+    // Add the signature fields to make this a signed transaction.
+    userTx.v = byt[64];
+    userTx.r = ethers.BigNumber.from(rSlice).toString();
+    userTx.s = ethers.BigNumber.from(sSlice).toString();
+    
+    // Marshal into JSON for the payload.
+    var data = JSON.stringify(userTx);
+
+    // Go doesn't want big integers to be strings. Removing quotes.
+    data = data.replace('r":"', 'r":');
+    data = data.replace('","s":"', ',"s":');
+    data = data.replace('"}', '}');
 
     // Make a call to the node.
     const url = "http://localhost:8080/v1/tx/submit";

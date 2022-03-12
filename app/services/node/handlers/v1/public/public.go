@@ -29,14 +29,9 @@ func (h Handlers) SubmitWalletTransaction(ctx context.Context, w http.ResponseWr
 		return web.NewShutdownError("web value missing from context")
 	}
 
-	var walletTx storage.WalletTx
-	if err := web.Decode(r, &walletTx); err != nil {
+	var signedTx storage.SignedTx
+	if err := web.Decode(r, &signedTx); err != nil {
 		return fmt.Errorf("unable to decode payload: %w", err)
-	}
-
-	signedTx, err := walletTx.ToSignedTx()
-	if err != nil {
-		return fmt.Errorf("unable to convert signature: %w", err)
 	}
 
 	h.Log.Infow("add user tran", "traceid", v.TraceID, "from:nonce", signedTx, "to", signedTx.To, "value", signedTx.Value, "tip", signedTx.Tip)

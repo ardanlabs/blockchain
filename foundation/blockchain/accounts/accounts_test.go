@@ -22,12 +22,7 @@ func sign(tx storage.UserTx, gas uint) (storage.BlockTx, error) {
 		return storage.BlockTx{}, err
 	}
 
-	walletTx, err := tx.Sign(pk)
-	if err != nil {
-		return storage.BlockTx{}, err
-	}
-
-	signedTx, err := walletTx.ToSignedTx()
+	signedTx, err := tx.Sign(pk)
 	if err != nil {
 		return storage.BlockTx{}, err
 	}
