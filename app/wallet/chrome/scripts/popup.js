@@ -1,11 +1,36 @@
 $.ajaxSetup({
     contentType: "application/json; charset=utf-8",
-    error: function (xhr) {
-        const conn = document.getElementById("connected");
-        conn.className = "notconnected";
-        conn.innerHTML = "NOT CONNECTED";
-      }
+    beforeSend: function() {
+        document.getElementById("errmsg").innerText = "";
+    }
 });
+
+function handleAjaxError(jqXHR, exception) {
+    var msg = '';
+
+    switch (jqXHR.status) {
+    case 0:
+        msg = 'Not connected, verify network.';
+    case 404:
+        msg = 'Requested page not found. [404]';
+    case 500:
+        msg = 'Internal Server Error [500].';
+    default:
+        switch (exception) {
+        case "parsererror":
+            msg = 'Requested JSON parse failed.';
+        case "timeout":
+            msg = 'Time out error.';
+        case "abort":
+            msg = 'Ajax request aborted.';
+        default:
+            const o = JSON.parse(jqXHR.responseText);
+            msg = o.error;
+        }
+    }
+
+    document.getElementById("errmsg").innerText = msg;
+}
 
 window.onload = function () {
     wireEvents();
@@ -65,55 +90,55 @@ function wireEvents() {
 // =============================================================================
 
 function connect() {
-    const url = "http://localhost:8080/v1/genesis/list"
+    $.ajax({
+        type: "get",
+        url: "http://localhost:8080/v1/genesis/list",
+        success: function (response) {
+            const conn = document.getElementById("connected");
+            conn.className = "connected";
+            conn.innerHTML = "CONNECTED";
 
-    $.get(url, function (o, status) {
-        const conn = document.getElementById("connected");
-
-        if ((typeof o.errors != "undefined") && (o.errors.length > 0)) {    
+            fromBalance();
+            toBalance();
+        },
+        error: function (jqXHR, exception) {
+            const conn = document.getElementById("connected");
             conn.className = "notconnected";
             conn.innerHTML = "NOT CONNECTED";
-            return;
-        }
-
-        conn.className = "connected";
-        conn.innerHTML = "CONNECTED";
-
-        fromBalance();
-        toBalance();
-
-        return
+            handleAjaxError(jqXHR, exception);
+        },
     });
 }
 
 // =============================================================================
 
 function fromBalance() {
-    var wallet = new ethers.Wallet(document.getElementById("from").value);
-    const url = "http://localhost:8080/v1/accounts/list/" + wallet.address;
+    const wallet = new ethers.Wallet(document.getElementById("from").value);
 
-    $.get(url, function (o, status) {
-        if ((typeof o.errors != "undefined") && (o.errors.length > 0)) {    
-            window.alert("ERROR: " + o.errors[0].message);
-            return;
-        }
-
-        const bal = document.getElementById("frombal");
-        bal.innerHTML = formatter.format(o.accounts[0].balance) + " ARD";
+    $.ajax({
+        type: "get",
+        url: "http://localhost:8080/v1/accounts/list/" + wallet.address,
+        success: function (resp) {
+            const bal = document.getElementById("frombal");
+            bal.innerHTML = formatter.format(resp.accounts[0].balance) + " ARD";
+        },
+        error: function (jqXHR, exception) {
+            handleAjaxError(jqXHR, exception);
+        },
     });
 }
 
 function toBalance() {
-    const url = "http://localhost:8080/v1/accounts/list/" + document.getElementById("to").value;
-
-    $.get(url, function (o, status) {
-        if ((typeof o.errors != "undefined") && (o.errors.length > 0)) {    
-            window.alert("ERROR: " + o.errors[0].message);
-            return;
-        }
-
-        const bal = document.getElementById("tobal");
-        bal.innerHTML = formatter.format(o.accounts[0].balance) + " ARD";
+    $.ajax({
+        type: "get",
+        url: "http://localhost:8080/v1/accounts/list/" + document.getElementById("to").value,
+        success: function (resp) {
+            const bal = document.getElementById("tobal");
+            bal.innerHTML = formatter.format(resp.accounts[0].balance) + " ARD";
+        },
+        error: function (jqXHR, exception) {
+            handleAjaxError(jqXHR, exception);
+        },
     });
 }
 
@@ -126,7 +151,7 @@ function submitTran() {
     
     // Construct a userTx with all the information.
     const userTx = {
-        nonce: 11,
+        nonce: 1,
         to: document.getElementById("to").value,
         value: Number(amount),
         tip: 10,
@@ -172,15 +197,16 @@ function sendTran(userTx, sig) {
     data = data.replace('","s":"', ',"s":');
     data = data.replace('"}', '}');
 
-    // Make a call to the node.
-    const url = "http://localhost:8080/v1/tx/submit";
-    $.post(url, data, function (o, status) {
-        if ((typeof o.errors != "undefined") && (o.errors.length > 0)) {    
-            window.alert("ERROR: " + o.errors[0].message);
-            return;
-        }
-
-        alert("Transaction Sent");
+    $.ajax({
+        type: "post",
+        url: "http://localhost:8080/v1/tx/submit",
+        data: data,
+        success: function (resp) {
+            alert(resp.responseText);
+        },
+        error: function (jqXHR, exception) {
+            handleAjaxError(jqXHR, exception);
+        },
     });
 }
 
@@ -213,18 +239,18 @@ function showInfoTab(which) {
     const tranBut = document.getElementById("tranbutton");
 
     switch (which) {
-        case "send":
-            sendBox.style.display = "block";
-            tranBox.style.display = "none";
-            sendBut.style.backgroundColor = "#faf9f5";
-            tranBut.style.backgroundColor = "#d9d8d4";
-            break;
-        case "tran":
-            sendBox.style.display = "none";
-            tranBox.style.display = "block";
-            sendBut.style.backgroundColor = "#d9d8d4";
-            tranBut.style.backgroundColor = "#faf9f5";
-            break;
+    case "send":
+        sendBox.style.display = "block";
+        tranBox.style.display = "none";
+        sendBut.style.backgroundColor = "#faf9f5";
+        tranBut.style.backgroundColor = "#d9d8d4";
+        break;
+    case "tran":
+        sendBox.style.display = "none";
+        tranBox.style.display = "block";
+        sendBut.style.backgroundColor = "#d9d8d4";
+        tranBut.style.backgroundColor = "#faf9f5";
+        break;
     }
 }
 
