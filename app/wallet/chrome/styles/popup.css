@@ -32,6 +32,9 @@
   border: 1px solid #333;
   margin-top: 5px;
 }
+.margin5 {
+  margin-top: 5px;
+}
 .label {
   width: 50px;
   float: left;
@@ -46,6 +49,11 @@
   width: 50px;
   float: left;
   margin: 3px 10px;
+}
+.labeltip{
+  width: 50px;
+  float: left;
+  margin: 8px 10px;
 }
 .accounts {
   width: 60%;

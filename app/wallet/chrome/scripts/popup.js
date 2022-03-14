@@ -1,3 +1,5 @@
+var nonce = 0;
+
 $.ajaxSetup({
     contentType: "application/json; charset=utf-8",
     beforeSend: function() {
@@ -121,6 +123,12 @@ function fromBalance() {
         success: function (resp) {
             const bal = document.getElementById("frombal");
             bal.innerHTML = formatter.format(resp.accounts[0].balance) + " ARD";
+
+            document.getElementById("fromnonce").innerHTML = resp.accounts[0].nonce;
+            if (nonce == 0) {
+                nonce = Number(resp.accounts[0].nonce);
+            }
+            document.getElementById("nextnonce").innerHTML = nonce;
         },
         error: function (jqXHR, exception) {
             handleAjaxError(jqXHR, exception);
@@ -144,19 +152,53 @@ function toBalance() {
 
 // =============================================================================
 
-function submitTran() {
+function createTransaction() {
+    
+    // Update the account information.
+    fromBalance();
 
-    // Capture the amount to send.
-    const amount = document.getElementById("sendamount").value.replace(/\$|,/g, '');
+     // Increment the nonce for the next transaction.
+     nonce = nonce + 1;
+
+    // Capture and validate the amount to send.
+    const amountStr = document.getElementById("sendamount").value.replace(/\$|,/g, '');
+    const amount = Number(amountStr);
+    if (isNaN(amount)) {
+        return { userTx: null, err: "Amount is not a number." };
+    }
+    if (amount <= 0) {
+        return { userTx: null, err: "Amount must be greater than 0 dollars." };
+    }
+
+    // Capture and validate the tip to send.
+    const tipStr = document.getElementById("sendtip").value.replace(/\$|,/g, '');
+    const tip = Number(tipStr);
+    if (isNaN(tip)) {
+        return { userTx: null, err: "Tip is not a number." };
+    }
+    if (tip < 0) {
+        return { userTx: null, err: "Tip can't be a negative number." };
+    }
     
     // Construct a userTx with all the information.
     const userTx = {
-        nonce: 1,
+        nonce: nonce,
         to: document.getElementById("to").value,
-        value: Number(amount),
-        tip: 10,
+        value: amount,
+        tip: tip,
         data: null,
     };
+
+    return { userTx, err: null };
+}
+
+function submitTran() {
+
+    const {userTx, err} = createTransaction();
+    if (err != null) {
+        document.getElementById("errmsg").innerText = err;
+        return;
+    }
 
     // Marshal the userTx to a string and convert the string to bytes.
     const marshal = JSON.stringify(userTx);
@@ -202,7 +244,8 @@ function sendTran(userTx, sig) {
         url: "http://localhost:8080/v1/tx/submit",
         data: data,
         success: function (resp) {
-            alert(resp.responseText);
+            document.getElementById("nextnonce").innerHTML = nonce;
+            alert(resp.status);
         },
         error: function (jqXHR, exception) {
             handleAjaxError(jqXHR, exception);
