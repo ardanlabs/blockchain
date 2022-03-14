@@ -22,18 +22,29 @@ var (
 	data  []byte
 )
 
-// sendCmd represents the send command
 var sendCmd = &cobra.Command{
 	Use:   "send",
 	Short: "Send transaction",
-	Run: func(cmd *cobra.Command, args []string) {
-		privateKey, err := crypto.LoadECDSA(getPrivateKeyPath())
-		if err != nil {
-			log.Fatal(err)
-		}
+	Run:   sendRun,
+}
 
-		sendWithDetails(privateKey)
-	},
+func init() {
+	rootCmd.AddCommand(sendCmd)
+	sendCmd.Flags().StringVarP(&url, "url", "u", "http://localhost:8080", "Url of the node.")
+	sendCmd.Flags().UintVarP(&nonce, "nonce", "n", 0, "id for the transaction.")
+	sendCmd.Flags().StringVarP(&to, "to", "t", "", "Url of the node.")
+	sendCmd.Flags().UintVarP(&value, "value", "v", 0, "Value to send.")
+	sendCmd.Flags().UintVarP(&tip, "tip", "c", 0, "Tip to send.")
+	sendCmd.Flags().BytesHexVarP(&data, "data", "d", nil, "Data to send.")
+}
+
+func sendRun(cmd *cobra.Command, args []string) {
+	privateKey, err := crypto.LoadECDSA(getPrivateKeyPath())
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	sendWithDetails(privateKey)
 }
 
 func sendWithDetails(privateKey *ecdsa.PrivateKey) {
@@ -61,14 +72,4 @@ func sendWithDetails(privateKey *ecdsa.PrivateKey) {
 		log.Fatal(err)
 	}
 	defer resp.Body.Close()
-}
-
-func init() {
-	rootCmd.AddCommand(sendCmd)
-	sendCmd.Flags().StringVarP(&url, "url", "u", "http://localhost:8080", "Url of the node.")
-	sendCmd.Flags().UintVarP(&nonce, "nonce", "n", 0, "id for the transaction.")
-	sendCmd.Flags().StringVarP(&to, "to", "t", "", "Url of the node.")
-	sendCmd.Flags().UintVarP(&value, "value", "v", 0, "Value to send.")
-	sendCmd.Flags().UintVarP(&tip, "tip", "c", 0, "Tip to send.")
-	sendCmd.Flags().BytesHexVarP(&data, "data", "d", nil, "Data to send.")
 }

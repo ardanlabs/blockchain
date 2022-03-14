@@ -22,34 +22,39 @@ type balances struct {
 	Balances     []balance `json:"balances"`
 }
 
-// balanceCmd represents the balance command
 var balanceCmd = &cobra.Command{
 	Use:   "balance",
 	Short: "Print your balance.",
-	Run: func(cmd *cobra.Command, args []string) {
-		privateKey, err := crypto.LoadECDSA(getPrivateKeyPath())
-		if err != nil {
-			log.Fatal(err)
-		}
-		account := storage.PublicKeyToAccount(privateKey.PublicKey)
-		fmt.Println("For Account:", account)
-		resp, err := http.Get(fmt.Sprintf("%s/v1/balances/list/%s", url, account))
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer resp.Body.Close()
-		decoder := json.NewDecoder(resp.Body)
-		var balances balances
-		if err := decoder.Decode(&balances); err != nil {
-			log.Fatal(err)
-		}
-		if len(balances.Balances) > 0 {
-			fmt.Println(balances.Balances[0].Balance)
-		}
-	},
+	Run:   balanceRun,
 }
 
 func init() {
 	rootCmd.AddCommand(balanceCmd)
 	balanceCmd.Flags().StringVarP(&url, "url", "u", "http://localhost:8080", "Url of the node.")
+}
+
+func balanceRun(cmd *cobra.Command, args []string) {
+	privateKey, err := crypto.LoadECDSA(getPrivateKeyPath())
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	account := storage.PublicKeyToAccount(privateKey.PublicKey)
+	fmt.Println("For Account:", account)
+
+	resp, err := http.Get(fmt.Sprintf("%s/v1/balances/list/%s", url, account))
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	decoder := json.NewDecoder(resp.Body)
+	var balances balances
+	if err := decoder.Decode(&balances); err != nil {
+		log.Fatal(err)
+	}
+
+	if len(balances.Balances) > 0 {
+		fmt.Println(balances.Balances[0].Balance)
+	}
 }

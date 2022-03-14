@@ -7,21 +7,23 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// generateCmd represents the generate command
 var generateCmd = &cobra.Command{
 	Use:   "generate",
 	Short: "Generate new key pair",
-	Run: func(cmd *cobra.Command, args []string) {
-		privateKey, err := crypto.GenerateKey()
-		if err != nil {
-			log.Fatal(err)
-		}
-		if err := crypto.SaveECDSA(getPrivateKeyPath(), privateKey); err != nil {
-			log.Fatal(err)
-		}
-	},
+	Run:   generateRun,
 }
 
 func init() {
 	rootCmd.AddCommand(generateCmd)
+}
+
+func generateRun(cmd *cobra.Command, args []string) {
+	privateKey, err := crypto.GenerateKey()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err := crypto.SaveECDSA(getPrivateKeyPath(), privateKey); err != nil {
+		log.Fatal(err)
+	}
 }
