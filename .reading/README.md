@@ -114,6 +114,7 @@ Occasionally we run into material that we feel is important. This is a section p
 [Basic Proof of Wallet Code](https://go.dev/play/p/A_66_Kz9tpl) - Pavel Aborilov  
 [Golang HexToECDSA Examples](https://golang.hotexamples.com/examples/github.com.ethereum.go-ethereum.crypto/-/HexToECDSA/golang-hextoecdsa-function-examples.html)  
 [Building an EVM from Scratch - Part I](https://www.notion.so/Building-an-EVM-from-scratch-part-1-c28ebb4200c94f6fb75948a5feffc686)  
+[Merkel Trees and LevelDB](https://web3.coach/golang-blockchain-filesystem-and-merkle-trees) - Lukas Lukac  
 
 ### Video
 [Is It Possible To Get The Same 24 BIP39 Seed Words?](https://www.youtube.com/watch?v=hjRntYh0ot8) - John Chow  

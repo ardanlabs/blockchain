@@ -27,6 +27,7 @@ import (
 	Then add a graphical way of seeing the data.
 
 	-- Blockchain
+	Maybe use a Merkel tree (https://github.com/cbergoon/merkletree, https://github.com/google/leveldb)
 	Batch new transactions to send across the network.
 	Create a block index file for query and clean up forks.
 	Publishing events. (New Blocks)
