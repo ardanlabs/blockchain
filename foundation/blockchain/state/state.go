@@ -19,16 +19,12 @@ import (
 
 /*
 	-- Chrome Extension Wallet
-	Show the balance of each account (more work).
-	Add tip and data fields to form.
-	Validate all input before sending.
-	Show a better way to the transaction being sent.
 	Concept of connecting and receiving events.
 
 	-- Web Application
-	Provide support to read a file of transactions to send.
-	Need to verify enough money at the account before sending a transaction.
-	See the different nodes, view activity.
+	Add websocket support to get real time events.
+	Start with showing the logs.
+	Then add a graphical way of seeing the data.
 
 	-- Blockchain
 	Batch new transactions to send across the network.
