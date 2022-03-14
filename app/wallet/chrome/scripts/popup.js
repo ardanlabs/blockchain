@@ -227,7 +227,12 @@ function createTransaction() {
     if (tip < 0) {
         return { userTx: null, err: "Tip can't be a negative number." };
     }
-    
+
+    confirmAction = confirm("Are you sure to execute this transaction?");
+    if (!confirmAction) {
+        return { userTx: null, err: "cancelled" }
+    }
+
     // Construct a userTx with all the information.
     const userTx = {
         nonce: nonce,
@@ -244,7 +249,9 @@ function submitTran() {
 
     const {userTx, err} = createTransaction();
     if (err != null) {
-        document.getElementById("errmsg").innerText = err;
+        if (err != "cancelled") {
+            document.getElementById("errmsg").innerText = err;
+        }
         return;
     }
 
