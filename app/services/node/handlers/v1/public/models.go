@@ -18,10 +18,11 @@ type actInfo struct {
 }
 
 type tx struct {
-	FromAccount storage.Account `json:"from_account"`
+	FromAccount storage.Account `json:"from"`
 	FromName    string          `json:"from_name"`
-	Nonce       uint            `json:"nonce"`
 	To          storage.Account `json:"to"`
+	ToName      string          `json:"to_name"`
+	Nonce       uint            `json:"nonce"`
 	Value       uint            `json:"value"`
 	Tip         uint            `json:"tip"`
 	Data        []byte          `json:"data"`

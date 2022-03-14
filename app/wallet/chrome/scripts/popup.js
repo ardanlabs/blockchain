@@ -44,14 +44,14 @@ function wireEvents() {
     const from = document.getElementById("from");
     from.addEventListener(
         'change',
-        fromBalance,
+        connect,
         false
     );
 
     const to = document.getElementById("to");
     to.addEventListener(
         'change',
-        toBalance,
+        connect,
         false
     );
 
@@ -100,7 +100,10 @@ function wireEvents() {
 
 
 function connect() {
+    nonce = 0;
     document.getElementById("errmsg").innerText = "";
+    document.getElementById("tranbutton").innerHTML = "Trans";
+
     const conn = document.getElementById("connected");
     conn.className = "notconnected";
     conn.innerHTML = "Connecting....";
@@ -117,6 +120,7 @@ function connect() {
 
                 fromBalance();
                 toBalance();
+                transactions();
             },
             error: function (jqXHR, exception) {
                 conn.className = "notconnected";
@@ -130,6 +134,32 @@ function connect() {
 }
 
 // =============================================================================
+
+function transactions() {
+    const wallet = new ethers.Wallet(document.getElementById("from").value);
+
+    $.ajax({
+        type: "get",
+        url: "http://localhost:8080/v1/blocks/list/" + wallet.address,
+        success: function (resp) {
+            var msg = "";
+            var count = 0;
+            for (var i = 0; i < resp.length; i++) {
+                for (var j = 0; j < resp[i].txs.length; j++) {
+                    if ((resp[i].txs[j].from == wallet.address) || (resp[i].txs[j].to == wallet.address)) {
+                        msg += JSON.stringify(resp[i].txs[j], null, 2);
+                        count++;
+                    }
+                }
+            }
+            document.getElementById("trans").innerHTML = msg;
+            document.getElementById("tranbutton").innerHTML = "Trans(" + count + ")";
+        },
+        error: function (jqXHR, exception) {
+            handleAjaxError(jqXHR, exception);
+        },
+    });
+}
 
 function fromBalance() {
     const wallet = new ethers.Wallet(document.getElementById("from").value);

@@ -117,8 +117,9 @@ func (h Handlers) BlocksByAccount(ctx context.Context, w http.ResponseWriter, r 
 			trans[i] = tx{
 				FromAccount: account,
 				FromName:    h.NS.Lookup(account),
-				Nonce:       tran.Nonce,
 				To:          tran.To,
+				ToName:      h.NS.Lookup(tran.To),
+				Nonce:       tran.Nonce,
 				Value:       tran.Value,
 				Tip:         tran.Tip,
 				Data:        tran.Data,

@@ -12,6 +12,30 @@
   width: 100%;
   margin-top: 10px;
 }
+.infobox {
+  height: var(--main-height);
+  border: 1px solid #333;
+  box-shadow: 8px 8px 5px #444;
+  font-family: verdana;
+  background-image: linear-gradient(180deg, #fff, #ddd 40%, #ccc);
+  padding: 10px 10px;
+  overflow: auto;
+  margin-top: 5px;
+}
+.sendbox {
+  overflow: auto;
+  padding: 15px 15px;
+  border: 1px solid #333;
+  background-color: #faf9f5;
+}
+.tranbox {
+  height: 220px;
+  display: none;
+  overflow: auto;
+  padding: 5px 15px;
+  border: 1px solid #333;
+  background-color: #faf9f5;
+}
 .title {
   width: 50%;
   float: left;
@@ -26,11 +50,6 @@
   color: green;
   float: right;
   font-size: 12px;
-}
-.framebox {
-  overflow: auto;
-  border: 1px solid #333;
-  margin-top: 5px;
 }
 .margin5 {
   margin-top: 5px;
@@ -62,16 +81,6 @@
 .balance {
   margin: 10px 0px;
 }
-.infobox {
-  height: var(--main-height);
-  border: 1px solid #333;
-  box-shadow: 8px 8px 5px #444;
-  font-family: verdana;
-  background-image: linear-gradient(180deg, #fff, #ddd 40%, #ccc);
-  padding: 10px 10px;
-  overflow: auto;
-  margin-top: 5px;
-}
 .tabsection {
   margin-top: 15px;
 }
@@ -79,21 +88,6 @@
   font-family: verdana;
   overflow: auto;
   padding: 0px 0px;
-}
-.sendbox {
-  height: 93%;
-  overflow: auto;
-  padding: 15px 15px;
-  border: 1px solid #333;
-  background-color: #faf9f5;
-}
-.tranbox {
-  height: 93%;
-  display: none;
-  overflow: auto;
-  padding: 5px 15px;
-  border: 1px solid #333;
-  background-color: #faf9f5;
 }
 .tab {
   background-color: #d9d8d4;
