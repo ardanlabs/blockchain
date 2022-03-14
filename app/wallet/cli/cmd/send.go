@@ -67,6 +67,7 @@ func sendWithDetails(privateKey *ecdsa.PrivateKey) {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	resp, err := http.Post(fmt.Sprintf("%s/v1/tx/submit", url), "application/json", bytes.NewBuffer(data))
 	if err != nil {
 		log.Fatal(err)
