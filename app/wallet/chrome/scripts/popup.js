@@ -62,6 +62,13 @@ function wireEvents() {
         false
     );
 
+    const refresh = document.getElementById("refreshsubmit");
+    refresh.addEventListener(
+        'click',
+        connect,
+        false
+    );
+
     const tran = document.getElementById("tranbutton");
     tran.addEventListener(
         'click',
@@ -91,25 +98,35 @@ function wireEvents() {
 
 // =============================================================================
 
-function connect() {
-    $.ajax({
-        type: "get",
-        url: "http://localhost:8080/v1/genesis/list",
-        success: function (response) {
-            const conn = document.getElementById("connected");
-            conn.className = "connected";
-            conn.innerHTML = "CONNECTED";
 
-            fromBalance();
-            toBalance();
-        },
-        error: function (jqXHR, exception) {
-            const conn = document.getElementById("connected");
-            conn.className = "notconnected";
-            conn.innerHTML = "NOT CONNECTED";
-            handleAjaxError(jqXHR, exception);
-        },
-    });
+function connect() {
+    document.getElementById("errmsg").innerText = "";
+    const conn = document.getElementById("connected");
+    conn.className = "notconnected";
+    conn.innerHTML = "Connecting....";
+
+    const f = function () {
+        const conn = document.getElementById("connected");
+
+        $.ajax({
+            type: "get",
+            url: "http://localhost:8080/v1/genesis/list",
+            success: function (response) {
+                conn.className = "connected";
+                conn.innerHTML = "CONNECTED";
+
+                fromBalance();
+                toBalance();
+            },
+            error: function (jqXHR, exception) {
+                conn.className = "notconnected";
+                conn.innerHTML = "NOT CONNECTED";
+                handleAjaxError(jqXHR, exception);
+            },
+        });
+    }
+
+    setTimeout(f, 1000);
 }
 
 // =============================================================================
