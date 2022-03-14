@@ -27,7 +27,7 @@ var build = "develop"
 func main() {
 
 	// Construct the application logger.
-	log, err := logger.New("BAR-LED")
+	log, err := logger.New("NODE")
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -74,7 +74,7 @@ func run(log *zap.SugaredLogger) error {
 		},
 	}
 
-	const prefix = "ARDLED"
+	const prefix = "NODE"
 	help, err := conf.Parse(prefix, &cfg)
 	if err != nil {
 		if errors.Is(err, conf.ErrHelpWanted) {

@@ -36,7 +36,7 @@ up2:
 	go run app/services/node/main.go -race --web-debug-host 0.0.0.0:7181 --web-public-host 0.0.0.0:8180 --web-private-host 0.0.0.0:9180 --node-miner-name=miner2 --node-db-path zblock/blocks2.db | go run app/tooling/logfmt/main.go
 
 down:
-	kill -INT $(shell ps | grep go-build | grep -v grep | sed -n 2,2p | cut -c1-5)
+	kill -INT $(shell ps | grep "main -race" | grep -v grep | sed -n 1,1p | cut -c1-5)
 
 load:
 	go run app/wallet/cli/main.go send -a kennedy -n 1 -t 0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76 -v 100
@@ -45,6 +45,12 @@ load:
 	go run app/wallet/cli/main.go send -a pavel -n 2 -t 0xa988b1866EaBF72B4c53b592c97aAD8e4b9bDCC0 -v 125
 	go run app/wallet/cli/main.go send -a kennedy -n 3 -t 0xa988b1866EaBF72B4c53b592c97aAD8e4b9bDCC0 -v 200
 	go run app/wallet/cli/main.go send -a pavel -n 3 -t 0x6Fe6CF3c8fF57c58d24BfC869668F48BCbDb3BD9 -v 250
+
+# ==============================================================================
+# Viewer support
+
+viewer-up:
+	go run app/services/viewer/main.go | go run app/tooling/logfmt/main.go
 
 # ==============================================================================
 # Wallet support
