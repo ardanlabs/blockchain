@@ -127,6 +127,7 @@ function fromBalance() {
             document.getElementById("fromnonce").innerHTML = resp.accounts[0].nonce;
             if (nonce == 0) {
                 nonce = Number(resp.accounts[0].nonce);
+                nonce += 1
             }
             document.getElementById("nextnonce").innerHTML = nonce;
         },
