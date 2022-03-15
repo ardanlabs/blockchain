@@ -33,6 +33,8 @@ func (h Handlers) Events(ctx context.Context, w http.ResponseWriter, r *http.Req
 		return web.NewShutdownError("web value missing from context")
 	}
 
+	h.WS.CheckOrigin = func(r *http.Request) bool { return true }
+
 	c, err := h.WS.Upgrade(w, r, nil)
 	if err != nil {
 		return err
