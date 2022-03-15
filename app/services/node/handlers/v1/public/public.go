@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	v1 "github.com/ardanlabs/blockchain/business/web/v1"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/accounts"
@@ -44,13 +45,25 @@ func (h Handlers) Events(ctx context.Context, w http.ResponseWriter, r *http.Req
 	ch := h.Evts.Acquire(v.TraceID)
 	defer h.Evts.Release(v.TraceID)
 
-	for msg := range ch {
-		if err := c.WriteMessage(websocket.TextMessage, []byte(msg)); err != nil {
-			return err
+	ticker := time.NewTicker(time.Second)
+
+	for {
+		select {
+		case msg, wd := <-ch:
+			if !wd {
+				return nil
+			}
+
+			if err := c.WriteMessage(websocket.TextMessage, []byte(msg)); err != nil {
+				return err
+			}
+
+		case <-ticker.C:
+			if err := c.WriteMessage(websocket.PingMessage, []byte("ping")); err != nil {
+				return nil
+			}
 		}
 	}
-
-	return nil
 }
 
 // SubmitWalletTransaction adds new user transactions to the mempool.

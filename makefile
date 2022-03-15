@@ -49,6 +49,9 @@ load:
 # ==============================================================================
 # Viewer support
 
+vup:
+	go run app/services/viewer/main.go | go run app/tooling/logfmt/main.go
+
 viewer:
 	python -m webbrowser "http://localhost"
 

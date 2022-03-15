@@ -5,7 +5,5 @@ socket.addEventListener('open', function (event) {
 });
 
 socket.addEventListener('message', function (event) {
-    var v = document.getElementById("msg").innerHTML;
-    v += v + "<BR />" + event.data;
-    document.getElementById("msg").innerHTML = v;
+    document.getElementById("msg").innerHTML += "<BR />" + event.data;
 });
