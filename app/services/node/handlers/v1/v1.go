@@ -35,6 +35,11 @@ func PublicRoutes(app *web.App, cfg Config) {
 		Evts:  cfg.Evts,
 	}
 
+	app.OptionsHandler = func(w http.ResponseWriter, r *http.Request, params map[string]string) {
+		w.WriteHeader(http.StatusOK)
+	}
+
+	app.Handle(http.MethodGet, version, "/events", pbl.Events)
 	app.Handle(http.MethodGet, version, "/genesis/list", pbl.Genesis)
 	app.Handle(http.MethodGet, version, "/accounts/list", pbl.Accounts)
 	app.Handle(http.MethodGet, version, "/accounts/list/:account", pbl.Accounts)
@@ -42,8 +47,6 @@ func PublicRoutes(app *web.App, cfg Config) {
 	app.Handle(http.MethodGet, version, "/blocks/list/:account", pbl.BlocksByAccount)
 	app.Handle(http.MethodGet, version, "/tx/uncommitted/list", pbl.Mempool)
 	app.Handle(http.MethodPost, version, "/tx/submit", pbl.SubmitWalletTransaction)
-
-	app.Handle(http.MethodGet, version, "/events", pbl.Events)
 }
 
 // PrivateRoutes binds all the version 1 private routes.
