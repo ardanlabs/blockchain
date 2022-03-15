@@ -22,8 +22,6 @@ import (
 	Concept of connecting and receiving events.
 
 	-- Web Application
-	Add websocket support to get real time events.
-	Start with showing the logs.
 	Then add a graphical way of seeing the data.
 
 	-- Blockchain
