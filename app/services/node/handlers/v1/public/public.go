@@ -10,8 +10,10 @@ import (
 	"github.com/ardanlabs/blockchain/foundation/blockchain/accounts"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/state"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
+	"github.com/ardanlabs/blockchain/foundation/events"
 	"github.com/ardanlabs/blockchain/foundation/nameservice"
 	"github.com/ardanlabs/blockchain/foundation/web"
+	"github.com/gorilla/websocket"
 	"go.uber.org/zap"
 )
 
@@ -20,6 +22,33 @@ type Handlers struct {
 	Log   *zap.SugaredLogger
 	State *state.State
 	NS    *nameservice.NameService
+	WS    websocket.Upgrader
+	Evts  *events.Events
+}
+
+// Events handles a web socket to provide events to a client.
+func (h Handlers) Events(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	v, err := web.GetValues(ctx)
+	if err != nil {
+		return web.NewShutdownError("web value missing from context")
+	}
+
+	c, err := h.WS.Upgrade(w, r, nil)
+	if err != nil {
+		return err
+	}
+	defer c.Close()
+
+	ch := h.Evts.Acquire(v.TraceID)
+	defer h.Evts.Release(v.TraceID)
+
+	for msg := range ch {
+		if err := c.WriteMessage(websocket.TextMessage, []byte(msg)); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // SubmitWalletTransaction adds new user transactions to the mempool.

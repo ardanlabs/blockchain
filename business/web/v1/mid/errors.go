@@ -2,6 +2,7 @@ package mid
 
 import (
 	"context"
+	"errors"
 	"net/http"
 
 	"github.com/ardanlabs/blockchain/business/sys/validate"
@@ -62,7 +63,12 @@ func Errors(log *zap.SugaredLogger) web.Middleware {
 
 				// Respond with the error back to the client.
 				if err := web.Respond(ctx, w, er, status); err != nil {
-					return err
+
+					// If we get this error, it means the event handler
+					// has completed.
+					if !errors.Is(err, http.ErrHijacked) {
+						return err
+					}
 				}
 
 				// If we receive the shutdown err we need to return it

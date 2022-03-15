@@ -8,9 +8,10 @@ require (
 	github.com/ethereum/go-ethereum v1.10.16
 	github.com/go-playground/locales v0.14.0
 	github.com/go-playground/universal-translator v0.18.0
-	github.com/go-playground/validator/v10 v10.10.0
+	github.com/go-playground/validator/v10 v10.10.1
 	github.com/google/uuid v1.3.0
-	github.com/spf13/cobra v1.3.0
+	github.com/gorilla/websocket v1.5.0
+	github.com/spf13/cobra v1.4.0
 	go.uber.org/zap v1.21.0
 )
 
@@ -20,8 +21,8 @@ require (
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
-	go.uber.org/multierr v1.7.0 // indirect
-	golang.org/x/crypto v0.0.0-20220214200702-86341886e292 // indirect
-	golang.org/x/sys v0.0.0-20220222200937-f2425489ef4c // indirect
+	go.uber.org/multierr v1.8.0 // indirect
+	golang.org/x/crypto v0.0.0-20220314234724-5d542ad81a58 // indirect
+	golang.org/x/sys v0.0.0-20220310020820-b874c991c1a5 // indirect
 	golang.org/x/text v0.3.7 // indirect
 )

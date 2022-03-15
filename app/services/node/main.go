@@ -14,6 +14,7 @@ import (
 	"github.com/ardanlabs/blockchain/foundation/blockchain/peer"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/state"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
+	"github.com/ardanlabs/blockchain/foundation/events"
 	"github.com/ardanlabs/blockchain/foundation/logger"
 	"github.com/ardanlabs/blockchain/foundation/nameservice"
 	"github.com/ardanlabs/conf/v3"
@@ -124,9 +125,12 @@ func run(log *zap.SugaredLogger) error {
 		peerSet.Add(peer.New(host))
 	}
 
+	evts := events.New()
+
 	ev := func(v string, args ...interface{}) {
 		s := fmt.Sprintf(v, args...)
 		log.Infow(s, "traceid", "00000000-0000-0000-0000-000000000000")
+		evts.Send(s)
 	}
 
 	state, err := state.New(state.Config{
@@ -184,6 +188,7 @@ func run(log *zap.SugaredLogger) error {
 		Log:      log,
 		State:    state,
 		NS:       ns,
+		Evts:     evts,
 	})
 
 	// Construct a server to service the requests against the mux.
@@ -241,6 +246,10 @@ func run(log *zap.SugaredLogger) error {
 	case sig := <-shutdown:
 		log.Infow("shutdown", "status", "shutdown started", "signal", sig)
 		defer log.Infow("shutdown", "status", "shutdown complete", "signal", sig)
+
+		// Release any web sockets that are currently active.
+		log.Infow("shutdown", "status", "shutdown web socket channels")
+		evts.Shutdown()
 
 		// Give outstanding requests a deadline for completion.
 		ctx, cancelPub := context.WithTimeout(context.Background(), cfg.Web.ShutdownTimeout)
