@@ -104,15 +104,14 @@ func (h Handlers) Mempool(ctx context.Context, w http.ResponseWriter, r *http.Re
 
 	mempool := h.State.RetrieveMempool()
 
-	trans := make([]tx, len(mempool))
-	for i, tran := range mempool {
+	trans := []tx{}
+	for _, tran := range mempool {
 		account, _ := tran.FromAccount()
-
 		if acct != "" && ((acct != string(account)) && (acct != string(tran.To))) {
 			continue
 		}
 
-		trans[i] = tx{
+		trans = append(trans, tx{
 			FromAccount: account,
 			FromName:    h.NS.Lookup(account),
 			To:          tran.To,
@@ -124,7 +123,7 @@ func (h Handlers) Mempool(ctx context.Context, w http.ResponseWriter, r *http.Re
 			TimeStamp:   tran.TimeStamp,
 			Gas:         tran.Gas,
 			Sig:         tran.SignatureString(),
-		}
+		})
 	}
 
 	return web.Respond(ctx, w, trans, http.StatusOK)
