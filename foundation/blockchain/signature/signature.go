@@ -133,7 +133,7 @@ func FromAddress(value interface{}, v, r, s *big.Int) (string, error) {
 
 // SignatureString returns the signature as a string.
 func SignatureString(v, r, s *big.Int) string {
-	return "0x" + hex.EncodeToString(toSignatureBytesForDisplay(v, r, s))
+	return "0x" + hex.EncodeToString(toSignatureBytesWithArdanID(v, r, s))
 }
 
 // ToVRSFromHexSignature converts a hex representation of the signature into
@@ -193,19 +193,33 @@ func toSignatureValues(sig []byte) (v, r, s *big.Int) {
 func toSignatureBytes(v, r, s *big.Int) []byte {
 	sig := make([]byte, crypto.SignatureLength)
 
-	copy(sig, r.Bytes())
-	copy(sig[32:], s.Bytes())
+	rBytes := r.Bytes()
+	switch len(rBytes) {
+	case 31:
+		copy(sig, []byte{0})
+		copy(sig[1:], rBytes)
+	default:
+		copy(sig, rBytes)
+	}
+
+	sBytes := s.Bytes()
+	switch len(sBytes) {
+	case 31:
+		copy(sig[32:], []byte{0})
+		copy(sig[33:], sBytes)
+	default:
+		copy(sig, sBytes)
+	}
+
 	sig[64] = byte(v.Uint64() - ardanID)
 
 	return sig
 }
 
-// toSignatureBytesForDisplay converts the r, s, v values into a slice of bytes.
-func toSignatureBytesForDisplay(v, r, s *big.Int) []byte {
-	sig := make([]byte, crypto.SignatureLength)
-
-	copy(sig, r.Bytes())
-	copy(sig[32:], s.Bytes())
+// toSignatureBytesWithArdanID converts the r, s, v values into a slice of bytes
+// keeping the Ardan id.
+func toSignatureBytesWithArdanID(v, r, s *big.Int) []byte {
+	sig := toSignatureBytes(v, r, s)
 	sig[64] = byte(v.Uint64())
 
 	return sig

@@ -103,7 +103,7 @@ func (act *Accounts) ValidateNonce(tx storage.SignedTx) error {
 	act.mu.RUnlock()
 
 	if tx.Nonce <= info.Nonce {
-		return fmt.Errorf("invalid nonce, got %d, exp >= %d", tx.Nonce, info.Nonce)
+		return fmt.Errorf("invalid nonce, got %d, exp > %d", tx.Nonce, info.Nonce)
 	}
 
 	return nil
