@@ -36,6 +36,14 @@
   border: 1px solid #333;
   background-color: #faf9f5;
 }
+.mempbox {
+  height: 220px;
+  display: none;
+  overflow: auto;
+  padding: 5px 15px;
+  border: 1px solid #333;
+  background-color: #faf9f5;
+}
 .title {
   width: 50%;
   float: left;

@@ -44,6 +44,13 @@ function wireEvents() {
         false
     );
 
+    const memp = document.getElementById("mempbutton");
+    memp.addEventListener(
+        'click',
+        showInfoTabMemp,
+        false
+    );
+
     const sendsubmit = document.getElementById("sendsubmit");
     sendsubmit.addEventListener(
         'click',
@@ -144,6 +151,7 @@ function load() {
             fromBalance();
             toBalance();
             transactions();
+            mempool();
         },
         error: function (jqXHR, exception) {
             document.getElementById("errmsg").innerText = exception;
@@ -214,15 +222,43 @@ function transactions() {
     });
 }
 
+function mempool() {
+    const wallet = new ethers.Wallet(document.getElementById("from").value);
+
+    $.ajax({
+        type: "get",
+        url: "http://localhost:8080/v1/tx/uncommitted/list/" + wallet.address,
+        success: function (resp) {
+            var msg = "";
+            var count = 0;
+            for (var i = 0; i < resp.length; i++) {
+                msg += JSON.stringify(resp[i], null, 2);
+                count++;
+
+                // Check the mempool for what the next nonce should be for this account.
+                if (resp[i].from == wallet.address) {
+                    const txNonce = Number(resp[i].nonce);
+                    if (txNonce >= nonce) {
+                        nonce = txNonce + 1
+                        document.getElementById("nextnonce").innerHTML = nonce;
+                    }
+                }
+            }
+            document.getElementById("mempool").innerHTML = msg;
+            document.getElementById("mempbutton").innerHTML = "Mem(" + count + ")";
+        },
+        error: function (jqXHR, exception) {
+            handleAjaxError(jqXHR, exception);
+        },
+    });
+}
+
 // =============================================================================
 
 function createTransaction() {
     
     // Update the account information.
     fromBalance();
-
-     // Increment the nonce for the next transaction.
-     nonce = nonce + 1;
 
     // Capture and validate the amount to send.
     const amountStr = document.getElementById("sendamount").value.replace(/\$|,/g, '');
@@ -317,6 +353,7 @@ function sendTran(userTx, sig) {
         success: function (resp) {
             document.getElementById("nextnonce").innerHTML = nonce;
             alert(resp.status);
+            load();
         },
         error: function (jqXHR, exception) {
             handleAjaxError(jqXHR, exception);
@@ -345,25 +382,43 @@ function showInfoTabTran() {
     showInfoTab("tran");
 }
 
+function showInfoTabMemp() {
+    showInfoTab("memp");
+}
+
 function showInfoTab(which) {
     const sendBox = document.querySelector("div.sendbox");
     const tranBox = document.querySelector("div.tranbox");
+    const mempBox = document.querySelector("div.mempbox");
 
     const sendBut = document.getElementById("sendbutton");
     const tranBut = document.getElementById("tranbutton");
+    const mempBut = document.getElementById("mempbutton");
 
     switch (which) {
     case "send":
         sendBox.style.display = "block";
         tranBox.style.display = "none";
+        mempBox.style.display = "none";
         sendBut.style.backgroundColor = "#faf9f5";
         tranBut.style.backgroundColor = "#d9d8d4";
+        mempBut.style.backgroundColor = "#d9d8d4";
         break;
     case "tran":
-        sendBox.style.display = "none";
         tranBox.style.display = "block";
-        sendBut.style.backgroundColor = "#d9d8d4";
+        sendBox.style.display = "none";
+        mempBox.style.display = "none";
         tranBut.style.backgroundColor = "#faf9f5";
+        sendBut.style.backgroundColor = "#d9d8d4";
+        mempBut.style.backgroundColor = "#d9d8d4";
+        break;
+    case "memp":
+        mempBox.style.display = "block";
+        tranBox.style.display = "none";
+        sendBox.style.display = "none";
+        mempBut.style.backgroundColor = "#faf9f5";
+        tranBut.style.backgroundColor = "#d9d8d4";
+        sendBut.style.backgroundColor = "#d9d8d4";
         break;
     }
 }

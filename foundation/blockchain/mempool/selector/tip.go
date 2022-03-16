@@ -66,7 +66,7 @@ var tipSelect = func(m map[storage.Account][]storage.BlockTx, howMany int) []sto
 	// anyway. Then try to select the number of requested transactions. Keep
 	// pulling transactions from each row until the amount of fulfilled or
 	// there are no more transactions.
-	var final []storage.BlockTx
+	final := []storage.BlockTx{}
 done:
 	for _, row := range rows {
 		need := howMany - len(final)

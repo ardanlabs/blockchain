@@ -100,8 +100,34 @@ func (h Handlers) Genesis(ctx context.Context, w http.ResponseWriter, r *http.Re
 
 // Mempool returns the set of uncommitted transactions.
 func (h Handlers) Mempool(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	txs := h.State.RetrieveMempool()
-	return web.Respond(ctx, w, txs, http.StatusOK)
+	acct := web.Param(r, "account")
+
+	mempool := h.State.RetrieveMempool()
+
+	trans := make([]tx, len(mempool))
+	for i, tran := range mempool {
+		account, _ := tran.FromAccount()
+
+		if acct != "" && ((acct != string(account)) && (acct != string(tran.To))) {
+			continue
+		}
+
+		trans[i] = tx{
+			FromAccount: account,
+			FromName:    h.NS.Lookup(account),
+			To:          tran.To,
+			ToName:      h.NS.Lookup(tran.To),
+			Nonce:       tran.Nonce,
+			Value:       tran.Value,
+			Tip:         tran.Tip,
+			Data:        tran.Data,
+			TimeStamp:   tran.TimeStamp,
+			Gas:         tran.Gas,
+			Sig:         tran.SignatureString(),
+		}
+	}
+
+	return web.Respond(ctx, w, trans, http.StatusOK)
 }
 
 // Accounts returns the current balances for all users.

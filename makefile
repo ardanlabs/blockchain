@@ -26,6 +26,9 @@ SHELL := /bin/bash
 # go run app/wallet/cli/main.go account -a kennedy
 # go run app/wallet/cli/main.go balance -a kennedy
 
+# FIX THIS
+# go run app/wallet/cli/main.go send -a kennedy -n 2 -t 0x6Fe6CF3c8fF57c58d24BfC869668F48BCbDb3BD9 -v 150
+
 # ==============================================================================
 # Local support
 
