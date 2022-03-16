@@ -235,13 +235,21 @@ function mempool() {
                 msg += JSON.stringify(resp[i], null, 2);
                 count++;
 
-                // Check the mempool for what the next nonce should be for this account.
                 if (resp[i].from == wallet.address) {
+
+                    // Check the mempool for what the next nonce should be for this account.
                     const txNonce = Number(resp[i].nonce);
                     if (txNonce >= nonce) {
                         nonce = txNonce + 1
                         document.getElementById("nextnonce").innerHTML = nonce;
                     }
+
+                    // Update the accounts balance.
+                    const frombal = document.getElementById("frombal");
+                    const txValue = Number(resp[i].value);
+                    var balance = Number(frombal.innerHTML.replace(/\$|,/g, '').replace(" ARD", ""));
+                    balance -= txValue;
+                    frombal.innerHTML = formatter.format(balance) + " ARD";
                 }
             }
             document.getElementById("mempool").innerHTML = msg;
@@ -278,6 +286,13 @@ function createTransaction() {
     }
     if (tip < 0) {
         return { userTx: null, err: "Tip can't be a negative number." };
+    }
+
+    // Validate there is enough money.
+    const frombal = document.getElementById("frombal");
+    var balance = Number(frombal.innerHTML.replace(/\$|,/g, '').replace(" ARD", ""));
+    if (amount > balance) {
+        return { userTx: null, err: "You don't have enough money." };
     }
 
     confirmAction = confirm("Are you sure to execute this transaction?");
