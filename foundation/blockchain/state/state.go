@@ -19,7 +19,7 @@ import (
 
 /*
 	-- Chrome Extension Wallet
-	Concept of connecting and receiving events.
+	Leverage events to see when mining started and auto refresh.
 
 	-- Web Application
 	Then add a graphical way of seeing the data.
