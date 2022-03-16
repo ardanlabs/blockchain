@@ -1,5 +1,101 @@
 var nonce = 0;
 
+window.onload = function () {
+    wireEvents();
+    showInfoTab("send");    
+    connect();
+}
+
+// =============================================================================
+
+function wireEvents() {
+    const refresh = document.getElementById("refreshsubmit");
+    refresh.addEventListener(
+        'click',
+        load,
+        false
+    );
+
+    const from = document.getElementById("from");
+    from.addEventListener(
+        'change',
+        load,
+        false
+    );
+
+    const to = document.getElementById("to");
+    to.addEventListener(
+        'change',
+        load,
+        false
+    );
+
+    const send = document.getElementById("sendbutton");
+    send.addEventListener(
+        'click',
+        showInfoTabSend,
+        false
+    );
+
+    const tran = document.getElementById("tranbutton");
+    tran.addEventListener(
+        'click',
+        showInfoTabTran,
+        false
+    );
+
+    const sendsubmit = document.getElementById("sendsubmit");
+    sendsubmit.addEventListener(
+        'click',
+        submitTran,
+        false
+    );
+
+    const sendamount = document.getElementById("sendamount");
+    sendamount.addEventListener(
+        'keyup',
+        formatCurrencyKeyup,
+        false
+    );
+    sendamount.addEventListener(
+        'blur',
+        formatCurrencyBlur,
+        false
+    );
+}
+
+// =============================================================================
+
+function connect() {
+    var socket = new WebSocket('ws://localhost:8080/v1/events');
+
+    socket.addEventListener('open', function (event) {
+        const conn = document.getElementById("connected");
+        conn.className = "connected";
+        conn.innerHTML = "CONNECTED";
+        load();
+    });
+
+    socket.addEventListener('close', function (event) {
+        const conn = document.getElementById("connected");
+        conn.className = "notconnected";
+        conn.innerHTML = "NOT CONNECTED";
+    });
+
+    socket.addEventListener('message', function (event) {
+       // TODO
+    });
+
+    socket.addEventListener('error', function (err) {
+        const conn = document.getElementById("connected");
+        conn.className = "notconnected";
+        conn.innerHTML = "NOT CONNECTED";
+        document.getElementById("errmsg").innerText = err.message;
+    });
+}
+
+// =============================================================================
+
 $.ajaxSetup({
     contentType: "application/json; charset=utf-8",
     beforeSend: function() {
@@ -34,129 +130,23 @@ function handleAjaxError(jqXHR, exception) {
     document.getElementById("errmsg").innerText = msg;
 }
 
-window.onload = function () {
-    wireEvents();
-    showInfoTab("send");
-    connect();
-}
+// ==============================================================================
 
-function wireEvents() {
-    const from = document.getElementById("from");
-    from.addEventListener(
-        'change',
-        connect,
-        false
-    );
-
-    const to = document.getElementById("to");
-    to.addEventListener(
-        'change',
-        connect,
-        false
-    );
-
-    const send = document.getElementById("sendbutton");
-    send.addEventListener(
-        'click',
-        showInfoTabSend,
-        false
-    );
-
-    const refresh = document.getElementById("refreshsubmit");
-    refresh.addEventListener(
-        'click',
-        connect,
-        false
-    );
-
-    const tran = document.getElementById("tranbutton");
-    tran.addEventListener(
-        'click',
-        showInfoTabTran,
-        false
-    );
-
-    const sendsubmit = document.getElementById("sendsubmit");
-    sendsubmit.addEventListener(
-        'click',
-        submitTran,
-        false
-    );
-
-    const sendamount = document.getElementById("sendamount");
-    sendamount.addEventListener(
-        'keyup',
-        formatCurrencyKeyup,
-        false
-    );
-    sendamount.addEventListener(
-        'blur',
-        formatCurrencyBlur,
-        false
-    );
-}
-
-// =============================================================================
-
-
-function connect() {
+function load() {
     nonce = 0;
     document.getElementById("errmsg").innerText = "";
     document.getElementById("tranbutton").innerHTML = "Trans";
 
-    const conn = document.getElementById("connected");
-    conn.className = "notconnected";
-    conn.innerHTML = "Connecting....";
-
-    const f = function () {
-        const conn = document.getElementById("connected");
-
-        $.ajax({
-            type: "get",
-            url: "http://localhost:8080/v1/genesis/list",
-            success: function (response) {
-                conn.className = "connected";
-                conn.innerHTML = "CONNECTED";
-
-                fromBalance();
-                toBalance();
-                transactions();
-            },
-            error: function (jqXHR, exception) {
-                conn.className = "notconnected";
-                conn.innerHTML = "NOT CONNECTED";
-                handleAjaxError(jqXHR, exception);
-            },
-        });
-    }
-
-    setTimeout(f, 250);
-}
-
-// =============================================================================
-
-function transactions() {
-    const wallet = new ethers.Wallet(document.getElementById("from").value);
-
     $.ajax({
         type: "get",
-        url: "http://localhost:8080/v1/blocks/list/" + wallet.address,
-        success: function (resp) {
-            var msg = "";
-            var count = 0;
-            for (var i = 0; i < resp.length; i++) {
-                for (var j = 0; j < resp[i].txs.length; j++) {
-                    if ((resp[i].txs[j].from == wallet.address) || (resp[i].txs[j].to == wallet.address)) {
-                        msg += JSON.stringify(resp[i].txs[j], null, 2);
-                        count++;
-                    }
-                }
-            }
-            document.getElementById("trans").innerHTML = msg;
-            document.getElementById("tranbutton").innerHTML = "Trans(" + count + ")";
+        url: "http://localhost:8080/v1/genesis/list",
+        success: function (response) {
+            fromBalance();
+            toBalance();
+            transactions();
         },
         error: function (jqXHR, exception) {
-            handleAjaxError(jqXHR, exception);
+            document.getElementById("errmsg").innerText = exception;
         },
     });
 }
@@ -191,6 +181,32 @@ function toBalance() {
         success: function (resp) {
             const bal = document.getElementById("tobal");
             bal.innerHTML = formatter.format(resp.accounts[0].balance) + " ARD";
+        },
+        error: function (jqXHR, exception) {
+            handleAjaxError(jqXHR, exception);
+        },
+    });
+}
+
+function transactions() {
+    const wallet = new ethers.Wallet(document.getElementById("from").value);
+
+    $.ajax({
+        type: "get",
+        url: "http://localhost:8080/v1/blocks/list/" + wallet.address,
+        success: function (resp) {
+            var msg = "";
+            var count = 0;
+            for (var i = 0; i < resp.length; i++) {
+                for (var j = 0; j < resp[i].txs.length; j++) {
+                    if ((resp[i].txs[j].from == wallet.address) || (resp[i].txs[j].to == wallet.address)) {
+                        msg += JSON.stringify(resp[i].txs[j], null, 2);
+                        count++;
+                    }
+                }
+            }
+            document.getElementById("trans").innerHTML = msg;
+            document.getElementById("tranbutton").innerHTML = "Trans(" + count + ")";
         },
         error: function (jqXHR, exception) {
             handleAjaxError(jqXHR, exception);
