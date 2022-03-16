@@ -194,14 +194,14 @@ func toSignatureBytes(v, r, s *big.Int) []byte {
 	sig := make([]byte, crypto.SignatureLength)
 
 	rBytes := r.Bytes()
-	if len(rBytes) == crypto.DigestLength-1 {
+	if len(rBytes) == 31 {
 		copy(sig[1:], rBytes)
 	} else {
 		copy(sig, rBytes)
 	}
 
 	sBytes := s.Bytes()
-	if len(sBytes) == crypto.DigestLength-1 {
+	if len(sBytes) == 31 {
 		copy(sig[33:], sBytes)
 	} else {
 		copy(sig[32:], sBytes)
