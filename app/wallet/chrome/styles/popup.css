@@ -7,6 +7,17 @@
   overflow: auto;
 }
 
+@keyframes blink-animation {
+  to {
+    visibility: hidden;
+  }
+}
+@-webkit-keyframes blink-animation {
+  to {
+    visibility: hidden;
+  }
+}
+
 .errors {
   color: red;
   width: 100%;
@@ -58,6 +69,13 @@
   color: green;
   float: right;
   font-size: 12px;
+}
+.mining {
+  color: blue;
+  float: right;
+  font-size: 12px;
+  animation: blink-animation 1s steps(5, start) infinite;
+  -webkit-animation: blink-animation 1s steps(5, start) infinite;
 }
 .margin5 {
   margin-top: 5px;
