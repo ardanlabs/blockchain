@@ -90,7 +90,19 @@ function connect() {
     });
 
     socket.addEventListener('message', function (event) {
-       // TODO
+        const conn = document.getElementById("connected");
+
+        if (event.data.includes("MINING")) {
+            conn.className = "mining";
+            conn.innerHTML = "MINING...";
+            return;
+        }
+        
+        if (event.data.includes("MINING: completed")) {
+            conn.className = "connected";
+            conn.innerHTML = "CONNECTED";
+            load();
+        }
     });
 
     socket.addEventListener('error', function (err) {
