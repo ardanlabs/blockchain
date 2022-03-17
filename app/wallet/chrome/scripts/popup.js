@@ -92,16 +92,17 @@ function connect() {
     socket.addEventListener('message', function (event) {
         const conn = document.getElementById("connected");
 
-        if (event.data.includes("MINING")) {
-            conn.className = "mining";
-            conn.innerHTML = "MINING...";
-            return;
-        }
-        
         if (event.data.includes("MINING: completed")) {
             conn.className = "connected";
             conn.innerHTML = "CONNECTED";
             load();
+            return;
+        }
+
+        if (event.data.includes("MINING")) {
+            conn.className = "mining";
+            conn.innerHTML = "MINING...";
+            return;
         }
     });
 
