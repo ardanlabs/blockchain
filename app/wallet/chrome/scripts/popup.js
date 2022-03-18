@@ -69,6 +69,27 @@ function wireEvents() {
         formatCurrencyBlur,
         false
     );
+
+    const closebutton = document.getElementById("closebutton");
+    closebutton.addEventListener(
+        'click',
+        closeConfirmation,
+        false
+    );
+
+    const confirmno = document.getElementById("confirmno");
+    confirmno.addEventListener(
+        'click',
+        closeConfirmation,
+        false
+    );
+
+    const confirmyes = document.getElementById("confirmyes");
+    confirmyes.addEventListener(
+        'click',
+        createTransaction,
+        false
+    );
 }
 
 // =============================================================================
@@ -153,6 +174,12 @@ function handleAjaxError(jqXHR, exception) {
 // ==============================================================================
 
 function load() {
+    const conn = document.getElementById("connected");
+    if (conn.innerHTML != "CONNECTED") {
+        document.getElementById("errmsg").innerText = "No connection to node.";
+        return;
+    }
+
     nonce = 0;
     document.getElementById("errmsg").innerText = "";
     document.getElementById("tranbutton").innerHTML = "Trans";
@@ -276,7 +303,12 @@ function mempool() {
 
 // =============================================================================
 
-function createTransaction() {
+function submitTran() {
+    const conn = document.getElementById("connected");
+    if (conn.innerHTML != "CONNECTED") {
+        document.getElementById("errmsg").innerText = "No connection to node.";
+        return;
+    }
     
     // Update the account information.
     fromBalance();
@@ -285,55 +317,51 @@ function createTransaction() {
     const amountStr = document.getElementById("sendamount").value.replace(/\$|,/g, '');
     const amount = Number(amountStr);
     if (isNaN(amount)) {
-        return { userTx: null, err: "Amount is not a number." };
+        document.getElementById("errmsg").innerText = "Amount is not a number.";
+        return;
     }
     if (amount <= 0) {
-        return { userTx: null, err: "Amount must be greater than 0 dollars." };
+        document.getElementById("errmsg").innerText = "Amount must be greater than 0 dollars.";
+        return;
     }
 
     // Capture and validate the tip to send.
     const tipStr = document.getElementById("sendtip").value.replace(/\$|,/g, '');
     const tip = Number(tipStr);
     if (isNaN(tip)) {
-        return { userTx: null, err: "Tip is not a number." };
+        document.getElementById("errmsg").innerText = "Tip is not a number.";
+        return;
     }
     if (tip < 0) {
-        return { userTx: null, err: "Tip can't be a negative number." };
+        document.getElementById("errmsg").innerText = "Tip can't be a negative number.";
+        return;
     }
 
     // Validate there is enough money.
     const frombal = document.getElementById("frombal");
     var balance = Number(frombal.innerHTML.replace(/\$|,/g, '').replace(" ARD", ""));
     if (amount > balance) {
-        return { userTx: null, err: "You don't have enough money." };
-    }
-
-    confirmAction = confirm("Are you sure to execute this transaction?");
-    if (!confirmAction) {
-        return { userTx: null, err: "cancelled" }
-    }
-
-    // Construct a userTx with all the information.
-    const userTx = {
-        nonce: nonce,
-        to: document.getElementById("to").value,
-        value: amount,
-        tip: tip,
-        data: null,
-    };
-
-    return { userTx, err: null };
-}
-
-function submitTran() {
-
-    const {userTx, err} = createTransaction();
-    if (err != null) {
-        if (err != "cancelled") {
-            document.getElementById("errmsg").innerText = err;
-        }
+        document.getElementById("errmsg").innerText = "You don't have enough money.";
         return;
     }
+
+    showConfirmation();
+}
+
+function createTransaction() {
+
+    // We got a yes confirmation so we know the values are verified.
+    const amountStr = document.getElementById("sendamount").value.replace(/\$|,/g, '');
+    const tipStr = document.getElementById("sendtip").value.replace(/\$|,/g, '');
+
+     // Construct a userTx with all the information.
+     const userTx = {
+        nonce: nonce,
+        to: document.getElementById("to").value,
+        value: Number(amountStr),
+        tip: Number(tipStr),
+        data: null,
+    };
 
     // Marshal the userTx to a string and convert the string to bytes.
     const marshal = JSON.stringify(userTx);
@@ -374,19 +402,38 @@ function sendTran(userTx, sig) {
     data = data.replace('","s":"', ',"s":');
     data = data.replace('"}', '}');
 
+    closeConfirmation();
+
     $.ajax({
         type: "post",
         url: "http://localhost:8080/v1/tx/submit",
         data: data,
         success: function (resp) {
             document.getElementById("nextnonce").innerHTML = nonce;
-            alert(resp.status);
             load();
         },
         error: function (jqXHR, exception) {
             handleAjaxError(jqXHR, exception);
         },
     });
+}
+
+// =============================================================================
+
+function showConfirmation() {
+    const modal = document.getElementById("confirmationmodal");
+    modal.style.display = "block";
+
+    document.getElementById("yesnomessage").innerHTML = "";
+}
+
+function closeConfirmation() {
+    const modal = document.getElementById("confirmationmodal");
+    modal.style.display = "none";
+}
+
+function onConfirm() {
+
 }
 
 // =============================================================================

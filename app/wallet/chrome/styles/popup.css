@@ -155,3 +155,66 @@
   cursor: pointer;
   float: right;
 }
+
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgb(0,0,0);
+  background-color: rgba(0,0,0,0.4);
+  border: 4px solid #333;
+}
+.modalcontent {
+  background-color: #fefefe;
+  margin: 15% auto;
+  padding: 10px;
+  border: 2px solid #000;
+  width: 70%;
+}
+.modalheader {
+  padding: 5px 10px;
+  background-color: #5cb85c;
+  color: white;
+}
+.modalbody {
+  margin: 10px;
+}
+.close {
+  color: #000;
+  float: right;
+  font-size: 12px;
+  font-weight: bold;
+}
+.close:hover,
+.close:focus {
+  color: rgb(116, 114, 114);
+  text-decoration: none;
+  cursor: pointer;
+}
+.confirmbutton {
+  background-color: #faf9f5;
+  border: 1px solid #333;
+  color: black;
+  padding: 5px 10px;
+  text-align: center;
+  text-decoration: none;
+  font-size: 10px;
+  margin: 0px 5px;
+  cursor: pointer;
+  float: right;
+}
+.yesno {
+  margin-top: 10px;
+  display: inline-block;
+  width: 100%;
+}
+.yesnomessage {
+  border-top: 1px solid #333;
+  margin-top: 10px;
+  padding-top: 10px;
+}

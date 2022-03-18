@@ -19,7 +19,7 @@ import (
 
 /*
 	-- Chrome Extension Wallet
-	Leverage events to see when mining started and auto refresh.
+	Add cleaner modal for confirmation.
 
 	-- Web Application
 	Then add a graphical way of seeing the data.
