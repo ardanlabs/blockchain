@@ -70,17 +70,24 @@ function wireEvents() {
         false
     );
 
-    const closebutton = document.getElementById("closebutton");
-    closebutton.addEventListener(
+    const closebuttonconf = document.getElementById("closebuttonconf");
+    closebuttonconf.addEventListener(
         'click',
-        closeConfirmation,
+        closeModal,
+        false
+    );
+
+    const closebuttonmsg = document.getElementById("closebuttonmsg");
+    closebuttonmsg.addEventListener(
+        'click',
+        closeModal,
         false
     );
 
     const confirmno = document.getElementById("confirmno");
     confirmno.addEventListener(
         'click',
-        closeConfirmation,
+        closeModal,
         false
     );
 
@@ -402,7 +409,7 @@ function sendTran(userTx, sig) {
     data = data.replace('","s":"', ',"s":');
     data = data.replace('"}', '}');
 
-    closeConfirmation();
+    closeModal();
 
     $.ajax({
         type: "post",
@@ -411,6 +418,7 @@ function sendTran(userTx, sig) {
         success: function (resp) {
             document.getElementById("nextnonce").innerHTML = nonce;
             load();
+            showMessage(resp.status);
         },
         error: function (jqXHR, exception) {
             handleAjaxError(jqXHR, exception);
@@ -427,9 +435,18 @@ function showConfirmation() {
     document.getElementById("yesnomessage").innerHTML = "";
 }
 
-function closeConfirmation() {
-    const modal = document.getElementById("confirmationmodal");
-    modal.style.display = "none";
+function showMessage(msg) {
+    const modal = document.getElementById("messagemodal");
+    modal.style.display = "block";
+
+    document.getElementById("msg").innerHTML = msg;
+}
+
+function closeModal() {
+    const confirmationmodal = document.getElementById("confirmationmodal");
+    confirmationmodal.style.display = "none";
+    const messagemodal = document.getElementById("messagemodal");
+    messagemodal.style.display = "none";
 }
 
 function onConfirm() {
