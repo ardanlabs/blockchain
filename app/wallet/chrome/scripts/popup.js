@@ -134,11 +134,11 @@ function connect() {
         }
     });
 
-    socket.addEventListener('error', function (err) {
+    socket.addEventListener('error', function (event) {
         const conn = document.getElementById("connected");
         conn.className = "notconnected";
         conn.innerHTML = "NOT CONNECTED";
-        document.getElementById("errmsg").innerText = err.message;
+        showMessage("Unable to connect to node.");
     });
 }
 
@@ -146,8 +146,8 @@ function connect() {
 
 $.ajaxSetup({
     contentType: "application/json; charset=utf-8",
-    beforeSend: function() {
-        document.getElementById("errmsg").innerText = "";
+    beforeSend: function () {
+        closeModal();
     }
 });
 
@@ -175,7 +175,7 @@ function handleAjaxError(jqXHR, exception) {
         }
     }
 
-    document.getElementById("errmsg").innerText = msg;
+    showMessage(msg);
 }
 
 // ==============================================================================
@@ -183,12 +183,11 @@ function handleAjaxError(jqXHR, exception) {
 function load() {
     const conn = document.getElementById("connected");
     if (conn.innerHTML != "CONNECTED") {
-        document.getElementById("errmsg").innerText = "No connection to node.";
+        showMessage("No connection to node.");
         return;
     }
 
     nonce = 0;
-    document.getElementById("errmsg").innerText = "";
     document.getElementById("tranbutton").innerHTML = "Trans";
 
     $.ajax({
@@ -201,7 +200,7 @@ function load() {
             mempool();
         },
         error: function (jqXHR, exception) {
-            document.getElementById("errmsg").innerText = exception;
+            showMessage(exception);
         },
     });
 }
@@ -313,7 +312,7 @@ function mempool() {
 function submitTran() {
     const conn = document.getElementById("connected");
     if (conn.innerHTML != "CONNECTED") {
-        document.getElementById("errmsg").innerText = "No connection to node.";
+        showMessage("No connection to node.");
         return;
     }
     
@@ -324,11 +323,11 @@ function submitTran() {
     const amountStr = document.getElementById("sendamount").value.replace(/\$|,/g, '');
     const amount = Number(amountStr);
     if (isNaN(amount)) {
-        document.getElementById("errmsg").innerText = "Amount is not a number.";
+        showMessage("Amount is not a number.");
         return;
     }
     if (amount <= 0) {
-        document.getElementById("errmsg").innerText = "Amount must be greater than 0 dollars.";
+        showMessage("Amount must be greater than 0 dollars.");
         return;
     }
 
@@ -336,11 +335,11 @@ function submitTran() {
     const tipStr = document.getElementById("sendtip").value.replace(/\$|,/g, '');
     const tip = Number(tipStr);
     if (isNaN(tip)) {
-        document.getElementById("errmsg").innerText = "Tip is not a number.";
+        showMessage("Tip is not a number.");
         return;
     }
     if (tip < 0) {
-        document.getElementById("errmsg").innerText = "Tip can't be a negative number.";
+        showMessage("Tip can't be a negative number.");
         return;
     }
 
@@ -348,7 +347,7 @@ function submitTran() {
     const frombal = document.getElementById("frombal");
     var balance = Number(frombal.innerHTML.replace(/\$|,/g, '').replace(" ARD", ""));
     if (amount > balance) {
-        document.getElementById("errmsg").innerText = "You don't have enough money.";
+        showMessage("You don't have enough money.");
         return;
     }
 
@@ -447,6 +446,7 @@ function closeModal() {
     confirmationmodal.style.display = "none";
     const messagemodal = document.getElementById("messagemodal");
     messagemodal.style.display = "none";
+    document.getElementById("msg").innerHTML = "";
 }
 
 function onConfirm() {
