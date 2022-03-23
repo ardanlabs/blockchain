@@ -298,21 +298,6 @@ func (w *worker) runMiningOperation() {
 		}
 	}()
 
-	// Drain the cancel mining channel before starting.
-	select {
-	case <-w.cancelMining:
-		w.evHandler("worker: runMiningOperation: MINING: drained cancel channel")
-	default:
-	}
-
-	// Create a context so mining can be cancelled.
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	// Can't return from this function until these G's are complete.
-	var wg sync.WaitGroup
-	wg.Add(2)
-
 	// If mining is signalled to be cancelled by the WriteNextBlock function,
 	// this G can't terminate until it is told it can.
 	var wait chan struct{}
@@ -323,6 +308,21 @@ func (w *worker) runMiningOperation() {
 			w.evHandler("worker: runMiningOperation: MINING: termination signal: received")
 		}
 	}()
+
+	// Drain the cancel mining channel before starting.
+	select {
+	case <-w.cancelMining:
+		w.evHandler("worker: runMiningOperation: MINING: drained cancel channel")
+	default:
+	}
+
+	// Can't return from this function until these G's are complete.
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	// Create a context so mining can be cancelled.
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	// This G exists to cancel the mining operation.
 	go func() {
