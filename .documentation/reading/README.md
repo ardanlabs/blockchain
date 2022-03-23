@@ -170,6 +170,7 @@ Ethereum documentation that helps to better understand that blockchain project.
 ### Beacon Chain and POS
 [PROOF-OF-STAKE (POS)](https://ethereum.org/en/developers/docs/consensus-mechanisms/pos/)  
 [Beacon Chain](https://ethereum.org/en/upgrades/beacon-chain/)  
+[Proof of Stake FAQ](https://vitalik.ca/general/2017/12/31/pos_faq.html) - Vitalik Buterin    
 
 ### Zero Address
 [Etherscan Address Zero](https://etherscan.io/address/0x0000000000000000000000000000000000000000)  
