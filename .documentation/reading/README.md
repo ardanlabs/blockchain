@@ -167,5 +167,9 @@ Ethereum documentation that helps to better understand that blockchain project.
 ### Proposals
 [EIP-3668: CCIP Read: Secure offchain data retrieval](https://eips.ethereum.org/EIPS/eip-3668)  
 
+### Beacon Chain and POS
+[PROOF-OF-STAKE (POS)](https://ethereum.org/en/developers/docs/consensus-mechanisms/pos/)  
+[Beacon Chain](https://ethereum.org/en/upgrades/beacon-chain/)  
+
 ### Zero Address
 [Etherscan Address Zero](https://etherscan.io/address/0x0000000000000000000000000000000000000000)  
