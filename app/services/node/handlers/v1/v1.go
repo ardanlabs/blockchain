@@ -35,9 +35,7 @@ func PublicRoutes(app *web.App, cfg Config) {
 		Evts:  cfg.Evts,
 	}
 
-	app.OptionsHandler = func(w http.ResponseWriter, r *http.Request, params map[string]string) {
-		w.WriteHeader(http.StatusOK)
-	}
+	app.OptionsHandlerAll()
 
 	app.Handle(http.MethodGet, version, "/events", pbl.Events)
 	app.Handle(http.MethodGet, version, "/genesis/list", pbl.Genesis)
