@@ -316,13 +316,13 @@ func (w *worker) runMiningOperation() {
 	default:
 	}
 
-	// Can't return from this function until these G's are complete.
-	var wg sync.WaitGroup
-	wg.Add(2)
-
 	// Create a context so mining can be cancelled.
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	// Can't return from this function until these G's are complete.
+	var wg sync.WaitGroup
+	wg.Add(2)
 
 	// This G exists to cancel the mining operation.
 	go func() {
