@@ -32,6 +32,7 @@ Occasionally we run into material that we feel is important. This is a section p
 [All Smart Contracts Are Ambiguous](https://scholarship.law.upenn.edu/cgi/viewcontent.cgi?article=1006&context=jli) - James Grimmelmann  
 [I was wrong, we need crypto](https://world.hey.com/dhh/i-was-wrong-we-need-crypto-587ccb03) - David Hansson  
 [Progressive Decentralization: A Playbook for Building Crypto Applications](https://a16z.com/2020/01/09/progressive-decentralization-crypto-product-management/) - Jesse Walden  
+[A Brief Tour of FLP Impossibility](https://www.the-paper-trail.org/post/2008-08-13-a-brief-tour-of-flp-impossibility) - The Paper Trail  
 
 ### Bitcoin
 [Bitcoin in Go: libsv](https://github.com/libsv)  
