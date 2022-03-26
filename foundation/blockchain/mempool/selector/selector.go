@@ -10,12 +10,14 @@ import (
 
 // List of different select strategies.
 const (
-	StrategyTip = "tip"
+	StrategyTip      = "tip"
+	StrategyAdvanced = "advanced"
 )
 
 // Map of different select strategies with functions.
 var strategies = map[string]Func{
-	StrategyTip: tipSelect,
+	StrategyTip:      tipSelect,
+	StrategyAdvanced: advancedSelect,
 }
 
 // Func defines a function that takes a mempool of transactions grouped by
