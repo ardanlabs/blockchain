@@ -120,7 +120,7 @@ func TestAdvancedSort(t *testing.T) {
 						m[from] = append(m[from], tx)
 					}
 
-					sort, err := selector.Retrieve(selector.StrategyAdvanced)
+					sort, err := selector.Retrieve(selector.StrategyTipAdvanced)
 					if err != nil {
 						t.Fatalf("\t%s\tTest %d:\tShould be able to get sort strategy function: %s", failed, testID, err)
 					}
