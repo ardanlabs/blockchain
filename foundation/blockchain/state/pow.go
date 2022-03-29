@@ -55,7 +55,7 @@ func performPOW(ctx context.Context, difficulty int, b storage.Block, ev EventHa
 			return storage.BlockFS{}, time.Since(t), ctx.Err()
 		}
 
-		ev("worker: runMiningOperation: MINING: POW: SOLVED: prevBlk[%s]: newBlk[%s]", b.Header.ParentHash, b.Hash())
+		ev("worker: runMiningOperation: MINING: POW: SOLVED: prevBlk[%s]: newBlk[%s]", b.Header.ParentHash, hash)
 		ev("worker: runMiningOperation: MINING: POW: attempts[%d]", attempts)
 
 		// We found a solution to the POW.

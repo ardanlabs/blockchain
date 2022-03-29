@@ -140,7 +140,9 @@ func (act *Accounts) ApplyTransaction(minerAccount storage.Account, tx storage.B
 			return fmt.Errorf("invalid transaction, nonce too small, last %d, tx %d", fromInfo.Nonce, tx.Nonce)
 		}
 
-		if tx.Value > act.info[from].Balance {
+		fee := tx.Gas + tx.Tip
+
+		if tx.Value+fee > act.info[from].Balance {
 			return fmt.Errorf("%s has an insufficient balance", from)
 		}
 
@@ -150,9 +152,8 @@ func (act *Accounts) ApplyTransaction(minerAccount storage.Account, tx storage.B
 		fromInfo.Balance -= tx.Value
 		toInfo.Balance += tx.Value
 
-		fee := tx.Gas + tx.Tip
-		minerInfo.Balance += fee
 		fromInfo.Balance -= fee
+		minerInfo.Balance += fee
 
 		fromInfo.Nonce = tx.Nonce
 
