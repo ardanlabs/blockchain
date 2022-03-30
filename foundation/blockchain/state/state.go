@@ -486,26 +486,6 @@ func (s *State) MineNewBlock(ctx context.Context) (storage.Block, time.Duration,
 	trans := s.mempool.PickBest(s.genesis.TransPerBlock)
 	nb := storage.NewBlock(s.minerAccount, s.genesis.Difficulty, s.genesis.TransPerBlock, s.RetrieveLatestBlock(), trans)
 
-	s.evHandler("worker: runMiningOperation: MINING: copy accounts and update")
-
-	// Process the transactions against a copy of the accounts.
-	accounts := s.accounts.Clone()
-	for _, tx := range nb.Transactions {
-
-		// Apply the balance changes based on this transaction.
-		if err := accounts.ApplyTransaction(s.minerAccount, tx); err != nil {
-			s.evHandler("worker: runMiningOperation: MINING: WARNING : %s", err)
-			continue
-		}
-
-		// Update the total gas and tip fees.
-		nb.Header.TotalGas += tx.Gas
-		nb.Header.TotalTip += tx.Tip
-	}
-
-	// Apply the mining reward for this block.
-	accounts.ApplyMiningReward(s.minerAccount)
-
 	s.evHandler("worker: runMiningOperation: MINING: perform POW")
 
 	// Attempt to create a new BlockFS by solving the POW puzzle.
@@ -530,17 +510,31 @@ func (s *State) MineNewBlock(ctx context.Context) (storage.Block, time.Duration,
 		if err := s.storage.Write(blockFS); err != nil {
 			return storage.Block{}, duration, err
 		}
-
-		s.evHandler("worker: runMiningOperation: MINING: apply new account updates")
-
-		s.accounts.Replace(accounts)
 		s.latestBlock = blockFS.Block
 
-		// Remove the transactions from this block.
+		s.evHandler("worker: runMiningOperation: MINING: update accounts and remove from mempool")
+
 		for _, tx := range nb.Transactions {
-			s.evHandler("worker: runMiningOperation: MINING: remove from mempool: tx[%s]", tx)
+			s.evHandler("worker: runMiningOperation: MINING: tx[%s] updated and removed", tx)
+
+			// Apply the balance changes based on this transaction.
+			if err := s.accounts.ApplyTransaction(s.minerAccount, tx); err != nil {
+				s.evHandler("worker: runMiningOperation: MINING: WARNING : %s", err)
+				continue
+			}
+
+			// Update the total gas and tip fees.
+			nb.Header.TotalGas += tx.Gas
+			nb.Header.TotalTip += tx.Tip
+
+			// Remove this transaction from the mempool.
 			s.mempool.Delete(tx)
 		}
+
+		s.evHandler("worker: runMiningOperation: MINING: apply mining reward")
+
+		// Apply the mining reward for this block.
+		s.accounts.ApplyMiningReward(s.minerAccount)
 	}
 
 	return blockFS.Block, duration, nil

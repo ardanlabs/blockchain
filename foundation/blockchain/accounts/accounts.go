@@ -47,32 +47,12 @@ func (act *Accounts) Reset() {
 	}
 }
 
-// Replace updates the accounts based on the specified accounts.
-func (act *Accounts) Replace(accounts *Accounts) {
-	act.mu.Lock()
-	defer act.mu.Unlock()
-
-	act.info = accounts.info
-}
-
 // Remove deletes an account from the accounts.
 func (act *Accounts) Remove(account storage.Account) {
 	act.mu.Lock()
 	defer act.mu.Unlock()
 
 	delete(act.info, account)
-}
-
-// Clone makes a copy of the current accounts.
-func (act *Accounts) Clone() *Accounts {
-	act.mu.RLock()
-	defer act.mu.RUnlock()
-
-	accounts := New(act.genesis)
-	for account, value := range act.info {
-		accounts.info[account] = value
-	}
-	return accounts
 }
 
 // Copy makes a copy of the current information for all accounts.
