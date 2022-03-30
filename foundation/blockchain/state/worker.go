@@ -488,7 +488,7 @@ func (w *worker) writePeerBlocks(pr peer.Peer) error {
 	for _, block := range blocks {
 		w.evHandler("worker: runPeerUpdatesOperation: writePeerBlocks: prevBlk[%s]: newBlk[%s]: numTrans[%d]", block.Header.ParentHash, block.Hash(), len(block.Transactions))
 
-		if err := w.state.WriteNextBlock(block); err != nil {
+		if err := w.state.WritePeerBlock(block); err != nil {
 			return err
 		}
 	}

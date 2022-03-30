@@ -33,16 +33,27 @@ func NewBlock(minerAccount Account, difficulty int, transPerBlock int, parentBlo
 		parentHash = parentBlock.Hash()
 	}
 
-	return Block{
+	var totalTip uint
+	var totalGas uint
+	for _, tx := range trans {
+		totalTip += tx.Tip
+		totalGas += tx.Gas
+	}
+
+	nb := Block{
 		Header: BlockHeader{
 			ParentHash:   parentHash,
 			MinerAccount: minerAccount,
 			Difficulty:   difficulty,
 			Number:       parentBlock.Header.Number + 1,
+			TotalTip:     totalTip,
+			TotalGas:     totalGas,
 			TimeStamp:    uint64(time.Now().UTC().Unix()),
 		},
 		Transactions: trans,
 	}
+
+	return nb
 }
 
 // Hash returns the unique hash for the Block.
