@@ -252,11 +252,11 @@ func (s *State) MineNewBlock(ctx context.Context) (storage.Block, time.Duration,
 	return blockFS.Block, duration, nil
 }
 
-// WritePeerBlock takes a block received from a peer, validates it and
+// MinePeerBlock takes a block received from a peer, validates it and
 // if that passes, writes the block to disk.
-func (s *State) WritePeerBlock(block storage.Block) error {
-	s.evHandler("state: WritePeerBlock: started : block[%s]", block.Hash())
-	defer s.evHandler("state: WritePeerBlock: completed")
+func (s *State) MinePeerBlock(block storage.Block) error {
+	s.evHandler("state: MinePeerBlock: started : block[%s]", block.Hash())
+	defer s.evHandler("state: MinePeerBlock: completed")
 
 	// If the runMiningOperation function is being executed it needs to stop
 	// immediately. The G executing runMiningOperation will not return from the
@@ -264,7 +264,7 @@ func (s *State) WritePeerBlock(block storage.Block) error {
 	// its state changes before a new mining operation takes place.
 	done := s.worker.signalCancelMining()
 	defer func() {
-		s.evHandler("state: WritePeerBlock: signal runMiningOperation to terminate")
+		s.evHandler("state: MinePeerBlock: signal runMiningOperation to terminate")
 		done()
 	}()
 

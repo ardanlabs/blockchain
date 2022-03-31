@@ -140,11 +140,38 @@ func (w *worker) sync() {
 		// If this peer has blocks we don't have, we need to add them.
 		if peerStatus.LatestBlockNumber > w.state.RetrieveLatestBlock().Header.Number {
 			w.evHandler("worker: sync: writePeerBlocks: %s: latestBlockNumber[%d]", peer.Host, peerStatus.LatestBlockNumber)
-			if err := w.writePeerBlocks(peer); err != nil {
+
+			if err := w.retrievePeerBlocks(peer); err != nil {
 				w.evHandler("worker: sync: writePeerBlocks: %s: ERROR %s", peer.Host, err)
 			}
 		}
 	}
+}
+
+// retrievePeerBlocks queries the specified node asking for blocks this node does
+// not have, then writes them to disk.
+func (w *worker) retrievePeerBlocks(pr peer.Peer) error {
+	w.evHandler("worker: sync: retrievePeerBlocks: started: %s", pr)
+	defer w.evHandler("worker: sync: retrievePeerBlocks: completed: %s", pr)
+
+	from := w.state.RetrieveLatestBlock().Header.Number + 1
+	url := fmt.Sprintf("%s/block/list/%d/latest", fmt.Sprintf(w.baseURL, pr.Host), from)
+
+	var blocks []storage.Block
+	if err := send(http.MethodGet, url, nil, &blocks); err != nil {
+		return err
+	}
+
+	w.evHandler("worker: sync: retrievePeerBlocks: found blocks[%d]", len(blocks))
+
+	for _, block := range blocks {
+		w.evHandler("worker: sync: retrievePeerBlocks: prevBlk[%s]: newBlk[%s]: numTrans[%d]", block.Header.ParentHash, block.Hash(), len(block.Transactions))
+		if err := w.state.MinePeerBlock(block); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // =============================================================================
@@ -458,33 +485,6 @@ func (w *worker) addNewPeers(knownPeers []peer.Peer) error {
 			return nil
 		}
 		w.evHandler("worker: runPeerUpdatesOperation: addNewPeers: add peer nodes: adding peer-node %s", peer)
-	}
-
-	return nil
-}
-
-// writePeerBlocks queries the specified node asking for blocks this
-// node does not have, then writes them to disk.
-func (w *worker) writePeerBlocks(pr peer.Peer) error {
-	w.evHandler("worker: runPeerUpdatesOperation: writePeerBlocks: started: %s", pr)
-	defer w.evHandler("worker: runPeerUpdatesOperation: writePeerBlocks: completed: %s", pr)
-
-	from := w.state.RetrieveLatestBlock().Header.Number + 1
-	url := fmt.Sprintf("%s/block/list/%d/latest", fmt.Sprintf(w.baseURL, pr.Host), from)
-
-	var blocks []storage.Block
-	if err := send(http.MethodGet, url, nil, &blocks); err != nil {
-		return err
-	}
-
-	w.evHandler("worker: runPeerUpdatesOperation: writePeerBlocks: found blocks[%d]", len(blocks))
-
-	for _, block := range blocks {
-		w.evHandler("worker: runPeerUpdatesOperation: writePeerBlocks: prevBlk[%s]: newBlk[%s]: numTrans[%d]", block.Header.ParentHash, block.Hash(), len(block.Transactions))
-
-		if err := w.state.WritePeerBlock(block); err != nil {
-			return err
-		}
 	}
 
 	return nil

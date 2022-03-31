@@ -50,15 +50,15 @@ func (h Handlers) SubmitNodeTransaction(ctx context.Context, w http.ResponseWrit
 	return web.Respond(ctx, w, resp, http.StatusOK)
 }
 
-// AddPeerBlock accepts a new mined block from a peer, validates it, then adds it
+// MinePeerBlock accepts a new mined block from a peer, validates it, then adds it
 // to the block chain.
-func (h Handlers) AddPeerBlock(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (h Handlers) MinePeerBlock(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	var block storage.Block
 	if err := web.Decode(r, &block); err != nil {
 		return fmt.Errorf("unable to decode payload: %w", err)
 	}
 
-	if err := h.State.WritePeerBlock(block); err != nil {
+	if err := h.State.MinePeerBlock(block); err != nil {
 
 		// More has to be thought about here. I don't think the blockchain
 		// package can perform this activity because it doesn't understand
