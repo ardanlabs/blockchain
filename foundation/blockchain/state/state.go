@@ -18,13 +18,11 @@ import (
 )
 
 /*
-	-- Chrome Extension Wallet
-	Add cleaner modal for confirmation.
-
 	-- Web Application
 	Then add a graphical way of seeing the data.
 
 	-- Blockchain
+	How can we validate a difficulty level per block that's changing.
 	Maybe use a Merkel tree (https://github.com/cbergoon/merkletree, https://github.com/google/leveldb)
 	Batch new transactions to send across the network.
 	Create a block index file for query and clean up forks.
