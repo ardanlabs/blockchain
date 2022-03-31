@@ -78,7 +78,7 @@ func TestTransactions(t *testing.T) {
 			t.Logf("\tTest %d:\tWhen handling a set of accounts.", testID)
 			{
 				f := func(t *testing.T) {
-					accounts := accounts.New(genesis.Genesis{MiningReward: tst.minerReward, Balances: tst.balances})
+					accounts := accounts.New(genesis.Genesis{MiningReward: tst.minerReward, Balances: tst.balances}, nil)
 
 					for _, tx := range tst.txs {
 						blktx, err := sign(tx, tst.gas)
@@ -159,7 +159,7 @@ func TestNonceValidation(t *testing.T) {
 		for testID, tst := range tt {
 			t.Logf("\tTest %d:\tWhen handling a set of transactions.", testID)
 			{
-				accounts := accounts.New(genesis.Genesis{MiningReward: tst.minerReward, Balances: tst.balances})
+				accounts := accounts.New(genesis.Genesis{MiningReward: tst.minerReward, Balances: tst.balances}, nil)
 
 				for i, tx := range tst.txs {
 					blktx, err := sign(tx, tst.gas)

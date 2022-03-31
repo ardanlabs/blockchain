@@ -105,20 +105,8 @@ func New(cfg Config) (*State, error) {
 	}
 
 	// Create a new accounts value to manage accounts who transact on
-	// the blockchain.
-	accounts := accounts.New(genesis)
-
-	// Process the blocks and transactions for each account.
-	for _, block := range blocks {
-		for _, tx := range block.Transactions {
-
-			// Apply the balance changes based for this transaction.
-			accounts.ApplyTransaction(block.Header.MinerAccount, tx)
-		}
-
-		// Apply the mining reward for this block.
-		accounts.ApplyMiningReward(block.Header.MinerAccount)
-	}
+	// the blockchain and apply the genesis information and blocks.
+	accounts := accounts.New(genesis, blocks)
 
 	// Construct a mempool with the specified sort strategy.
 	mempool, err := mempool.NewWithStrategy(cfg.SelectStrategy)

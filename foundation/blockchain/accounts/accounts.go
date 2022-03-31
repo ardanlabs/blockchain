@@ -23,17 +23,25 @@ type Accounts struct {
 	mu      sync.RWMutex
 }
 
-func New(genesis genesis.Genesis) *Accounts {
-	accounts := Accounts{
+// New constructs a new accounts and applies genesis and block information.
+func New(genesis genesis.Genesis, blocks []storage.Block) *Accounts {
+	act := Accounts{
 		genesis: genesis,
 		info:    make(map[storage.Account]Info),
 	}
 
 	for account, balance := range genesis.Balances {
-		accounts.info[account] = Info{Balance: balance}
+		act.info[account] = Info{Balance: balance}
 	}
 
-	return &accounts
+	for _, block := range blocks {
+		for _, tx := range block.Transactions {
+			act.ApplyTransaction(block.Header.MinerAccount, tx)
+		}
+		act.ApplyMiningReward(block.Header.MinerAccount)
+	}
+
+	return &act
 }
 
 // Reset re-initalizes the accounts back to the genesis information.
