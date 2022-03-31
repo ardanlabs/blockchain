@@ -66,7 +66,7 @@ func (h Handlers) MinePeerBlock(ctx context.Context, w http.ResponseWriter, r *h
 		// to truncate to re-sync the state of the blockchain.
 		// So the idea for now is to truncate the state here and force a
 		// shutdown/restart of the service.
-		if errors.Is(err, state.ErrChainForked) {
+		if errors.Is(err, storage.ErrChainForked) {
 			h.State.Truncate()
 			return web.NewShutdownError(err.Error())
 		}
