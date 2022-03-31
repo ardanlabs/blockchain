@@ -327,7 +327,7 @@ func (s *State) validateBlock(block storage.Block) (string, error) {
 	s.evHandler("state: WriteNextBlock: validate: hash solved")
 
 	hash := block.Hash()
-	if !isHashSolved(s.genesis.Difficulty, hash) {
+	if !isHashSolved(block.Header.Difficulty, hash) {
 		return signature.ZeroHash, fmt.Errorf("%s invalid hash", hash)
 	}
 
