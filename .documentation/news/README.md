@@ -2,6 +2,9 @@
 
 Occasionally we run into new articles that we feel are important. This is a section place for those new articles. If you have new articles we should add, please send us an email.
 
+### Mar 2022
+[They’re all Aped in! Yuga Labs raises $450M at $4B valuation to build NFT metaverse](https://refreshmiami.com/theyre-all-aped-in-yuga-labs-raises-450m-at-4b-valuation-to-build-nft-metaverse/) - Nancy Dahlberg  
+
 ### Feb 2022
 
 [Ethereum Founder Buterin Says Crypto ‘Welcomes’ Another Winter](https://www.bloomberg.com/news/articles/2022-02-19/ethereum-founder-buterin-says-crypto-welcomes-another-winter) - Muyao Shen and Matthew Hill  
