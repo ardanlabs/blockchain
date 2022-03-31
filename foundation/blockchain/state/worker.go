@@ -34,7 +34,6 @@ type worker struct {
 	wg           sync.WaitGroup
 	ticker       time.Ticker
 	shut         chan struct{}
-	peerUpdates  chan bool
 	startMining  chan bool
 	cancelMining chan chan struct{}
 	txSharing    chan storage.BlockTx
@@ -51,7 +50,6 @@ func runWorker(state *State, evHandler EventHandler) {
 		state:        state,
 		ticker:       *time.NewTicker(peerUpdateInterval),
 		shut:         make(chan struct{}),
-		peerUpdates:  make(chan bool, 1),
 		startMining:  make(chan bool, 1),
 		cancelMining: make(chan chan struct{}, 1),
 		txSharing:    make(chan storage.BlockTx, maxTxShareRequests),
@@ -158,10 +156,6 @@ func (w *worker) peerOperations() {
 
 	for {
 		select {
-		case <-w.peerUpdates:
-			if !w.isShutdown() {
-				w.runFindNewPeersOperation()
-			}
 		case <-w.ticker.C:
 			if !w.isShutdown() {
 				w.runFindNewPeersOperation()
