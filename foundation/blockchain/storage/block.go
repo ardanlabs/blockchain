@@ -87,6 +87,12 @@ func (b Block) ValidateBlock(parentBlock Block, evHandler func(v string, args ..
 
 	evHandler("storage: ValidateBlock: validate: blk[%d]: chain is not forked", b.Header.Number)
 
+	if b.Header.Difficulty < parentBlock.Header.Difficulty {
+		return signature.ZeroHash, fmt.Errorf("block difficulty is less than parent block difficulty, parent %d, block %d", parentBlock.Header.Difficulty, b.Header.Difficulty)
+	}
+
+	evHandler("storage: ValidateBlock: validate: blk[%d]: block difficulty is the same or greater than parent block difficulty", b.Header.Number)
+
 	hash := b.Hash()
 	if !isHashSolved(b.Header.Difficulty, hash) {
 		return signature.ZeroHash, fmt.Errorf("%s invalid hash", hash)
@@ -124,12 +130,6 @@ func (b Block) ValidateBlock(parentBlock Block, evHandler func(v string, args ..
 
 		// evHandler("storage: ValidateBlock: validate: blk[%d]: block is less than 15 minutes apart from parent block", b.Header.Number)
 	}
-
-	if b.Header.Difficulty < parentBlock.Header.Difficulty {
-		return signature.ZeroHash, fmt.Errorf("block difficulty is less than parent block difficulty, parent %d, block %d", parentBlock.Header.Difficulty, b.Header.Difficulty)
-	}
-
-	evHandler("storage: ValidateBlock: validate: blk[%d]: block difficulty is the same or greater than parent block difficulty", b.Header.Number)
 
 	return hash, nil
 }
