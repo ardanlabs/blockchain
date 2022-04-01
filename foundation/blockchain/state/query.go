@@ -30,7 +30,7 @@ func (s *State) QueryMempoolLength() int {
 // QueryBlocksByNumber returns the set of blocks based on block numbers. This
 // function reads the blockchain from disk first.
 func (s *State) QueryBlocksByNumber(from uint64, to uint64) []storage.Block {
-	blocks, err := s.storage.ReadAllBlocks(s.evHandler)
+	blocks, err := s.storage.ReadAllBlocks(s.evHandler, false)
 	if err != nil {
 		return nil
 	}
@@ -54,7 +54,7 @@ func (s *State) QueryBlocksByNumber(from uint64, to uint64) []storage.Block {
 // is empty, all blocks are returned. This function reads the blockchain
 // from disk first.
 func (s *State) QueryBlocksByAccount(account storage.Account) []storage.Block {
-	blocks, err := s.storage.ReadAllBlocks(s.evHandler)
+	blocks, err := s.storage.ReadAllBlocks(s.evHandler, false)
 	if err != nil {
 		return nil
 	}

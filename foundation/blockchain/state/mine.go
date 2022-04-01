@@ -2,10 +2,17 @@ package state
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
 )
+
+// ErrNotEnoughTransactions is returned when a block is requested to be created
+// and there are not enough transactions.
+var ErrNotEnoughTransactions = errors.New("not enough transactions in mempool")
+
+// =============================================================================
 
 // MineNewBlock attempts to create a new block with a proper hash that can become
 // the next block in the chain.
@@ -55,7 +62,7 @@ func (s *State) MinePeerBlock(block storage.Block) error {
 	// immediately. The G executing runMiningOperation will not return from the
 	// function until done is called. That allows this function to complete
 	// its state changes before a new mining operation takes place.
-	done := s.worker.signalCancelMining()
+	done := s.Worker.SignalCancelMining()
 	defer func() {
 		s.evHandler("state: MinePeerBlock: signal runMiningOperation to terminate")
 		done()

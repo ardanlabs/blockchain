@@ -1,4 +1,4 @@
-package state
+package worker
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ import (
 )
 
 // sync updates the peer list, mempool and blocks.
-func (w *worker) sync() {
+func (w *Worker) sync() {
 	w.evHandler("worker: sync: started")
 	defer w.evHandler("worker: sync: completed")
 
@@ -22,9 +22,7 @@ func (w *worker) sync() {
 		}
 
 		// Add new peers to this nodes list.
-		if err := w.addNewPeers(peerStatus.KnownPeers); err != nil {
-			w.evHandler("worker: sync: addNewPeers: %s: ERROR: %s", peer.Host, err)
-		}
+		w.addNewPeers(peerStatus.KnownPeers)
 
 		// Retrieve the mempool from the peer.
 		pool, err := w.retrievePeerMempool(peer)
@@ -33,7 +31,7 @@ func (w *worker) sync() {
 		}
 		for _, tx := range pool {
 			w.evHandler("worker: sync: retrievePeerMempool: %s: Add Tx: %s", peer.Host, tx.SignatureString()[:16])
-			w.state.mempool.Upsert(tx)
+			w.state.UpsertMempool(tx)
 		}
 
 		// If this peer has blocks we don't have, we need to add them.
@@ -48,7 +46,7 @@ func (w *worker) sync() {
 }
 
 // retrievePeerMempool asks the peer for the transactions in their mempool.
-func (w *worker) retrievePeerMempool(pr peer.Peer) ([]storage.BlockTx, error) {
+func (w *Worker) retrievePeerMempool(pr peer.Peer) ([]storage.BlockTx, error) {
 	w.evHandler("worker: sync: retrievePeerMempool: started: %s", pr)
 	defer w.evHandler("worker: sync: retrievePeerMempool: completed: %s", pr)
 
@@ -66,7 +64,7 @@ func (w *worker) retrievePeerMempool(pr peer.Peer) ([]storage.BlockTx, error) {
 
 // retrievePeerBlocks queries the specified node asking for blocks this node does
 // not have, then writes them to disk.
-func (w *worker) retrievePeerBlocks(pr peer.Peer) error {
+func (w *Worker) retrievePeerBlocks(pr peer.Peer) error {
 	w.evHandler("worker: sync: retrievePeerBlocks: started: %s", pr)
 	defer w.evHandler("worker: sync: retrievePeerBlocks: completed: %s", pr)
 

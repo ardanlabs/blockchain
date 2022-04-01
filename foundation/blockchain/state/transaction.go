@@ -15,10 +15,10 @@ func (s *State) SubmitWalletTransaction(signedTx storage.SignedTx) error {
 		return err
 	}
 
-	s.worker.signalShareTx(tx)
+	s.Worker.SignalShareTx(tx)
 
 	if n >= s.genesis.TransPerBlock {
-		s.worker.signalStartMining()
+		s.Worker.SignalStartMining()
 	}
 
 	return nil
@@ -36,7 +36,7 @@ func (s *State) SubmitNodeTransaction(tx storage.BlockTx) error {
 	}
 
 	if n >= s.genesis.TransPerBlock {
-		s.worker.signalStartMining()
+		s.Worker.SignalStartMining()
 	}
 
 	return nil

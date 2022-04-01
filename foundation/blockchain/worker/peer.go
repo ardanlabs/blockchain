@@ -1,4 +1,4 @@
-package state
+package worker
 
 import (
 	"errors"
@@ -9,7 +9,7 @@ import (
 )
 
 // peerOperations handles finding new peers.
-func (w *worker) peerOperations() {
+func (w *Worker) peerOperations() {
 	w.evHandler("worker: peerOperations: G started")
 	defer w.evHandler("worker: peerOperations: G completed")
 
@@ -27,7 +27,7 @@ func (w *worker) peerOperations() {
 }
 
 // runPeersOperation updates the peer list.
-func (w *worker) runPeersOperation() {
+func (w *Worker) runPeersOperation() {
 	w.evHandler("worker: runPeersOperation: started")
 	defer w.evHandler("worker: runPeersOperation: completed")
 
@@ -40,15 +40,13 @@ func (w *worker) runPeersOperation() {
 		}
 
 		// Add new peers to this nodes list.
-		if err := w.addNewPeers(peerStatus.KnownPeers); err != nil {
-			w.evHandler("worker: runPeersOperation: addNewPeers: %s: ERROR: %s", peer.Host, err)
-		}
+		w.addNewPeers(peerStatus.KnownPeers)
 	}
 }
 
 // queryPeerStatus looks for new nodes on the blockchain by asking
 // known nodes for their peer list. New nodes are added to the list.
-func (w *worker) queryPeerStatus(pr peer.Peer) (peer.PeerStatus, error) {
+func (w *Worker) queryPeerStatus(pr peer.Peer) (peer.PeerStatus, error) {
 	w.evHandler("worker: runPeerUpdatesOperation: queryPeerStatus: started: %s", pr)
 	defer w.evHandler("worker: runPeerUpdatesOperation: queryPeerStatus: completed: %s", pr)
 
@@ -66,19 +64,19 @@ func (w *worker) queryPeerStatus(pr peer.Peer) (peer.PeerStatus, error) {
 
 // addNewPeers takes the list of known peers and makes sure they are included
 // in the nodes list of know peers.
-func (w *worker) addNewPeers(knownPeers []peer.Peer) error {
+func (w *Worker) addNewPeers(knownPeers []peer.Peer) error {
 	w.evHandler("worker: runPeerUpdatesOperation: addNewPeers: started")
 	defer w.evHandler("worker: runPeerUpdatesOperation: addNewPeers: completed")
 
 	for _, peer := range knownPeers {
 
 		// Don't add this running node to the known peer list.
-		if peer.Match(w.state.host) {
+		if peer.Match(w.state.RetrieveHost()) {
 			return errors.New("already exists")
 		}
 
 		w.evHandler("worker: runPeerUpdatesOperation: addNewPeers: add peer nodes: adding peer-node %s", peer)
-		w.state.knownPeers.Add(peer)
+		w.state.AddKnownPeer(peer)
 	}
 
 	return nil

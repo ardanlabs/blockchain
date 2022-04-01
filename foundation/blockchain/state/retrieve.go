@@ -7,6 +7,11 @@ import (
 	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
 )
 
+// RetrieveHost returns a copy of host information.
+func (s *State) RetrieveHost() string {
+	return s.host
+}
+
 // RetrieveGenesis returns a copy of the genesis information.
 func (s *State) RetrieveGenesis() genesis.Genesis {
 	return s.genesis

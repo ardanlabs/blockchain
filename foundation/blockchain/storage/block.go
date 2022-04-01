@@ -113,7 +113,7 @@ func (b Block) ValidateBlock(parentBlock Block, evHandler func(v string, args ..
 			return signature.ZeroHash, fmt.Errorf("block timestamp is before parent block, parent %s, block %s", parentTime, blockTime)
 		}
 
-		evHandler("storage: ValidateBlock: validate: blk[%d]: block's timestamp is higher than parent block's timestamp", b.Header.Number)
+		evHandler("storage: ValidateBlock: validate: blk[%d]: block's timestamp is greater than parent block's timestamp", b.Header.Number)
 
 		// This is a check that Ethereum does but we can't because we don't run all the time.
 
@@ -129,7 +129,7 @@ func (b Block) ValidateBlock(parentBlock Block, evHandler func(v string, args ..
 		return signature.ZeroHash, fmt.Errorf("block difficulty is less than parent block difficulty, parent %d, block %d", parentBlock.Header.Difficulty, b.Header.Difficulty)
 	}
 
-	evHandler("storage: ValidateBlock: validate: blk[%d]: block difficulty is less than parent block difficulty", b.Header.Number)
+	evHandler("storage: ValidateBlock: validate: blk[%d]: block difficulty is the same or greater than parent block difficulty", b.Header.Number)
 
 	return hash, nil
 }

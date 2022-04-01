@@ -1,4 +1,4 @@
-package state
+package worker
 
 import (
 	"context"
@@ -7,37 +7,12 @@ import (
 	"net/http"
 	"sync"
 
+	"github.com/ardanlabs/blockchain/foundation/blockchain/state"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
 )
 
-// signalStartMining starts a mining operation. If there is already a signal
-// pending in the channel, just return since a mining operation will start.
-func (w *worker) signalStartMining() {
-	select {
-	case w.startMining <- true:
-	default:
-	}
-	w.evHandler("worker: signalStartMining: mining signaled")
-}
-
-// signalCancelMining signals the G executing the runMiningOperation function
-// to stop immediately. That G will not return from the function until done
-// is called. This allows the caller to complete any state changes before a new
-// mining operation takes place.
-func (w *worker) signalCancelMining() (done func()) {
-	wait := make(chan struct{})
-
-	select {
-	case w.cancelMining <- wait:
-	default:
-	}
-	w.evHandler("worker: signalCancelMining: cancel mining signaled")
-
-	return func() { close(wait) }
-}
-
 // miningOperations handles mining.
-func (w *worker) miningOperations() {
+func (w *Worker) miningOperations() {
 	w.evHandler("worker: miningOperations: G started")
 	defer w.evHandler("worker: miningOperations: G completed")
 
@@ -56,13 +31,15 @@ func (w *worker) miningOperations() {
 
 // runMiningOperation takes all the transactions from the mempool and writes a
 // new block to the database.
-func (w *worker) runMiningOperation() {
+func (w *Worker) runMiningOperation() {
 	w.evHandler("worker: runMiningOperation: MINING: started")
 	defer w.evHandler("worker: runMiningOperation: MINING: completed")
 
+	genesis := w.state.RetrieveGenesis()
+
 	// Make sure there are at least transPerBlock in the mempool.
 	length := w.state.QueryMempoolLength()
-	if length < w.state.genesis.TransPerBlock {
+	if length < genesis.TransPerBlock {
 		w.evHandler("worker: runMiningOperation: MINING: not enough transactions to mine: Txs[%d]", length)
 		return
 	}
@@ -71,9 +48,9 @@ func (w *worker) runMiningOperation() {
 	// be signaled again.
 	defer func() {
 		length := w.state.QueryMempoolLength()
-		if length >= w.state.genesis.TransPerBlock {
+		if length >= genesis.TransPerBlock {
 			w.evHandler("worker: runMiningOperation: MINING: signal new mining operation: Txs[%d]", length)
-			w.signalStartMining()
+			w.SignalStartMining()
 		}
 	}()
 
@@ -129,7 +106,7 @@ func (w *worker) runMiningOperation() {
 
 		if err != nil {
 			switch {
-			case errors.Is(err, ErrNotEnoughTransactions):
+			case errors.Is(err, state.ErrNotEnoughTransactions):
 				w.evHandler("worker: runMiningOperation: MINING: WARNING: not enough transactions in mempool")
 			case ctx.Err() != nil:
 				w.evHandler("worker: runMiningOperation: MINING: CANCELLED: by request")
@@ -151,7 +128,7 @@ func (w *worker) runMiningOperation() {
 }
 
 // sendBlockToPeers takes the new mined block and sends it to all know peers.
-func (w *worker) sendBlockToPeers(block storage.Block) error {
+func (w *Worker) sendBlockToPeers(block storage.Block) error {
 	w.evHandler("worker: runMiningOperation: MINING: sendBlockToPeers: started")
 	defer w.evHandler("worker: runMiningOperation: MINING: sendBlockToPeers: completed")
 

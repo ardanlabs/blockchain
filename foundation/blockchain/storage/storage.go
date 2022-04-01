@@ -86,7 +86,7 @@ func (str *Storage) Write(block BlockFS) error {
 
 // ReadAllBlocks loads all existing blocks from storage into memory. In a real
 // world situation this would require a lot of memory.
-func (str *Storage) ReadAllBlocks(evHandler func(v string, args ...interface{})) ([]Block, error) {
+func (str *Storage) ReadAllBlocks(evHandler func(v string, args ...interface{}), validate bool) ([]Block, error) {
 	dbFile, err := os.Open(str.dbPath)
 	if err != nil {
 		return nil, err
@@ -106,8 +106,10 @@ func (str *Storage) ReadAllBlocks(evHandler func(v string, args ...interface{}))
 			return nil, err
 		}
 
-		if _, err := blockFS.Block.ValidateBlock(latestBlock, evHandler); err != nil {
-			return nil, err
+		if validate {
+			if _, err := blockFS.Block.ValidateBlock(latestBlock, evHandler); err != nil {
+				return nil, err
+			}
 		}
 
 		blocks = append(blocks, blockFS.Block)

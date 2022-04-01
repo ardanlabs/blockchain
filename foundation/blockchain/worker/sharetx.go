@@ -1,4 +1,4 @@
-package state
+package worker
 
 import (
 	"fmt"
@@ -16,19 +16,8 @@ const maxTxShareRequests = 100
 
 // =============================================================================
 
-// signalShareTx signals a share transaction operation. If
-// maxTxShareRequests signals exist in the channel, we won't send these.
-func (w *worker) signalShareTx(blockTx storage.BlockTx) {
-	select {
-	case w.txSharing <- blockTx:
-		w.evHandler("worker: signalShareTx: share Tx signaled")
-	default:
-		w.evHandler("worker: signalShareTx: queue full, transactions won't be shared.")
-	}
-}
-
 // shareTxOperations handles sharing new block transactions.
-func (w *worker) shareTxOperations() {
+func (w *Worker) shareTxOperations() {
 	w.evHandler("worker: shareTxOperations: G started")
 	defer w.evHandler("worker: shareTxOperations: G completed")
 
@@ -46,7 +35,7 @@ func (w *worker) shareTxOperations() {
 }
 
 // runShareTxOperation shares a new block transactions with the known peers.
-func (w *worker) runShareTxOperation(tx storage.BlockTx) {
+func (w *Worker) runShareTxOperation(tx storage.BlockTx) {
 	w.evHandler("worker: runShareTxOperation: started")
 	defer w.evHandler("worker: runShareTxOperation: completed")
 

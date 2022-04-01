@@ -1,4 +1,4 @@
-package state
+package worker
 
 import (
 	"bytes"
@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ardanlabs/blockchain/foundation/blockchain/state"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
 )
 
@@ -18,25 +19,23 @@ const peerUpdateInterval = time.Minute
 
 // =============================================================================
 
-// worker manages the POW workflows for the blockchain.
-type worker struct {
-	state        *State
+// Worker manages the POW workflows for the blockchain.
+type Worker struct {
+	state        *state.State
 	wg           sync.WaitGroup
 	ticker       time.Ticker
 	shut         chan struct{}
 	startMining  chan bool
 	cancelMining chan chan struct{}
 	txSharing    chan storage.BlockTx
-	evHandler    EventHandler
+	evHandler    state.EventHandler
 	baseURL      string
 }
 
-// runWorker creates a powWorker for starting the POW workflows.
-func runWorker(state *State, evHandler EventHandler) {
-
-	// Construct and register this worker to the state. During initialization
-	// this worker needs access to the state.
-	state.worker = &worker{
+// Run creates a worker, registers the worker with the state package, and
+// starts up all the background processes.
+func Run(state *state.State, evHandler state.EventHandler) {
+	w := Worker{
 		state:        state,
 		ticker:       *time.NewTicker(peerUpdateInterval),
 		shut:         make(chan struct{}),
@@ -47,20 +46,23 @@ func runWorker(state *State, evHandler EventHandler) {
 		baseURL:      "http://%s/v1/node",
 	}
 
+	// Register this worker with the state package.
+	state.Worker = &w
+
 	// Update this node before starting any support G's.
-	state.worker.sync()
+	w.sync()
 
 	// Load the set of operations we need to run.
 	operations := []func(){
-		state.worker.peerOperations,
-		state.worker.miningOperations,
-		state.worker.shareTxOperations,
+		w.peerOperations,
+		w.miningOperations,
+		w.shareTxOperations,
 	}
 
 	// Set waitgroup to match the number of G's we need for the set
 	// of operations we have.
 	g := len(operations)
-	state.worker.wg.Add(g)
+	w.wg.Add(g)
 
 	// We don't want to return until we know all the G's are up and running.
 	hasStarted := make(chan bool)
@@ -68,7 +70,7 @@ func runWorker(state *State, evHandler EventHandler) {
 	// Start all the operational G's.
 	for _, op := range operations {
 		go func(op func()) {
-			defer state.worker.wg.Done()
+			defer w.wg.Done()
 			hasStarted <- true
 			op()
 		}(op)
@@ -80,8 +82,11 @@ func runWorker(state *State, evHandler EventHandler) {
 	}
 }
 
-// shutdown terminates the goroutine performing work.
-func (w *worker) shutdown() {
+// =============================================================================
+// These methods implement the state.Worker interface.
+
+// Shutdown terminates the goroutine performing work.
+func (w *Worker) Shutdown() {
 	w.evHandler("worker: shutdown: started")
 	defer w.evHandler("worker: shutdown: completed")
 
@@ -89,7 +94,7 @@ func (w *worker) shutdown() {
 	w.ticker.Stop()
 
 	w.evHandler("worker: shutdown: signal cancel mining")
-	done := w.signalCancelMining()
+	done := w.SignalCancelMining()
 	done()
 
 	w.evHandler("worker: shutdown: terminate goroutines")
@@ -97,8 +102,47 @@ func (w *worker) shutdown() {
 	w.wg.Wait()
 }
 
+// SignalStartMining starts a mining operation. If there is already a signal
+// pending in the channel, just return since a mining operation will start.
+func (w *Worker) SignalStartMining() {
+	select {
+	case w.startMining <- true:
+	default:
+	}
+	w.evHandler("worker: SignalStartMining: mining signaled")
+}
+
+// SignalCancelMining signals the G executing the runMiningOperation function
+// to stop immediately. That G will not return from the function until done
+// is called. This allows the caller to complete any state changes before a new
+// mining operation takes place.
+func (w *Worker) SignalCancelMining() (done func()) {
+	wait := make(chan struct{})
+
+	select {
+	case w.cancelMining <- wait:
+	default:
+	}
+	w.evHandler("worker: SignalCancelMining: cancel mining signaled")
+
+	return func() { close(wait) }
+}
+
+// SignalShareTx signals a share transaction operation. If
+// maxTxShareRequests signals exist in the channel, we won't send these.
+func (w *Worker) SignalShareTx(blockTx storage.BlockTx) {
+	select {
+	case w.txSharing <- blockTx:
+		w.evHandler("worker: SignalShareTx: share Tx signaled")
+	default:
+		w.evHandler("worker: SignalShareTx: queue full, transactions won't be shared.")
+	}
+}
+
+// =============================================================================
+
 // isShutdown is used to test if a shutdown has been signaled.
-func (w *worker) isShutdown() bool {
+func (w *Worker) isShutdown() bool {
 	select {
 	case <-w.shut:
 		return true
@@ -106,8 +150,6 @@ func (w *worker) isShutdown() bool {
 		return false
 	}
 }
-
-// =============================================================================
 
 // send is a helper function to send an HTTP request to a node.
 func send(method string, url string, dataSend interface{}, dataRecv interface{}) error {
