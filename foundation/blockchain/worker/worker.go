@@ -1,3 +1,5 @@
+// Package worker implements mining, peer updates, and transaction sharing for
+// the blockchain.
 package worker
 
 import (
