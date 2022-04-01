@@ -2,8 +2,8 @@ package state
 
 import "github.com/ardanlabs/blockchain/foundation/blockchain/storage"
 
-// SubmitWalletTransaction accepts a transaction from a wallet for inclusion.
-func (s *State) SubmitWalletTransaction(signedTx storage.SignedTx) error {
+// UpsertWalletTransaction accepts a transaction from a wallet for inclusion.
+func (s *State) UpsertWalletTransaction(signedTx storage.SignedTx) error {
 	if err := s.validateTransaction(signedTx); err != nil {
 		return err
 	}
@@ -24,8 +24,8 @@ func (s *State) SubmitWalletTransaction(signedTx storage.SignedTx) error {
 	return nil
 }
 
-// SubmitNodeTransaction accepts a transaction from a node for inclusion.
-func (s *State) SubmitNodeTransaction(tx storage.BlockTx) error {
+// UpsertNodeTransaction accepts a transaction from a node for inclusion.
+func (s *State) UpsertNodeTransaction(tx storage.BlockTx) error {
 	if err := s.validateTransaction(tx.SignedTx); err != nil {
 		return err
 	}

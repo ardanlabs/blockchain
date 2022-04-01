@@ -37,7 +37,7 @@ func (h Handlers) SubmitNodeTransaction(ctx context.Context, w http.ResponseWrit
 	}
 
 	h.Log.Infow("add user tran", "traceid", v.TraceID, "from:nonce", tx, "to", tx.To, "value", tx.Value, "tip", tx.Tip)
-	if err := h.State.SubmitNodeTransaction(tx); err != nil {
+	if err := h.State.UpsertNodeTransaction(tx); err != nil {
 		return v1.NewRequestError(err, http.StatusBadRequest)
 	}
 
