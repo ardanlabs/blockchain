@@ -17,7 +17,8 @@ import (
 	Then add a graphical way of seeing the data.
 
 	-- Blockchain
-	Maybe use a Merkel tree (https://github.com/cbergoon/merkletree, https://github.com/google/leveldb)
+	Add a Merket Root to the block and build a Merkel tree for the transactions in each block.
+		https://github.com/cbergoon/merkletree
 	Batch new transactions to send across the network. Must maintain mining sync.
 	Create a block index file for query and clean up forks.
 	Add integration test for the state package.
