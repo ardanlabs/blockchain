@@ -1,3 +1,7 @@
+// Copyright 2017 Cameron Bergoon
+// https://github.com/cbergoon/merkletree
+// Licensed under the MIT License, see LICENCE file for details.
+
 package merkle_test
 
 import (
