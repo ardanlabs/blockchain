@@ -64,8 +64,8 @@ func NewTree(data []Data, options ...func(t *Tree)) (*Tree, error) {
 }
 
 // GetMerklePath gets the Merkle path and indexes (left leaf or right leaf).
-func (m *Tree) GetMerklePath(data Data) ([][]byte, []int64, error) {
-	for _, node := range m.Leafs {
+func (t *Tree) GetMerklePath(data Data) ([][]byte, []int64, error) {
+	for _, node := range t.Leafs {
 		ok, err := node.Data.Equals(data)
 		if err != nil {
 			return nil, nil, err
