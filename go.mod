@@ -1,6 +1,6 @@
 module github.com/ardanlabs/blockchain
 
-go 1.17
+go 1.18
 
 require (
 	github.com/ardanlabs/conf/v3 v3.1.2
