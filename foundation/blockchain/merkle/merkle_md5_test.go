@@ -299,18 +299,7 @@ var tableMD5Content = []struct {
 		hashStrategyName:    "md5",
 		defaultHashStrategy: false,
 		contents: []TestMD5Content{
-			{
-				x: "Hello",
-			},
-			{
-				x: "Hi",
-			},
-			{
-				x: "Hey",
-			},
-			{
-				x: "Hola",
-			},
+			{x: "Hello"}, {x: "Hi"}, {x: "Hey"}, {x: "Hola"},
 		},
 		notInContents: TestMD5Content{x: "NotInTestTable"},
 		expectedHash:  []byte{217, 158, 206, 52, 191, 78, 253, 233, 25, 55, 69, 142, 254, 45, 127, 144},
@@ -321,15 +310,7 @@ var tableMD5Content = []struct {
 		hashStrategyName:    "md5",
 		defaultHashStrategy: false,
 		contents: []TestMD5Content{
-			{
-				x: "Hello",
-			},
-			{
-				x: "Hi",
-			},
-			{
-				x: "Hey",
-			},
+			{x: "Hello"}, {x: "Hi"}, {x: "Hey"},
 		},
 		notInContents: TestMD5Content{x: "NotInTestTable"},
 		expectedHash:  []byte{145, 228, 171, 107, 94, 219, 221, 171, 7, 195, 206, 128, 148, 98, 59, 76},
@@ -340,21 +321,7 @@ var tableMD5Content = []struct {
 		hashStrategyName:    "md5",
 		defaultHashStrategy: false,
 		contents: []TestMD5Content{
-			{
-				x: "Hello",
-			},
-			{
-				x: "Hi",
-			},
-			{
-				x: "Hey",
-			},
-			{
-				x: "Greetings",
-			},
-			{
-				x: "Hola",
-			},
+			{x: "Hello"}, {x: "Hi"}, {x: "Hey"}, {x: "Greetings"}, {x: "Hola"},
 		},
 		notInContents: TestMD5Content{x: "NotInTestTable"},
 		expectedHash:  []byte{167, 200, 229, 62, 194, 247, 117, 12, 206, 194, 90, 235, 70, 14, 100, 100},
@@ -365,30 +332,7 @@ var tableMD5Content = []struct {
 		hashStrategyName:    "md5",
 		defaultHashStrategy: false,
 		contents: []TestMD5Content{
-			{
-				x: "123",
-			},
-			{
-				x: "234",
-			},
-			{
-				x: "345",
-			},
-			{
-				x: "456",
-			},
-			{
-				x: "1123",
-			},
-			{
-				x: "2234",
-			},
-			{
-				x: "3345",
-			},
-			{
-				x: "4456",
-			},
+			{x: "123"}, {x: "234"}, {x: "345"}, {x: "456"}, {x: "1123"}, {x: "2234"}, {x: "3345"}, {x: "4456"},
 		},
 		notInContents: TestMD5Content{x: "NotInTestTable"},
 		expectedHash:  []byte{8, 36, 33, 50, 204, 197, 82, 81, 207, 74, 6, 60, 162, 209, 168, 21},
@@ -399,33 +343,7 @@ var tableMD5Content = []struct {
 		hashStrategyName:    "md5",
 		defaultHashStrategy: false,
 		contents: []TestMD5Content{
-			{
-				x: "123",
-			},
-			{
-				x: "234",
-			},
-			{
-				x: "345",
-			},
-			{
-				x: "456",
-			},
-			{
-				x: "1123",
-			},
-			{
-				x: "2234",
-			},
-			{
-				x: "3345",
-			},
-			{
-				x: "4456",
-			},
-			{
-				x: "5567",
-			},
+			{x: "123"}, {x: "234"}, {x: "345"}, {x: "456"}, {x: "1123"}, {x: "2234"}, {x: "3345"}, {x: "4456"}, {x: "5567"},
 		},
 		notInContents: TestMD5Content{x: "NotInTestTable"},
 		expectedHash:  []byte{158, 85, 181, 191, 25, 250, 251, 71, 215, 22, 68, 68, 11, 198, 244, 148},

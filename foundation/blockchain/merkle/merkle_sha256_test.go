@@ -294,18 +294,7 @@ var tableSHA256Content = []struct {
 		hashStrategyName:    "sha256",
 		defaultHashStrategy: true,
 		contents: []TestSHA256Content{
-			{
-				x: "Hello",
-			},
-			{
-				x: "Hi",
-			},
-			{
-				x: "Hey",
-			},
-			{
-				x: "Hola",
-			},
+			{x: "Hello"}, {x: "Hi"}, {x: "Hey"}, {x: "Hola"},
 		},
 		notInContents: TestSHA256Content{x: "NotInTestTable"},
 		expectedHash:  []byte{95, 48, 204, 128, 19, 59, 147, 148, 21, 110, 36, 178, 51, 240, 196, 190, 50, 178, 78, 68, 187, 51, 129, 240, 44, 123, 165, 38, 25, 208, 254, 188},
@@ -316,15 +305,7 @@ var tableSHA256Content = []struct {
 		hashStrategyName:    "sha256",
 		defaultHashStrategy: true,
 		contents: []TestSHA256Content{
-			{
-				x: "Hello",
-			},
-			{
-				x: "Hi",
-			},
-			{
-				x: "Hey",
-			},
+			{x: "Hello"}, {x: "Hi"}, {x: "Hey"},
 		},
 		notInContents: TestSHA256Content{x: "NotInTestTable"},
 		expectedHash:  []byte{189, 214, 55, 197, 35, 237, 92, 14, 171, 121, 43, 152, 109, 177, 136, 80, 194, 57, 162, 226, 56, 2, 179, 106, 255, 38, 187, 104, 251, 63, 224, 8},
@@ -335,21 +316,7 @@ var tableSHA256Content = []struct {
 		hashStrategyName:    "sha256",
 		defaultHashStrategy: true,
 		contents: []TestSHA256Content{
-			{
-				x: "Hello",
-			},
-			{
-				x: "Hi",
-			},
-			{
-				x: "Hey",
-			},
-			{
-				x: "Greetings",
-			},
-			{
-				x: "Hola",
-			},
+			{x: "Hello"}, {x: "Hi"}, {x: "Hey"}, {x: "Greetings"}, {x: "Hola"},
 		},
 		notInContents: TestSHA256Content{x: "NotInTestTable"},
 		expectedHash:  []byte{46, 216, 115, 174, 13, 210, 55, 39, 119, 197, 122, 104, 93, 144, 112, 131, 202, 151, 41, 14, 80, 143, 21, 71, 140, 169, 139, 173, 50, 37, 235, 188},
@@ -360,30 +327,7 @@ var tableSHA256Content = []struct {
 		hashStrategyName:    "sha256",
 		defaultHashStrategy: true,
 		contents: []TestSHA256Content{
-			{
-				x: "123",
-			},
-			{
-				x: "234",
-			},
-			{
-				x: "345",
-			},
-			{
-				x: "456",
-			},
-			{
-				x: "1123",
-			},
-			{
-				x: "2234",
-			},
-			{
-				x: "3345",
-			},
-			{
-				x: "4456",
-			},
+			{x: "123"}, {x: "234"}, {x: "345"}, {x: "456"}, {x: "1123"}, {x: "2234"}, {x: "3345"}, {x: "4456"},
 		},
 		notInContents: TestSHA256Content{x: "NotInTestTable"},
 		expectedHash:  []byte{30, 76, 61, 40, 106, 173, 169, 183, 149, 2, 157, 246, 162, 218, 4, 70, 153, 148, 62, 162, 90, 24, 173, 250, 41, 149, 173, 121, 141, 187, 146, 43},
@@ -394,33 +338,7 @@ var tableSHA256Content = []struct {
 		hashStrategyName:    "sha256",
 		defaultHashStrategy: true,
 		contents: []TestSHA256Content{
-			{
-				x: "123",
-			},
-			{
-				x: "234",
-			},
-			{
-				x: "345",
-			},
-			{
-				x: "456",
-			},
-			{
-				x: "1123",
-			},
-			{
-				x: "2234",
-			},
-			{
-				x: "3345",
-			},
-			{
-				x: "4456",
-			},
-			{
-				x: "5567",
-			},
+			{x: "123"}, {x: "234"}, {x: "345"}, {x: "456"}, {x: "1123"}, {x: "2234"}, {x: "3345"}, {x: "4456"}, {x: "5567"},
 		},
 		notInContents: TestSHA256Content{x: "NotInTestTable"},
 		expectedHash:  []byte{143, 37, 161, 192, 69, 241, 248, 56, 169, 87, 79, 145, 37, 155, 51, 159, 209, 129, 164, 140, 130, 167, 16, 182, 133, 205, 126, 55, 237, 188, 89, 236},
