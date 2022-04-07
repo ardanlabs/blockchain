@@ -10,6 +10,7 @@ package merkle
 import (
 	"bytes"
 	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"hash"
@@ -212,6 +213,11 @@ func (t *Tree[T]) VerifyData(data T) (bool, error) {
 	}
 
 	return false, nil
+}
+
+// MerkelRootHex provides the hexidecimal encoding of the merkel root.
+func (t *Tree[T]) MerkelRootHex() string {
+	return hex.EncodeToString(t.MerkleRoot)
 }
 
 // String returns a string representation of the tree. Only leaf nodes are

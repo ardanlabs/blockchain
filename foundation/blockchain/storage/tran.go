@@ -1,7 +1,9 @@
 package storage
 
 import (
+	"bytes"
 	"crypto/ecdsa"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"math/big"
@@ -126,4 +128,21 @@ func NewBlockTx(signedTx SignedTx, gas uint) BlockTx {
 		TimeStamp: uint64(time.Now().UTC().Unix()),
 		Gas:       gas,
 	}
+}
+
+// Hash implements the merkle Hashable interface for providing a hash
+// of a block transaction.
+func (tx BlockTx) Hash() ([]byte, error) {
+	str := signature.Hash(tx)
+	return hex.DecodeString(str)
+}
+
+// Equals implements the merkle Hashable interface for providing an equality
+// check between two block transactions. If the nonce and signatures are the
+// same, the two blocks are the same.
+func (tx BlockTx) Equals(otherTx BlockTx) (bool, error) {
+	txSig := signature.ToSignatureBytes(tx.V, tx.R, tx.S)
+	otherTxSig := signature.ToSignatureBytes(otherTx.V, otherTx.R, otherTx.S)
+
+	return tx.Nonce == otherTx.Nonce && bytes.Equal(txSig, otherTxSig), nil
 }

@@ -17,11 +17,10 @@ import (
 	Then add a graphical way of seeing the data.
 
 	-- Blockchain
-	Add a Merket Root to the block and build a Merkel tree for the transactions in each block.
-		https://github.com/cbergoon/merkletree
 	Batch new transactions to send across the network. Must maintain mining sync.
-	Create a block index file for query and clean up forks.
+	Create a file for each block and then fix the way we handle a forked chain.
 	Add integration test for the state package.
+	Try a different POW cryptographic problem to solve that could provide more consistency time.
 */
 
 // =============================================================================

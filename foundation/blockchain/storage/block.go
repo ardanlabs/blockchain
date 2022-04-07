@@ -9,6 +9,7 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/ardanlabs/blockchain/foundation/blockchain/merkle"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/signature"
 )
 
@@ -24,6 +25,7 @@ type BlockHeader struct {
 	MinerAccount Account `json:"miner_account"` // The account of the miner who mined the block.
 	Difficulty   int     `json:"difficulty"`    // Number of 0's needed to solve the hash solution.
 	Number       uint64  `json:"number"`        // Block number in the chain.
+	MerkleRoot   string  `json:"merkle_root"`   // Represents the merkle tree root hash for the transactions in this block.
 	TotalTip     uint    `json:"total_tip"`     // Total tip paid by all senders as an incentive.
 	TotalGas     uint    `json:"total_gas"`     // Total gas fee to recover computation costs paid by the sender.
 	TimeStamp    uint64  `json:"timestamp"`     // Time the block was mined.
@@ -37,10 +39,15 @@ type Block struct {
 }
 
 // NewBlock constructs a new BlockFS for persisting.
-func NewBlock(minerAccount Account, difficulty int, transPerBlock int, parentBlock Block, trans []BlockTx) Block {
+func NewBlock(minerAccount Account, difficulty int, transPerBlock int, parentBlock Block, trans []BlockTx) (Block, error) {
 	parentHash := signature.ZeroHash
 	if parentBlock.Header.Number > 0 {
 		parentHash = parentBlock.Hash()
+	}
+
+	tree, err := merkle.NewTree(trans)
+	if err != nil {
+		return Block{}, err
 	}
 
 	var totalTip uint
@@ -56,6 +63,7 @@ func NewBlock(minerAccount Account, difficulty int, transPerBlock int, parentBlo
 			MinerAccount: minerAccount,
 			Difficulty:   difficulty,
 			Number:       parentBlock.Header.Number + 1,
+			MerkleRoot:   tree.MerkelRootHex(),
 			TotalTip:     totalTip,
 			TotalGas:     totalGas,
 			TimeStamp:    uint64(time.Now().UTC().Unix()),
@@ -63,7 +71,7 @@ func NewBlock(minerAccount Account, difficulty int, transPerBlock int, parentBlo
 		Transactions: trans,
 	}
 
-	return nb
+	return nb, nil
 }
 
 // Hash returns the unique hash for the Block.
@@ -130,6 +138,19 @@ func (b Block) ValidateBlock(parentBlock Block, evHandler func(v string, args ..
 
 		// evHandler("storage: ValidateBlock: validate: blk[%d]: block is less than 15 minutes apart from parent block", b.Header.Number)
 	}
+
+	tree, err := merkle.NewTree(b.Transactions)
+	if err != nil {
+		return signature.ZeroHash, fmt.Errorf("unable to create merkle tree from transactions, %w", err)
+	}
+
+	evHandler("storage: ValidateBlock: validate: blk[%d]: could create merkle tree from transactions", b.Header.Number)
+
+	if b.Header.MerkleRoot != tree.MerkelRootHex() {
+		return signature.ZeroHash, fmt.Errorf("merkle root does not match transactions, got %s, exp %s", tree.MerkelRootHex(), b.Header.MerkleRoot)
+	}
+
+	evHandler("storage: ValidateBlock: validate: blk[%d]: merkle root does match transactions", b.Header.Number)
 
 	return hash, nil
 }
