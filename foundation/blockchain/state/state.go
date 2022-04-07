@@ -17,6 +17,7 @@ import (
 	Then add a graphical way of seeing the data.
 
 	-- Blockchain
+	Find a way to quickly find transactions for an account in the blockchain.
 	Batch new transactions to send across the network. Must maintain mining sync.
 	Create a file for each block and then fix the way we handle a forked chain.
 	Add integration test for the state package.
