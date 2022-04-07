@@ -45,6 +45,7 @@ func WithHashStrategy[T Hashable[T]](hashStrategy func() hash.Hash) func(t *Tree
 // exhibits the behavior defined by the Hashable interface.
 func NewTree[T Hashable[T]](data []T, options ...func(t *Tree[T])) (*Tree[T], error) {
 	var defaultHashStrategy = sha256.New
+
 	t := Tree[T]{
 		hashStrategy: defaultHashStrategy,
 	}
@@ -53,16 +54,72 @@ func NewTree[T Hashable[T]](data []T, options ...func(t *Tree[T])) (*Tree[T], er
 		option(&t)
 	}
 
-	root, leafs, err := buildWithContent(data, &t)
-	if err != nil {
+	if err := t.GenerateTree(data); err != nil {
 		return nil, err
+	}
+
+	return &t, nil
+}
+
+// GenerateTree constructs the leafs and nodes of the tree from the specified
+// data. If the tree has been generated previously, the tree is re-generated
+// from scratch.
+func (t *Tree[T]) GenerateTree(data []T) error {
+	if len(data) == 0 {
+		return errors.New("cannot construct tree with no content")
+	}
+
+	var leafs []*Node[T]
+	for _, dt := range data {
+		hash, err := dt.Hash()
+		if err != nil {
+			return err
+		}
+
+		leafs = append(leafs, &Node[T]{
+			Hash: hash,
+			Data: dt,
+			leaf: true,
+			Tree: t,
+		})
+	}
+
+	if len(leafs)%2 == 1 {
+		duplicate := &Node[T]{
+			Hash: leafs[len(leafs)-1].Hash,
+			Data: leafs[len(leafs)-1].Data,
+			leaf: true,
+			dup:  true,
+			Tree: t,
+		}
+		leafs = append(leafs, duplicate)
+	}
+
+	root, err := buildIntermediate(leafs, t)
+	if err != nil {
+		return err
 	}
 
 	t.Root = root
 	t.Leafs = leafs
 	t.MerkleRoot = root.Hash
 
-	return &t, nil
+	return nil
+}
+
+// RebuildTree is a helper function that will rebuild the tree reusing only the
+// data that it currently holds in the leaves.
+func (t *Tree[T]) RebuildTree() error {
+	var data []T
+	for _, node := range t.Leafs {
+		data = append(data, node.Data)
+	}
+
+	if err := t.GenerateTree(data); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // MerklePath gets the tree path and indexes (left leaf or right leaf)
@@ -96,42 +153,6 @@ func (t *Tree[T]) MerklePath(data T) ([][]byte, []int64, error) {
 	}
 
 	return nil, nil, nil
-}
-
-// RebuildTree is a helper function that will rebuild the tree reusing only the
-// data that it currently holds in the leaves.
-func (t *Tree[T]) RebuildTree() error {
-	var data []T
-	for _, node := range t.Leafs {
-		data = append(data, node.Data)
-	}
-
-	root, leafs, err := buildWithContent(data, t)
-	if err != nil {
-		return err
-	}
-
-	t.Root = root
-	t.Leafs = leafs
-	t.MerkleRoot = root.Hash
-
-	return nil
-}
-
-// RebuildTreeWith replaces the data of the tree and does a complete rebuild.
-// While the root of the tree will be replaced, the tree completely survives
-// this operation. Returns an error if their is no data in the tree.
-func (t *Tree[T]) RebuildTreeWith(data []T) error {
-	root, leafs, err := buildWithContent(data, t)
-	if err != nil {
-		return err
-	}
-
-	t.Root = root
-	t.Leafs = leafs
-	t.MerkleRoot = root.Hash
-
-	return nil
 }
 
 // VerifyTree validates the hashes at each level of the tree and returns true
@@ -266,48 +287,6 @@ func (n *Node[T]) String() string {
 }
 
 // =============================================================================
-
-// buildWithContent is a helper function that for a given set of data,
-// generates a corresponding tree and returns the root node, a list of leaf
-// nodes, and a possible error. Returns an error if there is no data.
-func buildWithContent[T Hashable[T]](data []T, t *Tree[T]) (*Node[T], []*Node[T], error) {
-	if len(data) == 0 {
-		return nil, nil, errors.New("cannot construct tree with no content")
-	}
-
-	var leafs []*Node[T]
-	for _, dt := range data {
-		hash, err := dt.Hash()
-		if err != nil {
-			return nil, nil, err
-		}
-
-		leafs = append(leafs, &Node[T]{
-			Hash: hash,
-			Data: dt,
-			leaf: true,
-			Tree: t,
-		})
-	}
-
-	if len(leafs)%2 == 1 {
-		duplicate := &Node[T]{
-			Hash: leafs[len(leafs)-1].Hash,
-			Data: leafs[len(leafs)-1].Data,
-			leaf: true,
-			dup:  true,
-			Tree: t,
-		}
-		leafs = append(leafs, duplicate)
-	}
-
-	root, err := buildIntermediate(leafs, t)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return root, leafs, nil
-}
 
 // buildIntermediate is a helper function that for a given list of leaf nodes,
 // constructs the intermediate and root levels of the tree. Returns the resulting

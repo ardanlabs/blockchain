@@ -93,7 +93,7 @@ func TestSHA256_RebuildTreeWith(t *testing.T) {
 		if err != nil {
 			t.Errorf("[case:%d] error: unexpected error: %v", tableSHA256[i].testCaseId, err)
 		}
-		err = tree.RebuildTreeWith(tableSHA256[i+1].data)
+		err = tree.GenerateTree(tableSHA256[i+1].data)
 		if err != nil {
 			t.Errorf("[case:%d] error: unexpected error: %v", tableSHA256[i].testCaseId, err)
 		}

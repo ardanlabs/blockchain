@@ -81,7 +81,7 @@ func TestMD5_RebuildTreeWith(t *testing.T) {
 		if err != nil {
 			t.Errorf("[case:%d] error: unexpected error: %v", tableMD5[i].testCaseId, err)
 		}
-		err = tree.RebuildTreeWith(tableMD5[i+1].data)
+		err = tree.GenerateTree(tableMD5[i+1].data)
 		if err != nil {
 			t.Errorf("[case:%d] error: unexpected error: %v", tableMD5[i].testCaseId, err)
 		}
