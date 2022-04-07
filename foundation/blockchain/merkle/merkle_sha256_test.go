@@ -204,7 +204,7 @@ func TestSHA256_MerklePath(t *testing.T) {
 			t.Errorf("[case:%d] error: unexpected error: %v", tableSHA256[i].testCaseId, err)
 		}
 		for j := 0; j < len(tableSHA256[i].data); j++ {
-			merklePath, index, _ := tree.GetMerklePath(tableSHA256[i].data[j])
+			merklePath, index, _ := tree.MerklePath(tableSHA256[i].data[j])
 
 			hash, err := tree.Leafs[j].CalculateNodeHash()
 			if err != nil {

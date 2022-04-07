@@ -15,8 +15,8 @@ import (
 	"hash"
 )
 
-// Hashable represents the data that is stored and verified by the tree. A type
-// that implements this interface can be used as an item in the tree.
+// Hashable represents the behavior concrete data must exhibit to be used in
+// the merkle tree.
 type Hashable[T any] interface {
 	Hash() ([]byte, error)
 	Equals(other T) (bool, error)
@@ -24,8 +24,8 @@ type Hashable[T any] interface {
 
 // =============================================================================
 
-// Tree is the container for the tree. It holds a pointer to the root of the tree,
-// a list of pointers to the leaf nodes, and the merkle root.
+// Tree represents a merkle tree that uses data of some type T that exhibits the
+// behavior defined by the Hashable interface.
 type Tree[T Hashable[T]] struct {
 	Root         *Node[T]
 	MerkleRoot   []byte
@@ -33,15 +33,16 @@ type Tree[T Hashable[T]] struct {
 	hashStrategy func() hash.Hash
 }
 
-// WithHashStrategy allows the configuration of a different hash strategy than
-// using the default strategy.
+// WithHashStrategy is used to change the default hash strategy of using sha256
+// when constructing a new tree.
 func WithHashStrategy[T Hashable[T]](hashStrategy func() hash.Hash) func(t *Tree[T]) {
 	return func(t *Tree[T]) {
 		t.hashStrategy = hashStrategy
 	}
 }
 
-// NewTree creates a new Merkle Tree using the content.
+// NewTree constructs a new merkle tree that uses data of some type T that
+// exhibits the behavior defined by the Hashable interface.
 func NewTree[T Hashable[T]](data []T, options ...func(t *Tree[T])) (*Tree[T], error) {
 	var defaultHashStrategy = sha256.New
 	t := Tree[T]{
@@ -64,8 +65,9 @@ func NewTree[T Hashable[T]](data []T, options ...func(t *Tree[T])) (*Tree[T], er
 	return &t, nil
 }
 
-// GetMerklePath gets the Merkle path and indexes (left leaf or right leaf).
-func (t *Tree[T]) GetMerklePath(data T) ([][]byte, []int64, error) {
+// MerklePath gets the tree path and indexes (left leaf or right leaf)
+// for the specified data.
+func (t *Tree[T]) MerklePath(data T) ([][]byte, []int64, error) {
 	for _, node := range t.Leafs {
 		ok, err := node.Data.Equals(data)
 		if err != nil {
@@ -97,7 +99,7 @@ func (t *Tree[T]) GetMerklePath(data T) ([][]byte, []int64, error) {
 }
 
 // RebuildTree is a helper function that will rebuild the tree reusing only the
-// content thatit holds in the leaves.
+// data that it currently holds in the leaves.
 func (t *Tree[T]) RebuildTree() error {
 	var data []T
 	for _, node := range t.Leafs {
@@ -116,9 +118,9 @@ func (t *Tree[T]) RebuildTree() error {
 	return nil
 }
 
-// RebuildTreeWith replaces the content of the tree and does a complete rebuild
-// while the root of the tree will be replaced the MerkleTree completely survives
-// this operation. Returns an error if the list of content cs contains no entries.
+// RebuildTreeWith replaces the data of the tree and does a complete rebuild.
+// While the root of the tree will be replaced, the tree completely survives
+// this operation. Returns an error if their is no data in the tree.
 func (t *Tree[T]) RebuildTreeWith(data []T) error {
 	root, leafs, err := buildWithContent(data, t)
 	if err != nil {
@@ -132,9 +134,8 @@ func (t *Tree[T]) RebuildTreeWith(data []T) error {
 	return nil
 }
 
-// VerifyTree verify tree validates the hashes at each level of the tree and
-// returns true if the resulting hash at the root of the tree matches the
-// resulting root hash; returns false otherwise.
+// VerifyTree validates the hashes at each level of the tree and returns true
+// if the resulting hash at the root of the tree matches the resulting root hash.
 func (t *Tree[T]) VerifyTree() (bool, error) {
 	calculatedMerkleRoot, err := t.Root.verifyNode()
 	if err != nil {
@@ -148,10 +149,10 @@ func (t *Tree[T]) VerifyTree() (bool, error) {
 	return false, nil
 }
 
-// VerifyData indicates whether a given piece of data is in the tree and the
-// hashes are valid for that data. Returns true if the expected Merkle Root is
-// equivalent to the Merkle root calculated on the critical path for a given
-// data. Returns true if valid and false otherwise.
+// VerifyData indicates whether a given piece of data is in the tree and if the
+// hashes are valid for that data. Returns true if the expected merkle root is
+// equivalent to the merkle root calculated on the critical path for a given
+// piece of data.
 func (t *Tree[T]) VerifyData(data T) (bool, error) {
 	for _, node := range t.Leafs {
 		ok, err := node.Data.Equals(data)
@@ -208,8 +209,7 @@ func (t *Tree[T]) String() string {
 // =============================================================================
 
 // Node represents a node, root, or leaf in the tree. It stores pointers to its
-// immediate relationships, a hash, the content stored if it is a leaf, and
-// other metadata.
+// immediate relationships, a hash, the data if it is a leaf, and other metadata.
 type Node[T Hashable[T]] struct {
 	Tree   *Tree[T]
 	Parent *Node[T]
@@ -222,7 +222,7 @@ type Node[T Hashable[T]] struct {
 }
 
 // verifyNode walks down the tree until hitting a leaf, calculating the hash at
-// each level and returning the resulting hash of Node n.
+// each level and returning the resulting hash of the node.
 func (n *Node[T]) verifyNode() ([]byte, error) {
 	if n.leaf {
 		return n.Data.Hash()
@@ -267,9 +267,9 @@ func (n *Node[T]) String() string {
 
 // =============================================================================
 
-// buildWithContent is a helper function that for a given set of Contents,
+// buildWithContent is a helper function that for a given set of data,
 // generates a corresponding tree and returns the root node, a list of leaf
-// nodes, and a possible error. Returns an error if cs contains no Contents.
+// nodes, and a possible error. Returns an error if there is no data.
 func buildWithContent[T Hashable[T]](data []T, t *Tree[T]) (*Node[T], []*Node[T], error) {
 	if len(data) == 0 {
 		return nil, nil, errors.New("cannot construct tree with no content")

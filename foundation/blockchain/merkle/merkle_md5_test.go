@@ -193,7 +193,7 @@ func TestMD5_MerklePath(t *testing.T) {
 			t.Errorf("[case:%d] error: unexpected error: %v", tableMD5[i].testCaseId, err)
 		}
 		for j := 0; j < len(tableMD5[i].data); j++ {
-			merklePath, index, _ := tree.GetMerklePath(tableMD5[i].data[j])
+			merklePath, index, _ := tree.MerklePath(tableMD5[i].data[j])
 
 			hash, err := tree.Leafs[j].CalculateNodeHash()
 			if err != nil {
