@@ -16,21 +16,9 @@ const (
 	failed  = "\u2717"
 )
 
-func sign(tx storage.UserTx, gas uint) (storage.BlockTx, error) {
-	pk, err := crypto.HexToECDSA("fae85851bdf5c9f49923722ce38f3c1defcfd3619ef5453230a58ad805499959")
-	if err != nil {
-		return storage.BlockTx{}, err
-	}
+// =============================================================================
 
-	signedTx, err := tx.Sign(pk)
-	if err != nil {
-		return storage.BlockTx{}, err
-	}
-
-	return storage.NewBlockTx(signedTx, gas), nil
-}
-
-func TestTransactions(t *testing.T) {
+func Test_Transactions(t *testing.T) {
 	type table struct {
 		name        string
 		miner       storage.Account
@@ -182,4 +170,20 @@ func TestNonceValidation(t *testing.T) {
 			}
 		}
 	}
+}
+
+// =============================================================================
+
+func sign(tx storage.UserTx, gas uint) (storage.BlockTx, error) {
+	pk, err := crypto.HexToECDSA("fae85851bdf5c9f49923722ce38f3c1defcfd3619ef5453230a58ad805499959")
+	if err != nil {
+		return storage.BlockTx{}, err
+	}
+
+	signedTx, err := tx.Sign(pk)
+	if err != nil {
+		return storage.BlockTx{}, err
+	}
+
+	return storage.NewBlockTx(signedTx, gas), nil
 }

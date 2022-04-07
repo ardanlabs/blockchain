@@ -19,7 +19,9 @@ const (
 	sigStr   = "0x3fc1a5adca72b01479c92856f2498296975448a208413c8f5a66a79ac75503d4434bac60b5fd40ac51ad61235b208a8d52c6a615c7f9ee92b2d8ce2fbb855a7c1e"
 )
 
-func TestSigning(t *testing.T) {
+// =============================================================================
+
+func Test_Signing(t *testing.T) {
 	value := struct {
 		Name string
 	}{
@@ -72,7 +74,7 @@ func TestSigning(t *testing.T) {
 	}
 }
 
-func TestHash(t *testing.T) {
+func Test_Hash(t *testing.T) {
 	value := struct {
 		Name string
 	}{
@@ -104,7 +106,7 @@ func TestHash(t *testing.T) {
 	}
 }
 
-func TestSignConsistency(t *testing.T) {
+func Test_SignConsistency(t *testing.T) {
 	value1 := struct {
 		Name string
 	}{

@@ -12,7 +12,9 @@ const (
 	failed  = "\u2717"
 )
 
-func TestCRUD(t *testing.T) {
+// =============================================================================
+
+func Test_CRUD(t *testing.T) {
 	type table struct {
 		name  string
 		peers []peer.Peer

@@ -14,21 +14,9 @@ const (
 	failed  = "\u2717"
 )
 
-func sign(hexKey string, tx storage.UserTx, gas uint) (storage.BlockTx, error) {
-	pk, err := crypto.HexToECDSA(hexKey)
-	if err != nil {
-		return storage.BlockTx{}, err
-	}
+// =============================================================================
 
-	signedTx, err := tx.Sign(pk)
-	if err != nil {
-		return storage.BlockTx{}, err
-	}
-
-	return storage.NewBlockTx(signedTx, gas), nil
-}
-
-func TestCRUD(t *testing.T) {
+func Test_CRUD(t *testing.T) {
 	type user struct {
 		userTx storage.UserTx
 		hexKey string
@@ -132,4 +120,20 @@ func TestCRUD(t *testing.T) {
 			}
 		}
 	}
+}
+
+// =============================================================================
+
+func sign(hexKey string, tx storage.UserTx, gas uint) (storage.BlockTx, error) {
+	pk, err := crypto.HexToECDSA(hexKey)
+	if err != nil {
+		return storage.BlockTx{}, err
+	}
+
+	signedTx, err := tx.Sign(pk)
+	if err != nil {
+		return storage.BlockTx{}, err
+	}
+
+	return storage.NewBlockTx(signedTx, gas), nil
 }

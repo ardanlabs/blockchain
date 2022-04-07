@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/ardanlabs/blockchain/business/sys/metrics"
+	"github.com/ardanlabs/blockchain/business/web/metrics"
 	"github.com/ardanlabs/blockchain/foundation/web"
 )
 
