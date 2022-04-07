@@ -148,11 +148,11 @@ func (t *Tree[T]) VerifyTree() (bool, error) {
 	return false, nil
 }
 
-// VerifyContent indicates whether a given content is in the tree and the hashes
-// are valid for that content. Returns true if the expected Merkle Root is
+// VerifyData indicates whether a given piece of data is in the tree and the
+// hashes are valid for that data. Returns true if the expected Merkle Root is
 // equivalent to the Merkle root calculated on the critical path for a given
-// content. Returns true if valid and false otherwise.
-func (t *Tree[T]) VerifyContent(data T) (bool, error) {
+// data. Returns true if valid and false otherwise.
+func (t *Tree[T]) VerifyData(data T) (bool, error) {
 	for _, node := range t.Leafs {
 		ok, err := node.Data.Equals(data)
 		if err != nil {
