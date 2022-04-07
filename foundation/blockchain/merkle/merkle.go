@@ -25,7 +25,7 @@ type Hashable[T any] interface {
 // =============================================================================
 
 // Tree represents a merkle tree that uses data of some type T that exhibits the
-// behavior defined by the Hashable interface.
+// behavior defined by the Hashable constraint.
 type Tree[T Hashable[T]] struct {
 	Root         *Node[T]
 	MerkleRoot   []byte
