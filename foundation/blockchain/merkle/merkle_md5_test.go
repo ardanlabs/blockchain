@@ -7,7 +7,6 @@ package merkle_test
 import (
 	"bytes"
 	"crypto/md5"
-	"crypto/sha256"
 	"hash"
 	"testing"
 
@@ -199,7 +198,7 @@ func TestMD5_MerklePath(t *testing.T) {
 			if err != nil {
 				t.Errorf("[case:%d] error: calculateNodeHash error: %v", tableMD5[i].testCaseId, err)
 			}
-			h := sha256.New()
+			h := md5.New()
 			for k := 0; k < len(merklePath); k++ {
 				if index[k] == 1 {
 					hash = append(hash, merklePath[k]...)
