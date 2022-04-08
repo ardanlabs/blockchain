@@ -26,7 +26,7 @@ const ardanID = 29
 // =============================================================================
 
 // Hash returns a unique string for the value.
-func Hash(value interface{}) string {
+func Hash(value any) string {
 	data, err := json.Marshal(value)
 	if err != nil {
 		return ZeroHash
@@ -37,7 +37,7 @@ func Hash(value interface{}) string {
 }
 
 // Sign uses the specified private key to sign the user transaction.
-func Sign(value interface{}, privateKey *ecdsa.PrivateKey) (v, r, s *big.Int, err error) {
+func Sign(value any, privateKey *ecdsa.PrivateKey) (v, r, s *big.Int, err error) {
 
 	// Prepare the transaction for signing.
 	data, err := stamp(value)
@@ -59,7 +59,7 @@ func Sign(value interface{}, privateKey *ecdsa.PrivateKey) (v, r, s *big.Int, er
 
 // VerifySignature verifies the signature conforms to our standards and
 // is associated with the data claimed to be signed.
-func VerifySignature(value interface{}, v, r, s *big.Int) error {
+func VerifySignature(value any, v, r, s *big.Int) error {
 
 	// Check the recovery id is either 0 or 1.
 	uintV := v.Uint64() - ardanID
@@ -97,7 +97,7 @@ func VerifySignature(value interface{}, v, r, s *big.Int) error {
 }
 
 // FromAddress extracts the address for the account that signed the transaction.
-func FromAddress(value interface{}, v, r, s *big.Int) (string, error) {
+func FromAddress(value any, v, r, s *big.Int) (string, error) {
 
 	// Prepare the transaction for public key extraction.
 	tran, err := stamp(value)
@@ -155,7 +155,7 @@ func ToVRSFromHexSignature(sigStr string) (v, r, s *big.Int, err error) {
 
 // stamp returns a hash of 32 bytes that represents this user
 // transaction with the Ardan stamp embedded into the final hash.
-func stamp(value interface{}) ([]byte, error) {
+func stamp(value any) ([]byte, error) {
 
 	// Marshal the data.
 	data, err := json.Marshal(value)

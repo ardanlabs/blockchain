@@ -84,7 +84,7 @@ func (b Block) Hash() string {
 }
 
 // ValidateBlock takes a block and validates it to be included into the blockchain.
-func (b Block) ValidateBlock(parentBlock Block, evHandler func(v string, args ...interface{})) (string, error) {
+func (b Block) ValidateBlock(parentBlock Block, evHandler func(v string, args ...any)) (string, error) {
 
 	// The node who sent this block has a chain that is two or more blocks ahead
 	// of ours. This means there has been a fork and we are on the wrong side.
@@ -157,7 +157,7 @@ func (b Block) ValidateBlock(parentBlock Block, evHandler func(v string, args ..
 
 // PerformPOW does the work of mining to find a valid hash for a specified
 // block and returns a BlockFS ready to be written to disk.
-func (b Block) PerformPOW(ctx context.Context, difficulty int, ev func(v string, args ...interface{})) (BlockFS, time.Duration, error) {
+func (b Block) PerformPOW(ctx context.Context, difficulty int, ev func(v string, args ...any)) (BlockFS, time.Duration, error) {
 	ev("worker: PerformPOW: MINING: started")
 	defer ev("worker: PerformPOW: MINING: completed")
 

@@ -28,7 +28,7 @@ import (
 
 // EventHandler defines a function that is called when events
 // occur in the processing of persisting blocks.
-type EventHandler func(v string, args ...interface{})
+type EventHandler func(v string, args ...any)
 
 // Worker interface represents the behavior required to be implemented by any
 // package providing support for mining, peer updates, and transaction sharing.
@@ -74,7 +74,7 @@ type State struct {
 func New(cfg Config) (*State, error) {
 
 	// Build a safe event handler function for use.
-	ev := func(v string, args ...interface{}) {
+	ev := func(v string, args ...any) {
 		if cfg.EvHandler != nil {
 			cfg.EvHandler(v, args...)
 		}

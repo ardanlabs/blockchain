@@ -154,7 +154,7 @@ func (w *Worker) isShutdown() bool {
 }
 
 // send is a helper function to send an HTTP request to a node.
-func send(method string, url string, dataSend interface{}, dataRecv interface{}) error {
+func send(method string, url string, dataSend any, dataRecv any) error {
 	var req *http.Request
 
 	switch {

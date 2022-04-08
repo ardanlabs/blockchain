@@ -135,7 +135,7 @@ func run(log *zap.SugaredLogger) error {
 
 	evts := events.New()
 
-	ev := func(v string, args ...interface{}) {
+	ev := func(v string, args ...any) {
 		s := fmt.Sprintf(v, args...)
 		log.Infow(s, "traceid", "00000000-0000-0000-0000-000000000000")
 		evts.Send(s)

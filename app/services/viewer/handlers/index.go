@@ -40,7 +40,7 @@ func newIndex() (indexGroup, error) {
 
 func (ig *indexGroup) handler(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	var markup bytes.Buffer
-	vars := map[string]interface{}{
+	vars := map[string]any{
 		"variable": "testing",
 	}
 
