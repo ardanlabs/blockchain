@@ -125,7 +125,7 @@ func (t *Tree[T]) RebuildTree() error {
 
 // MerklePath gets the tree path and indexes (left leaf or right leaf)
 // for the specified data.
-func (t *Tree[T]) MerklePath(data T) ([][]byte, []int64, error) {
+func (t *Tree[T]) MerklePath(data T) (merklePath [][]byte, index []int64, err error) {
 	for _, node := range t.Leafs {
 		ok, err := node.Data.Equals(data)
 		if err != nil {
@@ -158,28 +158,29 @@ func (t *Tree[T]) MerklePath(data T) ([][]byte, []int64, error) {
 
 // VerifyTree validates the hashes at each level of the tree and returns true
 // if the resulting hash at the root of the tree matches the resulting root hash.
-func (t *Tree[T]) VerifyTree() (bool, error) {
+func (t *Tree[T]) VerifyTree() error {
 	calculatedMerkleRoot, err := t.Root.verifyNode()
 	if err != nil {
-		return false, err
+		return err
 	}
 
-	if bytes.Equal(t.MerkleRoot, calculatedMerkleRoot) {
-		return true, nil
+	if !bytes.Equal(t.MerkleRoot, calculatedMerkleRoot) {
+		return errors.New("root hashe invalid")
+
 	}
 
-	return false, nil
+	return nil
 }
 
 // VerifyData indicates whether a given piece of data is in the tree and if the
 // hashes are valid for that data. Returns true if the expected merkle root is
 // equivalent to the merkle root calculated on the critical path for a given
 // piece of data.
-func (t *Tree[T]) VerifyData(data T) (bool, error) {
+func (t *Tree[T]) VerifyData(data T) error {
 	for _, node := range t.Leafs {
 		ok, err := node.Data.Equals(data)
 		if err != nil {
-			return false, err
+			return err
 		}
 		if !ok {
 			continue
@@ -189,30 +190,30 @@ func (t *Tree[T]) VerifyData(data T) (bool, error) {
 		for currentParent != nil {
 			rightBytes, err := currentParent.Right.CalculateNodeHash()
 			if err != nil {
-				return false, err
+				return err
 			}
 
 			leftBytes, err := currentParent.Left.CalculateNodeHash()
 			if err != nil {
-				return false, err
+				return err
 			}
 
 			h := t.hashStrategy()
 			if _, err := h.Write(append(leftBytes, rightBytes...)); err != nil {
-				return false, err
+				return err
 			}
 
 			if !bytes.Equal(h.Sum(nil), currentParent.Hash) {
-				return false, nil
+				return errors.New("merkle root is not equivalent to the merkle root calculated on the critical path")
 			}
 
 			currentParent = currentParent.Parent
 		}
 
-		return true, nil
+		return nil
 	}
 
-	return false, nil
+	return errors.New("merkle root is not equivalent to the merkle root calculated on the critical path")
 }
 
 // MerkelRootHex provides the hexidecimal encoding of the merkel root.

@@ -109,20 +109,12 @@ func Test_VerifyTree(t *testing.T) {
 		if err != nil {
 			t.Errorf("[case:%d] error: unexpected error: %v", table[i].testCaseID, err)
 		}
-		v1, err := tree.VerifyTree()
-		if err != nil {
-			t.Fatal(err)
-		}
-		if v1 != true {
+		if err := tree.VerifyTree(); err != nil {
 			t.Errorf("[case:%d] error: expected tree to be valid", table[i].testCaseID)
 		}
 		tree.Root.Hash = []byte{1}
 		tree.MerkleRoot = []byte{1}
-		v2, err := tree.VerifyTree()
-		if err != nil {
-			t.Fatal(err)
-		}
-		if v2 != false {
+		if err := tree.VerifyTree(); err == nil {
 			t.Errorf("[case:%d] error: expected tree to be invalid", table[i].testCaseID)
 		}
 	}
@@ -135,51 +127,31 @@ func Test_VerifyData(t *testing.T) {
 			t.Errorf("[case:%d] error: unexpected error: %v", table[i].testCaseID, err)
 		}
 		if len(table[i].data) > 0 {
-			v, err := tree.VerifyData(table[i].data[0])
-			if err != nil {
-				t.Fatal(err)
-			}
-			if !v {
+			if err := tree.VerifyData(table[i].data[0]); err != nil {
 				t.Errorf("[case:%d] error: expected valid content", table[i].testCaseID)
 			}
 		}
 		if len(table[i].data) > 1 {
-			v, err := tree.VerifyData(table[i].data[1])
-			if err != nil {
-				t.Fatal(err)
-			}
-			if !v {
+			if err := tree.VerifyData(table[i].data[1]); err != nil {
 				t.Errorf("[case:%d] error: expected valid content", table[i].testCaseID)
 			}
 		}
 		if len(table[i].data) > 2 {
-			v, err := tree.VerifyData(table[i].data[2])
-			if err != nil {
-				t.Fatal(err)
-			}
-			if !v {
+			if err := tree.VerifyData(table[i].data[2]); err != nil {
 				t.Errorf("[case:%d] error: expected valid content", table[i].testCaseID)
 			}
 		}
 		if len(table[i].data) > 0 {
 			tree.Root.Hash = []byte{1}
 			tree.MerkleRoot = []byte{1}
-			v, err := tree.VerifyData(table[i].data[0])
-			if err != nil {
-				t.Fatal(err)
-			}
-			if v {
+			if err := tree.VerifyData(table[i].data[0]); err == nil {
 				t.Errorf("[case:%d] error: expected invalid content", table[i].testCaseID)
 			}
 			if err := tree.RebuildTree(); err != nil {
 				t.Fatal(err)
 			}
 		}
-		v, err := tree.VerifyData(table[i].notInContents)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if v {
+		if err := tree.VerifyData(table[i].notInContents); err == nil {
 			t.Errorf("[case:%d] error: expected invalid content", table[i].testCaseID)
 		}
 	}
