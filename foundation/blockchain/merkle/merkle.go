@@ -301,7 +301,7 @@ func buildIntermediate[T Hashable[T]](nl []*Node[T], t *Tree[T]) (*Node[T], erro
 	var nodes []*Node[T]
 
 	for i := 0; i < len(nl); i += 2 {
-		var left, right int = i, i + 1
+		left, right := i, i+1
 		if i+1 == len(nl) {
 			right = i
 		}
