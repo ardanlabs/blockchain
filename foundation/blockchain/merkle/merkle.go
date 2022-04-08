@@ -20,7 +20,7 @@ import (
 // the merkle tree.
 type Hashable[T any] interface {
 	Hash() ([]byte, error)
-	Equals(other T) (bool, error)
+	Equals(other T) bool
 }
 
 // =============================================================================
@@ -127,11 +127,7 @@ func (t *Tree[T]) RebuildTree() error {
 // for the specified data.
 func (t *Tree[T]) MerklePath(data T) (merklePath [][]byte, index []int64, err error) {
 	for _, node := range t.Leafs {
-		ok, err := node.Data.Equals(data)
-		if err != nil {
-			return nil, nil, err
-		}
-		if !ok {
+		if !node.Data.Equals(data) {
 			continue
 		}
 
@@ -178,11 +174,7 @@ func (t *Tree[T]) VerifyTree() error {
 // piece of data.
 func (t *Tree[T]) VerifyData(data T) error {
 	for _, node := range t.Leafs {
-		ok, err := node.Data.Equals(data)
-		if err != nil {
-			return err
-		}
-		if !ok {
+		if !node.Data.Equals(data) {
 			continue
 		}
 

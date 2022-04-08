@@ -140,9 +140,9 @@ func (tx BlockTx) Hash() ([]byte, error) {
 // Equals implements the merkle Hashable interface for providing an equality
 // check between two block transactions. If the nonce and signatures are the
 // same, the two blocks are the same.
-func (tx BlockTx) Equals(otherTx BlockTx) (bool, error) {
+func (tx BlockTx) Equals(otherTx BlockTx) bool {
 	txSig := signature.ToSignatureBytes(tx.V, tx.R, tx.S)
 	otherTxSig := signature.ToSignatureBytes(otherTx.V, otherTx.R, otherTx.S)
 
-	return tx.Nonce == otherTx.Nonce && bytes.Equal(txSig, otherTxSig), nil
+	return tx.Nonce == otherTx.Nonce && bytes.Equal(txSig, otherTxSig)
 }

@@ -29,8 +29,8 @@ func (d Data) Hash() ([]byte, error) {
 }
 
 // Equals tests for equality of two piece of data.
-func (d Data) Equals(other Data) (bool, error) {
-	return d.x == other.x, nil
+func (d Data) Equals(other Data) bool {
+	return d.x == other.x
 }
 
 // =============================================================================
