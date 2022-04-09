@@ -112,8 +112,7 @@ func (str *Storage) ReadAllBlocks(evHandler func(v string, args ...any), validat
 		}
 
 		if validate {
-			_, err := block.ValidateBlock(latestBlock, evHandler)
-			if err != nil {
+			if err := block.ValidateBlock(latestBlock, evHandler); err != nil {
 				return nil, err
 			}
 		}
