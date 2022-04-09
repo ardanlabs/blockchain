@@ -26,8 +26,6 @@ type BlockHeader struct {
 	Difficulty   int     `json:"difficulty"`    // Number of 0's needed to solve the hash solution.
 	Number       uint64  `json:"number"`        // Block number in the chain.
 	MerkleRoot   string  `json:"merkle_root"`   // Represents the merkle tree root hash for the transactions in this block.
-	TotalTip     uint    `json:"total_tip"`     // Total tip paid by all senders as an incentive.
-	TotalGas     uint    `json:"total_gas"`     // Total gas fee to recover computation costs paid by the sender.
 	TimeStamp    uint64  `json:"timestamp"`     // Time the block was mined.
 	Nonce        uint64  `json:"nonce"`         // Value identified to solve the hash solution.
 }
@@ -50,13 +48,6 @@ func NewBlock(minerAccount Account, difficulty int, transPerBlock int, parentBlo
 		return Block{}, err
 	}
 
-	var totalTip uint
-	var totalGas uint
-	for _, tx := range trans {
-		totalTip += tx.Tip
-		totalGas += tx.Gas
-	}
-
 	nb := Block{
 		Header: BlockHeader{
 			ParentHash:   parentHash,
@@ -64,8 +55,6 @@ func NewBlock(minerAccount Account, difficulty int, transPerBlock int, parentBlo
 			Difficulty:   difficulty,
 			Number:       parentBlock.Header.Number + 1,
 			MerkleRoot:   tree.MerkelRootHex(),
-			TotalTip:     totalTip,
-			TotalGas:     totalGas,
 			TimeStamp:    uint64(time.Now().UTC().Unix()),
 		},
 		Transactions: trans,

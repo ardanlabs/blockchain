@@ -203,8 +203,6 @@ func (h Handlers) BlocksByAccount(ctx context.Context, w http.ResponseWriter, r 
 			MinerAccount: blk.Header.MinerAccount,
 			Difficulty:   blk.Header.Difficulty,
 			Number:       blk.Header.Number,
-			TotalTip:     blk.Header.TotalTip,
-			TotalGas:     blk.Header.TotalGas,
 			TimeStamp:    blk.Header.TimeStamp,
 			Nonce:        blk.Header.Nonce,
 			Transactions: trans,
