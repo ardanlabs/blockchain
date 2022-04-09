@@ -217,14 +217,14 @@ type BlockFS struct {
 }
 
 // NewBlockFS constructs the value to serialize to disk.
-func NewBlockFS(hash string, block Block) BlockFS {
+func NewBlockFS(block Block) BlockFS {
 	trans := make([]BlockTx, len(block.Trans.Leafs))
 	for i, tx := range block.Trans.Leafs {
 		trans[i] = tx.Value
 	}
 
 	bfs := BlockFS{
-		Hash:  hash,
+		Hash:  block.Hash(),
 		Block: block.Header,
 		Trans: trans,
 	}

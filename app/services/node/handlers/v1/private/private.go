@@ -130,7 +130,7 @@ func (h Handlers) BlocksByNumber(ctx context.Context, w http.ResponseWriter, r *
 
 	blocksFS := make([]storage.BlockFS, len(blocks))
 	for i, block := range blocks {
-		blocksFS[i] = storage.NewBlockFS(block.Hash(), block)
+		blocksFS[i] = storage.NewBlockFS(block)
 	}
 
 	return web.Respond(ctx, w, blocksFS, http.StatusOK)

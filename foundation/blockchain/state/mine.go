@@ -80,7 +80,7 @@ func (s *State) updateLocalState(block storage.Block) error {
 	s.evHandler("state: updateLocalState: write to disk")
 
 	// Write the new block to the chain on disk.
-	if err := s.storage.Write(storage.NewBlockFS(block.Hash(), block)); err != nil {
+	if err := s.storage.Write(storage.NewBlockFS(block)); err != nil {
 		return err
 	}
 	s.latestBlock = block
