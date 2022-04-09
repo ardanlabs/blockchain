@@ -44,7 +44,7 @@ func WithHashStrategy[T Hashable[T]](hashStrategy func() hash.Hash) func(t *Tree
 
 // NewTree constructs a new merkle tree that uses data of some type T that
 // exhibits the behavior defined by the Hashable interface.
-func NewTree[T Hashable[T]](data []T, options ...func(t *Tree[T])) (*Tree[T], error) {
+func NewTree[T Hashable[T]](values []T, options ...func(t *Tree[T])) (*Tree[T], error) {
 	var defaultHashStrategy = sha256.New
 
 	t := Tree[T]{
@@ -55,7 +55,7 @@ func NewTree[T Hashable[T]](data []T, options ...func(t *Tree[T])) (*Tree[T], er
 		option(&t)
 	}
 
-	if err := t.GenerateTree(data); err != nil {
+	if err := t.GenerateTree(values); err != nil {
 		return nil, err
 	}
 
@@ -65,33 +65,33 @@ func NewTree[T Hashable[T]](data []T, options ...func(t *Tree[T])) (*Tree[T], er
 // GenerateTree constructs the leafs and nodes of the tree from the specified
 // data. If the tree has been generated previously, the tree is re-generated
 // from scratch.
-func (t *Tree[T]) GenerateTree(data []T) error {
-	if len(data) == 0 {
+func (t *Tree[T]) GenerateTree(values []T) error {
+	if len(values) == 0 {
 		return errors.New("cannot construct tree with no content")
 	}
 
 	var leafs []*Node[T]
-	for _, dt := range data {
-		hash, err := dt.Hash()
+	for _, value := range values {
+		hash, err := value.Hash()
 		if err != nil {
 			return err
 		}
 
 		leafs = append(leafs, &Node[T]{
-			Hash: hash,
-			Data: dt,
-			leaf: true,
-			Tree: t,
+			Hash:  hash,
+			Value: value,
+			leaf:  true,
+			Tree:  t,
 		})
 	}
 
 	if len(leafs)%2 == 1 {
 		duplicate := &Node[T]{
-			Hash: leafs[len(leafs)-1].Hash,
-			Data: leafs[len(leafs)-1].Data,
-			leaf: true,
-			dup:  true,
-			Tree: t,
+			Hash:  leafs[len(leafs)-1].Hash,
+			Value: leafs[len(leafs)-1].Value,
+			leaf:  true,
+			dup:   true,
+			Tree:  t,
 		}
 		leafs = append(leafs, duplicate)
 	}
@@ -113,7 +113,7 @@ func (t *Tree[T]) GenerateTree(data []T) error {
 func (t *Tree[T]) RebuildTree() error {
 	var data []T
 	for _, node := range t.Leafs {
-		data = append(data, node.Data)
+		data = append(data, node.Value)
 	}
 
 	if err := t.GenerateTree(data); err != nil {
@@ -127,7 +127,7 @@ func (t *Tree[T]) RebuildTree() error {
 // for the specified data.
 func (t *Tree[T]) MerklePath(data T) (merklePath [][]byte, index []int64, err error) {
 	for _, node := range t.Leafs {
-		if !node.Data.Equals(data) {
+		if !node.Value.Equals(data) {
 			continue
 		}
 
@@ -174,7 +174,7 @@ func (t *Tree[T]) VerifyTree() error {
 // piece of data.
 func (t *Tree[T]) VerifyData(data T) error {
 	for _, node := range t.Leafs {
-		if !node.Data.Equals(data) {
+		if !node.Value.Equals(data) {
 			continue
 		}
 
@@ -236,7 +236,7 @@ type Node[T Hashable[T]] struct {
 	Left   *Node[T]
 	Right  *Node[T]
 	Hash   []byte
-	Data   T
+	Value  T
 	leaf   bool
 	dup    bool
 }
@@ -245,7 +245,7 @@ type Node[T Hashable[T]] struct {
 // each level and returning the resulting hash of the node.
 func (n *Node[T]) verifyNode() ([]byte, error) {
 	if n.leaf {
-		return n.Data.Hash()
+		return n.Value.Hash()
 	}
 
 	rightBytes, err := n.Right.verifyNode()
@@ -269,7 +269,7 @@ func (n *Node[T]) verifyNode() ([]byte, error) {
 // CalculateNodeHash is a helper function that calculates the hash of the node.
 func (n *Node[T]) CalculateNodeHash() ([]byte, error) {
 	if n.leaf {
-		return n.Data.Hash()
+		return n.Value.Hash()
 	}
 
 	h := n.Tree.hashStrategy()
@@ -282,7 +282,7 @@ func (n *Node[T]) CalculateNodeHash() ([]byte, error) {
 
 // String returns a string representation of the node.
 func (n *Node[T]) String() string {
-	return fmt.Sprintf("%t %t %v %v", n.leaf, n.dup, n.Hash, n.Data)
+	return fmt.Sprintf("%t %t %v %v", n.leaf, n.dup, n.Hash, n.Value)
 }
 
 // =============================================================================

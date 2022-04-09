@@ -3,7 +3,6 @@ package state
 import (
 	"context"
 	"errors"
-	"time"
 
 	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
 )
@@ -16,43 +15,43 @@ var ErrNotEnoughTransactions = errors.New("not enough transactions in mempool")
 
 // MineNewBlock attempts to create a new block with a proper hash that can become
 // the next block in the chain.
-func (s *State) MineNewBlock(ctx context.Context) (storage.Block, time.Duration, error) {
+func (s *State) MineNewBlock(ctx context.Context) (storage.Block, error) {
 	s.evHandler("state: MineNewBlock: MINING: check mempool count")
 
 	// Are there enough transactions in the pool.
 	if s.mempool.Count() < s.genesis.TransPerBlock {
-		return storage.Block{}, 0, ErrNotEnoughTransactions
+		return storage.Block{}, ErrNotEnoughTransactions
 	}
 
 	s.evHandler("state: MineNewBlock: MINING: create new block: pick %d", s.genesis.TransPerBlock)
 
 	// Create a new block after picking the best transactions currently in the mempool.
 	trans := s.mempool.PickBest(s.genesis.TransPerBlock)
-	b, err := storage.NewBlock(s.minerAccount, s.genesis.Difficulty, s.genesis.TransPerBlock, s.RetrieveLatestBlock(), trans)
+	block, err := storage.NewBlock(s.minerAccount, s.genesis.Difficulty, s.RetrieveLatestBlock(), trans)
 	if err != nil {
-		return storage.Block{}, 0, err
+		return storage.Block{}, err
 	}
 
 	s.evHandler("state: MineNewBlock: MINING: perform POW")
 
 	// Attempt to create a new BlockFS by solving the POW puzzle. This can be cancelled.
-	blockFS, duration, err := b.PerformPOW(ctx, s.genesis.Difficulty, s.evHandler)
+	hash, err := block.PerformPOW(ctx, s.genesis.Difficulty, s.evHandler)
 	if err != nil {
-		return storage.Block{}, duration, err
+		return storage.Block{}, err
 	}
 
 	// Just check one more time we were not cancelled.
 	if ctx.Err() != nil {
-		return storage.Block{}, duration, ctx.Err()
+		return storage.Block{}, ctx.Err()
 	}
 
 	s.evHandler("state: MineNewBlock: MINING: update local state")
 
-	if err := s.updateLocalState(blockFS); err != nil {
-		return storage.Block{}, duration, err
+	if err := s.updateLocalState(hash, block); err != nil {
+		return storage.Block{}, err
 	}
 
-	return blockFS.Block, duration, nil
+	return block, nil
 }
 
 // MinePeerBlock takes a block received from a peer, validates it and
@@ -76,50 +75,45 @@ func (s *State) MinePeerBlock(block storage.Block) error {
 		return err
 	}
 
-	blockFS := storage.BlockFS{
-		Hash:  hash,
-		Block: block,
-	}
-
-	return s.updateLocalState(blockFS)
+	return s.updateLocalState(hash, block)
 }
 
 // =============================================================================
 
 // updateLocalState takes the blockFS and updates the current state of the
 // chain, including adding the block to disk.
-func (s *State) updateLocalState(blockFS storage.BlockFS) error {
+func (s *State) updateLocalState(hash string, block storage.Block) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	s.evHandler("state: updateLocalState: write to disk")
 
 	// Write the new block to the chain on disk.
-	if err := s.storage.Write(blockFS); err != nil {
+	if err := s.storage.Write(storage.NewBlockFS(hash, block)); err != nil {
 		return err
 	}
-	s.latestBlock = blockFS.Block
+	s.latestBlock = block
 
 	s.evHandler("state: updateLocalState: update accounts and remove from mempool")
 
 	// Process the transactions and update the accounts.
-	for _, tx := range blockFS.Block.Transactions {
-		s.evHandler("state: updateLocalState: tx[%s] update and remove", tx)
+	for _, tx := range block.Trans.Leafs {
+		s.evHandler("state: updateLocalState: tx[%s] update and remove", tx.Value)
 
 		// Apply the balance changes based on this transaction.
-		if err := s.accounts.ApplyTransaction(blockFS.Block.Header.MinerAccount, tx); err != nil {
+		if err := s.accounts.ApplyTransaction(block.Header.MinerAccount, tx.Value); err != nil {
 			s.evHandler("state: updateLocalState: WARNING : %s", err)
 			continue
 		}
 
 		// Remove this transaction from the mempool.
-		s.mempool.Delete(tx)
+		s.mempool.Delete(tx.Value)
 	}
 
 	s.evHandler("state: updateLocalState: apply mining reward")
 
 	// Apply the mining reward for this block.
-	s.accounts.ApplyMiningReward(blockFS.Block.Header.MinerAccount)
+	s.accounts.ApplyMiningReward(block.Header.MinerAccount)
 
 	return nil
 }

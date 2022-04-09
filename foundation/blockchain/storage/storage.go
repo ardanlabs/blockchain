@@ -106,14 +106,20 @@ func (str *Storage) ReadAllBlocks(evHandler func(v string, args ...any), validat
 			return nil, err
 		}
 
+		block, err := ToBlock(blockFS)
+		if err != nil {
+			return nil, err
+		}
+
 		if validate {
-			if _, err := blockFS.Block.ValidateBlock(latestBlock, evHandler); err != nil {
+			_, err := block.ValidateBlock(latestBlock, evHandler)
+			if err != nil {
 				return nil, err
 			}
 		}
 
-		blocks = append(blocks, blockFS.Block)
-		latestBlock = blockFS.Block
+		blocks = append(blocks, block)
+		latestBlock = block
 	}
 
 	return blocks, nil

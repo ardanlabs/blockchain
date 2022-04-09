@@ -62,12 +62,12 @@ func (s *State) QueryBlocksByAccount(account storage.Account) []storage.Block {
 	var out []storage.Block
 blocks:
 	for _, block := range blocks {
-		for _, tx := range block.Transactions {
-			from, err := tx.FromAccount()
+		for _, tx := range block.Trans.Leafs {
+			from, err := tx.Value.FromAccount()
 			if err != nil {
 				continue
 			}
-			if account == "" || from == account || tx.To == account {
+			if account == "" || from == account || tx.Value.To == account {
 				out = append(out, block)
 				continue blocks
 			}

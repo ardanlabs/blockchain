@@ -123,12 +123,17 @@ func (h Handlers) BlocksByNumber(ctx context.Context, w http.ResponseWriter, r *
 		return v1.NewRequestError(errors.New("from greater than to"), http.StatusBadRequest)
 	}
 
-	dbBlocks := h.State.QueryBlocksByNumber(from, to)
-	if len(dbBlocks) == 0 {
+	blocks := h.State.QueryBlocksByNumber(from, to)
+	if len(blocks) == 0 {
 		return web.Respond(ctx, w, nil, http.StatusNoContent)
 	}
 
-	return web.Respond(ctx, w, dbBlocks, http.StatusOK)
+	blocksFS := make([]storage.BlockFS, len(blocks))
+	for i, block := range blocks {
+		blocksFS[i] = storage.NewBlockFS(block.Hash(), block)
+	}
+
+	return web.Respond(ctx, w, blocksFS, http.StatusOK)
 }
 
 // Mempool returns the set of uncommitted transactions.
