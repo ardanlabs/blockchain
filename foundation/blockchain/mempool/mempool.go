@@ -46,18 +46,18 @@ func (mp *Mempool) Count() int {
 }
 
 // Upsert adds or replaces a transaction from the mempool.
-func (mp *Mempool) Upsert(tx storage.BlockTx) (int, error) {
+func (mp *Mempool) Upsert(tx storage.BlockTx) error {
 	mp.mu.Lock()
 	defer mp.mu.Unlock()
 
 	key, err := mapKey(tx)
 	if err != nil {
-		return 0, err
+		return err
 	}
 
 	mp.pool[key] = tx
 
-	return len(mp.pool), nil
+	return nil
 }
 
 // Delete removed a transaction from the mempool.
@@ -85,7 +85,11 @@ func (mp *Mempool) Truncate() {
 
 // PickBest uses the configured sort strategy to return the next set
 // of transactions for the next block.
-func (mp *Mempool) PickBest(howMany int) []storage.BlockTx {
+func (mp *Mempool) PickBest(howMany ...int) []storage.BlockTx {
+	number := -1
+	if len(howMany) > 0 {
+		number = howMany[0]
+	}
 
 	// Copy all the transactions for each account into separate
 	// slices for each account.
@@ -93,8 +97,8 @@ func (mp *Mempool) PickBest(howMany int) []storage.BlockTx {
 	m := make(map[storage.Account][]storage.BlockTx)
 	mp.mu.RLock()
 	{
-		if howMany == -1 {
-			howMany = len(mp.pool)
+		if number == -1 {
+			number = len(mp.pool)
 		}
 
 		for key, tx := range mp.pool {
@@ -104,7 +108,7 @@ func (mp *Mempool) PickBest(howMany int) []storage.BlockTx {
 	}
 	mp.mu.RUnlock()
 
-	return mp.selectFn(m, howMany)
+	return mp.selectFn(m, number)
 }
 
 // =============================================================================

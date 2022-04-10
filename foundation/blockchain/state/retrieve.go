@@ -27,7 +27,7 @@ func (s *State) RetrieveLatestBlock() storage.Block {
 
 // RetrieveMempool returns a copy of the mempool.
 func (s *State) RetrieveMempool() []storage.BlockTx {
-	return s.mempool.PickBest(-1)
+	return s.mempool.PickBest()
 }
 
 // RetrieveAccounts returns a copy of the set of account information.

@@ -36,12 +36,10 @@ func (w *Worker) runMiningOperation() {
 	w.evHandler("worker: runMiningOperation: MINING: started")
 	defer w.evHandler("worker: runMiningOperation: MINING: completed")
 
-	genesis := w.state.RetrieveGenesis()
-
-	// Make sure there are at least transPerBlock in the mempool.
+	// Make sure there are transactions in the mempool.
 	length := w.state.QueryMempoolLength()
-	if length < genesis.TransPerBlock {
-		w.evHandler("worker: runMiningOperation: MINING: not enough transactions to mine: Txs[%d]", length)
+	if length == 0 {
+		w.evHandler("worker: runMiningOperation: MINING: no transactions to mine: Txs[%d]", length)
 		return
 	}
 
@@ -49,7 +47,7 @@ func (w *Worker) runMiningOperation() {
 	// be signaled again.
 	defer func() {
 		length := w.state.QueryMempoolLength()
-		if length >= genesis.TransPerBlock {
+		if length > 0 {
 			w.evHandler("worker: runMiningOperation: MINING: signal new mining operation: Txs[%d]", length)
 			w.SignalStartMining()
 		}
@@ -90,7 +88,7 @@ func (w *Worker) runMiningOperation() {
 
 		select {
 		case wait = <-w.cancelMining:
-			w.evHandler("worker: runMiningOperation: MINING: cancel mining requested")
+			w.evHandler("worker: runMiningOperation: MINING: CANCEL: requested")
 		case <-ctx.Done():
 		}
 	}()
@@ -110,10 +108,10 @@ func (w *Worker) runMiningOperation() {
 
 		if err != nil {
 			switch {
-			case errors.Is(err, state.ErrNotEnoughTransactions):
-				w.evHandler("worker: runMiningOperation: MINING: WARNING: not enough transactions in mempool")
+			case errors.Is(err, state.ErrNoTransactions):
+				w.evHandler("worker: runMiningOperation: MINING: WARNING: no transactions in mempool")
 			case ctx.Err() != nil:
-				w.evHandler("worker: runMiningOperation: MINING: CANCELLED: by request")
+				w.evHandler("worker: runMiningOperation: MINING: CANCEL: complete")
 			default:
 				w.evHandler("worker: runMiningOperation: MINING: ERROR: %s", err)
 			}
@@ -140,11 +138,10 @@ func (w *Worker) sendBlockToPeers(block storage.Block) error {
 		url := fmt.Sprintf("%s/block/next", fmt.Sprintf(w.baseURL, peer.Host))
 
 		var status struct {
-			Status string        `json:"status"`
-			Block  storage.Block `json:"block"`
+			Status string `json:"status"`
 		}
 
-		if err := send(http.MethodPost, url, block, &status); err != nil {
+		if err := send(http.MethodPost, url, storage.NewBlockFS(block), &status); err != nil {
 			return fmt.Errorf("%s: %s", peer.Host, err)
 		}
 

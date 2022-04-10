@@ -100,7 +100,7 @@ func Test_CRUD(t *testing.T) {
 					}
 
 					mp.Delete(txs[1])
-					txs = mp.PickBest(-1)
+					txs = mp.PickBest()
 					if len(txs) != len(tst.txs)-1 {
 						t.Logf("\t%s\tTest %d:\tgot: %d", failed, testID, len(txs))
 						t.Logf("\t%s\tTest %d:\texp: %d", failed, testID, len(tst.txs)-1)
@@ -109,7 +109,7 @@ func Test_CRUD(t *testing.T) {
 					t.Logf("\t%s\tTest %d:\tShould be able to remove a transaction.", success, testID)
 
 					mp.Truncate()
-					txs = mp.PickBest(-1)
+					txs = mp.PickBest()
 					if len(txs) != 0 {
 						t.Fatalf("\t%s\tTest %d:\tShould be able to truncate mempool.", failed, testID)
 					}

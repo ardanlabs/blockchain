@@ -180,21 +180,27 @@ func (h Handlers) BlocksByAccount(ctx context.Context, w http.ResponseWriter, r 
 
 	blocks := make([]block, len(dbBlocks))
 	for j, blk := range dbBlocks {
-		trans := make([]tx, len(blk.Trans.Leafs))
-		for i, tran := range blk.Trans.Leafs {
-			account, _ := tran.Value.FromAccount()
+		values := blk.Trans.Values()
+		trans := make([]tx, len(blk.Trans.Values()))
+
+		for i, tran := range values {
+			account, err := tran.FromAccount()
+			if err != nil {
+				return err
+			}
+
 			trans[i] = tx{
 				FromAccount: account,
 				FromName:    h.NS.Lookup(account),
-				To:          tran.Value.To,
-				ToName:      h.NS.Lookup(tran.Value.To),
-				Nonce:       tran.Value.Nonce,
-				Value:       tran.Value.Value,
-				Tip:         tran.Value.Tip,
-				Data:        tran.Value.Data,
-				TimeStamp:   tran.Value.TimeStamp,
-				Gas:         tran.Value.Gas,
-				Sig:         tran.Value.SignatureString(),
+				To:          tran.To,
+				ToName:      h.NS.Lookup(tran.To),
+				Nonce:       tran.Nonce,
+				Value:       tran.Value,
+				Tip:         tran.Tip,
+				Data:        tran.Data,
+				TimeStamp:   tran.TimeStamp,
+				Gas:         tran.Gas,
+				Sig:         tran.SignatureString(),
 			}
 		}
 

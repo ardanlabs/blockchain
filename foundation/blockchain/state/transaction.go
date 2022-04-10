@@ -10,16 +10,12 @@ func (s *State) UpsertWalletTransaction(signedTx storage.SignedTx) error {
 
 	tx := storage.NewBlockTx(signedTx, s.genesis.GasPrice)
 
-	n, err := s.mempool.Upsert(tx)
-	if err != nil {
+	if err := s.mempool.Upsert(tx); err != nil {
 		return err
 	}
 
 	s.Worker.SignalShareTx(tx)
-
-	if n >= s.genesis.TransPerBlock {
-		s.Worker.SignalStartMining()
-	}
+	s.Worker.SignalStartMining()
 
 	return nil
 }
@@ -30,14 +26,11 @@ func (s *State) UpsertNodeTransaction(tx storage.BlockTx) error {
 		return err
 	}
 
-	n, err := s.mempool.Upsert(tx)
-	if err != nil {
+	if err := s.mempool.Upsert(tx); err != nil {
 		return err
 	}
 
-	if n >= s.genesis.TransPerBlock {
-		s.Worker.SignalStartMining()
-	}
+	s.Worker.SignalStartMining()
 
 	return nil
 }

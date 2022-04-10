@@ -11,6 +11,6 @@ func (s *State) AddKnownPeer(peer peer.Peer) {
 }
 
 // UpsertMempool adds a new transaction to the mempool.
-func (s *State) UpsertMempool(tx storage.BlockTx) (int, error) {
+func (s *State) UpsertMempool(tx storage.BlockTx) error {
 	return s.mempool.Upsert(tx)
 }

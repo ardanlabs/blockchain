@@ -7,9 +7,9 @@ import (
 	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
 )
 
-// ErrNotEnoughTransactions is returned when a block is requested to be created
+// ErrNoTransactions is returned when a block is requested to be created
 // and there are not enough transactions.
-var ErrNotEnoughTransactions = errors.New("not enough transactions in mempool")
+var ErrNoTransactions = errors.New("no transactions in mempool")
 
 // =============================================================================
 
@@ -19,14 +19,14 @@ func (s *State) MineNewBlock(ctx context.Context) (storage.Block, error) {
 	s.evHandler("state: MineNewBlock: MINING: check mempool count")
 
 	// Are there enough transactions in the pool.
-	if s.mempool.Count() < s.genesis.TransPerBlock {
-		return storage.Block{}, ErrNotEnoughTransactions
+	if s.mempool.Count() == 0 {
+		return storage.Block{}, ErrNoTransactions
 	}
 
 	s.evHandler("state: MineNewBlock: MINING: perform POW")
 
 	// Attempt to create a new block by solving the POW puzzle. This can be cancelled.
-	trans := s.mempool.PickBest(s.genesis.TransPerBlock)
+	trans := s.mempool.PickBest()
 	block, err := storage.POW(ctx, s.minerAccount, s.genesis.Difficulty, s.RetrieveLatestBlock(), trans, s.evHandler)
 	if err != nil {
 		return storage.Block{}, err
@@ -88,17 +88,17 @@ func (s *State) updateLocalState(block storage.Block) error {
 	s.evHandler("state: updateLocalState: update accounts and remove from mempool")
 
 	// Process the transactions and update the accounts.
-	for _, tx := range block.Trans.Leafs {
-		s.evHandler("state: updateLocalState: tx[%s] update and remove", tx.Value)
+	for _, tx := range block.Trans.Values() {
+		s.evHandler("state: updateLocalState: tx[%s] update and remove", tx)
 
 		// Apply the balance changes based on this transaction.
-		if err := s.accounts.ApplyTransaction(block.Header.MinerAccount, tx.Value); err != nil {
+		if err := s.accounts.ApplyTransaction(block.Header.MinerAccount, tx); err != nil {
 			s.evHandler("state: updateLocalState: WARNING : %s", err)
 			continue
 		}
 
 		// Remove this transaction from the mempool.
-		s.mempool.Delete(tx.Value)
+		s.mempool.Delete(tx)
 	}
 
 	s.evHandler("state: updateLocalState: apply mining reward")

@@ -53,9 +53,14 @@ func (h Handlers) SubmitNodeTransaction(ctx context.Context, w http.ResponseWrit
 // MinePeerBlock accepts a new mined block from a peer, validates it, then adds it
 // to the block chain.
 func (h Handlers) MinePeerBlock(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	var block storage.Block
-	if err := web.Decode(r, &block); err != nil {
+	var blockFS storage.BlockFS
+	if err := web.Decode(r, &blockFS); err != nil {
 		return fmt.Errorf("unable to decode payload: %w", err)
+	}
+
+	block, err := storage.ToBlock(blockFS)
+	if err != nil {
+		return fmt.Errorf("unable to decode block: %w", err)
 	}
 
 	if err := h.State.MinePeerBlock(block); err != nil {
@@ -75,11 +80,9 @@ func (h Handlers) MinePeerBlock(ctx context.Context, w http.ResponseWriter, r *h
 	}
 
 	resp := struct {
-		Status string        `json:"status"`
-		Block  storage.Block `json:"block"`
+		Status string `json:"status"`
 	}{
 		Status: "accepted",
-		Block:  block,
 	}
 
 	return web.Respond(ctx, w, resp, http.StatusOK)

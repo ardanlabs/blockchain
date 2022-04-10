@@ -84,7 +84,7 @@ func (w *Worker) retrievePeerBlocks(pr peer.Peer) error {
 			return err
 		}
 
-		w.evHandler("worker: sync: retrievePeerBlocks: prevBlk[%s]: newBlk[%s]: numTrans[%d]", block.Header.ParentHash, block.Hash(), len(block.Trans.Leafs))
+		w.evHandler("worker: sync: retrievePeerBlocks: prevBlk[%s]: newBlk[%s]: numTrans[%d]", block.Header.ParentHash, block.Hash(), len(block.Trans.Values()))
 		if err := w.state.MinePeerBlock(block); err != nil {
 			return err
 		}
