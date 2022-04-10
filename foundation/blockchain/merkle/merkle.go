@@ -149,7 +149,7 @@ func (t *Tree[T]) MerklePath(data T) (merklePath [][]byte, index []int64, err er
 		return merklePath, index, nil
 	}
 
-	return nil, nil, nil
+	return nil, nil, errors.New("unable to find data in tree")
 }
 
 // VerifyTree validates the hashes at each level of the tree and returns true
