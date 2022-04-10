@@ -139,6 +139,9 @@ Occasionally we run into material that we feel is important. This is a section p
 
 Ethereum documentation that helps to better understand that blockchain project.
 
+### Code
+[Ethers JS Library](https://docs.ethers.io/v5/)  
+
 ### Development
 [Ethereum Mining](https://ethereum.org/en/developers/docs/consensus-mechanisms/pow/mining) - Ethereum Website
 [Ethereum Blocks](https://ethereum.org/en/developers/docs/blocks) - Ethereum Website  
