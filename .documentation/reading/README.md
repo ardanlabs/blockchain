@@ -99,6 +99,9 @@ Occasionally we run into material that we feel is important. This is a section p
 [Celestia: Effortlessly deploy your own blockchain](https://celestia.org/)  
 [Substrate: Build future proof blockchains optimized for any use case](https://substrate.io/)
 
+### Government
+[The ECASH Act: Digital Privacy / Public Money](https://ecashact.us/)  
+
 ### Organizations
 [Girls Who Code](https://girlswhocode.com/crypto)  
 
