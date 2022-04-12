@@ -133,21 +133,25 @@ func (h Handlers) Mempool(ctx context.Context, w http.ResponseWriter, r *http.Re
 func (h Handlers) Accounts(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	account := web.Param(r, "account")
 
-	var database map[storage.Account]database.Info
+	var records map[storage.Account]database.Info
 	switch account {
 	case "":
-		database = h.State.RetrieveDatabase()
+		records = h.State.RetrieveDatabaseRecords()
 
 	default:
 		account, err := storage.ToAccount(account)
 		if err != nil {
 			return err
 		}
-		database = h.State.QueryDatabase(account)
+		info, err := h.State.QueryDatabaseRecord(account)
+		if err != nil {
+			return err
+		}
+		records = map[storage.Account]database.Info{account: info}
 	}
 
-	accounts := make([]act, 0, len(database))
-	for account, info := range database {
+	accounts := make([]act, 0, len(records))
+	for account, info := range records {
 		act := act{
 			Account: account,
 			Name:    h.NS.Lookup(account),

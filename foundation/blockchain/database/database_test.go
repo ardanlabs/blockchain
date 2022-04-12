@@ -69,13 +69,13 @@ func Test_Transactions(t *testing.T) {
 					db := database.New(genesis.Genesis{MiningReward: tst.minerReward, Balances: tst.balances}, nil)
 
 					for _, tx := range tst.txs {
-						blktx, err := sign(tx, tst.gas)
+						blockTx, err := sign(tx, tst.gas)
 						if err != nil {
 							t.Fatalf("\t%s\tTest %d:\tShould be able to sign transaction.", failed, testID)
 						}
 						t.Logf("\t%s\tTest %d:\tShould be able to sign transaction.", success, testID)
 
-						if err := db.ApplyTransaction(tst.miner, blktx); err != nil {
+						if err := db.ApplyTransaction(tst.miner, blockTx); err != nil {
 							t.Fatalf("\t%s\tTest %d:\tShould be able to apply transaction.", failed, testID)
 						}
 						t.Logf("\t%s\tTest %d:\tShould be able to apply transaction.", success, testID)
@@ -84,8 +84,8 @@ func Test_Transactions(t *testing.T) {
 					db.ApplyMiningReward(tst.miner)
 					t.Logf("\t%s\tTest %d:\tShould be able to apply miner reward.", success, testID)
 
-					cpyAccount := db.Copy()
-					for account, record := range cpyAccount {
+					records := db.CopyRecords()
+					for account, info := range records {
 						finalValue, exists := tst.final[account]
 						if !exists {
 							t.Errorf("\t%s\tTest %d:\tShould have account %s in balances.", failed, testID, account)
@@ -93,9 +93,9 @@ func Test_Transactions(t *testing.T) {
 							t.Logf("\t%s\tTest %d:\tShould have account %s in balances.", success, testID, account)
 						}
 
-						if finalValue != record.Balance {
+						if finalValue != info.Balance {
 							t.Errorf("\t%s\tTest %d:\tShould have correct balances for %s.", failed, testID, account)
-							t.Logf("\t%s\tTest %d:\tgot: %d", failed, testID, record.Balance)
+							t.Logf("\t%s\tTest %d:\tgot: %d", failed, testID, info.Balance)
 							t.Logf("\t%s\tTest %d:\texp: %d", failed, testID, finalValue)
 						} else {
 							t.Logf("\t%s\tTest %d:\tShould have correct balances for %s.", success, testID, account)
@@ -150,19 +150,19 @@ func TestNonceValidation(t *testing.T) {
 				db := database.New(genesis.Genesis{MiningReward: tst.minerReward, Balances: tst.balances}, nil)
 
 				for i, tx := range tst.txs {
-					blktx, err := sign(tx, tst.gas)
+					blockTx, err := sign(tx, tst.gas)
 					if err != nil {
 						t.Fatalf("\t%s\tTest %d:\tShould be able to sign transaction.", failed, testID)
 					}
 					t.Logf("\t%s\tTest %d:\tShould be able to sign transaction.", success, testID)
 
-					err = db.ValidateNonce(blktx.SignedTx)
+					err = db.ValidateNonce(blockTx.SignedTx)
 					if (tst.results[i] == nil && err != nil) || (tst.results[i] != nil && err == nil) {
 						t.Fatalf("\t%s\tTest %d:\tShould be able to validate nonce correctly.", failed, testID)
 					}
 					t.Logf("\t%s\tTest %d:\tShould be able to validate nonce correctly.", success, testID)
 
-					err = db.ApplyTransaction("test", blktx)
+					err = db.ApplyTransaction("test", blockTx)
 					if (tst.results[i] == nil && err != nil) || (tst.results[i] != nil && err == nil) {
 						t.Fatalf("\t%s\tTest %d:\tShould be able to apply transaction.", failed, testID)
 					}

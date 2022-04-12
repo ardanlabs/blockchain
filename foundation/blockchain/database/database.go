@@ -62,8 +62,8 @@ func (db *Database) Remove(account storage.Account) {
 	delete(db.records, account)
 }
 
-// Copy makes a copy of the current database for all accounts.
-func (db *Database) Copy() map[storage.Account]Info {
+// CopyRecords makes a copy of the current database for all accounts.
+func (db *Database) CopyRecords() map[storage.Account]Info {
 	db.mu.RLock()
 	defer db.mu.RUnlock()
 

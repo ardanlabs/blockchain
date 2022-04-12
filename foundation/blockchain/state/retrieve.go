@@ -30,9 +30,9 @@ func (s *State) RetrieveMempool() []storage.BlockTx {
 	return s.mempool.PickBest()
 }
 
-// RetrieveDatabase returns a copy of the account database.
-func (s *State) RetrieveDatabase() map[storage.Account]database.Info {
-	return s.db.Copy()
+// RetrieveDatabaseRecords returns a copy of the database records.
+func (s *State) RetrieveDatabaseRecords() map[storage.Account]database.Info {
+	return s.db.CopyRecords()
 }
 
 // RetrieveKnownPeers retrieves a copy of the known peer list.

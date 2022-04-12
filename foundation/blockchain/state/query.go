@@ -1,6 +1,8 @@
 package state
 
 import (
+	"errors"
+
 	"github.com/ardanlabs/blockchain/foundation/blockchain/database"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
 )
@@ -10,16 +12,15 @@ const QueryLastest = ^uint64(0) >> 1
 
 // =============================================================================
 
-// QueryDatabase returns a copy of the database information by account.
-func (s *State) QueryDatabase(account storage.Account) map[storage.Account]database.Info {
-	cpy := s.db.Copy()
+// QueryDatabaseRecord returns a copy of the database record for the specified account.
+func (s *State) QueryDatabaseRecord(account storage.Account) (database.Info, error) {
+	records := s.db.CopyRecords()
 
-	final := make(map[storage.Account]database.Info)
-	if info, exists := cpy[account]; exists {
-		final[account] = info
+	if info, exists := records[account]; exists {
+		return info, nil
 	}
 
-	return final
+	return database.Info{}, errors.New("not found")
 }
 
 // QueryMempoolLength returns the current length of the mempool.
@@ -32,7 +33,7 @@ func (s *State) QueryMempoolLength() int {
 func (s *State) QueryBlocksByNumber(from uint64, to uint64) []storage.Block {
 	blocks, err := s.storage.ReadAllBlocks(s.evHandler, false)
 	if err != nil {
-		return nil
+		return []storage.Block{}
 	}
 
 	if from == QueryLastest {
@@ -56,7 +57,7 @@ func (s *State) QueryBlocksByNumber(from uint64, to uint64) []storage.Block {
 func (s *State) QueryBlocksByAccount(account storage.Account) []storage.Block {
 	blocks, err := s.storage.ReadAllBlocks(s.evHandler, false)
 	if err != nil {
-		return nil
+		return []storage.Block{}
 	}
 
 	var out []storage.Block
