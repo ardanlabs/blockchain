@@ -20,10 +20,7 @@ import (
 	Ask for a Merkle proof that a transaction is in the last block.
 
 	-- Blockchain
-	Batch new transactions to send across the network. Must maintain mining sync.
-	Create a file for each block and then fix the way we handle a forked chain.
 	Add integration test for the state package.
-	Try a different POW cryptographic problem to solve that could provide more consistency time.
 */
 
 // =============================================================================
