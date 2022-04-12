@@ -64,16 +64,8 @@ func (h Handlers) MinePeerBlock(ctx context.Context, w http.ResponseWriter, r *h
 	}
 
 	if err := h.State.MinePeerBlock(block); err != nil {
-
-		// More has to be thought about here. I don't think the blockchain
-		// package can perform this activity because it doesn't understand
-		// the application layer. All activity needs to stop after this call
-		// to truncate to re-sync the state of the blockchain.
-		// So the idea for now is to truncate the state here and force a
-		// shutdown/restart of the service.
 		if errors.Is(err, storage.ErrChainForked) {
-			h.State.Truncate()
-			return web.NewShutdownError(err.Error())
+			h.State.Resync()
 		}
 
 		return v1.NewRequestError(err, http.StatusNotAcceptable)

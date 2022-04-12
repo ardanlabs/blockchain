@@ -36,6 +36,12 @@ func (w *Worker) runMiningOperation() {
 	w.evHandler("worker: runMiningOperation: MINING: started")
 	defer w.evHandler("worker: runMiningOperation: MINING: completed")
 
+	// Validate we are allowed to mine and we are not in a resync.
+	if !w.state.IsMiningAllowed() {
+		w.evHandler("worker: runMiningOperation: MINING: turned off")
+		return
+	}
+
 	// Make sure there are transactions in the mempool.
 	length := w.state.QueryMempoolLength()
 	if length == 0 {

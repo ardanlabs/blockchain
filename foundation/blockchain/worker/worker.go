@@ -52,7 +52,7 @@ func Run(state *state.State, evHandler state.EventHandler) {
 	state.Worker = &w
 
 	// Update this node before starting any support G's.
-	w.sync()
+	// w.Sync()
 
 	// Load the set of operations we need to run.
 	operations := []func(){
@@ -107,6 +107,11 @@ func (w *Worker) Shutdown() {
 // SignalStartMining starts a mining operation. If there is already a signal
 // pending in the channel, just return since a mining operation will start.
 func (w *Worker) SignalStartMining() {
+	if !w.state.IsMiningAllowed() {
+		w.evHandler("state: MinePeerBlock: accepting blocks turned off")
+		return
+	}
+
 	select {
 	case w.startMining <- true:
 	default:

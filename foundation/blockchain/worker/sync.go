@@ -8,8 +8,8 @@ import (
 	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
 )
 
-// sync updates the peer list, mempool and blocks.
-func (w *Worker) sync() {
+// Sync updates the peer list, mempool and blocks.
+func (w *Worker) Sync() {
 	w.evHandler("worker: sync: started")
 	defer w.evHandler("worker: sync: completed")
 

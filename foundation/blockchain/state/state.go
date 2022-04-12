@@ -24,7 +24,6 @@ import (
 	Create a file for each block and then fix the way we handle a forked chain.
 	Add integration test for the state package.
 	Try a different POW cryptographic problem to solve that could provide more consistency time.
-	Ability to drop traffic so the node can resync without restart.
 */
 
 // =============================================================================
@@ -37,6 +36,7 @@ type EventHandler func(v string, args ...any)
 // package providing support for mining, peer updates, and transaction sharing.
 type Worker interface {
 	Shutdown()
+	Sync()
 	SignalStartMining()
 	SignalCancelMining() (done func())
 	SignalShareTx(blockTx storage.BlockTx)
@@ -57,12 +57,16 @@ type Config struct {
 
 // State manages the blockchain database.
 type State struct {
+	mu sync.RWMutex
+
 	minerAccount storage.Account
 	host         string
 	dbPath       string
 	evHandler    EventHandler
 	latestBlock  storage.Block
-	mu           sync.Mutex
+
+	allowMining bool
+	resyncWG    sync.WaitGroup
 
 	knownPeers *peer.PeerSet
 	genesis    genesis.Genesis
@@ -126,6 +130,7 @@ func New(cfg Config) (*State, error) {
 		dbPath:       cfg.DBPath,
 		evHandler:    ev,
 		latestBlock:  latestBlock,
+		allowMining:  true,
 
 		knownPeers: cfg.KnownPeers,
 		genesis:    genesis,
@@ -142,6 +147,8 @@ func New(cfg Config) (*State, error) {
 
 // Shutdown cleanly brings the node down.
 func (s *State) Shutdown() error {
+	s.evHandler("state: shutdown: started")
+	defer s.evHandler("state: shutdown: completed")
 
 	// Make sure the database file is properly closed.
 	defer func() {
@@ -151,20 +158,54 @@ func (s *State) Shutdown() error {
 	// Stop all blockchain writing activity.
 	s.Worker.Shutdown()
 
+	// Wait for any resync to finish.
+	s.resyncWG.Wait()
+
 	return nil
 }
 
-// Truncate resets the chain both on disk and in memory. This is used to
-// correct an identified fork.
-func (s *State) Truncate() error {
+// IsMiningAllowed identifies if we are allows to mine blocks. This
+// might be turned off if the blockchain needs to be re-synced.
+func (s *State) IsMiningAllowed() bool {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.allowMining
+}
+
+// TurnMiningOn sets the allowMining flag back to true.
+func (s *State) TurnMiningOn() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.allowMining = true
+}
+
+// Resync resets the chain both on disk and in memory. This is used to
+// correct an identified fork. No mining is allowed to take place while this
+// process is running. New transactions can be placed into the mempool.
+func (s *State) Resync() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	// Don't allow mining to continue.
+	s.allowMining = false
+
 	// Reset the state of the database.
-	s.mempool.Truncate()
 	s.accounts.Reset()
 	s.latestBlock = storage.Block{}
 	s.storage.Reset()
+
+	// Resync the state of the blockchain.
+	s.resyncWG.Add(1)
+	go func() {
+		s.evHandler("state: Resync: started: *****************************")
+		defer func() {
+			s.TurnMiningOn()
+			s.evHandler("state: Resync: completed: *****************************")
+			s.resyncWG.Done()
+		}()
+
+		s.Worker.Sync()
+	}()
 
 	return nil
 }
