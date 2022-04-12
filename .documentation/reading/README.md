@@ -9,6 +9,7 @@ Occasionally we run into material that we feel is important. This is a section p
 
 ### Must Watch
 [Crypto: The Wave of the Future or a Giant Ponzi Scheme?](https://www.youtube.com/watch?v=vZfUjL3y4KY) - Docket Media LLC  
+[Blockchain Class](https://www.crowdcast.io/e/cryptocurrency-class-2022) - Patrick McCorry  
 
 ### Documentation
 [Digital Accounts, Signatures and Verification](https://www.ardanlabs.com/blog/2022/02/blockchain-01-digital-accounts-signatures-verification.html) - Bill Kennedy  
