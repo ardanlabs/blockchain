@@ -24,23 +24,23 @@ type Database struct {
 
 // New constructs a new database and applies account genesis and block information.
 func New(genesis genesis.Genesis, blocks []storage.Block) *Database {
-	act := Database{
+	db := Database{
 		genesis: genesis,
 		records: make(map[storage.Account]Info),
 	}
 
 	for account, balance := range genesis.Balances {
-		act.records[account] = Info{Balance: balance}
+		db.records[account] = Info{Balance: balance}
 	}
 
 	for _, block := range blocks {
 		for _, tx := range block.Trans.Values() {
-			act.ApplyTransaction(block.Header.MinerAccount, tx)
+			db.ApplyTransaction(block.Header.MinerAccount, tx)
 		}
-		act.ApplyMiningReward(block.Header.MinerAccount)
+		db.ApplyMiningReward(block.Header.MinerAccount)
 	}
 
-	return &act
+	return &db
 }
 
 // Reset re-initalizes the database back to the genesis information.
@@ -101,10 +101,10 @@ func (db *Database) ApplyMiningReward(minerAccount storage.Account) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 
-	user := db.records[minerAccount]
-	user.Balance += db.genesis.MiningReward
+	info := db.records[minerAccount]
+	info.Balance += db.genesis.MiningReward
 
-	db.records[minerAccount] = user
+	db.records[minerAccount] = info
 }
 
 // ApplyTransaction performs the business logic for applying a transaction
