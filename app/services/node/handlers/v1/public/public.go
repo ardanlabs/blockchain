@@ -8,7 +8,7 @@ import (
 	"time"
 
 	v1 "github.com/ardanlabs/blockchain/business/web/v1"
-	"github.com/ardanlabs/blockchain/foundation/blockchain/accounts"
+	"github.com/ardanlabs/blockchain/foundation/blockchain/database"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/state"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
 	"github.com/ardanlabs/blockchain/foundation/events"
@@ -133,34 +133,34 @@ func (h Handlers) Mempool(ctx context.Context, w http.ResponseWriter, r *http.Re
 func (h Handlers) Accounts(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	account := web.Param(r, "account")
 
-	var blkAccounts map[storage.Account]accounts.Info
+	var database map[storage.Account]database.Info
 	switch account {
 	case "":
-		blkAccounts = h.State.RetrieveAccounts()
+		database = h.State.RetrieveDatabase()
 
 	default:
 		account, err := storage.ToAccount(account)
 		if err != nil {
 			return err
 		}
-		blkAccounts = h.State.QueryAccounts(account)
+		database = h.State.QueryDatabase(account)
 	}
 
-	acts := make([]info, 0, len(blkAccounts))
-	for account, blkInfo := range blkAccounts {
-		act := info{
+	accounts := make([]act, 0, len(database))
+	for account, info := range database {
+		act := act{
 			Account: account,
 			Name:    h.NS.Lookup(account),
-			Balance: blkInfo.Balance,
-			Nonce:   blkInfo.Nonce,
+			Balance: info.Balance,
+			Nonce:   info.Nonce,
 		}
-		acts = append(acts, act)
+		accounts = append(accounts, act)
 	}
 
 	ai := actInfo{
 		LastestBlock: h.State.RetrieveLatestBlock().Hash(),
 		Uncommitted:  len(h.State.RetrieveMempool()),
-		Accounts:     acts,
+		Accounts:     accounts,
 	}
 
 	return web.Respond(ctx, w, ai, http.StatusOK)

@@ -5,7 +5,7 @@ package state
 import (
 	"sync"
 
-	"github.com/ardanlabs/blockchain/foundation/blockchain/accounts"
+	"github.com/ardanlabs/blockchain/foundation/blockchain/database"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/genesis"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/mempool"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/peer"
@@ -69,7 +69,7 @@ type State struct {
 	genesis    genesis.Genesis
 	mempool    *mempool.Mempool
 	storage    *storage.Storage
-	accounts   *accounts.Accounts
+	db         *database.Database
 
 	Worker Worker
 }
@@ -110,9 +110,9 @@ func New(cfg Config) (*State, error) {
 		latestBlock = blocks[len(blocks)-1]
 	}
 
-	// Create a new accounts value to manage accounts who transact on
+	// Create a new database to manage accounts who transact on
 	// the blockchain and apply the genesis information and blocks.
-	accounts := accounts.New(genesis, blocks)
+	db := database.New(genesis, blocks)
 
 	// Construct a mempool with the specified sort strategy.
 	mempool, err := mempool.NewWithStrategy(cfg.SelectStrategy)
@@ -133,7 +133,7 @@ func New(cfg Config) (*State, error) {
 		genesis:    genesis,
 		mempool:    mempool,
 		storage:    strg,
-		accounts:   accounts,
+		db:         db,
 	}
 
 	// The Worker is not set here. The call to worker.Run will assign itself
@@ -186,8 +186,8 @@ func (s *State) Resync() error {
 	// Don't allow mining to continue.
 	s.allowMining = false
 
-	// Reset the state of the database.
-	s.accounts.Reset()
+	// Reset the state of the blockchain node.
+	s.db.Reset()
 	s.latestBlock = storage.Block{}
 	s.storage.Reset()
 

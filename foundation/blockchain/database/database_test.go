@@ -1,10 +1,10 @@
-package accounts_test
+package database_test
 
 import (
 	"errors"
 	"testing"
 
-	"github.com/ardanlabs/blockchain/foundation/blockchain/accounts"
+	"github.com/ardanlabs/blockchain/foundation/blockchain/database"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/genesis"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -63,10 +63,10 @@ func Test_Transactions(t *testing.T) {
 	t.Log("Given the need to validate the transactions.")
 	{
 		for testID, tst := range tt {
-			t.Logf("\tTest %d:\tWhen handling a set of accounts.", testID)
+			t.Logf("\tTest %d:\tWhen handling a set of database.", testID)
 			{
 				f := func(t *testing.T) {
-					accounts := accounts.New(genesis.Genesis{MiningReward: tst.minerReward, Balances: tst.balances}, nil)
+					db := database.New(genesis.Genesis{MiningReward: tst.minerReward, Balances: tst.balances}, nil)
 
 					for _, tx := range tst.txs {
 						blktx, err := sign(tx, tst.gas)
@@ -75,17 +75,17 @@ func Test_Transactions(t *testing.T) {
 						}
 						t.Logf("\t%s\tTest %d:\tShould be able to sign transaction.", success, testID)
 
-						if err := accounts.ApplyTransaction(tst.miner, blktx); err != nil {
+						if err := db.ApplyTransaction(tst.miner, blktx); err != nil {
 							t.Fatalf("\t%s\tTest %d:\tShould be able to apply transaction.", failed, testID)
 						}
 						t.Logf("\t%s\tTest %d:\tShould be able to apply transaction.", success, testID)
 					}
 
-					accounts.ApplyMiningReward(tst.miner)
+					db.ApplyMiningReward(tst.miner)
 					t.Logf("\t%s\tTest %d:\tShould be able to apply miner reward.", success, testID)
 
-					cpyAccount := accounts.Copy()
-					for account, info := range cpyAccount {
+					cpyAccount := db.Copy()
+					for account, record := range cpyAccount {
 						finalValue, exists := tst.final[account]
 						if !exists {
 							t.Errorf("\t%s\tTest %d:\tShould have account %s in balances.", failed, testID, account)
@@ -93,9 +93,9 @@ func Test_Transactions(t *testing.T) {
 							t.Logf("\t%s\tTest %d:\tShould have account %s in balances.", success, testID, account)
 						}
 
-						if finalValue != info.Balance {
+						if finalValue != record.Balance {
 							t.Errorf("\t%s\tTest %d:\tShould have correct balances for %s.", failed, testID, account)
-							t.Logf("\t%s\tTest %d:\tgot: %d", failed, testID, info.Balance)
+							t.Logf("\t%s\tTest %d:\tgot: %d", failed, testID, record.Balance)
 							t.Logf("\t%s\tTest %d:\texp: %d", failed, testID, finalValue)
 						} else {
 							t.Logf("\t%s\tTest %d:\tShould have correct balances for %s.", success, testID, account)
@@ -147,7 +147,7 @@ func TestNonceValidation(t *testing.T) {
 		for testID, tst := range tt {
 			t.Logf("\tTest %d:\tWhen handling a set of transactions.", testID)
 			{
-				accounts := accounts.New(genesis.Genesis{MiningReward: tst.minerReward, Balances: tst.balances}, nil)
+				db := database.New(genesis.Genesis{MiningReward: tst.minerReward, Balances: tst.balances}, nil)
 
 				for i, tx := range tst.txs {
 					blktx, err := sign(tx, tst.gas)
@@ -156,13 +156,13 @@ func TestNonceValidation(t *testing.T) {
 					}
 					t.Logf("\t%s\tTest %d:\tShould be able to sign transaction.", success, testID)
 
-					err = accounts.ValidateNonce(blktx.SignedTx)
+					err = db.ValidateNonce(blktx.SignedTx)
 					if (tst.results[i] == nil && err != nil) || (tst.results[i] != nil && err == nil) {
 						t.Fatalf("\t%s\tTest %d:\tShould be able to validate nonce correctly.", failed, testID)
 					}
 					t.Logf("\t%s\tTest %d:\tShould be able to validate nonce correctly.", success, testID)
 
-					err = accounts.ApplyTransaction("test", blktx)
+					err = db.ApplyTransaction("test", blktx)
 					if (tst.results[i] == nil && err != nil) || (tst.results[i] != nil && err == nil) {
 						t.Fatalf("\t%s\tTest %d:\tShould be able to apply transaction.", failed, testID)
 					}

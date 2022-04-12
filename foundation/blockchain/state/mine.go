@@ -92,7 +92,7 @@ func (s *State) updateLocalState(block storage.Block) error {
 		s.evHandler("state: updateLocalState: tx[%s] update and remove", tx)
 
 		// Apply the balance changes based on this transaction.
-		if err := s.accounts.ApplyTransaction(block.Header.MinerAccount, tx); err != nil {
+		if err := s.db.ApplyTransaction(block.Header.MinerAccount, tx); err != nil {
 			s.evHandler("state: updateLocalState: WARNING : %s", err)
 			continue
 		}
@@ -104,7 +104,7 @@ func (s *State) updateLocalState(block storage.Block) error {
 	s.evHandler("state: updateLocalState: apply mining reward")
 
 	// Apply the mining reward for this block.
-	s.accounts.ApplyMiningReward(block.Header.MinerAccount)
+	s.db.ApplyMiningReward(block.Header.MinerAccount)
 
 	return nil
 }

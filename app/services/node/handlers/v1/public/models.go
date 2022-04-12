@@ -4,7 +4,7 @@ import (
 	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
 )
 
-type info struct {
+type act struct {
 	Account storage.Account `json:"account"`
 	Name    string          `json:"name"`
 	Balance uint            `json:"balance"`
@@ -14,7 +14,7 @@ type info struct {
 type actInfo struct {
 	LastestBlock string `json:"lastest_block"`
 	Uncommitted  int    `json:"uncommitted"`
-	Accounts     []info `json:"accounts"`
+	Accounts     []act  `json:"accounts"`
 }
 
 type tx struct {

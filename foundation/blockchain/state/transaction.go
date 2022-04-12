@@ -44,7 +44,7 @@ func (s *State) validateTransaction(signedTx storage.SignedTx) error {
 		return err
 	}
 
-	if err := s.accounts.ValidateNonce(signedTx); err != nil {
+	if err := s.db.ValidateNonce(signedTx); err != nil {
 		return err
 	}
 

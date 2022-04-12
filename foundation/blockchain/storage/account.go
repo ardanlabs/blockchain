@@ -7,7 +7,8 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
-// Account represents an account in the system.
+// Account represents an account in the system that can sign and is associated
+// with transactions on the blockchain.
 type Account string
 
 // ToAccount converts a hex-encoded string to an account and validates the
