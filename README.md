@@ -166,7 +166,7 @@ The Ultimate Go and Service classes are critical classes to understanding the co
 [Scholarship](https://docs.google.com/forms/d/e/1FAIpQLSchEz6zg1fseR2XiIZgNB8Qm2a5JDB7n3EOWX5GeIP18OstaQ/viewform)  
 
 This is a free and great class to learning concepts behind blockchains.  
-[Blockchain Class](https://www.crowdcast.io/e/cryptocurrency-class-2022) - Patrick McCorry  
+[Blockchain Class](https://cryptocurrencyclass.github.io/) - Patrick McCorry  
 
 ### Joining the Go Slack Community
 
