@@ -24,6 +24,7 @@ import (
 	Create a file for each block and then fix the way we handle a forked chain.
 	Add integration test for the state package.
 	Try a different POW cryptographic problem to solve that could provide more consistency time.
+	Ability to drop traffic so the node can resync without restart.
 */
 
 // =============================================================================
