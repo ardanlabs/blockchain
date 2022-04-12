@@ -161,17 +161,12 @@ The following is a set of tasks that can be done prior to showing up for class. 
 
 ### Prep Work
 
-**Reading Material**  
-http://go.dev/   
-https://www.ardanlabs.com/blog/
+The Ultimate Go and Service classes are critical classes to understanding the code in this class.  
+[Ultimate Go Classes](https://www.ardanlabs.com/ultimate-go/#tabpanel)  
+[Scholarship](https://docs.google.com/forms/d/e/1FAIpQLSchEz6zg1fseR2XiIZgNB8Qm2a5JDB7n3EOWX5GeIP18OstaQ/viewform)  
 
-**Exercises**  
-https://tour.golang.org/welcome/1  
-https://gophercises.com/
-
-**Books**  
-https://www.manning.com/books/go-in-action  
-https://bitfieldconsulting.com/books/fundamentals  
+This is a free and great class to learning concepts behind blockchains.  
+[Blockchain Class](https://www.crowdcast.io/e/cryptocurrency-class-2022) - Patrick McCorry  
 
 ### Joining the Go Slack Community
 
