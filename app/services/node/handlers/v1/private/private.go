@@ -68,7 +68,7 @@ func (h Handlers) MinePeerBlock(ctx context.Context, w http.ResponseWriter, r *h
 			h.State.Resync()
 		}
 
-		return v1.NewRequestError(err, http.StatusNotAcceptable)
+		return v1.NewRequestError(errors.New("block not accepted"), http.StatusNotAcceptable)
 	}
 
 	resp := struct {

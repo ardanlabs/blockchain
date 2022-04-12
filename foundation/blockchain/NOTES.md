@@ -11,13 +11,33 @@ This is a technical blog about how digital signatures work by Maarten Zuidhoorn.
 
 	https://medium.com/mycrypto/the-magic-of-digital-signatures-on-ethereum-98fe184dc9c7
 
+Great blockchain class by Patrick McCorry
+
+	https://cryptocurrencyclass.github.io/
+
 Notes
 
-A blockchain is a database for storing things of value.
+A blockchain is a database for storing things of value that allows anyone to
+computer a copy using a cryptographic audit trail. It's immutable and
+transparent with a token supply and initial user balances. The global blockchain
+settings are defined in a Genesis file.
 
-Blockchain is an immutable, transparent database. The token supply,
-initial user balances, and global blockchain settings are defined
-in a Genesis file.
+Consensus is about having nodes come together to reach a decision about the state
+of the blockchain. You have to balance Safety with Liveness. Systems like Bitcoin
+and Ethereum side on Liveness for high availability. This is why we get
+forks at times. We need this since individual mining nodes are not reliable in
+terms of being online. A country could shut down thousands of machines.
+
+Blocks are just a batch update to the database.
+
+The blockchain is a conceptual single database with a single mempool.
+
+Merkle tree is for convincing you of something I am telling you. Such
+as, this transaction does belong to this block.
+
+Simplified Payment Verification Mode is available thanks to block chains and
+merkle trees, I can convince anyone a transaction is in the blockchain. At least
+for the most current POW.
 
 Block time refers to the time it takes to mine a new block. In Ethereum, the
 average block time is between 12 to 14 seconds and is evaluated after each block.
