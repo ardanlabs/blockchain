@@ -40,15 +40,15 @@ William Kennedy
 ArdanLabs (www.ardanlabs.com)  
 bill@ardanlabs.com  
 
-* [Purchase Video](https://github.com/ardanlabs/service#purchase-video)
-* [Experience](https://github.com/ardanlabs/service#our-experience)
-* [Teacher](https://github.com/ardanlabs/service#our-teacher)
-* [More About Go](https://github.com/ardanlabs/service#more-about-go)
-* [Minimal Qualified Student](https://github.com/ardanlabs/service#minimal-qualified-student)
-* [Important Reading](https://github.com/ardanlabs/service#important-reading)
-* [Before You Come To Class](https://github.com/ardanlabs/service#before-you-come-to-class)
-* [Starter Material](https://github.com/ardanlabs/service#starter-material)
-* [Get The Training Material](https://github.com/ardanlabs/service#go-get-the-training-material)
+* [Purchase Video](https://github.com/ardanlabs/blockchain#purchase-video)
+* [Experience](https://github.com/ardanlabs/blockchain#our-experience)
+* [Teacher](https://github.com/ardanlabs/blockchain#our-teacher)
+* [More About Go](https://github.com/ardanlabs/blockchain#more-about-go)
+* [Minimal Qualified Student](https://github.com/ardanlabs/blockchain#minimal-qualified-student)
+* [Important Reading](https://github.com/ardanlabs/blockchain#important-reading)
+* [Before You Come To Class](https://github.com/ardanlabs/blockchain#before-you-come-to-class)
+* [Starter Material](https://github.com/ardanlabs/blockchain#starter-material)
+* [Get The Training Material](https://github.com/ardanlabs/blockchain#go-get-the-training-material)
 
 ## Purchase Video
 
