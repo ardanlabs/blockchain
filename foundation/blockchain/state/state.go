@@ -21,6 +21,7 @@ import (
 	-- Blockchain
 	Add integration test for the state package.
 	Consider adding transaction receipts similar to Ethereum.
+	Change out HTTP to JSON-RPC.
 */
 
 // =============================================================================
