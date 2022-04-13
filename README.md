@@ -151,6 +151,15 @@ The material has been designed to be taught in a classroom environment. The code
 	* Knows how to maneuver around the file system.
 	* Understands what environment variables are.
 
+**You will get the most out of this advanced Go class if you have taken the Ultimate Go and Service classes first.**
+
+[Ultimate Go Classes](https://www.ardanlabs.com/ultimate-go/#tabpanel)  
+[Scholarship](https://docs.google.com/forms/d/e/1FAIpQLSchEz6zg1fseR2XiIZgNB8Qm2a5JDB7n3EOWX5GeIP18OstaQ/viewform)  
+
+**This is a free and great class to learning concepts behind blockchains.**
+
+[Blockchain Class](https://cryptocurrencyclass.github.io/) - Patrick McCorry  
+
 ## Important Reading
 
 Please check out this page of [important reading](.reading/README.md). You will find articles and videos around topics related to this repo.
