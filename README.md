@@ -162,7 +162,7 @@ The material has been designed to be taught in a classroom environment. The code
 
 ## Important Reading
 
-Please check out this page of [important reading](.reading/README.md). You will find articles and videos around topics related to this repo.
+Please check out this page of [important reading](.documentation/reading/README.md). You will find articles and videos around topics related to this repo.
 
 ## Before You Come To Class
 

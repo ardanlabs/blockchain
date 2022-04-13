@@ -2,13 +2,12 @@
 Occasionally we run into material that we feel is important. This is a section place for that material. If you have material we should add, please send us an email.
 
 ### Must Read
+[Ethereum Under the Hood: Part-1 (ver 0.4)](https://medium.com/coinmonks/ethereum-under-the-hood-part-1-ver-0-4-7ac9ccbfd0f6) - Derao  
 [Technical Discussion About Blockchains and Cryptocurrency](https://blog.dshr.org/2022/02/ee380-talk.html) - David Rosenthal  
-[The Technological Case Against Bitcoin and Blockchain](https://lukeplant.me.uk/blog/posts/the-technological-case-against-bitcoin-and-blockchain/) - Luke Plant  
 [The Magic of Digital Signatures on Ethereum](https://medium.com/mycrypto/the-magic-of-digital-signatures-on-ethereum-98fe184dc9c7) - Maarten Zuidhoorn  
 [Transparent Logs for Skeptical Clients](https://research.swtch.com/tlog) - Russ Cox  
 
 ### Must Watch
-[Crypto: The Wave of the Future or a Giant Ponzi Scheme?](https://www.youtube.com/watch?v=vZfUjL3y4KY) - Docket Media LLC  
 [Blockchain Class](https://cryptocurrencyclass.github.io/) - Patrick McCorry  
 
 ### Documentation
@@ -28,7 +27,6 @@ Occasionally we run into material that we feel is important. This is a section p
 [Sha256 Algorithm Explained](https://sha256algorithm.com/) - Domingo Martin   
 
 ### Articles (General)
-[Ethereum Under the Hood: Part-1 (ver 0.4)](https://medium.com/coinmonks/ethereum-under-the-hood-part-1-ver-0-4-7ac9ccbfd0f6) - Derao  
 [5 Differences between Cosmos & Polkadot](https://juliankoh.medium.com/5-differences-between-cosmos-polkadot-67f09535594b) - Julian Koh  
 [Money, Bitcoin and Time: Part 1 of 3](https://breedlove22.medium.com/money-bitcoin-and-time-part-1-of-3-b4f6bb036c04) - Robert Breedlove  
 [All Smart Contracts Are Ambiguous](https://scholarship.law.upenn.edu/cgi/viewcontent.cgi?article=1006&context=jli) - James Grimmelmann  
@@ -36,6 +34,7 @@ Occasionally we run into material that we feel is important. This is a section p
 [Progressive Decentralization: A Playbook for Building Crypto Applications](https://a16z.com/2020/01/09/progressive-decentralization-crypto-product-management/) - Jesse Walden  
 [A Brief Tour of FLP Impossibility](https://www.the-paper-trail.org/post/2008-08-13-a-brief-tour-of-flp-impossibility) - The Paper Trail  
 [The Mystery Behind Block Time](https://medium.facilelogin.com/the-mystery-behind-block-time-63351e35603a) - Prabath Siriwardena  
+[The Technological Case Against Bitcoin and Blockchain](https://lukeplant.me.uk/blog/posts/the-technological-case-against-bitcoin-and-blockchain/) - Luke Plant  
 
 ### Bitcoin
 [Bitcoin in Go: libsv](https://github.com/libsv)  
@@ -134,6 +133,7 @@ Occasionally we run into material that we feel is important. This is a section p
 [Abuse on the Blockchain](https://www.youtube.com/watch?v=hXBZ-BXfCSY) - Molly White  
 [Cryptocurrency Regulation, Enforcement and Litigation](https://www.youtube.com/watch?v=aK-UzcJF5bI) - Docket Media LLC  
 [All Together Now: An Introduction to Distributed Consensus](https://www.youtube.com/watch?v=vMz3q8Mm1uY) - Tess Rinearson  
+[Crypto: The Wave of the Future or a Giant Ponzi Scheme?](https://www.youtube.com/watch?v=vZfUjL3y4KY) - Docket Media LLC  
 
 ### Vitalik Buterin (Creater of Ethereum)
 [Lex Fridman Podcast: Vitalik Buterin: Ethereum, Cryptocurrency, and the Future of Money](https://www.youtube.com/watch?v=3x1b_S6Qp2Q)  
