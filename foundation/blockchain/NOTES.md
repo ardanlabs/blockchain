@@ -43,6 +43,10 @@ Gas is a way to limit the computational cost of processing transactions. There i
 a gas limit so a transaction will end and fail without running forever. This is
 important when transactions are executing code in a VM, like a smart contract.
 
+The validation functions are the rules to consensus. When the validation rules
+change, then blocks can still be accepted on old rules until all nodes are updated.
+This can create forks as well until finally all the nodes are using the same rules.
+
 Block time refers to the time it takes to mine a new block. In Ethereum, the
 average block time is between 12 to 14 seconds and is evaluated after each block.
 The expected block time is set as a constant at the protocol level and is used to
