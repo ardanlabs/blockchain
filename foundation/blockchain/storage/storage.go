@@ -11,9 +11,9 @@ import (
 
 // Storage manages reading and writing of blocks to storage.
 type Storage struct {
+	mu     sync.Mutex
 	dbPath string
 	dbFile *os.File
-	mu     sync.Mutex
 }
 
 // New provides access to blockchain storage.

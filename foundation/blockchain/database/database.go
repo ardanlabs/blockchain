@@ -17,10 +17,10 @@ type Info struct {
 
 // Database manages data related to accounts who have transacted on the blockchain.
 type Database struct {
+	mu          sync.RWMutex
 	genesis     genesis.Genesis
 	latestBlock storage.Block
 	records     map[storage.Account]Info
-	mu          sync.RWMutex
 }
 
 // New constructs a new database and applies account genesis information and

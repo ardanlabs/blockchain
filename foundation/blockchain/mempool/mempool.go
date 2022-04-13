@@ -12,8 +12,8 @@ import (
 
 // Mempool represents a cache of transactions organized by account:nonce.
 type Mempool struct {
-	pool     map[string]storage.BlockTx
 	mu       sync.RWMutex
+	pool     map[string]storage.BlockTx
 	selectFn selector.Func
 }
 

@@ -35,8 +35,8 @@ type PeerStatus struct {
 
 // PeerSet represents the data representation to maintain a set of known peers.
 type PeerSet struct {
-	set map[Peer]struct{}
 	mu  sync.RWMutex
+	set map[Peer]struct{}
 }
 
 // NewPeerSet constructs a new info set to manage node peer information.
