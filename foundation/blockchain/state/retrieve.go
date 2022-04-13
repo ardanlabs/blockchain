@@ -19,9 +19,6 @@ func (s *State) RetrieveGenesis() genesis.Genesis {
 
 // RetrieveLatestBlock returns a copy the current latest block.
 func (s *State) RetrieveLatestBlock() storage.Block {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
 	return s.db.LatestBlock()
 }
 
