@@ -40,7 +40,8 @@ merkle trees, I can convince anyone a transaction is in the blockchain. At least
 for the most current POW.
 
 Gas is a way to limit the computational cost of processing transactions. There is
-a gas limit so a transaction will end and fail without running forever.
+a gas limit so a transaction will end and fail without running forever. This is
+important when transactions are executing code in a VM, like a smart contract.
 
 Block time refers to the time it takes to mine a new block. In Ethereum, the
 average block time is between 12 to 14 seconds and is evaluated after each block.

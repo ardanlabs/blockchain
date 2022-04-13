@@ -22,7 +22,6 @@ import (
 	Add integration test for the state package.
 	Consider adding transaction receipts similar to Ethereum.
 	Change out HTTP to JSON-RPC.
-	How can account pay gas for any transaction submission when it isn't mined?
 */
 
 // =============================================================================
