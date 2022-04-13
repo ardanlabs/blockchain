@@ -41,8 +41,6 @@ func (str *Storage) Close() {
 	str.dbFile.Close()
 }
 
-// =============================================================================
-
 // Reset create a new storage area for the blockchain to start new.
 func (str *Storage) Reset() error {
 	str.mu.Lock()
@@ -81,8 +79,6 @@ func (str *Storage) Write(block BlockFS) error {
 
 	return nil
 }
-
-// =============================================================================
 
 // ReadAllBlocks loads all existing blocks from storage into memory. In a real
 // world situation this would require a lot of memory.

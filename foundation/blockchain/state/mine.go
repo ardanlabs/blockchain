@@ -62,7 +62,7 @@ func (s *State) MinePeerBlock(block storage.Block) error {
 		done()
 	}()
 
-	if err := block.ValidateBlock(s.latestBlock, s.evHandler); err != nil {
+	if err := block.ValidateBlock(s.db.LatestBlock(), s.evHandler); err != nil {
 		return err
 	}
 
@@ -83,7 +83,7 @@ func (s *State) updateLocalState(block storage.Block) error {
 	if err := s.storage.Write(storage.NewBlockFS(block)); err != nil {
 		return err
 	}
-	s.latestBlock = block
+	s.db.UpdateLatestBlock(block)
 
 	s.evHandler("state: updateLocalState: update accounts and remove from mempool")
 
