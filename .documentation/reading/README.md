@@ -28,6 +28,7 @@ Occasionally we run into material that we feel is important. This is a section p
 [Sha256 Algorithm Explained](https://sha256algorithm.com/) - Domingo Martin   
 
 ### Articles (General)
+[Ethereum Under the Hood: Part-1 (ver 0.4)](https://medium.com/coinmonks/ethereum-under-the-hood-part-1-ver-0-4-7ac9ccbfd0f6) - Derao  
 [5 Differences between Cosmos & Polkadot](https://juliankoh.medium.com/5-differences-between-cosmos-polkadot-67f09535594b) - Julian Koh  
 [Money, Bitcoin and Time: Part 1 of 3](https://breedlove22.medium.com/money-bitcoin-and-time-part-1-of-3-b4f6bb036c04) - Robert Breedlove  
 [All Smart Contracts Are Ambiguous](https://scholarship.law.upenn.edu/cgi/viewcontent.cgi?article=1006&context=jli) - James Grimmelmann  

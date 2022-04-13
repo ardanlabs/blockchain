@@ -39,6 +39,9 @@ Simplified Payment Verification Mode is available thanks to block chains and
 merkle trees, I can convince anyone a transaction is in the blockchain. At least
 for the most current POW.
 
+Gas is a way to limit the computational cost of processing transactions. There is
+a gas limit so a transaction will end and fail without running forever.
+
 Block time refers to the time it takes to mine a new block. In Ethereum, the
 average block time is between 12 to 14 seconds and is evaluated after each block.
 The expected block time is set as a constant at the protocol level and is used to
