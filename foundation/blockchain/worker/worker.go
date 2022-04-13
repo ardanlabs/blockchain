@@ -52,7 +52,7 @@ func Run(state *state.State, evHandler state.EventHandler) {
 	state.Worker = &w
 
 	// Update this node before starting any support G's.
-	// w.Sync()
+	w.Sync()
 
 	// Load the set of operations we need to run.
 	operations := []func(){
