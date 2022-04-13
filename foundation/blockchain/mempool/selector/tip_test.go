@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ardanlabs/blockchain/foundation/blockchain/database"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/mempool/selector"
-	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
@@ -15,25 +15,25 @@ const (
 	failed  = "\u2717"
 )
 
-func sign(hexKey string, tx storage.UserTx, gas uint) (storage.BlockTx, error) {
+func sign(hexKey string, tx database.UserTx, gas uint) (database.BlockTx, error) {
 	pk, err := crypto.HexToECDSA(hexKey)
 	if err != nil {
-		return storage.BlockTx{}, err
+		return database.BlockTx{}, err
 	}
 
 	signedTx, err := tx.Sign(pk)
 	if err != nil {
-		return storage.BlockTx{}, err
+		return database.BlockTx{}, err
 	}
 
-	return storage.NewBlockTx(signedTx, gas), nil
+	return database.NewBlockTx(signedTx, gas), nil
 }
 
 func TestTipSort(t *testing.T) {
-	tran := func(nonce uint, hexKey string, tip uint, ts time.Time) storage.BlockTx {
+	tran := func(nonce uint, hexKey string, tip uint, ts time.Time) database.BlockTx {
 		const toID = "0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76"
 
-		tx, err := sign(hexKey, storage.UserTx{Nonce: nonce, ToID: toID, Tip: tip}, 0)
+		tx, err := sign(hexKey, database.UserTx{Nonce: nonce, ToID: toID, Tip: tip}, 0)
 		if err != nil {
 			t.Fatalf("\t%s \tShould be able to sign transaction: %s", failed, tx)
 		}
@@ -42,16 +42,16 @@ func TestTipSort(t *testing.T) {
 
 	type test struct {
 		name    string
-		txs     []storage.BlockTx
+		txs     []database.BlockTx
 		howMany int
-		best    []storage.BlockTx
+		best    []database.BlockTx
 	}
 
 	now := time.Now()
 	tt := []test{
 		{
 			name: "one from second cycle",
-			txs: []storage.BlockTx{
+			txs: []database.BlockTx{
 				tran(0, signPavel, 25, now),
 				tran(1, signPavel, 75, now),
 				tran(2, signPavel, 50, now),
@@ -65,7 +65,7 @@ func TestTipSort(t *testing.T) {
 				tran(2, signEd, 25, now),
 			},
 			howMany: 4,
-			best: []storage.BlockTx{
+			best: []database.BlockTx{
 				tran(0, signPavel, 25, now),
 				tran(1, signPavel, 75, now),
 				tran(0, signBill, 10, now),
@@ -74,7 +74,7 @@ func TestTipSort(t *testing.T) {
 		},
 		{
 			name: "whole two cycles",
-			txs: []storage.BlockTx{
+			txs: []database.BlockTx{
 				tran(0, signPavel, 25, now),
 				tran(1, signPavel, 75, now),
 				tran(2, signPavel, 50, now),
@@ -88,7 +88,7 @@ func TestTipSort(t *testing.T) {
 				tran(2, signEd, 25, now),
 			},
 			howMany: 6,
-			best: []storage.BlockTx{
+			best: []database.BlockTx{
 				tran(0, signPavel, 25, now),
 				tran(1, signPavel, 75, now),
 				tran(0, signBill, 10, now),
@@ -99,7 +99,7 @@ func TestTipSort(t *testing.T) {
 		},
 		{
 			name: "take all",
-			txs: []storage.BlockTx{
+			txs: []database.BlockTx{
 				tran(0, signPavel, 25, now),
 				tran(1, signPavel, 75, now),
 				tran(2, signPavel, 50, now),
@@ -111,7 +111,7 @@ func TestTipSort(t *testing.T) {
 				tran(2, signEd, 25, now),
 			},
 			howMany: 15,
-			best: []storage.BlockTx{
+			best: []database.BlockTx{
 				tran(0, signPavel, 25, now),
 				tran(1, signPavel, 75, now),
 				tran(2, signPavel, 50, now),
@@ -125,7 +125,7 @@ func TestTipSort(t *testing.T) {
 		},
 		{
 			name: "first two",
-			txs: []storage.BlockTx{
+			txs: []database.BlockTx{
 				tran(0, signPavel, 25, now),
 				tran(1, signPavel, 75, now),
 				tran(2, signPavel, 50, now),
@@ -137,7 +137,7 @@ func TestTipSort(t *testing.T) {
 				tran(2, signEd, 25, now),
 			},
 			howMany: 2,
-			best: []storage.BlockTx{
+			best: []database.BlockTx{
 				tran(0, signPavel, 25, now),
 				tran(0, signBill, 10, now),
 			},
@@ -150,7 +150,7 @@ func TestTipSort(t *testing.T) {
 			t.Logf("\tTest %d:\tWhen handling a set of transaction.", testID)
 			{
 				f := func(t *testing.T) {
-					m := make(map[storage.AccountID][]storage.BlockTx)
+					m := make(map[database.AccountID][]database.BlockTx)
 					for _, tx := range tst.txs {
 						from, err := tx.FromAccount()
 						if err != nil {

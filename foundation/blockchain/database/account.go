@@ -1,4 +1,4 @@
-package storage
+package database
 
 import (
 	"crypto/ecdsa"
@@ -7,11 +7,17 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
-// accountID represents an account id that is used to sign transactions and is
+// Account represents information stored in the database for an individual account.
+type Account struct {
+	Balance uint
+	Nonce   uint
+}
+
+// AccountID represents an account id that is used to sign transactions and is
 // associated with transactions on the blockchain.
 type AccountID string
 
-// ToAccount converts a hex-encoded string to an account and validates the
+// ToAccountID converts a hex-encoded string to an account and validates the
 // hex-encoded string is formatted correctly.
 func ToAccountID(hex string) (AccountID, error) {
 	a := AccountID(hex)
@@ -22,12 +28,12 @@ func ToAccountID(hex string) (AccountID, error) {
 	return a, nil
 }
 
-// PublicKeyToAccount converts the public key to an account value.
-func PublicKeyToAccount(pk ecdsa.PublicKey) AccountID {
+// PublicKeyToAccountID converts the public key to an account value.
+func PublicKeyToAccountID(pk ecdsa.PublicKey) AccountID {
 	return AccountID(crypto.PubkeyToAddress(pk).String())
 }
 
-// IsAccount verifies whether the underlying data represents a valid
+// IsAccountID verifies whether the underlying data represents a valid
 // hex-encoded account.
 func (a AccountID) IsAccountID() bool {
 	const addressLength = 20
@@ -35,6 +41,7 @@ func (a AccountID) IsAccountID() bool {
 	if has0xPrefix(a) {
 		a = a[2:]
 	}
+
 	return len(a) == 2*addressLength && isHex(a)
 }
 

@@ -9,7 +9,6 @@ import (
 	"github.com/ardanlabs/blockchain/foundation/blockchain/genesis"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/mempool"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/peer"
-	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
 )
 
 /*
@@ -36,7 +35,7 @@ type Worker interface {
 	Sync()
 	SignalStartMining()
 	SignalCancelMining() (done func())
-	SignalShareTx(blockTx storage.BlockTx)
+	SignalShareTx(blockTx database.BlockTx)
 }
 
 // =============================================================================
@@ -44,7 +43,7 @@ type Worker interface {
 // Config represents the configuration required to start
 // the blockchain node.
 type Config struct {
-	MinerAccountID storage.AccountID
+	MinerAccountID database.AccountID
 	Host           string
 	DBPath         string
 	SelectStrategy string
@@ -56,7 +55,7 @@ type Config struct {
 type State struct {
 	mu sync.RWMutex
 
-	minerAccountID storage.AccountID
+	minerAccountID database.AccountID
 	host           string
 	dbPath         string
 	evHandler      EventHandler

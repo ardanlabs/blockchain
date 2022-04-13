@@ -8,7 +8,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
+	"github.com/ardanlabs/blockchain/foundation/blockchain/database"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/spf13/cobra"
 )
@@ -48,12 +48,12 @@ func sendRun(cmd *cobra.Command, args []string) {
 }
 
 func sendWithDetails(privateKey *ecdsa.PrivateKey) {
-	toAccount, err := storage.ToAccountID(to)
+	toAccount, err := database.ToAccountID(to)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	userTx, err := storage.NewUserTx(nonce, toAccount, value, tip, data)
+	userTx, err := database.NewUserTx(nonce, toAccount, value, tip, data)
 	if err != nil {
 		log.Fatal(err)
 	}

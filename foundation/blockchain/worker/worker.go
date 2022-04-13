@@ -11,8 +11,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ardanlabs/blockchain/foundation/blockchain/database"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/state"
-	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
 )
 
 // peerUpdateInterval represents the interval of finding new peer nodes
@@ -29,7 +29,7 @@ type Worker struct {
 	shut         chan struct{}
 	startMining  chan bool
 	cancelMining chan chan struct{}
-	txSharing    chan storage.BlockTx
+	txSharing    chan database.BlockTx
 	evHandler    state.EventHandler
 	baseURL      string
 }
@@ -43,7 +43,7 @@ func Run(state *state.State, evHandler state.EventHandler) {
 		shut:         make(chan struct{}),
 		startMining:  make(chan bool, 1),
 		cancelMining: make(chan chan struct{}, 1),
-		txSharing:    make(chan storage.BlockTx, maxTxShareRequests),
+		txSharing:    make(chan database.BlockTx, maxTxShareRequests),
 		evHandler:    evHandler,
 		baseURL:      "http://%s/v1/node",
 	}
@@ -137,7 +137,7 @@ func (w *Worker) SignalCancelMining() (done func()) {
 
 // SignalShareTx signals a share transaction operation. If
 // maxTxShareRequests signals exist in the channel, we won't send these.
-func (w *Worker) SignalShareTx(blockTx storage.BlockTx) {
+func (w *Worker) SignalShareTx(blockTx database.BlockTx) {
 	select {
 	case w.txSharing <- blockTx:
 		w.evHandler("worker: SignalShareTx: share Tx signaled")

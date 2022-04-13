@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
+	"github.com/ardanlabs/blockchain/foundation/blockchain/database"
 )
 
 // List of different select strategies.
@@ -24,7 +24,7 @@ var strategies = map[string]Func{
 // account and selects howMany of them in an order based on the functions
 // strategy. All selector functions MUST respect nonce ordering. Receiving -1
 // for howMany must return all the transactions in the strategies ordering.
-type Func func(transactions map[storage.AccountID][]storage.BlockTx, howMany int) []storage.BlockTx
+type Func func(transactions map[database.AccountID][]database.BlockTx, howMany int) []database.BlockTx
 
 // Retrieve returns the specified select strategy function.
 func Retrieve(strategy string) (Func, error) {
@@ -38,7 +38,7 @@ func Retrieve(strategy string) (Func, error) {
 // =============================================================================
 
 // byNonce provides sorting support by the transaction id value.
-type byNonce []storage.BlockTx
+type byNonce []database.BlockTx
 
 // Len returns the number of transactions in the list.
 func (bn byNonce) Len() int {
@@ -59,7 +59,7 @@ func (bn byNonce) Swap(i, j int) {
 // =============================================================================
 
 // byTip provides sorting support by the transaction tip value.
-type byTip []storage.BlockTx
+type byTip []database.BlockTx
 
 // Len returns the number of transactions in the list.
 func (bt byTip) Len() int {

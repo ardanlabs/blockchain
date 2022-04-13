@@ -3,12 +3,12 @@ package selector
 import (
 	"sort"
 
-	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
+	"github.com/ardanlabs/blockchain/foundation/blockchain/database"
 )
 
 // tipSelect returns transactions with the best tip while respecting the nonce
 // for each account/transaction.
-var tipSelect = func(m map[storage.AccountID][]storage.BlockTx, howMany int) []storage.BlockTx {
+var tipSelect = func(m map[database.AccountID][]database.BlockTx, howMany int) []database.BlockTx {
 
 	/*
 		Bill: {Nonce: 2, To: "0x6Fe6CF3c8fF57c58d24BfC869668F48BCbDb3BD9", Tip: 250},
@@ -38,9 +38,9 @@ var tipSelect = func(m map[storage.AccountID][]storage.BlockTx, howMany int) []s
 	// Pick the first transaction in the slice for each account. Each iteration
 	// represents a new row of selections. Keep doing that until all the
 	// transactions have been selected.
-	var rows [][]storage.BlockTx
+	var rows [][]database.BlockTx
 	for {
-		var row []storage.BlockTx
+		var row []database.BlockTx
 		for key := range m {
 			if len(m[key]) > 0 {
 				row = append(row, m[key][0])
@@ -66,7 +66,7 @@ var tipSelect = func(m map[storage.AccountID][]storage.BlockTx, howMany int) []s
 	// anyway. Then try to select the number of requested transactions. Keep
 	// pulling transactions from each row until the amount of fulfilled or
 	// there are no more transactions.
-	final := []storage.BlockTx{}
+	final := []database.BlockTx{}
 done:
 	for _, row := range rows {
 		need := howMany - len(final)

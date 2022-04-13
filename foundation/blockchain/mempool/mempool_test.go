@@ -3,8 +3,8 @@ package mempool_test
 import (
 	"testing"
 
+	"github.com/ardanlabs/blockchain/foundation/blockchain/database"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/mempool"
-	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
@@ -18,13 +18,13 @@ const (
 
 func Test_CRUD(t *testing.T) {
 	type user struct {
-		userTx storage.UserTx
+		userTx database.UserTx
 		hexKey string
 	}
 	type table struct {
 		name string
 		txs  []user
-		best map[storage.AccountID]storage.UserTx
+		best map[database.AccountID]database.UserTx
 	}
 
 	tt := []table{
@@ -32,31 +32,31 @@ func Test_CRUD(t *testing.T) {
 			name: "tip",
 			txs: []user{
 				{
-					userTx: storage.UserTx{Nonce: 2, ToID: "0x0000000000000000000000000000000000000000", Tip: 250},
+					userTx: database.UserTx{Nonce: 2, ToID: "0x0000000000000000000000000000000000000000", Tip: 250},
 					hexKey: "9f332e3700d8fc2446eaf6d15034cf96e0c2745e40353deef032a5dbf1dfed93",
 				},
 				{
-					userTx: storage.UserTx{Nonce: 2, ToID: "0x1111111111111111111111111111111111111111", Tip: 200},
+					userTx: database.UserTx{Nonce: 2, ToID: "0x1111111111111111111111111111111111111111", Tip: 200},
 					hexKey: "fae85851bdf5c9f49923722ce38f3c1defcfd3619ef5453230a58ad805499959",
 				},
 				{
-					userTx: storage.UserTx{Nonce: 2, ToID: "0x2222222222222222222222222222222222222222", Tip: 75},
+					userTx: database.UserTx{Nonce: 2, ToID: "0x2222222222222222222222222222222222222222", Tip: 75},
 					hexKey: "aed31b6b5a341af8f27e66fb0b7633cf20fc27049e3eb7f6f623a4655b719ebb",
 				},
 				{
-					userTx: storage.UserTx{Nonce: 1, ToID: "0x3333333333333333333333333333333333333333", Tip: 150},
+					userTx: database.UserTx{Nonce: 1, ToID: "0x3333333333333333333333333333333333333333", Tip: 150},
 					hexKey: "9f332e3700d8fc2446eaf6d15034cf96e0c2745e40353deef032a5dbf1dfed93",
 				},
 				{
-					userTx: storage.UserTx{Nonce: 1, ToID: "0x4444444444444444444444444444444444444444", Tip: 75},
+					userTx: database.UserTx{Nonce: 1, ToID: "0x4444444444444444444444444444444444444444", Tip: 75},
 					hexKey: "fae85851bdf5c9f49923722ce38f3c1defcfd3619ef5453230a58ad805499959",
 				},
 				{
-					userTx: storage.UserTx{Nonce: 1, ToID: "0x5555555555555555555555555555555555555555", Tip: 100},
+					userTx: database.UserTx{Nonce: 1, ToID: "0x5555555555555555555555555555555555555555", Tip: 100},
 					hexKey: "aed31b6b5a341af8f27e66fb0b7633cf20fc27049e3eb7f6f623a4655b719ebb",
 				},
 			},
-			best: map[storage.AccountID]storage.UserTx{
+			best: map[database.AccountID]database.UserTx{
 				"0x3333333333333333333333333333333333333333": {Nonce: 1, Tip: 150},
 				"0x5555555555555555555555555555555555555555": {Nonce: 1, Tip: 100},
 				"0x4444444444444444444444444444444444444444": {Nonce: 1, Tip: 75},
@@ -124,16 +124,16 @@ func Test_CRUD(t *testing.T) {
 
 // =============================================================================
 
-func sign(hexKey string, tx storage.UserTx, gas uint) (storage.BlockTx, error) {
+func sign(hexKey string, tx database.UserTx, gas uint) (database.BlockTx, error) {
 	pk, err := crypto.HexToECDSA(hexKey)
 	if err != nil {
-		return storage.BlockTx{}, err
+		return database.BlockTx{}, err
 	}
 
 	signedTx, err := tx.Sign(pk)
 	if err != nil {
-		return storage.BlockTx{}, err
+		return database.BlockTx{}, err
 	}
 
-	return storage.NewBlockTx(signedTx, gas), nil
+	return database.NewBlockTx(signedTx, gas), nil
 }

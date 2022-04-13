@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/ardanlabs/blockchain/foundation/blockchain/database"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/peer"
-	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
 )
 
 // Sync updates the peer list, mempool and blocks.
@@ -46,13 +46,13 @@ func (w *Worker) Sync() {
 }
 
 // retrievePeerMempool asks the peer for the transactions in their mempool.
-func (w *Worker) retrievePeerMempool(pr peer.Peer) ([]storage.BlockTx, error) {
+func (w *Worker) retrievePeerMempool(pr peer.Peer) ([]database.BlockTx, error) {
 	w.evHandler("worker: sync: retrievePeerMempool: started: %s", pr)
 	defer w.evHandler("worker: sync: retrievePeerMempool: completed: %s", pr)
 
 	url := fmt.Sprintf("%s/tx/list", fmt.Sprintf(w.baseURL, pr.Host))
 
-	var mempool []storage.BlockTx
+	var mempool []database.BlockTx
 	if err := send(http.MethodGet, url, nil, &mempool); err != nil {
 		return nil, err
 	}
@@ -71,7 +71,7 @@ func (w *Worker) retrievePeerBlocks(pr peer.Peer) error {
 	from := w.state.RetrieveLatestBlock().Header.Number + 1
 	url := fmt.Sprintf("%s/block/list/%d/latest", fmt.Sprintf(w.baseURL, pr.Host), from)
 
-	var blocksFS []storage.BlockFS
+	var blocksFS []database.BlockFS
 	if err := send(http.MethodGet, url, nil, &blocksFS); err != nil {
 		return err
 	}
@@ -79,7 +79,7 @@ func (w *Worker) retrievePeerBlocks(pr peer.Peer) error {
 	w.evHandler("worker: sync: retrievePeerBlocks: found blocks[%d]", len(blocksFS))
 
 	for _, blockFS := range blocksFS {
-		block, err := storage.ToBlock(blockFS)
+		block, err := database.ToBlock(blockFS)
 		if err != nil {
 			return err
 		}

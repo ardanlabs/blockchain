@@ -6,7 +6,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
+	"github.com/ardanlabs/blockchain/foundation/blockchain/database"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/spf13/cobra"
 )
@@ -39,10 +39,10 @@ func balanceRun(cmd *cobra.Command, args []string) {
 		log.Fatal(err)
 	}
 
-	account := storage.PublicKeyToAccount(privateKey.PublicKey)
-	fmt.Println("For Account:", account)
+	accountID := database.PublicKeyToAccountID(privateKey.PublicKey)
+	fmt.Println("For Account:", accountID)
 
-	resp, err := http.Get(fmt.Sprintf("%s/v1/balances/list/%s", url, account))
+	resp, err := http.Get(fmt.Sprintf("%s/v1/balances/list/%s", url, accountID))
 	if err != nil {
 		log.Fatal(err)
 	}

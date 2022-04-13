@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
+	"github.com/ardanlabs/blockchain/foundation/blockchain/database"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/spf13/cobra"
 )
@@ -25,6 +25,6 @@ func accountRun(cmd *cobra.Command, args []string) {
 		log.Fatal(err)
 	}
 
-	account := storage.PublicKeyToAccount(privateKey.PublicKey)
-	fmt.Println(account)
+	accountID := database.PublicKeyToAccountID(privateKey.PublicKey)
+	fmt.Println(accountID)
 }

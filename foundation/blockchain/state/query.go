@@ -4,7 +4,6 @@ import (
 	"errors"
 
 	"github.com/ardanlabs/blockchain/foundation/blockchain/database"
-	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
 )
 
 // QueryLastest represents to query the latest block in the chain.
@@ -12,11 +11,11 @@ const QueryLastest = ^uint64(0) >> 1
 
 // =============================================================================
 
-// QueryDatabaseRecord returns a copy of the database record for the specified account.
-func (s *State) QueryDatabaseRecord(account storage.AccountID) (database.Account, error) {
-	records := s.db.CopyRecords()
+// QueryAccounts returns a copy of the account from the database.
+func (s *State) QueryAccounts(account database.AccountID) (database.Account, error) {
+	accounts := s.db.CopyAccounts()
 
-	if info, exists := records[account]; exists {
+	if info, exists := accounts[account]; exists {
 		return info, nil
 	}
 
@@ -30,10 +29,10 @@ func (s *State) QueryMempoolLength() int {
 
 // QueryBlocksByNumber returns the set of blocks based on block numbers. This
 // function reads the blockchain from disk first.
-func (s *State) QueryBlocksByNumber(from uint64, to uint64) []storage.Block {
+func (s *State) QueryBlocksByNumber(from uint64, to uint64) []database.Block {
 	blocks, err := s.db.ReadAllBlocks(s.evHandler, false)
 	if err != nil {
-		return []storage.Block{}
+		return []database.Block{}
 	}
 
 	if from == QueryLastest {
@@ -41,7 +40,7 @@ func (s *State) QueryBlocksByNumber(from uint64, to uint64) []storage.Block {
 		to = from
 	}
 
-	var out []storage.Block
+	var out []database.Block
 	for _, block := range blocks {
 		if block.Header.Number >= from && block.Header.Number <= to {
 			out = append(out, block)
@@ -54,13 +53,13 @@ func (s *State) QueryBlocksByNumber(from uint64, to uint64) []storage.Block {
 // QueryBlocksByAccount returns the set of blocks by account. If the account
 // is empty, all blocks are returned. This function reads the blockchain
 // from disk first.
-func (s *State) QueryBlocksByAccount(accountID storage.AccountID) []storage.Block {
+func (s *State) QueryBlocksByAccount(accountID database.AccountID) []database.Block {
 	blocks, err := s.db.ReadAllBlocks(s.evHandler, false)
 	if err != nil {
-		return []storage.Block{}
+		return []database.Block{}
 	}
 
-	var out []storage.Block
+	var out []database.Block
 blocks:
 	for _, block := range blocks {
 		for _, tx := range block.Trans.Values() {

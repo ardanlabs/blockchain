@@ -1,14 +1,14 @@
 package state
 
-import "github.com/ardanlabs/blockchain/foundation/blockchain/storage"
+import "github.com/ardanlabs/blockchain/foundation/blockchain/database"
 
 // UpsertWalletTransaction accepts a transaction from a wallet for inclusion.
-func (s *State) UpsertWalletTransaction(signedTx storage.SignedTx) error {
+func (s *State) UpsertWalletTransaction(signedTx database.SignedTx) error {
 	if err := s.validateTransaction(signedTx); err != nil {
 		return err
 	}
 
-	tx := storage.NewBlockTx(signedTx, s.genesis.GasPrice)
+	tx := database.NewBlockTx(signedTx, s.genesis.GasPrice)
 
 	if err := s.mempool.Upsert(tx); err != nil {
 		return err
@@ -21,7 +21,7 @@ func (s *State) UpsertWalletTransaction(signedTx storage.SignedTx) error {
 }
 
 // UpsertNodeTransaction accepts a transaction from a node for inclusion.
-func (s *State) UpsertNodeTransaction(tx storage.BlockTx) error {
+func (s *State) UpsertNodeTransaction(tx database.BlockTx) error {
 	if err := s.validateTransaction(tx.SignedTx); err != nil {
 		return err
 	}
@@ -39,7 +39,7 @@ func (s *State) UpsertNodeTransaction(tx storage.BlockTx) error {
 
 // validateTransaction takes the signed transaction and validates it has
 // a proper signature and other aspects of the data.
-func (s *State) validateTransaction(signedTx storage.SignedTx) error {
+func (s *State) validateTransaction(signedTx database.SignedTx) error {
 	if err := signedTx.Validate(); err != nil {
 		return err
 	}

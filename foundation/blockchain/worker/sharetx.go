@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
+	"github.com/ardanlabs/blockchain/foundation/blockchain/database"
 )
 
 // maxTxShareRequests represents the max number of pending tx network share
@@ -35,7 +35,7 @@ func (w *Worker) shareTxOperations() {
 }
 
 // runShareTxOperation shares a new block transactions with the known peers.
-func (w *Worker) runShareTxOperation(tx storage.BlockTx) {
+func (w *Worker) runShareTxOperation(tx database.BlockTx) {
 	w.evHandler("worker: runShareTxOperation: started")
 	defer w.evHandler("worker: runShareTxOperation: completed")
 

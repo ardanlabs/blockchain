@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
+	"github.com/ardanlabs/blockchain/foundation/blockchain/database"
 )
 
 // ErrNoTransactions is returned when a block is requested to be created
@@ -15,32 +15,32 @@ var ErrNoTransactions = errors.New("no transactions in mempool")
 
 // MineNewBlock attempts to create a new block with a proper hash that can become
 // the next block in the chain.
-func (s *State) MineNewBlock(ctx context.Context) (storage.Block, error) {
+func (s *State) MineNewBlock(ctx context.Context) (database.Block, error) {
 	s.evHandler("state: MineNewBlock: MINING: check mempool count")
 
 	// Are there enough transactions in the pool.
 	if s.mempool.Count() == 0 {
-		return storage.Block{}, ErrNoTransactions
+		return database.Block{}, ErrNoTransactions
 	}
 
 	s.evHandler("state: MineNewBlock: MINING: perform POW")
 
 	// Attempt to create a new block by solving the POW puzzle. This can be cancelled.
 	trans := s.mempool.PickBest()
-	block, err := storage.POW(ctx, s.minerAccountID, s.genesis.Difficulty, s.RetrieveLatestBlock(), trans, s.evHandler)
+	block, err := database.POW(ctx, s.minerAccountID, s.genesis.Difficulty, s.RetrieveLatestBlock(), trans, s.evHandler)
 	if err != nil {
-		return storage.Block{}, err
+		return database.Block{}, err
 	}
 
 	// Just check one more time we were not cancelled.
 	if ctx.Err() != nil {
-		return storage.Block{}, ctx.Err()
+		return database.Block{}, ctx.Err()
 	}
 
 	s.evHandler("state: MineNewBlock: MINING: update local state")
 
 	if err := s.updateLocalState(block); err != nil {
-		return storage.Block{}, err
+		return database.Block{}, err
 	}
 
 	return block, nil
@@ -48,7 +48,7 @@ func (s *State) MineNewBlock(ctx context.Context) (storage.Block, error) {
 
 // MinePeerBlock takes a block received from a peer, validates it and
 // if that passes, writes the block to disk.
-func (s *State) MinePeerBlock(block storage.Block) error {
+func (s *State) MinePeerBlock(block database.Block) error {
 	s.evHandler("state: MinePeerBlock: started : block[%s]", block.Hash())
 	defer s.evHandler("state: MinePeerBlock: completed")
 
@@ -73,14 +73,14 @@ func (s *State) MinePeerBlock(block storage.Block) error {
 
 // updateLocalState takes the blockFS and updates the current state of the
 // chain, including adding the block to disk.
-func (s *State) updateLocalState(block storage.Block) error {
+func (s *State) updateLocalState(block database.Block) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	s.evHandler("state: updateLocalState: write to disk")
 
 	// Write the new block to the chain on disk.
-	if err := s.db.Write(storage.NewBlockFS(block)); err != nil {
+	if err := s.db.Write(database.NewBlockFS(block)); err != nil {
 		return err
 	}
 	s.db.UpdateLatestBlock(block)

@@ -4,7 +4,6 @@ import (
 	"github.com/ardanlabs/blockchain/foundation/blockchain/database"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/genesis"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/peer"
-	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
 )
 
 // RetrieveHost returns a copy of host information.
@@ -18,18 +17,18 @@ func (s *State) RetrieveGenesis() genesis.Genesis {
 }
 
 // RetrieveLatestBlock returns a copy the current latest block.
-func (s *State) RetrieveLatestBlock() storage.Block {
+func (s *State) RetrieveLatestBlock() database.Block {
 	return s.db.LatestBlock()
 }
 
 // RetrieveMempool returns a copy of the mempool.
-func (s *State) RetrieveMempool() []storage.BlockTx {
+func (s *State) RetrieveMempool() []database.BlockTx {
 	return s.mempool.PickBest()
 }
 
-// RetrieveDatabaseRecords returns a copy of the database records.
-func (s *State) RetrieveDatabaseRecords() map[storage.AccountID]database.Account {
-	return s.db.CopyRecords()
+// RetrieveAccounts returns a copy of the database accounts.
+func (s *State) RetrieveAccounts() map[database.AccountID]database.Account {
+	return s.db.CopyAccounts()
 }
 
 // RetrieveKnownPeers retrieves a copy of the known peer list.

@@ -10,22 +10,15 @@ import (
 	"sync"
 
 	"github.com/ardanlabs/blockchain/foundation/blockchain/genesis"
-	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
 )
-
-// Account represents information stored in the database for an individual account.
-type Account struct {
-	Balance uint
-	Nonce   uint
-}
 
 // Database manages data related to accounts who have transacted on the blockchain.
 type Database struct {
 	mu sync.RWMutex
 
 	genesis     genesis.Genesis
-	latestBlock storage.Block
-	accounts    map[storage.AccountID]Account
+	latestBlock Block
+	accounts    map[AccountID]Account
 
 	dbPath string
 	dbFile *os.File
@@ -46,12 +39,12 @@ func New(dbPath string, genesis genesis.Genesis, evHandler func(v string, args .
 
 	db := Database{
 		genesis:  genesis,
-		accounts: make(map[storage.AccountID]Account),
+		accounts: make(map[AccountID]Account),
 		dbPath:   dbPath,
 		dbFile:   dbFile,
 	}
 
-	var blocks []storage.Block
+	var blocks []Block
 	if dbFile != nil {
 		var err error
 		blocks, err = db.ReadAllBlocks(evHandler, true)
@@ -60,7 +53,11 @@ func New(dbPath string, genesis genesis.Genesis, evHandler func(v string, args .
 		}
 	}
 
-	for accountID, balance := range genesis.Balances {
+	for accountStr, balance := range genesis.Balances {
+		accountID, err := ToAccountID(accountStr)
+		if err != nil {
+			return nil, err
+		}
 		db.accounts[accountID] = Account{Balance: balance}
 	}
 
@@ -78,7 +75,7 @@ func New(dbPath string, genesis genesis.Genesis, evHandler func(v string, args .
 	return &db, nil
 }
 
-// Close cleanly releases the storage area.
+// Close closes the open blocks database.
 func (db *Database) Close() {
 	db.mu.Lock()
 	defer db.mu.Unlock()
@@ -86,7 +83,7 @@ func (db *Database) Close() {
 	db.dbFile.Close()
 }
 
-// Reset re-initalizes the database back to the genesis information.
+// Reset re-initalizes the database back to the genesis state.
 func (db *Database) Reset() error {
 	db.mu.Lock()
 	defer db.mu.Unlock()
@@ -105,9 +102,13 @@ func (db *Database) Reset() error {
 	db.dbFile = dbFile
 
 	// Initalizes the database back to the genesis information.
-	db.latestBlock = storage.Block{}
-	db.accounts = make(map[storage.AccountID]Account)
-	for accountID, balance := range db.genesis.Balances {
+	db.latestBlock = Block{}
+	db.accounts = make(map[AccountID]Account)
+	for accountStr, balance := range db.genesis.Balances {
+		accountID, err := ToAccountID(accountStr)
+		if err != nil {
+			return err
+		}
 		db.accounts[accountID] = Account{Balance: balance}
 	}
 
@@ -115,28 +116,28 @@ func (db *Database) Reset() error {
 }
 
 // Remove deletes an account from the database.
-func (db *Database) Remove(accountID storage.AccountID) {
+func (db *Database) Remove(accountID AccountID) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 
 	delete(db.accounts, accountID)
 }
 
-// CopyRecords makes a copy of the current database for all accounts.
-func (db *Database) CopyRecords() map[storage.AccountID]Account {
+// CopyAccounts makes a copy of the current accounts in the database.
+func (db *Database) CopyAccounts() map[AccountID]Account {
 	db.mu.RLock()
 	defer db.mu.RUnlock()
 
-	records := make(map[storage.AccountID]Account)
+	accounts := make(map[AccountID]Account)
 	for accountID, account := range db.accounts {
-		records[accountID] = account
+		accounts[accountID] = account
 	}
-	return records
+	return accounts
 }
 
 // ValidateNonce validates the nonce for the specified transaction is larger
 // than the last nonce used by the account who signed the transaction.
-func (db *Database) ValidateNonce(tx storage.SignedTx) error {
+func (db *Database) ValidateNonce(tx SignedTx) error {
 	from, err := tx.FromAccount()
 	if err != nil {
 		return err
@@ -157,7 +158,7 @@ func (db *Database) ValidateNonce(tx storage.SignedTx) error {
 }
 
 // ApplyMiningReward gives the specififed account the mining reward.
-func (db *Database) ApplyMiningReward(minerAccountID storage.AccountID) {
+func (db *Database) ApplyMiningReward(minerAccountID AccountID) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 
@@ -169,7 +170,7 @@ func (db *Database) ApplyMiningReward(minerAccountID storage.AccountID) {
 
 // ApplyTransaction performs the business logic for applying a transaction
 // to the database.
-func (db *Database) ApplyTransaction(minerID storage.AccountID, tx storage.BlockTx) error {
+func (db *Database) ApplyTransaction(minerID AccountID, tx BlockTx) error {
 	fromID, err := tx.FromAccount()
 	if err != nil {
 		return fmt.Errorf("invalid signature, %s", err)
@@ -213,7 +214,7 @@ func (db *Database) ApplyTransaction(minerID storage.AccountID, tx storage.Block
 }
 
 // UpdateLatestBlock provides safe access to update the latest block.
-func (db *Database) UpdateLatestBlock(block storage.Block) {
+func (db *Database) UpdateLatestBlock(block Block) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 
@@ -221,7 +222,7 @@ func (db *Database) UpdateLatestBlock(block storage.Block) {
 }
 
 // LatestBlock returns the latest block.
-func (db *Database) LatestBlock() storage.Block {
+func (db *Database) LatestBlock() Block {
 	db.mu.RLock()
 	defer db.mu.RUnlock()
 
@@ -229,7 +230,7 @@ func (db *Database) LatestBlock() storage.Block {
 }
 
 // Write adds a new block to the chain.
-func (db *Database) Write(block storage.BlockFS) error {
+func (db *Database) Write(block BlockFS) error {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 
@@ -249,27 +250,27 @@ func (db *Database) Write(block storage.BlockFS) error {
 
 // ReadAllBlocks loads all existing blocks from storage into memory. In a real
 // world situation this would require a lot of memory.
-func (db *Database) ReadAllBlocks(evHandler func(v string, args ...any), validate bool) ([]storage.Block, error) {
+func (db *Database) ReadAllBlocks(evHandler func(v string, args ...any), validate bool) ([]Block, error) {
 	dbFile, err := os.Open(db.dbPath)
 	if err != nil {
 		return nil, err
 	}
 	defer dbFile.Close()
 
-	var blocks []storage.Block
-	var latestBlock storage.Block
+	var blocks []Block
+	var latestBlock Block
 	scanner := bufio.NewScanner(dbFile)
 	for scanner.Scan() {
 		if err := scanner.Err(); err != nil {
 			return nil, err
 		}
 
-		var blockFS storage.BlockFS
+		var blockFS BlockFS
 		if err := json.Unmarshal(scanner.Bytes(), &blockFS); err != nil {
 			return nil, err
 		}
 
-		block, err := storage.ToBlock(blockFS)
+		block, err := ToBlock(blockFS)
 		if err != nil {
 			return nil, err
 		}

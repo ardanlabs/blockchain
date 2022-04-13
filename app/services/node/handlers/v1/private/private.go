@@ -9,9 +9,9 @@ import (
 	"strconv"
 
 	v1 "github.com/ardanlabs/blockchain/business/web/v1"
+	"github.com/ardanlabs/blockchain/foundation/blockchain/database"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/peer"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/state"
-	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
 	"github.com/ardanlabs/blockchain/foundation/nameservice"
 	"github.com/ardanlabs/blockchain/foundation/web"
 	"go.uber.org/zap"
@@ -31,7 +31,7 @@ func (h Handlers) SubmitNodeTransaction(ctx context.Context, w http.ResponseWrit
 		return web.NewShutdownError("web value missing from context")
 	}
 
-	var tx storage.BlockTx
+	var tx database.BlockTx
 	if err := web.Decode(r, &tx); err != nil {
 		return fmt.Errorf("unable to decode payload: %w", err)
 	}
@@ -53,18 +53,18 @@ func (h Handlers) SubmitNodeTransaction(ctx context.Context, w http.ResponseWrit
 // MinePeerBlock accepts a new mined block from a peer, validates it, then adds it
 // to the block chain.
 func (h Handlers) MinePeerBlock(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	var blockFS storage.BlockFS
+	var blockFS database.BlockFS
 	if err := web.Decode(r, &blockFS); err != nil {
 		return fmt.Errorf("unable to decode payload: %w", err)
 	}
 
-	block, err := storage.ToBlock(blockFS)
+	block, err := database.ToBlock(blockFS)
 	if err != nil {
 		return fmt.Errorf("unable to decode block: %w", err)
 	}
 
 	if err := h.State.MinePeerBlock(block); err != nil {
-		if errors.Is(err, storage.ErrChainForked) {
+		if errors.Is(err, database.ErrChainForked) {
 			h.State.Resync()
 		}
 
@@ -123,9 +123,9 @@ func (h Handlers) BlocksByNumber(ctx context.Context, w http.ResponseWriter, r *
 		return web.Respond(ctx, w, nil, http.StatusNoContent)
 	}
 
-	blocksFS := make([]storage.BlockFS, len(blocks))
+	blocksFS := make([]database.BlockFS, len(blocks))
 	for i, block := range blocks {
-		blocksFS[i] = storage.NewBlockFS(block)
+		blocksFS[i] = database.NewBlockFS(block)
 	}
 
 	return web.Respond(ctx, w, blocksFS, http.StatusOK)

@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ardanlabs/blockchain/foundation/blockchain/database"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/mempool/selector"
-	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
 )
 
 var (
@@ -15,10 +15,10 @@ var (
 )
 
 func TestAdvancedSort(t *testing.T) {
-	tran := func(nonce uint, hexKey string, tip uint, ts time.Time) storage.BlockTx {
+	tran := func(nonce uint, hexKey string, tip uint, ts time.Time) database.BlockTx {
 		const toID = "0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76"
 
-		tx, err := sign(hexKey, storage.UserTx{Nonce: nonce, ToID: toID, Tip: tip}, 0)
+		tx, err := sign(hexKey, database.UserTx{Nonce: nonce, ToID: toID, Tip: tip}, 0)
 		if err != nil {
 			t.Fatalf("\t%s \tShould be able to sign transaction: %s", failed, tx)
 		}
@@ -27,16 +27,16 @@ func TestAdvancedSort(t *testing.T) {
 
 	type test struct {
 		name    string
-		txs     []storage.BlockTx
+		txs     []database.BlockTx
 		howMany int
-		best    []storage.BlockTx
+		best    []database.BlockTx
 	}
 
 	now := time.Now()
 	tt := []test{
 		{
 			name: "all from first account",
-			txs: []storage.BlockTx{
+			txs: []database.BlockTx{
 				tran(1, signPavel, 1, now),
 				tran(2, signPavel, 2, now),
 				tran(3, signPavel, 3, now),
@@ -47,7 +47,7 @@ func TestAdvancedSort(t *testing.T) {
 				tran(3, signBill, 1, now),
 			},
 			howMany: 4,
-			best: []storage.BlockTx{
+			best: []database.BlockTx{
 				tran(1, signPavel, 1, now),
 				tran(2, signPavel, 2, now),
 				tran(3, signPavel, 3, now),
@@ -56,7 +56,7 @@ func TestAdvancedSort(t *testing.T) {
 		},
 		{
 			name: "one from another account",
-			txs: []storage.BlockTx{
+			txs: []database.BlockTx{
 				tran(0, signPavel, 25, now),
 				tran(1, signPavel, 75, now),
 				tran(2, signPavel, 50, now),
@@ -70,7 +70,7 @@ func TestAdvancedSort(t *testing.T) {
 				tran(2, signEd, 7, now),
 			},
 			howMany: 4,
-			best: []storage.BlockTx{
+			best: []database.BlockTx{
 				tran(0, signPavel, 25, now),
 				tran(1, signPavel, 75, now),
 				tran(2, signPavel, 50, now),
@@ -80,7 +80,7 @@ func TestAdvancedSort(t *testing.T) {
 		},
 		{
 			name: "unblock big fee",
-			txs: []storage.BlockTx{
+			txs: []database.BlockTx{
 				tran(0, signPavel, 1, now),
 				tran(1, signPavel, 1, now),
 				tran(2, signPavel, 50, now),
@@ -94,7 +94,7 @@ func TestAdvancedSort(t *testing.T) {
 				tran(2, signEd, 7, now),
 			},
 			howMany: 4,
-			best: []storage.BlockTx{
+			best: []database.BlockTx{
 				tran(0, signPavel, 1, now),
 				tran(1, signPavel, 1, now),
 				tran(2, signPavel, 50, now),
@@ -110,7 +110,7 @@ func TestAdvancedSort(t *testing.T) {
 			t.Logf("\tTest %d:\tWhen handling a set of transaction.", testID)
 			{
 				f := func(t *testing.T) {
-					m := make(map[storage.AccountID][]storage.BlockTx)
+					m := make(map[database.AccountID][]database.BlockTx)
 					for _, tx := range tst.txs {
 						from, err := tx.FromAccount()
 						if err != nil {

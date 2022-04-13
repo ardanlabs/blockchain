@@ -6,14 +6,14 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/ardanlabs/blockchain/foundation/blockchain/database"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/mempool/selector"
-	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
 )
 
 // Mempool represents a cache of transactions organized by account:nonce.
 type Mempool struct {
 	mu       sync.RWMutex
-	pool     map[string]storage.BlockTx
+	pool     map[string]database.BlockTx
 	selectFn selector.Func
 }
 
@@ -30,7 +30,7 @@ func NewWithStrategy(strategy string) (*Mempool, error) {
 	}
 
 	mp := Mempool{
-		pool:     make(map[string]storage.BlockTx),
+		pool:     make(map[string]database.BlockTx),
 		selectFn: selectFn,
 	}
 
@@ -46,7 +46,7 @@ func (mp *Mempool) Count() int {
 }
 
 // Upsert adds or replaces a transaction from the mempool.
-func (mp *Mempool) Upsert(tx storage.BlockTx) error {
+func (mp *Mempool) Upsert(tx database.BlockTx) error {
 	mp.mu.Lock()
 	defer mp.mu.Unlock()
 
@@ -61,7 +61,7 @@ func (mp *Mempool) Upsert(tx storage.BlockTx) error {
 }
 
 // Delete removed a transaction from the mempool.
-func (mp *Mempool) Delete(tx storage.BlockTx) error {
+func (mp *Mempool) Delete(tx database.BlockTx) error {
 	mp.mu.Lock()
 	defer mp.mu.Unlock()
 
@@ -80,12 +80,12 @@ func (mp *Mempool) Truncate() {
 	mp.mu.Lock()
 	defer mp.mu.Unlock()
 
-	mp.pool = make(map[string]storage.BlockTx)
+	mp.pool = make(map[string]database.BlockTx)
 }
 
 // PickBest uses the configured sort strategy to return the next set
 // of transactions for the next block.
-func (mp *Mempool) PickBest(howMany ...int) []storage.BlockTx {
+func (mp *Mempool) PickBest(howMany ...int) []database.BlockTx {
 	number := -1
 	if len(howMany) > 0 {
 		number = howMany[0]
@@ -94,7 +94,7 @@ func (mp *Mempool) PickBest(howMany ...int) []storage.BlockTx {
 	// Copy all the transactions for each account into separate
 	// slices for each account.
 
-	m := make(map[storage.AccountID][]storage.BlockTx)
+	m := make(map[database.AccountID][]database.BlockTx)
 	mp.mu.RLock()
 	{
 		if number == -1 {
@@ -114,7 +114,7 @@ func (mp *Mempool) PickBest(howMany ...int) []storage.BlockTx {
 // =============================================================================
 
 // mapKey is used to generate the map key.
-func mapKey(tx storage.BlockTx) (string, error) {
+func mapKey(tx database.BlockTx) (string, error) {
 	account, err := tx.FromAccount()
 	if err != nil {
 		return "", err
@@ -124,6 +124,6 @@ func mapKey(tx storage.BlockTx) (string, error) {
 }
 
 // accountFromMapKey extracts the account information from the mapkey.
-func accountFromMapKey(key string) storage.AccountID {
-	return storage.AccountID(strings.Split(key, ":")[0])
+func accountFromMapKey(key string) database.AccountID {
+	return database.AccountID(strings.Split(key, ":")[0])
 }

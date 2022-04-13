@@ -3,14 +3,14 @@ package selector
 import (
 	"sort"
 
-	"github.com/ardanlabs/blockchain/foundation/blockchain/storage"
+	"github.com/ardanlabs/blockchain/foundation/blockchain/database"
 )
 
 // advancedTipSelect returns transactions with the best tip while respecting the nonce
 // for each account/transaction. This strategy takes into account high-value transactions
 // that happens to be stuck on a low-nonce transaction with a low tip price.
-var advancedTipSelect = func(m map[storage.AccountID][]storage.BlockTx, howMany int) []storage.BlockTx {
-	final := []storage.BlockTx{}
+var advancedTipSelect = func(m map[database.AccountID][]database.BlockTx, howMany int) []database.BlockTx {
+	final := []database.BlockTx{}
 
 	// Sort the transactions per account by nonce.
 	for key := range m {
@@ -34,14 +34,14 @@ var advancedTipSelect = func(m map[storage.AccountID][]storage.BlockTx, howMany 
 type advancedTips struct {
 	howMany   int
 	bestTip   uint
-	bestPos   map[storage.AccountID]int
-	groupTips map[storage.AccountID][]uint
-	groups    []storage.AccountID
+	bestPos   map[database.AccountID]int
+	groupTips map[database.AccountID][]uint
+	groups    []database.AccountID
 }
 
-func newAdvancedTips(m map[storage.AccountID][]storage.BlockTx, howMany int) *advancedTips {
-	groupTips := map[storage.AccountID][]uint{}
-	groups := []storage.AccountID{}
+func newAdvancedTips(m map[database.AccountID][]database.BlockTx, howMany int) *advancedTips {
+	groupTips := map[database.AccountID][]uint{}
+	groups := []database.AccountID{}
 
 	for from := range m {
 		groupTips[from] = []uint{0}
@@ -64,12 +64,12 @@ func newAdvancedTips(m map[storage.AccountID][]storage.BlockTx, howMany int) *ad
 	}
 }
 
-func (at *advancedTips) findBest() map[storage.AccountID]int {
+func (at *advancedTips) findBest() map[database.AccountID]int {
 	at.findBestTransactions(0, 0, at.howMany, at.bestPos, 0)
 	return at.bestPos
 }
 
-func (at *advancedTips) findBestTransactions(groupID, pos int, left int, currPos map[storage.AccountID]int, prevTip uint) {
+func (at *advancedTips) findBestTransactions(groupID, pos int, left int, currPos map[database.AccountID]int, prevTip uint) {
 	if prevTip > at.bestTip {
 		at.bestTip = prevTip
 		at.bestPos = currPos
@@ -93,8 +93,8 @@ func (at *advancedTips) findBestTransactions(groupID, pos int, left int, currPos
 
 // =============================================================================
 
-func copyMap(m map[storage.AccountID]int) map[storage.AccountID]int {
-	newCurrPos := map[storage.AccountID]int{}
+func copyMap(m map[database.AccountID]int) map[database.AccountID]int {
+	newCurrPos := map[database.AccountID]int{}
 	for from, pos := range m {
 		newCurrPos[from] = pos
 	}
