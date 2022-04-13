@@ -28,7 +28,7 @@ func (s *State) RetrieveMempool() []storage.BlockTx {
 }
 
 // RetrieveDatabaseRecords returns a copy of the database records.
-func (s *State) RetrieveDatabaseRecords() map[storage.Account]database.Info {
+func (s *State) RetrieveDatabaseRecords() map[storage.AccountID]database.Account {
 	return s.db.CopyRecords()
 }
 

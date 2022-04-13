@@ -7,15 +7,15 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
-// Account represents an account in the system that can sign and is associated
-// with transactions on the blockchain.
-type Account string
+// accountID represents an account id that is used to sign transactions and is
+// associated with transactions on the blockchain.
+type AccountID string
 
 // ToAccount converts a hex-encoded string to an account and validates the
 // hex-encoded string is formatted correctly.
-func ToAccount(hex string) (Account, error) {
-	a := Account(hex)
-	if !a.IsAccount() {
+func ToAccountID(hex string) (AccountID, error) {
+	a := AccountID(hex)
+	if !a.IsAccountID() {
 		return "", errors.New("invalid account format")
 	}
 
@@ -23,13 +23,13 @@ func ToAccount(hex string) (Account, error) {
 }
 
 // PublicKeyToAccount converts the public key to an account value.
-func PublicKeyToAccount(pk ecdsa.PublicKey) Account {
-	return Account(crypto.PubkeyToAddress(pk).String())
+func PublicKeyToAccount(pk ecdsa.PublicKey) AccountID {
+	return AccountID(crypto.PubkeyToAddress(pk).String())
 }
 
 // IsAccount verifies whether the underlying data represents a valid
 // hex-encoded account.
-func (a Account) IsAccount() bool {
+func (a AccountID) IsAccountID() bool {
 	const addressLength = 20
 
 	if has0xPrefix(a) {
@@ -41,12 +41,12 @@ func (a Account) IsAccount() bool {
 // =============================================================================
 
 // has0xPrefix validates the account starts with a 0x.
-func has0xPrefix(a Account) bool {
+func has0xPrefix(a AccountID) bool {
 	return len(a) >= 2 && a[0] == '0' && (a[1] == 'x' || a[1] == 'X')
 }
 
 // isHex validates whether each byte is valid hexadecimal string.
-func isHex(a Account) bool {
+func isHex(a AccountID) bool {
 	if len(a)%2 != 0 {
 		return false
 	}

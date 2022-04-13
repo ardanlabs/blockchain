@@ -78,7 +78,7 @@ func (h Handlers) SubmitWalletTransaction(ctx context.Context, w http.ResponseWr
 		return fmt.Errorf("unable to decode payload: %w", err)
 	}
 
-	h.Log.Infow("add user tran", "traceid", v.TraceID, "from:nonce", signedTx, "to", signedTx.To, "value", signedTx.Value, "tip", signedTx.Tip)
+	h.Log.Infow("add user tran", "traceid", v.TraceID, "from:nonce", signedTx, "to", signedTx.ToID, "value", signedTx.Value, "tip", signedTx.Tip)
 	if err := h.State.UpsertWalletTransaction(signedTx); err != nil {
 		return v1.NewRequestError(err, http.StatusBadRequest)
 	}
@@ -107,15 +107,15 @@ func (h Handlers) Mempool(ctx context.Context, w http.ResponseWriter, r *http.Re
 	trans := []tx{}
 	for _, tran := range mempool {
 		account, _ := tran.FromAccount()
-		if acct != "" && ((acct != string(account)) && (acct != string(tran.To))) {
+		if acct != "" && ((acct != string(account)) && (acct != string(tran.ToID))) {
 			continue
 		}
 
 		trans = append(trans, tx{
 			FromAccount: account,
 			FromName:    h.NS.Lookup(account),
-			To:          tran.To,
-			ToName:      h.NS.Lookup(tran.To),
+			To:          tran.ToID,
+			ToName:      h.NS.Lookup(tran.ToID),
 			Nonce:       tran.Nonce,
 			Value:       tran.Value,
 			Tip:         tran.Tip,
@@ -131,23 +131,23 @@ func (h Handlers) Mempool(ctx context.Context, w http.ResponseWriter, r *http.Re
 
 // Accounts returns the current balances for all users.
 func (h Handlers) Accounts(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	account := web.Param(r, "account")
+	accountStr := web.Param(r, "account")
 
-	var records map[storage.Account]database.Info
-	switch account {
+	var records map[storage.AccountID]database.Account
+	switch accountStr {
 	case "":
 		records = h.State.RetrieveDatabaseRecords()
 
 	default:
-		account, err := storage.ToAccount(account)
+		accountID, err := storage.ToAccountID(accountStr)
 		if err != nil {
 			return err
 		}
-		info, err := h.State.QueryDatabaseRecord(account)
+		account, err := h.State.QueryDatabaseRecord(accountID)
 		if err != nil {
 			return err
 		}
-		records = map[storage.Account]database.Info{account: info}
+		records = map[storage.AccountID]database.Account{accountID: account}
 	}
 
 	accounts := make([]act, 0, len(records))
@@ -172,12 +172,12 @@ func (h Handlers) Accounts(ctx context.Context, w http.ResponseWriter, r *http.R
 
 // BlocksByAccount returns all the blocks and their details.
 func (h Handlers) BlocksByAccount(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	account, err := storage.ToAccount(web.Param(r, "account"))
+	accountStr, err := storage.ToAccountID(web.Param(r, "account"))
 	if err != nil {
 		return err
 	}
 
-	dbBlocks := h.State.QueryBlocksByAccount(account)
+	dbBlocks := h.State.QueryBlocksByAccount(accountStr)
 	if len(dbBlocks) == 0 {
 		return web.Respond(ctx, w, nil, http.StatusNoContent)
 	}
@@ -196,8 +196,8 @@ func (h Handlers) BlocksByAccount(ctx context.Context, w http.ResponseWriter, r 
 			trans[i] = tx{
 				FromAccount: account,
 				FromName:    h.NS.Lookup(account),
-				To:          tran.To,
-				ToName:      h.NS.Lookup(tran.To),
+				To:          tran.ToID,
+				ToName:      h.NS.Lookup(tran.ToID),
 				Nonce:       tran.Nonce,
 				Value:       tran.Value,
 				Tip:         tran.Tip,
@@ -210,7 +210,7 @@ func (h Handlers) BlocksByAccount(ctx context.Context, w http.ResponseWriter, r 
 
 		b := block{
 			ParentHash:   blk.Header.ParentHash,
-			MinerAccount: blk.Header.MinerAccount,
+			MinerAccount: blk.Header.MinerAccountID,
 			Difficulty:   blk.Header.Difficulty,
 			Number:       blk.Header.Number,
 			TimeStamp:    blk.Header.TimeStamp,

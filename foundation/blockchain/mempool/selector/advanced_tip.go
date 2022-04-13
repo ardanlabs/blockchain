@@ -9,7 +9,7 @@ import (
 // advancedTipSelect returns transactions with the best tip while respecting the nonce
 // for each account/transaction. This strategy takes into account high-value transactions
 // that happens to be stuck on a low-nonce transaction with a low tip price.
-var advancedTipSelect = func(m map[storage.Account][]storage.BlockTx, howMany int) []storage.BlockTx {
+var advancedTipSelect = func(m map[storage.AccountID][]storage.BlockTx, howMany int) []storage.BlockTx {
 	final := []storage.BlockTx{}
 
 	// Sort the transactions per account by nonce.
@@ -34,14 +34,14 @@ var advancedTipSelect = func(m map[storage.Account][]storage.BlockTx, howMany in
 type advancedTips struct {
 	howMany   int
 	bestTip   uint
-	bestPos   map[storage.Account]int
-	groupTips map[storage.Account][]uint
-	groups    []storage.Account
+	bestPos   map[storage.AccountID]int
+	groupTips map[storage.AccountID][]uint
+	groups    []storage.AccountID
 }
 
-func newAdvancedTips(m map[storage.Account][]storage.BlockTx, howMany int) *advancedTips {
-	groupTips := map[storage.Account][]uint{}
-	groups := []storage.Account{}
+func newAdvancedTips(m map[storage.AccountID][]storage.BlockTx, howMany int) *advancedTips {
+	groupTips := map[storage.AccountID][]uint{}
+	groups := []storage.AccountID{}
 
 	for from := range m {
 		groupTips[from] = []uint{0}
@@ -64,12 +64,12 @@ func newAdvancedTips(m map[storage.Account][]storage.BlockTx, howMany int) *adva
 	}
 }
 
-func (at *advancedTips) findBest() map[storage.Account]int {
+func (at *advancedTips) findBest() map[storage.AccountID]int {
 	at.findBestTransactions(0, 0, at.howMany, at.bestPos, 0)
 	return at.bestPos
 }
 
-func (at *advancedTips) findBestTransactions(groupID, pos int, left int, currPos map[storage.Account]int, prevTip uint) {
+func (at *advancedTips) findBestTransactions(groupID, pos int, left int, currPos map[storage.AccountID]int, prevTip uint) {
 	if prevTip > at.bestTip {
 		at.bestTip = prevTip
 		at.bestPos = currPos
@@ -93,8 +93,8 @@ func (at *advancedTips) findBestTransactions(groupID, pos int, left int, currPos
 
 // =============================================================================
 
-func copyMap(m map[storage.Account]int) map[storage.Account]int {
-	newCurrPos := map[storage.Account]int{}
+func copyMap(m map[storage.AccountID]int) map[storage.AccountID]int {
+	newCurrPos := map[storage.AccountID]int{}
 	for from, pos := range m {
 		newCurrPos[from] = pos
 	}

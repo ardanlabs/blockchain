@@ -11,12 +11,12 @@ import (
 
 // Genesis represents the genesis file.
 type Genesis struct {
-	Date         time.Time                `json:"date"`
-	ChainID      string                   `json:"chain_id"`
-	Difficulty   int                      `json:"difficulty"`    // How difficult it needs to be to solve the work problem.
-	MiningReward uint                     `json:"mining_reward"` // Reward for mining a block.
-	GasPrice     uint                     `json:"gas_price"`     // Fee paid for each transaction mined into a block.
-	Balances     map[storage.Account]uint `json:"balances"`
+	Date         time.Time                  `json:"date"`
+	ChainID      string                     `json:"chain_id"`
+	Difficulty   int                        `json:"difficulty"`    // How difficult it needs to be to solve the work problem.
+	MiningReward uint                       `json:"mining_reward"` // Reward for mining a block.
+	GasPrice     uint                       `json:"gas_price"`     // Fee paid for each transaction mined into a block.
+	Balances     map[storage.AccountID]uint `json:"balances"`
 }
 
 // =============================================================================

@@ -21,11 +21,11 @@ const (
 func Test_Transactions(t *testing.T) {
 	type table struct {
 		name        string
-		miner       storage.Account
+		miner       storage.AccountID
 		minerReward uint
 		gas         uint
-		balances    map[storage.Account]uint
-		final       map[storage.Account]uint
+		balances    map[storage.AccountID]uint
+		final       map[storage.AccountID]uint
 		txs         []storage.UserTx
 	}
 
@@ -35,24 +35,24 @@ func Test_Transactions(t *testing.T) {
 			miner:       "miner",
 			minerReward: 100,
 			gas:         80,
-			balances: map[storage.Account]uint{
+			balances: map[storage.AccountID]uint{
 				"0xdd6B972ffcc631a62CAE1BB9d80b7ff429c8ebA4": 1000,
 				"0xF01813E4B85e178A83e29B8E7bF26BD830a25f32": 0,
 				"miner": 0,
 			},
-			final: map[storage.Account]uint{
+			final: map[storage.AccountID]uint{
 				"0xdd6B972ffcc631a62CAE1BB9d80b7ff429c8ebA4": 540,
 				"0xF01813E4B85e178A83e29B8E7bF26BD830a25f32": 200,
 				"miner": 360,
 			},
 			txs: []storage.UserTx{
 				{
-					To:    "0xF01813E4B85e178A83e29B8E7bF26BD830a25f32",
+					ToID:  "0xF01813E4B85e178A83e29B8E7bF26BD830a25f32",
 					Value: 100,
 					Tip:   50,
 				},
 				{
-					To:    "0xF01813E4B85e178A83e29B8E7bF26BD830a25f32",
+					ToID:  "0xF01813E4B85e178A83e29B8E7bF26BD830a25f32",
 					Value: 100,
 					Tip:   50,
 				},
@@ -63,10 +63,14 @@ func Test_Transactions(t *testing.T) {
 	t.Log("Given the need to validate the transactions.")
 	{
 		for testID, tst := range tt {
-			t.Logf("\tTest %d:\tWhen handling a set of database.", testID)
+			t.Logf("\tTest %d:\tWhen handling a set of storage.", testID)
 			{
 				f := func(t *testing.T) {
-					db := database.New(genesis.Genesis{MiningReward: tst.minerReward, Balances: tst.balances}, nil)
+					db, err := database.New("", genesis.Genesis{MiningReward: tst.minerReward, Balances: tst.balances}, nil)
+					if err != nil {
+						t.Fatalf("\t%s\tTest %d:\tShould be able to open database.", failed, testID)
+					}
+					t.Logf("\t%s\tTest %d:\tShould be able to open database.", success, testID)
 
 					for _, tx := range tst.txs {
 						blockTx, err := sign(tx, tst.gas)
@@ -114,7 +118,7 @@ func TestNonceValidation(t *testing.T) {
 		name        string
 		minerReward uint
 		gas         uint
-		balances    map[storage.Account]uint
+		balances    map[storage.AccountID]uint
 		txs         []storage.UserTx
 		results     []error
 	}
@@ -123,19 +127,19 @@ func TestNonceValidation(t *testing.T) {
 		{
 			name:        "basic",
 			minerReward: 100,
-			balances:    map[storage.Account]uint{},
+			balances:    map[storage.AccountID]uint{},
 			txs: []storage.UserTx{
 				{
 					Nonce: 5,
-					To:    "0xF01813E4B85e178A83e29B8E7bF26BD830a25f32",
+					ToID:  "0xF01813E4B85e178A83e29B8E7bF26BD830a25f32",
 				},
 				{
 					Nonce: 3,
-					To:    "0xF01813E4B85e178A83e29B8E7bF26BD830a25f32",
+					ToID:  "0xF01813E4B85e178A83e29B8E7bF26BD830a25f32",
 				},
 				{
 					Nonce: 6,
-					To:    "0xF01813E4B85e178A83e29B8E7bF26BD830a25f32",
+					ToID:  "0xF01813E4B85e178A83e29B8E7bF26BD830a25f32",
 				},
 			},
 			results: []error{nil, errors.New("error"), nil},
@@ -147,7 +151,11 @@ func TestNonceValidation(t *testing.T) {
 		for testID, tst := range tt {
 			t.Logf("\tTest %d:\tWhen handling a set of transactions.", testID)
 			{
-				db := database.New(genesis.Genesis{MiningReward: tst.minerReward, Balances: tst.balances}, nil)
+				db, err := database.New("", genesis.Genesis{MiningReward: tst.minerReward, Balances: tst.balances}, nil)
+				if err != nil {
+					t.Fatalf("\t%s\tTest %d:\tShould be able to open database.", failed, testID)
+				}
+				t.Logf("\t%s\tTest %d:\tShould be able to open database.", success, testID)
 
 				for i, tx := range tst.txs {
 					blockTx, err := sign(tx, tst.gas)

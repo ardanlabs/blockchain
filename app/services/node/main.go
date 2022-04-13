@@ -126,7 +126,7 @@ func run(log *zap.SugaredLogger) error {
 		return fmt.Errorf("unable to load private key for node: %w", err)
 	}
 
-	account := storage.PublicKeyToAccount(privateKey.PublicKey)
+	accountID := storage.PublicKeyToAccount(privateKey.PublicKey)
 
 	peerSet := peer.NewPeerSet()
 	for _, host := range cfg.Node.KnownPeers {
@@ -142,7 +142,7 @@ func run(log *zap.SugaredLogger) error {
 	}
 
 	state, err := state.New(state.Config{
-		MinerAccount:   account,
+		MinerAccountID: accountID,
 		Host:           cfg.Web.PrivateHost,
 		DBPath:         cfg.Node.DBPath,
 		SelectStrategy: cfg.Node.SelectStrategy,

@@ -44,7 +44,7 @@ type Worker interface {
 // Config represents the configuration required to start
 // the blockchain node.
 type Config struct {
-	MinerAccount   storage.Account
+	MinerAccountID storage.AccountID
 	Host           string
 	DBPath         string
 	SelectStrategy string
@@ -56,10 +56,10 @@ type Config struct {
 type State struct {
 	mu sync.RWMutex
 
-	minerAccount storage.Account
-	host         string
-	dbPath       string
-	evHandler    EventHandler
+	minerAccountID storage.AccountID
+	host           string
+	dbPath         string
+	evHandler      EventHandler
 
 	allowMining bool
 	resyncWG    sync.WaitGroup
@@ -67,7 +67,6 @@ type State struct {
 	knownPeers *peer.PeerSet
 	genesis    genesis.Genesis
 	mempool    *mempool.Mempool
-	storage    *storage.Storage
 	db         *database.Database
 
 	Worker Worker
@@ -91,20 +90,10 @@ func New(cfg Config) (*State, error) {
 	}
 
 	// Access the storage for the blockchain.
-	strg, err := storage.New(cfg.DBPath)
+	db, err := database.New(cfg.DBPath, genesis, ev)
 	if err != nil {
 		return nil, err
 	}
-
-	// Read all the blocks from disk. This wouldn't fly in a real
-	// blockchain system.
-	blocks, err := strg.ReadAllBlocks(ev, true)
-	if err != nil {
-		return nil, err
-	}
-
-	// Create a new database and set the state for all the accounts.
-	db := database.New(genesis, blocks)
 
 	// Construct a mempool with the specified sort strategy.
 	mempool, err := mempool.NewWithStrategy(cfg.SelectStrategy)
@@ -114,16 +103,15 @@ func New(cfg Config) (*State, error) {
 
 	// Create the State to provide support for managing the blockchain.
 	state := State{
-		minerAccount: cfg.MinerAccount,
-		host:         cfg.Host,
-		dbPath:       cfg.DBPath,
-		evHandler:    ev,
-		allowMining:  true,
+		minerAccountID: cfg.MinerAccountID,
+		host:           cfg.Host,
+		dbPath:         cfg.DBPath,
+		evHandler:      ev,
+		allowMining:    true,
 
 		knownPeers: cfg.KnownPeers,
 		genesis:    genesis,
 		mempool:    mempool,
-		storage:    strg,
 		db:         db,
 	}
 
@@ -140,7 +128,7 @@ func (s *State) Shutdown() error {
 
 	// Make sure the database file is properly closed.
 	defer func() {
-		s.storage.Close()
+		s.db.Close()
 	}()
 
 	// Stop all blockchain writing activity.
@@ -181,7 +169,6 @@ func (s *State) Resync() error {
 
 	// Reset the state of the blockchain node.
 	s.db.Reset()
-	s.storage.Reset()
 
 	// Resync the state of the blockchain.
 	s.resyncWG.Add(1)

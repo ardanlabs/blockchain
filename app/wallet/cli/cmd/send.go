@@ -48,7 +48,7 @@ func sendRun(cmd *cobra.Command, args []string) {
 }
 
 func sendWithDetails(privateKey *ecdsa.PrivateKey) {
-	toAccount, err := storage.ToAccount(to)
+	toAccount, err := storage.ToAccountID(to)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -16,22 +16,22 @@ import (
 
 // UserTx is the transactional data submitted by a user.
 type UserTx struct {
-	Nonce uint    `json:"nonce"` // Unique id for the transaction supplied by the user.
-	To    Account `json:"to"`    // Account receiving the benefit of the transaction.
-	Value uint    `json:"value"` // Monetary value received from this transaction.
-	Tip   uint    `json:"tip"`   // Tip offered by the sender as an incentive to mine this transaction.
-	Data  []byte  `json:"data"`  // Extra data related to the transaction.
+	Nonce uint      `json:"nonce"` // Unique id for the transaction supplied by the user.
+	ToID  AccountID `json:"to"`    // Account receiving the benefit of the transaction.
+	Value uint      `json:"value"` // Monetary value received from this transaction.
+	Tip   uint      `json:"tip"`   // Tip offered by the sender as an incentive to mine this transaction.
+	Data  []byte    `json:"data"`  // Extra data related to the transaction.
 }
 
 // NewUserTx constructs a new user transaction.
-func NewUserTx(nonce uint, to Account, value uint, tip uint, data []byte) (UserTx, error) {
-	if !to.IsAccount() {
+func NewUserTx(nonce uint, toID AccountID, value uint, tip uint, data []byte) (UserTx, error) {
+	if !toID.IsAccountID() {
 		return UserTx{}, fmt.Errorf("to account is not properly formatted")
 	}
 
 	userTx := UserTx{
 		Nonce: nonce,
-		To:    to,
+		ToID:  toID,
 		Value: value,
 		Tip:   tip,
 		Data:  data,
@@ -44,7 +44,7 @@ func NewUserTx(nonce uint, to Account, value uint, tip uint, data []byte) (UserT
 func (tx UserTx) Sign(privateKey *ecdsa.PrivateKey) (SignedTx, error) {
 
 	// Validate the to account incase the UserTx value was hand constructed.
-	if !tx.To.IsAccount() {
+	if !tx.ToID.IsAccountID() {
 		return SignedTx{}, fmt.Errorf("to account is not properly formatted")
 	}
 
@@ -84,7 +84,7 @@ func (tx SignedTx) Validate() error {
 		return err
 	}
 
-	if !tx.To.IsAccount() {
+	if !tx.ToID.IsAccountID() {
 		return errors.New("invalid account for to account")
 	}
 
@@ -92,9 +92,9 @@ func (tx SignedTx) Validate() error {
 }
 
 // FromAccount extracts the account that signed the transaction.
-func (tx SignedTx) FromAccount() (Account, error) {
+func (tx SignedTx) FromAccount() (AccountID, error) {
 	address, err := signature.FromAddress(tx.UserTx, tx.V, tx.R, tx.S)
-	return Account(address), err
+	return AccountID(address), err
 }
 
 // SignatureString returns the signature as a string.

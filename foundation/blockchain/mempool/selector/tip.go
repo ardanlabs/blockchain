@@ -8,7 +8,7 @@ import (
 
 // tipSelect returns transactions with the best tip while respecting the nonce
 // for each account/transaction.
-var tipSelect = func(m map[storage.Account][]storage.BlockTx, howMany int) []storage.BlockTx {
+var tipSelect = func(m map[storage.AccountID][]storage.BlockTx, howMany int) []storage.BlockTx {
 
 	/*
 		Bill: {Nonce: 2, To: "0x6Fe6CF3c8fF57c58d24BfC869668F48BCbDb3BD9", Tip: 250},
