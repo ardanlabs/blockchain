@@ -50,9 +50,9 @@ func (h Handlers) SubmitNodeTransaction(ctx context.Context, w http.ResponseWrit
 	return web.Respond(ctx, w, resp, http.StatusOK)
 }
 
-// MinePeerBlock accepts a new mined block from a peer, validates it, then adds it
-// to the block chain.
-func (h Handlers) MinePeerBlock(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+// ProposeBlock takes a block received from a peer, validates it and
+// if that passes, adds the block to the local blockchain.
+func (h Handlers) ProposeBlock(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	var blockFS database.BlockFS
 	if err := web.Decode(r, &blockFS); err != nil {
 		return fmt.Errorf("unable to decode payload: %w", err)
@@ -63,7 +63,7 @@ func (h Handlers) MinePeerBlock(ctx context.Context, w http.ResponseWriter, r *h
 		return fmt.Errorf("unable to decode block: %w", err)
 	}
 
-	if err := h.State.MinePeerBlock(block); err != nil {
+	if err := h.State.ValidateProposedBlock(block); err != nil {
 		if errors.Is(err, database.ErrChainForked) {
 			h.State.Resync()
 		}

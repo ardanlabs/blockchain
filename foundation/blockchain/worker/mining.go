@@ -124,10 +124,10 @@ func (w *Worker) runMiningOperation() {
 			return
 		}
 
-		// WOW, we mined a block. Send the new block to the network.
+		// WOW, we mined a block. Propose the new block to the network.
 		// Log the error, but that's it.
-		if err := w.sendBlockToPeers(block); err != nil {
-			w.evHandler("worker: runMiningOperation: MINING: sendBlockToPeers: WARNING %s", err)
+		if err := w.proposeBlockToPeers(block); err != nil {
+			w.evHandler("worker: runMiningOperation: MINING: proposeBlockToPeers: WARNING %s", err)
 		}
 	}()
 
@@ -135,13 +135,13 @@ func (w *Worker) runMiningOperation() {
 	wg.Wait()
 }
 
-// sendBlockToPeers takes the new mined block and sends it to all know peers.
-func (w *Worker) sendBlockToPeers(block database.Block) error {
-	w.evHandler("worker: runMiningOperation: MINING: sendBlockToPeers: started")
-	defer w.evHandler("worker: runMiningOperation: MINING: sendBlockToPeers: completed")
+// proposeBlockToPeers takes the new mined block and sends it to all know peers.
+func (w *Worker) proposeBlockToPeers(block database.Block) error {
+	w.evHandler("worker: runMiningOperation: MINING: proposeBlockToPeers: started")
+	defer w.evHandler("worker: runMiningOperation: MINING: proposeBlockToPeers: completed")
 
 	for _, peer := range w.state.RetrieveKnownPeers() {
-		url := fmt.Sprintf("%s/block/next", fmt.Sprintf(w.baseURL, peer.Host))
+		url := fmt.Sprintf("%s/block/propose", fmt.Sprintf(w.baseURL, peer.Host))
 
 		var status struct {
 			Status string `json:"status"`
@@ -151,7 +151,7 @@ func (w *Worker) sendBlockToPeers(block database.Block) error {
 			return fmt.Errorf("%s: %s", peer.Host, err)
 		}
 
-		w.evHandler("worker: runMiningOperation: MINING: sendBlockToPeers: sent to peer[%s]", peer)
+		w.evHandler("worker: runMiningOperation: MINING: proposeBlockToPeers: sent to peer[%s]", peer)
 	}
 
 	return nil

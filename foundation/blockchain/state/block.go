@@ -46,11 +46,11 @@ func (s *State) MineNewBlock(ctx context.Context) (database.Block, error) {
 	return block, nil
 }
 
-// MinePeerBlock takes a block received from a peer, validates it and
-// if that passes, writes the block to disk.
-func (s *State) MinePeerBlock(block database.Block) error {
-	s.evHandler("state: MinePeerBlock: started : block[%s]", block.Hash())
-	defer s.evHandler("state: MinePeerBlock: completed")
+// ValidateProposedBlock takes a block received from a peer, validates it and
+// if that passes, adds the block to the local blockchain.
+func (s *State) ValidateProposedBlock(block database.Block) error {
+	s.evHandler("state: ValidateProposedBlock: started : block[%s]", block.Hash())
+	defer s.evHandler("state: ValidateProposedBlock: completed")
 
 	// If the runMiningOperation function is being executed it needs to stop
 	// immediately. The G executing runMiningOperation will not return from the
@@ -58,7 +58,7 @@ func (s *State) MinePeerBlock(block database.Block) error {
 	// its state changes before a new mining operation takes place.
 	done := s.Worker.SignalCancelMining()
 	defer func() {
-		s.evHandler("state: MinePeerBlock: signal runMiningOperation to terminate")
+		s.evHandler("state: ValidateProposedBlock: signal runMiningOperation to terminate")
 		done()
 	}()
 
