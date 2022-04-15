@@ -25,13 +25,13 @@ type Database struct {
 }
 
 // New constructs a new database and applies account genesis information and
-// reads the blockchain database on disk if a dbPath is provided.
+// reads/writes the blockchain database on disk if a dbPath is provided.
 func New(dbPath string, genesis genesis.Genesis, evHandler func(v string, args ...any)) (*Database, error) {
 	var dbFile *os.File
 
 	if dbPath != "" {
 		var err error
-		dbFile, err = os.OpenFile(dbPath, os.O_APPEND|os.O_RDWR, 0600)
+		dbFile, err = os.OpenFile(dbPath, os.O_APPEND|os.O_RDWR|os.O_CREATE, 0600)
 		if err != nil {
 			return nil, err
 		}
