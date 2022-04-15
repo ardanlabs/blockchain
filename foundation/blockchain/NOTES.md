@@ -17,8 +17,8 @@ Great blockchain class by Patrick McCorry
 
 Notes
 
-A blockchain is a database for storing things of value that allows anyone to
-computer a copy using a cryptographic audit trail. It's immutable and
+A blockchain is a database for storing things of value that allows anyone with a
+computer to make a copy with a cryptographic audit trail. It's immutable and
 transparent with a token supply and initial user balances. The global blockchain
 settings are defined in a Genesis file.
 
