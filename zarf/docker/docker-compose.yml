@@ -26,7 +26,7 @@ services:
     <<: *node
     container_name: blockchain-node-1
     environment:
-      NODE_NODE_KNOWN_PEERS: "blockchain-node-2:9080;blockchain-node-3:9080"
+      NODE_STATE_KNOWN_PEERS: "blockchain-node-2:9080;blockchain-node-3:9080"
     ports:
       - 7080:7080
       - 8080:8080
@@ -36,19 +36,19 @@ services:
     <<: *node
     container_name: blockchain-node-2
     environment:
-      NODE_NODE_KNOWN_PEERS: "blockchain-node-1:9080;blockchain-node-3:9080"
-      NODE_NODE_MINER_NAME: miner2
+      NODE_STATE_KNOWN_PEERS: "blockchain-node-1:9080;blockchain-node-3:9080"
+      NODE_STATE_MINER_NAME: miner2
       # Use ephemeral filesystem on container for nodes other than node-1
-      NODE_NODE_DB_PATH: /blocks.db
+      NODE_STATE_DB_PATH: /blocks.db
 
   node-3:
     <<: *node
     container_name: blockchain-node-3
     environment:
-      NODE_NODE_KNOWN_PEERS: "blockchain-node-1:9080;blockchain-node-2:9080"
-      NODE_NODE_MINER_NAME: jeremy
+      NODE_STATE_KNOWN_PEERS: "blockchain-node-1:9080;blockchain-node-2:9080"
+      NODE_STATE_MINER_NAME: jeremy
       # Use ephemeral filesystem on container for nodes other than node-1
-      NODE_NODE_DB_PATH: /blocks.db
+      NODE_STATE_DB_PATH: /blocks.db
 
   #viewer:
   #  image: golang:1.18

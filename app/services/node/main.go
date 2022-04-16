@@ -60,7 +60,7 @@ func run(log *zap.SugaredLogger) error {
 			PublicHost      string        `conf:"default:0.0.0.0:8080"`
 			PrivateHost     string        `conf:"default:0.0.0.0:9080"`
 		}
-		Node struct {
+		State struct {
 			MinerName      string   `conf:"default:miner1"`
 			DBPath         string   `conf:"default:zblock/blocks.db"`
 			SelectStrategy string   `conf:"default:Tip"`
@@ -120,14 +120,14 @@ func run(log *zap.SugaredLogger) error {
 	// =========================================================================
 	// Blockchain Support
 
-	path := fmt.Sprintf("%s%s.ecdsa", cfg.NameService.Folder, cfg.Node.MinerName)
+	path := fmt.Sprintf("%s%s.ecdsa", cfg.NameService.Folder, cfg.State.MinerName)
 	privateKey, err := crypto.LoadECDSA(path)
 	if err != nil {
 		return fmt.Errorf("unable to load private key for node: %w", err)
 	}
 
 	peerSet := peer.NewPeerSet()
-	for _, host := range cfg.Node.KnownPeers {
+	for _, host := range cfg.State.KnownPeers {
 		peerSet.Add(peer.New(host))
 	}
 
@@ -141,8 +141,8 @@ func run(log *zap.SugaredLogger) error {
 	state, err := state.New(state.Config{
 		MinerAccountID: database.PublicKeyToAccountID(privateKey.PublicKey),
 		Host:           cfg.Web.PrivateHost,
-		DBPath:         cfg.Node.DBPath,
-		SelectStrategy: cfg.Node.SelectStrategy,
+		DBPath:         cfg.State.DBPath,
+		SelectStrategy: cfg.State.SelectStrategy,
 		KnownPeers:     peerSet,
 		EvHandler:      ev,
 	})
