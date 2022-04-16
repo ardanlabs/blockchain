@@ -41,6 +41,21 @@ down:
 down-ubuntu:
 	kill -INT $(shell ps -x | grep "main -race" | sed -n 1,1p | cut -c3-7)
 
+# ==============================================================================
+# Docker support
+
+docker-up:
+	docker compose -f zarf/docker/docker-compose.yml up
+
+docker-down:
+	docker compose -f zarf/docker/docker-compose.yml down
+
+docker-logs:
+	docker compose -f zarf/docker/docker-compose.yml logs
+
+# ==============================================================================
+# Transactions
+
 load:
 	go run app/wallet/cli/main.go send -a kennedy -n 1 -t 0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76 -v 100
 	go run app/wallet/cli/main.go send -a pavel -n 1 -t 0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76 -v 75

@@ -50,14 +50,11 @@ services:
       # Use ephemeral filesystem on container for nodes other than node-1
       NODE_NODE_DB_PATH: /blocks.db
 
-  viewer:
-    image: golang:1.18
-    command: "go run app/services/viewer/main.go | go run app/tooling/logfmt/main.go"
-    volumes:
-      - .:/source
-    working_dir: /source
-    environment:
-
-    ports:
-      - 80:80
-
+  #viewer:
+  #  image: golang:1.18
+  #  command: "go run app/services/viewer/main.go | go run app/tooling/logfmt/main.go"
+  #  volumes:
+  #  - .:/source
+  #  working_dir: /source
+  #  ports:
+  #    - 80:80
