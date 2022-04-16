@@ -1,0 +1,63 @@
+# Running Docker Containers
+# $ docker compose up
+#
+version: "3.9"
+
+# ==============================================================================
+# Extensions: Base config for a node
+#
+# Since docker swarm assumes replicas are identically configured nodes as part
+# of a homogenous cluster, we instead opted to declare nodes independently so
+# we can configure them slightly differently, with different block database
+# files and miner profiles. We can still DRY up our configuration here by
+# declaring a base node here to have others merge with.
+#
+x-node-config: &node
+  image: golang:1.18
+  command: |
+    sh -c "go run app/services/node/main.go -race | go run app/tooling/logfmt/main.go"
+  volumes:
+    - .:/source
+  working_dir: /source
+
+services:
+
+  node-1:
+    <<: *node
+    container_name: blockchain-node-1
+    environment:
+      NODE_NODE_KNOWN_PEERS: "blockchain-node-2:9080;blockchain-node-3:9080"
+    ports:
+      - 7080:7080
+      - 8080:8080
+      - 9080:9080
+
+  node-2:
+    <<: *node
+    container_name: blockchain-node-2
+    environment:
+      NODE_NODE_KNOWN_PEERS: "blockchain-node-1:9080;blockchain-node-3:9080"
+      NODE_NODE_MINER_NAME: miner2
+      # Use ephemeral filesystem on container for nodes other than node-1
+      NODE_NODE_DB_PATH: /blocks.db
+
+  node-3:
+    <<: *node
+    container_name: blockchain-node-3
+    environment:
+      NODE_NODE_KNOWN_PEERS: "blockchain-node-1:9080;blockchain-node-2:9080"
+      NODE_NODE_MINER_NAME: jeremy
+      # Use ephemeral filesystem on container for nodes other than node-1
+      NODE_NODE_DB_PATH: /blocks.db
+
+  viewer:
+    image: golang:1.18
+    command: "go run app/services/viewer/main.go | go run app/tooling/logfmt/main.go"
+    volumes:
+      - .:/source
+    working_dir: /source
+    environment:
+
+    ports:
+      - 80:80
+
