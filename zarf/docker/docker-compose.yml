@@ -17,7 +17,7 @@ x-node-config: &node
   command: |
     sh -c "go run app/services/node/main.go -race | go run app/tooling/logfmt/main.go"
   volumes:
-    - .:/source
+    - ../../:/source
   working_dir: /source
 
 services:
