@@ -75,8 +75,9 @@ func (w *Worker) addNewPeers(knownPeers []peer.Peer) error {
 			return errors.New("already exists")
 		}
 
-		w.evHandler("worker: runPeerUpdatesOperation: addNewPeers: add peer nodes: adding peer-node %s", peer)
-		w.state.AddKnownPeer(peer)
+		if w.state.AddKnownPeer(peer) {
+			w.evHandler("worker: runPeerUpdatesOperation: addNewPeers: add peer nodes: adding peer-node %s", peer)
+		}
 	}
 
 	return nil

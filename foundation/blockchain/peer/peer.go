@@ -47,13 +47,17 @@ func NewPeerSet() *PeerSet {
 }
 
 // Add adds a new node to the set.
-func (ps *PeerSet) Add(peer Peer) {
+func (ps *PeerSet) Add(peer Peer) bool {
 	ps.mu.Lock()
 	defer ps.mu.Unlock()
 
-	if _, exists := ps.set[peer]; !exists {
+	_, exists := ps.set[peer]
+	if !exists {
 		ps.set[peer] = struct{}{}
+		return true
 	}
+
+	return false
 }
 
 // Copy returns a list of the known peers.

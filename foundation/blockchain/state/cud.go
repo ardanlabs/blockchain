@@ -6,8 +6,8 @@ import (
 )
 
 // AddKnownPeer provides the ability to add a new peer.
-func (s *State) AddKnownPeer(peer peer.Peer) {
-	s.knownPeers.Add(peer)
+func (s *State) AddKnownPeer(peer peer.Peer) bool {
+	return s.knownPeers.Add(peer)
 }
 
 // UpsertMempool adds a new transaction to the mempool.

@@ -37,9 +37,10 @@ func (s *State) MineNewBlock(ctx context.Context) (database.Block, error) {
 		return database.Block{}, ctx.Err()
 	}
 
-	s.evHandler("state: MineNewBlock: MINING: update local state")
+	s.evHandler("state: MineNewBlock: MINING: validate and update database")
 
-	if err := s.updateLocalState(block); err != nil {
+	// Validate the block and then update the blockchain database.
+	if err := s.validateUpdateDatabase(block); err != nil {
 		return database.Block{}, err
 	}
 
@@ -62,20 +63,24 @@ func (s *State) ValidateProposedBlock(block database.Block) error {
 		done()
 	}()
 
-	if err := block.ValidateBlock(s.db.LatestBlock(), s.evHandler); err != nil {
-		return err
-	}
-
-	return s.updateLocalState(block)
+	// Validate the block and then update the blockchain database.
+	return s.validateUpdateDatabase(block)
 }
 
 // =============================================================================
 
-// updateLocalState takes the blockFS and updates the current state of the
-// chain, including adding the block to disk.
-func (s *State) updateLocalState(block database.Block) error {
+// validateUpdateDatabase takes the block and validates the block against the
+// consensus rules. If the block passes, then the state of the node is updated
+// including adding the block to disk.
+func (s *State) validateUpdateDatabase(block database.Block) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
+	s.evHandler("state: updateLocalState: validate block")
+
+	if err := block.ValidateBlock(s.db.LatestBlock(), s.evHandler); err != nil {
+		return err
+	}
 
 	s.evHandler("state: updateLocalState: write to disk")
 
