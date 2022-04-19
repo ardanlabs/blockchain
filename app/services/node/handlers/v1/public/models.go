@@ -29,6 +29,9 @@ type tx struct {
 	TimeStamp   uint64             `json:"timestamp"`
 	Gas         uint               `json:"gas"`
 	Sig         string             `json:"sig"`
+	Hash        string             `json:"hash"`
+	Proof       []string           `json:"proof"`
+	Index       []int64            `json:"proof_idx"`
 }
 
 type block struct {
@@ -38,5 +41,6 @@ type block struct {
 	Number       uint64             `json:"number"`
 	TimeStamp    uint64             `json:"timestamp"`
 	Nonce        uint64             `json:"nonce"`
+	MerkleRoot   string             `json:"merkle_root"`
 	Transactions []tx               `json:"txs"`
 }

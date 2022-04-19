@@ -254,6 +254,12 @@ function transactions() {
             for (var i = 0; i < resp.length; i++) {
                 for (var j = 0; j < resp[i].txs.length; j++) {
                     if ((resp[i].txs[j].from == wallet.address) || (resp[i].txs[j].to == wallet.address)) {
+                        resp[i].txs[j].proved = false;
+
+                        if (validateMerkleProof(resp[i].txs[j], resp[i].merkle_root)) {
+                            resp[i].txs[j].proved = true;
+                        }
+
                         msg += JSON.stringify(resp[i].txs[j], null, 2);
                         count++;
                     }
@@ -266,6 +272,40 @@ function transactions() {
             handleAjaxError(jqXHR, exception);
         },
     });
+}
+
+function validateMerkleProof(tx, merkelRoot) {
+
+    // Start with hashing the transactions hash with the
+    // first proof hash.
+    var array = [];
+    if (tx.proof_idx[0] == 0) {
+        array = [tx.proof[0], tx.hash];
+    } else {
+        array = [tx.hash, tx.proof[0]];
+    }
+    const cat = ethers.utils.hexConcat(array);
+    var sha = ethers.utils.sha256(cat);
+
+    // Now take that hash and keep hashing until we get to
+    // what is supposed to be the root hash.
+    for (var i = 1; i < tx.proof.length; i++) {
+        var array = [];
+        if (tx.proof_idx[i] == 0) {
+            array = [tx.proof[i], sha];
+        } else {
+            array = [sha, tx.proof[i]];
+        }
+        const cat = ethers.utils.hexConcat(array);
+        sha = ethers.utils.sha256(cat);
+    }
+
+    // Check the two hashes are the same.
+    if (sha == merkelRoot) {
+        return true;
+    }
+
+    return false;
 }
 
 function mempool() {

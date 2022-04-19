@@ -3,6 +3,7 @@ package public
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"net/http"
 	"time"
@@ -192,6 +193,20 @@ func (h Handlers) BlocksByAccount(ctx context.Context, w http.ResponseWriter, r 
 				return err
 			}
 
+			rawProof, idx, err := blk.Trans.MerklePath(tran)
+			if err != nil {
+				return err
+			}
+			proof := make([]string, len(rawProof))
+			for i, rp := range rawProof {
+				proof[i] = "0x" + hex.EncodeToString(rp)
+			}
+
+			hash, err := tran.Hash()
+			if err != nil {
+				return err
+			}
+
 			trans[i] = tx{
 				FromAccount: account,
 				FromName:    h.NS.Lookup(account),
@@ -204,6 +219,9 @@ func (h Handlers) BlocksByAccount(ctx context.Context, w http.ResponseWriter, r 
 				TimeStamp:   tran.TimeStamp,
 				Gas:         tran.Gas,
 				Sig:         tran.SignatureString(),
+				Hash:        "0x" + hex.EncodeToString(hash),
+				Proof:       proof,
+				Index:       idx,
 			}
 		}
 
@@ -214,6 +232,7 @@ func (h Handlers) BlocksByAccount(ctx context.Context, w http.ResponseWriter, r 
 			Number:       blk.Header.Number,
 			TimeStamp:    blk.Header.TimeStamp,
 			Nonce:        blk.Header.Nonce,
+			MerkleRoot:   "0x" + blk.Header.MerkleRoot,
 			Transactions: trans,
 		}
 
