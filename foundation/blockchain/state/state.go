@@ -19,6 +19,7 @@ import (
 	Ask for a Merkle proof that a transaction is in the last block.
 
 	-- Blockchain
+	When a proposed block arrives, check if that node is in the peer list.
 	Add integration test for the state package.
 	Consider adding transaction receipts similar to Ethereum.
 	Change out HTTP to JSON-RPC.
