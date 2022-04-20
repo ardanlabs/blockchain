@@ -47,9 +47,9 @@ func (s *State) MineNewBlock(ctx context.Context) (database.Block, error) {
 	return block, nil
 }
 
-// ValidateProposedBlock takes a block received from a peer, validates it and
+// ProcessProposedBlock takes a block received from a peer, validates it and
 // if that passes, adds the block to the local blockchain.
-func (s *State) ValidateProposedBlock(block database.Block) error {
+func (s *State) ProcessProposedBlock(block database.Block) error {
 	s.evHandler("state: ValidateProposedBlock: started : block[%s]", block.Hash())
 	defer s.evHandler("state: ValidateProposedBlock: completed")
 

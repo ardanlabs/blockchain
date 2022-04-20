@@ -31,11 +31,14 @@ func (h Handlers) SubmitNodeTransaction(ctx context.Context, w http.ResponseWrit
 		return web.NewShutdownError("web value missing from context")
 	}
 
+	// Decode the JSON in the post call into a block transaction.
 	var tx database.BlockTx
 	if err := web.Decode(r, &tx); err != nil {
 		return fmt.Errorf("unable to decode payload: %w", err)
 	}
 
+	// Ask the state package to add this transaction to the mempool and perform
+	// any other business logic.
 	h.Log.Infow("add user tran", "traceid", v.TraceID, "from:nonce", tx, "to", tx.ToID, "value", tx.Value, "tip", tx.Tip)
 	if err := h.State.UpsertNodeTransaction(tx); err != nil {
 		return v1.NewRequestError(err, http.StatusBadRequest)
@@ -53,17 +56,23 @@ func (h Handlers) SubmitNodeTransaction(ctx context.Context, w http.ResponseWrit
 // ProposeBlock takes a block received from a peer, validates it and
 // if that passes, adds the block to the local blockchain.
 func (h Handlers) ProposeBlock(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+
+	// Decode the JSON in the post call into a file system block.
 	var blockFS database.BlockFS
 	if err := web.Decode(r, &blockFS); err != nil {
 		return fmt.Errorf("unable to decode payload: %w", err)
 	}
 
+	// Convert the blockFS into a block. This action will create a merkle
+	// tree for the set of transactions required for blockchain operations.
 	block, err := database.ToBlock(blockFS)
 	if err != nil {
 		return fmt.Errorf("unable to decode block: %w", err)
 	}
 
-	if err := h.State.ValidateProposedBlock(block); err != nil {
+	// Ask the state package to validate the proposed block. If the block
+	// passes validation, it will be added to the blockchain database.
+	if err := h.State.ProcessProposedBlock(block); err != nil {
 		if errors.Is(err, database.ErrChainForked) {
 			h.State.Resync()
 		}

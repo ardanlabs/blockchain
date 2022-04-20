@@ -49,6 +49,9 @@ func run(log *zap.SugaredLogger) error {
 	// =========================================================================
 	// Configuration
 
+	// This is all the configuration for the application and the default values.
+	// Configuration values will be passed through the application as individual
+	// values.
 	cfg := struct {
 		conf.Version
 		Web struct {
@@ -76,6 +79,8 @@ func run(log *zap.SugaredLogger) error {
 		},
 	}
 
+	// Parse will set the defaults and then look for any overriding values
+	// in environment variables and command line flags.
 	const prefix = "NODE"
 	help, err := conf.Parse(prefix, &cfg)
 	if err != nil {
@@ -99,6 +104,7 @@ func run(log *zap.SugaredLogger) error {
 	log.Infow("starting service", "version", build)
 	defer log.Infow("shutdown complete")
 
+	// Display the current configuration to the logs.
 	out, err := conf.String(&cfg)
 	if err != nil {
 		return fmt.Errorf("generating config for output: %w", err)
@@ -108,11 +114,14 @@ func run(log *zap.SugaredLogger) error {
 	// =========================================================================
 	// Name Service Support
 
+	// The nameservice package provides name resolution for account addresses.
+	// The names come from the file names in the zblock/accounts folder.
 	ns, err := nameservice.New(cfg.NameService.Folder)
 	if err != nil {
 		return fmt.Errorf("unable to load account name service: %w", err)
 	}
 
+	// Logging the accounts for documentation in the logs.
 	for account, name := range ns.Copy() {
 		log.Infow("startup", "status", "nameservce", "name", name, "account", account)
 	}
@@ -120,17 +129,24 @@ func run(log *zap.SugaredLogger) error {
 	// =========================================================================
 	// Blockchain Support
 
+	// Need to load the private key file for the configured miner so the account
+	// can get credited with fees and tips.
 	path := fmt.Sprintf("%s%s.ecdsa", cfg.NameService.Folder, cfg.State.MinerName)
 	privateKey, err := crypto.LoadECDSA(path)
 	if err != nil {
 		return fmt.Errorf("unable to load private key for node: %w", err)
 	}
 
+	// A peer set is a collection of known nodes in the network so transactions
+	// and blocks can be shared.
 	peerSet := peer.NewPeerSet()
 	for _, host := range cfg.State.KnownPeers {
 		peerSet.Add(peer.New(host))
 	}
 
+	// The blockchain packages accept a function of this signature to allow the
+	// application to log. For now, these raw messages are sent to any websocket
+	// client that is connected into the system through the events package.
 	evts := events.New()
 	ev := func(v string, args ...any) {
 		s := fmt.Sprintf(v, args...)
@@ -138,6 +154,8 @@ func run(log *zap.SugaredLogger) error {
 		evts.Send(s)
 	}
 
+	// The state value represents the blockchain node and manages the blockchain
+	// database and provides an API for application support.
 	state, err := state.New(state.Config{
 		MinerAccountID: database.PublicKeyToAccountID(privateKey.PublicKey),
 		Host:           cfg.Web.PrivateHost,
@@ -151,6 +169,9 @@ func run(log *zap.SugaredLogger) error {
 	}
 	defer state.Shutdown()
 
+	// The worker package implements the different workflows such as mining,
+	// transaction peer sharing, and peer updates. The worker will register
+	// itself with the state.
 	worker.Run(state, ev)
 
 	// =========================================================================

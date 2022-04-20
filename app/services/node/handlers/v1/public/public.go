@@ -34,22 +34,29 @@ func (h Handlers) Events(ctx context.Context, w http.ResponseWriter, r *http.Req
 		return web.NewShutdownError("web value missing from context")
 	}
 
+	// Need this to handle CORS on the websocket.
 	h.WS.CheckOrigin = func(r *http.Request) bool { return true }
 
+	// This upgrades the HTTP connection to a websocket connection.
 	c, err := h.WS.Upgrade(w, r, nil)
 	if err != nil {
 		return err
 	}
 	defer c.Close()
 
+	// This provides a channel for receiving events from the blockchain.
 	ch := h.Evts.Acquire(v.TraceID)
 	defer h.Evts.Release(v.TraceID)
 
+	// Starting a ticker to send a ping message over the websocket.
 	ticker := time.NewTicker(time.Second)
 
+	// Block waiting for events from the blockchain or ticker.
 	for {
 		select {
 		case msg, wd := <-ch:
+
+			// If the channel is closed, release the websocket.
 			if !wd {
 				return nil
 			}
@@ -73,11 +80,14 @@ func (h Handlers) SubmitWalletTransaction(ctx context.Context, w http.ResponseWr
 		return web.NewShutdownError("web value missing from context")
 	}
 
+	// Decode the JSON in the post call into a Signed transaction.
 	var signedTx database.SignedTx
 	if err := web.Decode(r, &signedTx); err != nil {
 		return fmt.Errorf("unable to decode payload: %w", err)
 	}
 
+	// Ask the state package to add this transaction to the mempool and perform
+	// any other business logic.
 	h.Log.Infow("add user tran", "traceid", v.TraceID, "from:nonce", signedTx, "to", signedTx.ToID, "value", signedTx.Value, "tip", signedTx.Tip)
 	if err := h.State.UpsertWalletTransaction(signedTx); err != nil {
 		return v1.NewRequestError(err, http.StatusBadRequest)
@@ -185,8 +195,8 @@ func (h Handlers) BlocksByAccount(ctx context.Context, w http.ResponseWriter, r 
 	blocks := make([]block, len(dbBlocks))
 	for j, blk := range dbBlocks {
 		values := blk.Trans.Values()
-		trans := make([]tx, len(blk.Trans.Values()))
 
+		trans := make([]tx, len(blk.Trans.Values()))
 		for i, tran := range values {
 			account, err := tran.FromAccount()
 			if err != nil {

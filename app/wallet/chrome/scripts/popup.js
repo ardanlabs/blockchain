@@ -1,5 +1,6 @@
 var nonce = 0;
 
+// Things to run when the wallet is opened.
 window.onload = function () {
     wireEvents();
     showInfoTab("send");    
@@ -8,6 +9,8 @@ window.onload = function () {
 
 // =============================================================================
 
+// Chrome won't let this happen inside the HTML. So I'm wiring all of the
+// page events here.
 function wireEvents() {
     const refresh = document.getElementById("refreshsubmit");
     refresh.addEventListener(
@@ -101,6 +104,9 @@ function wireEvents() {
 
 // =============================================================================
 
+// connect is establishing a web socket connection to the node running under
+// 8080. If this is successful then screen data can be loaded. Events are also
+// provided to help keep the wallet up to date realtime.
 function connect() {
     var socket = new WebSocket('ws://localhost:8080/v1/events');
 
@@ -144,6 +150,7 @@ function connect() {
 
 // =============================================================================
 
+// Setting some ajax specific global settings.
 $.ajaxSetup({
     contentType: "application/json; charset=utf-8",
     beforeSend: function () {
@@ -151,6 +158,8 @@ $.ajaxSetup({
     }
 });
 
+// handleAjaxError is a helper function for handling the response from any
+// ajax request that is made.
 function handleAjaxError(jqXHR, exception) {
     var msg = '';
 
@@ -180,6 +189,7 @@ function handleAjaxError(jqXHR, exception) {
 
 // ==============================================================================
 
+// load pull the base information to show for the wallet.
 function load() {
     const conn = document.getElementById("connected");
     if (conn.innerHTML != "CONNECTED") {
@@ -205,6 +215,7 @@ function load() {
     });
 }
 
+// fromBalance makes a request to the node for the balance for the from selection.
 function fromBalance() {
     const wallet = new ethers.Wallet(document.getElementById("from").value);
 
@@ -228,6 +239,7 @@ function fromBalance() {
     });
 }
 
+// toBalance makes a request to the node for the balance for the to selection.
 function toBalance() {
     $.ajax({
         type: "get",
@@ -242,6 +254,9 @@ function toBalance() {
     });
 }
 
+// transactions makes a request to the node for the set of transactions the
+// from selection is a part of. The function also performs a merkle proof for
+// each transaction.
 function transactions() {
     const wallet = new ethers.Wallet(document.getElementById("from").value);
 
@@ -274,6 +289,8 @@ function transactions() {
     });
 }
 
+// validateMerkleProof proves cryptographically that the specified transaction
+// is inside the block based on the merkle root value.
 function validateMerkleProof(tx, merkelRoot) {
 
     // Create the expected hash for this transaction.
@@ -305,6 +322,8 @@ function validateMerkleProof(tx, merkelRoot) {
     return false;
 }
 
+// createTxHash is used by validateMerkleProof to create a hash for the
+// specified transaction to be used to check the merkle proof.
 function createTxHash(tx) {
 
     // Need to break out the R and S bytes from the signature.
@@ -345,6 +364,7 @@ function createTxHash(tx) {
     return ethers.utils.sha256(bytes);
 }
 
+// mempool makes a request to the node for the current transaction in the mempool.
 function mempool() {
     const wallet = new ethers.Wallet(document.getElementById("from").value);
 
@@ -386,6 +406,8 @@ function mempool() {
 
 // =============================================================================
 
+// submitTran is called to start the transaction submission process. It will check
+// the data for the new transactions and then present a modal dialog box.
 function submitTran() {
     const conn = document.getElementById("connected");
     if (conn.innerHTML != "CONNECTED") {
@@ -431,6 +453,8 @@ function submitTran() {
     showConfirmation();
 }
 
+// createTransaction prepares a signed transaction for submission and then
+// through a promise, will call sendTran to physically send the transaction.
 function createTransaction() {
 
     // We got a yes confirmation so we know the values are verified.
@@ -465,6 +489,7 @@ function createTransaction() {
     signature.then((sig) => sendTran(userTx, sig));
 }
 
+// sendTran submits the signed transaction to the node for inclusion.
 function sendTran(userTx, sig) {
 
     // Need to break out the R and S bytes from the signature.
