@@ -231,7 +231,7 @@ func (h Handlers) BlocksByAccount(ctx context.Context, w http.ResponseWriter, r 
 
 		b := block{
 			PrevBlockHash: blk.Header.PrevBlockHash,
-			MinerAccount:  blk.Header.MinerAccountID,
+			Beneficiary:   blk.Header.Beneficiary,
 			Difficulty:    blk.Header.Difficulty,
 			Number:        blk.Header.Number,
 			TimeStamp:     blk.Header.TimeStamp,

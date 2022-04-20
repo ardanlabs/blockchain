@@ -45,7 +45,7 @@ type Worker interface {
 // Config represents the configuration required to start
 // the blockchain node.
 type Config struct {
-	MinerAccountID database.AccountID
+	Beneficiary    database.AccountID
 	Host           string
 	DBPath         string
 	SelectStrategy string
@@ -57,10 +57,10 @@ type Config struct {
 type State struct {
 	mu sync.RWMutex
 
-	minerAccountID database.AccountID
-	host           string
-	dbPath         string
-	evHandler      EventHandler
+	beneficiary database.AccountID
+	host        string
+	dbPath      string
+	evHandler   EventHandler
 
 	allowMining bool
 	resyncWG    sync.WaitGroup
@@ -104,11 +104,11 @@ func New(cfg Config) (*State, error) {
 
 	// Create the State to provide support for managing the blockchain.
 	state := State{
-		minerAccountID: cfg.MinerAccountID,
-		host:           cfg.Host,
-		dbPath:         cfg.DBPath,
-		evHandler:      ev,
-		allowMining:    true,
+		beneficiary: cfg.Beneficiary,
+		host:        cfg.Host,
+		dbPath:      cfg.DBPath,
+		evHandler:   ev,
+		allowMining: true,
 
 		knownPeers: cfg.KnownPeers,
 		genesis:    genesis,

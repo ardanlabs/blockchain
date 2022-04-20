@@ -27,7 +27,7 @@ func (s *State) MineNewBlock(ctx context.Context) (database.Block, error) {
 
 	// Attempt to create a new block by solving the POW puzzle. This can be cancelled.
 	trans := s.mempool.PickBest()
-	block, err := database.POW(ctx, s.minerAccountID, s.genesis.Difficulty, s.RetrieveLatestBlock(), trans, s.evHandler)
+	block, err := database.POW(ctx, s.beneficiary, s.genesis.Difficulty, s.RetrieveLatestBlock(), trans, s.evHandler)
 	if err != nil {
 		return database.Block{}, err
 	}
@@ -97,7 +97,7 @@ func (s *State) validateUpdateDatabase(block database.Block) error {
 		s.evHandler("state: updateLocalState: tx[%s] update and remove", tx)
 
 		// Apply the balance changes based on this transaction.
-		if err := s.db.ApplyTransaction(block.Header.MinerAccountID, tx); err != nil {
+		if err := s.db.ApplyTransaction(block.Header.Beneficiary, tx); err != nil {
 			s.evHandler("state: updateLocalState: WARNING : %s", err)
 			continue
 		}
@@ -109,7 +109,7 @@ func (s *State) validateUpdateDatabase(block database.Block) error {
 	s.evHandler("state: updateLocalState: apply mining reward")
 
 	// Apply the mining reward for this block.
-	s.db.ApplyMiningReward(block.Header.MinerAccountID)
+	s.db.ApplyMiningReward(block.Header.Beneficiary)
 
 	return nil
 }

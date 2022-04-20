@@ -157,7 +157,7 @@ func run(log *zap.SugaredLogger) error {
 	// The state value represents the blockchain node and manages the blockchain
 	// database and provides an API for application support.
 	state, err := state.New(state.Config{
-		MinerAccountID: database.PublicKeyToAccountID(privateKey.PublicKey),
+		Beneficiary:    database.PublicKeyToAccountID(privateKey.PublicKey),
 		Host:           cfg.Web.PrivateHost,
 		DBPath:         cfg.State.DBPath,
 		SelectStrategy: cfg.State.SelectStrategy,
