@@ -236,7 +236,7 @@ func (h Handlers) BlocksByAccount(ctx context.Context, w http.ResponseWriter, r 
 			Number:        blk.Header.Number,
 			TimeStamp:     blk.Header.TimeStamp,
 			Nonce:         blk.Header.Nonce,
-			MerkleRoot:    blk.Header.MerkleRoot,
+			TransRoot:     blk.Header.TransRoot,
 			Transactions:  trans,
 		}
 

@@ -271,7 +271,7 @@ function transactions() {
                     if ((resp[i].txs[j].from == wallet.address) || (resp[i].txs[j].to == wallet.address)) {
                         resp[i].txs[j].proved = false;
 
-                        if (validateMerkleProof(resp[i].txs[j], resp[i].merkle_root)) {
+                        if (validateMerkleProof(resp[i].txs[j], resp[i].trans_root)) {
                             resp[i].txs[j].proved = true;
                         }
 

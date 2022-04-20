@@ -40,6 +40,6 @@ type block struct {
 	Number        uint64             `json:"number"`
 	TimeStamp     uint64             `json:"timestamp"`
 	Nonce         uint64             `json:"nonce"`
-	MerkleRoot    string             `json:"merkle_root"`
+	TransRoot     string             `json:"trans_root"`
 	Transactions  []tx               `json:"txs"`
 }
