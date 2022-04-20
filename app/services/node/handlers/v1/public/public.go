@@ -202,11 +202,6 @@ func (h Handlers) BlocksByAccount(ctx context.Context, w http.ResponseWriter, r 
 				proof[i] = merkle.ToHex(rp)
 			}
 
-			hash, err := tran.Hash()
-			if err != nil {
-				return err
-			}
-
 			trans[i] = tx{
 				FromAccount: account,
 				FromName:    h.NS.Lookup(account),
@@ -219,7 +214,6 @@ func (h Handlers) BlocksByAccount(ctx context.Context, w http.ResponseWriter, r 
 				TimeStamp:   tran.TimeStamp,
 				Gas:         tran.Gas,
 				Sig:         tran.SignatureString(),
-				Hash:        merkle.ToHex(hash),
 				Proof:       proof,
 				ProofOrder:  order,
 			}

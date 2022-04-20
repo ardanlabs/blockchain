@@ -29,7 +29,6 @@ type tx struct {
 	TimeStamp   uint64             `json:"timestamp"`
 	Gas         uint               `json:"gas"`
 	Sig         string             `json:"sig"`
-	Hash        string             `json:"hash"`
 	Proof       []string           `json:"proof"`
 	ProofOrder  []int64            `json:"proof_order"`
 }

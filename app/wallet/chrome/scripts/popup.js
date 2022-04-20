@@ -276,10 +276,12 @@ function transactions() {
 
 function validateMerkleProof(tx, merkelRoot) {
 
+    // Create the expected hash for this transaction.
+    var sha = createTxHash(tx);
+
     // Starting with the hash for the transaction, join the current
     // hash with the next hash in the proof list. Once all proof hashs have
     // been joined and hashed again, it should match the merkel root hash.
-    var sha = tx.hash;
     for (var i = 0; i < tx.proof.length; i++) {
 
         // The proof index determines the order of joining the hashes.
@@ -301,6 +303,46 @@ function validateMerkleProof(tx, merkelRoot) {
     }
 
     return false;
+}
+
+function createTxHash(tx) {
+
+    // Need to break out the R and S bytes from the signature.
+    const byt = ethers.utils.arrayify(tx.sig);
+    const rSlice = byt.slice(0, 32);
+    const sSlice = byt.slice(32, 64);
+
+    // Create a block transaction for hashing.
+    const blockTx = {
+        nonce: tx.nonce,
+        to: tx.to,
+        value: tx.value,
+        tip: tx.tip,
+        data: null,
+        v: byt[64],
+        r: ethers.BigNumber.from(rSlice).toString(),
+        s: ethers.BigNumber.from(sSlice).toString(),
+        timestamp: tx.timestamp,
+        gas: tx.gas
+    };
+
+    // Marshal into JSON for the payload.
+    var data = JSON.stringify(blockTx);
+
+    // Go doesn't want big integers to be strings. Removing quotes.
+    data = data.replace('r":"', 'r":');
+    data = data.replace('","s":"', ',"s":');
+    data = data.replace('","ti', ',"ti');
+
+    // Convert the JSON into bytes.
+    var bytes = [];
+    for (var i = 0; i < data.length; ++i) {
+        var code = data.charCodeAt(i);
+        bytes = bytes.concat([code]);
+    }
+
+    // Hash the bytes the same way the node does it.
+    return ethers.utils.sha256(bytes);
 }
 
 function mempool() {
