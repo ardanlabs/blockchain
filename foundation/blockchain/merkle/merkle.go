@@ -123,30 +123,31 @@ func (t *Tree[T]) RebuildTree() error {
 	return nil
 }
 
-// MerklePath gets the tree path and indexes (left leaf or right leaf)
-// for the specified data.
-func (t *Tree[T]) MerklePath(data T) (merklePath [][]byte, index []int64, err error) {
+// MerkleProof returns the set of hashes and the order of joining those hashes
+// for proving a transaction is in the tree.
+func (t *Tree[T]) MerkleProof(data T) ([][]byte, []int64, error) {
 	for _, node := range t.Leafs {
 		if !node.Value.Equals(data) {
 			continue
 		}
 
+		var merkleProof [][]byte
+		var order []int64
 		nodeParent := node.Parent
-		var merklePath [][]byte
-		var index []int64
+
 		for nodeParent != nil {
 			if bytes.Equal(nodeParent.Left.Hash, node.Hash) {
-				merklePath = append(merklePath, nodeParent.Right.Hash)
-				index = append(index, 1) // right leaf
+				merkleProof = append(merkleProof, nodeParent.Right.Hash)
+				order = append(order, 1) // right leaf, concat second.
 			} else {
-				merklePath = append(merklePath, nodeParent.Left.Hash)
-				index = append(index, 0) // left leaf
+				merkleProof = append(merkleProof, nodeParent.Left.Hash)
+				order = append(order, 0) // left leaf, concat first.
 			}
 			node = nodeParent
 			nodeParent = nodeParent.Parent
 		}
 
-		return merklePath, index, nil
+		return merkleProof, order, nil
 	}
 
 	return nil, nil, errors.New("unable to find data in tree")
@@ -206,11 +207,6 @@ func (t *Tree[T]) VerifyData(data T) error {
 	}
 
 	return errors.New("merkle root is not equivalent to the merkle root calculated on the critical path")
-}
-
-// MerkelRootHex provides the hexidecimal encoding of the merkel root.
-func (t *Tree[T]) MerkelRootHex() string {
-	return hex.EncodeToString(t.MerkleRoot)
 }
 
 // Values returns a slice of unique values stores in the tree. The last
@@ -303,6 +299,11 @@ func (n *Node[T]) String() string {
 }
 
 // =============================================================================
+
+// ToHex converts a hash in bytes to a hex encoded string.
+func ToHex(hash []byte) string {
+	return fmt.Sprintf("0x%s", hex.EncodeToString(hash))
+}
 
 // buildIntermediate is a helper function that for a given list of leaf nodes,
 // constructs the intermediate and root levels of the tree. Returns the resulting

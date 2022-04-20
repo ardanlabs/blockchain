@@ -276,26 +276,21 @@ function transactions() {
 
 function validateMerkleProof(tx, merkelRoot) {
 
-    // Start with hashing the transactions hash with the
-    // first proof hash.
-    var array = [];
-    if (tx.proof_idx[0] == 0) {
-        array = [tx.proof[0], tx.hash];
-    } else {
-        array = [tx.hash, tx.proof[0]];
-    }
-    const cat = ethers.utils.hexConcat(array);
-    var sha = ethers.utils.sha256(cat);
+    // Starting with the hash for the transaction, join the current
+    // hash with the next hash in the proof list. Once all proof hashs have
+    // been joined and hashed again, it should match the merkel root hash.
+    var sha = tx.hash;
+    for (var i = 0; i < tx.proof.length; i++) {
 
-    // Now take that hash and keep hashing until we get to
-    // what is supposed to be the root hash.
-    for (var i = 1; i < tx.proof.length; i++) {
+        // The proof index determines the order of joining the hashes.
         var array = [];
-        if (tx.proof_idx[i] == 0) {
+        if (tx.proof_order[i] == 0) {
             array = [tx.proof[i], sha];
         } else {
             array = [sha, tx.proof[i]];
         }
+
+        // Join the two hashes and rehash.
         const cat = ethers.utils.hexConcat(array);
         sha = ethers.utils.sha256(cat);
     }

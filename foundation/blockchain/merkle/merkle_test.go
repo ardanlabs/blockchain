@@ -176,18 +176,18 @@ func Test_MerklePath(t *testing.T) {
 			t.Errorf("[case:%d] error: unexpected error: %v", table[i].testCaseID, err)
 		}
 		for j := 0; j < len(table[i].data); j++ {
-			merklePath, index, _ := tree.MerklePath(table[i].data[j])
+			merkleProof, index, _ := tree.MerkleProof(table[i].data[j])
 
 			hash, err := tree.Leafs[j].CalculateNodeHash()
 			if err != nil {
 				t.Errorf("[case:%d] error: calculateNodeHash error: %v", table[i].testCaseID, err)
 			}
 			h := sha256.New()
-			for k := 0; k < len(merklePath); k++ {
+			for k := 0; k < len(merkleProof); k++ {
 				if index[k] == 1 {
-					hash = append(hash, merklePath[k]...)
+					hash = append(hash, merkleProof[k]...)
 				} else {
-					hash = append(merklePath[k], hash...)
+					hash = append(merkleProof[k], hash...)
 				}
 				if _, err := h.Write(hash); err != nil {
 					t.Errorf("[case:%d] error: Write error: %v", table[i].testCaseID, err)

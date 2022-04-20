@@ -31,7 +31,7 @@ type tx struct {
 	Sig         string             `json:"sig"`
 	Hash        string             `json:"hash"`
 	Proof       []string           `json:"proof"`
-	Index       []int64            `json:"proof_idx"`
+	ProofOrder  []int64            `json:"proof_order"`
 }
 
 type block struct {
