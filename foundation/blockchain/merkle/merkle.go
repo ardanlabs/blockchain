@@ -123,8 +123,31 @@ func (t *Tree[T]) RebuildTree() error {
 	return nil
 }
 
-// MerkleProof returns the set of hashes and the order of joining those hashes
-// for proving a transaction is in the tree.
+// MerkleProof returns the set of hashes and the order of concatenating those
+// hashes for proving a transaction is in the tree. This is how you can use
+// the information returned by this function.
+//
+// Hash the data in question and know the merkle tree root hash.
+// dataHash = "0x8e4c64afaeb4e6210a65eb7a54e51d90d20112a4c085209d3db12f0597f16fd6"
+// merkle_root = "0xbc43b5296b8adc75aea5f1d9220bf3bc9dc0dbed9a75d367784b50a7bbbd1211"
+//
+// Given this proof and proof order from this function for the data in question.
+// proof = [
+//     "0x23d2d2f2a0cbfb260492d42604728cdf8fd63b7d84e4a58094b90dbdd103cd23",
+//     "0xdf25fb5ab5d1373ed6e260ead0a5c7b5fc78b0e9ccf9e09407a67bd2faaf3120",
+//     "0x9dc3d2d31256f20044646614d0a6326627ccc5f1c42019c552c5929a5b9170f3"]
+//
+// proof_order = [0, 1, 1]
+//
+// Process the dataHash against the proof like this.
+// bytes = concat(proof[0], dataHash)  -- Order 0 says proof comes first.
+//  sha1 = sha256.Sum256(bytes)
+// bytes = concat(sha1, proof[1])      -- Order 1 says proof comes second.
+//  sha2 = sha256.Sum256(bytes)
+// bytes = concat(sha2, proof[2])      -- Order 1 says proof comes second.
+//  root = sha256.Sum256(bytes)
+//
+// The calculated root should match merkle_root.
 func (t *Tree[T]) MerkleProof(data T) ([][]byte, []int64, error) {
 	for _, node := range t.Leafs {
 		if !node.Value.Equals(data) {
