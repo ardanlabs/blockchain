@@ -34,12 +34,12 @@ type tx struct {
 }
 
 type block struct {
-	ParentHash   string             `json:"parent_hash"`
-	MinerAccount database.AccountID `json:"miner_account"`
-	Difficulty   int                `json:"difficulty"`
-	Number       uint64             `json:"number"`
-	TimeStamp    uint64             `json:"timestamp"`
-	Nonce        uint64             `json:"nonce"`
-	MerkleRoot   string             `json:"merkle_root"`
-	Transactions []tx               `json:"txs"`
+	PrevBlockHash string             `json:"prev_block_hash"`
+	MinerAccount  database.AccountID `json:"miner_account"`
+	Difficulty    int                `json:"difficulty"`
+	Number        uint64             `json:"number"`
+	TimeStamp     uint64             `json:"timestamp"`
+	Nonce         uint64             `json:"nonce"`
+	MerkleRoot    string             `json:"merkle_root"`
+	Transactions  []tx               `json:"txs"`
 }

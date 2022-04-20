@@ -230,14 +230,14 @@ func (h Handlers) BlocksByAccount(ctx context.Context, w http.ResponseWriter, r 
 		}
 
 		b := block{
-			ParentHash:   blk.Header.ParentHash,
-			MinerAccount: blk.Header.MinerAccountID,
-			Difficulty:   blk.Header.Difficulty,
-			Number:       blk.Header.Number,
-			TimeStamp:    blk.Header.TimeStamp,
-			Nonce:        blk.Header.Nonce,
-			MerkleRoot:   blk.Header.MerkleRoot,
-			Transactions: trans,
+			PrevBlockHash: blk.Header.PrevBlockHash,
+			MinerAccount:  blk.Header.MinerAccountID,
+			Difficulty:    blk.Header.Difficulty,
+			Number:        blk.Header.Number,
+			TimeStamp:     blk.Header.TimeStamp,
+			Nonce:         blk.Header.Nonce,
+			MerkleRoot:    blk.Header.MerkleRoot,
+			Transactions:  trans,
 		}
 
 		blocks[j] = b

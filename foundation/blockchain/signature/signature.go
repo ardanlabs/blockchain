@@ -16,7 +16,7 @@ import (
 )
 
 // ZeroHash represents a hash code of zeros.
-const ZeroHash string = "00000000000000000000000000000000"
+const ZeroHash string = "0000000000000000000000000000000000000000000000000000000000000000"
 
 // ardanID is an arbitrary number for signing messages. This will make it
 // clear that the signature comes from the Ardan blockchain.
