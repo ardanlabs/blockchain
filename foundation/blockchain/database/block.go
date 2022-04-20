@@ -21,10 +21,10 @@ var ErrChainForked = errors.New("blockchain forked, start resync")
 
 // BlockHeader represents common information required for each block.
 type BlockHeader struct {
-	PrevBlockHash  string    `json:"prev_block_hash"` // Hash of the previous block in the chain.
-	TimeStamp      uint64    `json:"timestamp"`       // Time the block was mined.
-	MerkleRoot     string    `json:"merkle_root"`     // Represents the merkle tree root hash for the transactions in this block.
-	Nonce          uint64    `json:"nonce"`           // Value identified to solve the hash solution.
+	PrevBlockHash  string    `json:"prev_block_hash"` // Bitcoin: Hash of the previous block in the chain.
+	TimeStamp      uint64    `json:"timestamp"`       // Bitcoin: Time the block was mined.
+	MerkleRoot     string    `json:"merkle_root"`     // Bitcoin: Represents the merkle tree root hash for the transactions in this block.
+	Nonce          uint64    `json:"nonce"`           // Bitcoin: Value identified to solve the hash solution.
 	MinerAccountID AccountID `json:"miner_account"`   // The account of the miner who mined the block.
 	Difficulty     int       `json:"difficulty"`      // Number of 0's needed to solve the hash solution.
 	Number         uint64    `json:"number"`          // Block number in the chain.
