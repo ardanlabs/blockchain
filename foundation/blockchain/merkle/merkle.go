@@ -29,8 +29,8 @@ type Hashable[T any] interface {
 // behavior defined by the Hashable constraint.
 type Tree[T Hashable[T]] struct {
 	Root         *Node[T]
-	MerkleRoot   []byte
 	Leafs        []*Node[T]
+	MerkleRoot   []byte
 	hashStrategy func() hash.Hash
 }
 

@@ -29,6 +29,8 @@ type Database struct {
 func New(dbPath string, genesis genesis.Genesis, evHandler func(v string, args ...any)) (*Database, error) {
 	var dbFile *os.File
 
+	// If not path is provided, the database will sync only to the
+	// genesis information.
 	if dbPath != "" {
 		var err error
 		dbFile, err = os.OpenFile(dbPath, os.O_APPEND|os.O_RDWR|os.O_CREATE, 0600)
@@ -44,6 +46,7 @@ func New(dbPath string, genesis genesis.Genesis, evHandler func(v string, args .
 		dbFile:   dbFile,
 	}
 
+	// Read all the blocks from disk if a path is provided.
 	var blocks []Block
 	if dbFile != nil {
 		var err error
@@ -53,6 +56,7 @@ func New(dbPath string, genesis genesis.Genesis, evHandler func(v string, args .
 		}
 	}
 
+	// Update the database with account balance information from genesis.
 	for accountStr, balance := range genesis.Balances {
 		accountID, err := ToAccountID(accountStr)
 		if err != nil {
@@ -61,10 +65,12 @@ func New(dbPath string, genesis genesis.Genesis, evHandler func(v string, args .
 		db.accounts[accountID] = Account{Balance: balance}
 	}
 
+	// Set the current latest block in the chain.
 	if len(blocks) > 0 {
 		db.latestBlock = blocks[len(blocks)-1]
 	}
 
+	// Update the databse with account balance information from blocks.
 	for _, block := range blocks {
 		for _, tx := range block.Trans.Values() {
 			db.ApplyTransaction(block.Header.MinerAccountID, tx)
@@ -171,6 +177,8 @@ func (db *Database) ApplyMiningReward(minerAccountID AccountID) {
 // ApplyTransaction performs the business logic for applying a transaction
 // to the database.
 func (db *Database) ApplyTransaction(minerID AccountID, tx BlockTx) error {
+
+	// Capture the from address from the signature of the transaction.
 	fromID, err := tx.FromAccount()
 	if err != nil {
 		return fmt.Errorf("invalid signature, %s", err)
@@ -179,23 +187,22 @@ func (db *Database) ApplyTransaction(minerID AccountID, tx BlockTx) error {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 	{
+		from := db.accounts[fromID]
+		to := db.accounts[tx.ToID]
+		miner := db.accounts[minerID]
+
 		if fromID == tx.ToID {
 			return fmt.Errorf("invalid transaction, sending money to yourself, from %s, to %s", fromID, tx.ToID)
 		}
 
-		from := db.accounts[fromID]
 		if tx.Nonce < from.Nonce {
 			return fmt.Errorf("invalid transaction, nonce too small, last %d, tx %d", from.Nonce, tx.Nonce)
 		}
 
 		fee := tx.Gas + tx.Tip
-
-		if tx.Value+fee > db.accounts[fromID].Balance {
+		if tx.Value+fee > from.Balance {
 			return fmt.Errorf("%s has an insufficient balance", fromID)
 		}
-
-		to := db.accounts[tx.ToID]
-		miner := db.accounts[minerID]
 
 		from.Balance -= tx.Value
 		to.Balance += tx.Value
@@ -275,6 +282,7 @@ func (db *Database) ReadAllBlocks(evHandler func(v string, args ...any), validat
 			return nil, err
 		}
 
+		// We want to skip the block validation for query and retrieve operations.
 		if validate {
 			if err := block.ValidateBlock(latestBlock, evHandler); err != nil {
 				return nil, err
