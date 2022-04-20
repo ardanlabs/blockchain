@@ -226,6 +226,11 @@ func (t *Tree[T]) Values() []T {
 	return values
 }
 
+// MerkleRootHex converts the merkle root byte hash to a hex encoded string.
+func (t *Tree[T]) MerkleRootHex() string {
+	return ToHex(t.MerkleRoot)
+}
+
 // String returns a string representation of the tree. Only leaf nodes are
 // included in the output.
 func (t *Tree[T]) String() string {

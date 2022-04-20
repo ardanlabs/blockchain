@@ -55,7 +55,7 @@ func POW(ctx context.Context, minerAccountID AccountID, difficulty int, parentBl
 			MinerAccountID: minerAccountID,
 			Difficulty:     difficulty,
 			Number:         parentBlock.Header.Number + 1,
-			MerkleRoot:     merkle.ToHex(tree.MerkleRoot),
+			MerkleRoot:     tree.MerkleRootHex(),
 			TimeStamp:      uint64(time.Now().UTC().Unix()),
 		},
 		Trans: tree,
@@ -188,8 +188,8 @@ func (b Block) ValidateBlock(parentBlock Block, evHandler func(v string, args ..
 
 	evHandler("storage: ValidateBlock: validate: blk[%d]: check: merkle root does match transactions", b.Header.Number)
 
-	if b.Header.MerkleRoot != merkle.ToHex(b.Trans.MerkleRoot) {
-		return fmt.Errorf("merkle root does not match transactions, got %s, exp %s", merkle.ToHex(b.Trans.MerkleRoot), b.Header.MerkleRoot)
+	if b.Header.MerkleRoot != b.Trans.MerkleRootHex() {
+		return fmt.Errorf("merkle root does not match transactions, got %s, exp %s", b.Trans.MerkleRootHex(), b.Header.MerkleRoot)
 	}
 
 	return nil
