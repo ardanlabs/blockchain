@@ -16,7 +16,6 @@ import (
 	Then add a graphical way of seeing the data.
 
 	-- Chrome Wallet
-	Ask for a Merkle proof that a transaction is in the last block.
 
 	-- Blockchain
 	When a proposed block arrives, check if that node is in the peer list.
