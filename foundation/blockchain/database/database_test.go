@@ -25,7 +25,7 @@ func Test_Transactions(t *testing.T) {
 		gas         uint
 		balances    map[string]uint
 		final       map[database.AccountID]uint
-		txs         []database.UserTx
+		txs         []database.Tx
 	}
 
 	tt := []table{
@@ -44,7 +44,7 @@ func Test_Transactions(t *testing.T) {
 				"0xF01813E4B85e178A83e29B8E7bF26BD830a25f32": 200,
 				"0xFef311483Cc040e1A89fb9bb469eeB8A70935EF8": 360,
 			},
-			txs: []database.UserTx{
+			txs: []database.Tx{
 				{
 					ToID:  "0xF01813E4B85e178A83e29B8E7bF26BD830a25f32",
 					Value: 100,
@@ -118,7 +118,7 @@ func TestNonceValidation(t *testing.T) {
 		minerReward uint
 		gas         uint
 		balances    map[string]uint
-		txs         []database.UserTx
+		txs         []database.Tx
 		results     []error
 	}
 
@@ -127,7 +127,7 @@ func TestNonceValidation(t *testing.T) {
 			name:        "basic",
 			minerReward: 100,
 			balances:    map[string]uint{},
-			txs: []database.UserTx{
+			txs: []database.Tx{
 				{
 					Nonce: 5,
 					ToID:  "0xF01813E4B85e178A83e29B8E7bF26BD830a25f32",
@@ -181,7 +181,7 @@ func TestNonceValidation(t *testing.T) {
 
 // =============================================================================
 
-func sign(tx database.UserTx, gas uint) (database.BlockTx, error) {
+func sign(tx database.Tx, gas uint) (database.BlockTx, error) {
 	pk, err := crypto.HexToECDSA("fae85851bdf5c9f49923722ce38f3c1defcfd3619ef5453230a58ad805499959")
 	if err != nil {
 		return database.BlockTx{}, err

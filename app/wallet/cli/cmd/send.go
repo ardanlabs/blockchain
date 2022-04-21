@@ -53,12 +53,12 @@ func sendWithDetails(privateKey *ecdsa.PrivateKey) {
 		log.Fatal(err)
 	}
 
-	userTx, err := database.NewUserTx(nonce, toAccount, value, tip, data)
+	tx, err := database.NewTx(nonce, toAccount, value, tip, data)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	walletTx, err := userTx.Sign(privateKey)
+	walletTx, err := tx.Sign(privateKey)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -18,13 +18,13 @@ const (
 
 func Test_CRUD(t *testing.T) {
 	type user struct {
-		userTx database.UserTx
+		Tx     database.Tx
 		hexKey string
 	}
 	type table struct {
 		name string
 		txs  []user
-		best map[database.AccountID]database.UserTx
+		best map[database.AccountID]database.Tx
 	}
 
 	tt := []table{
@@ -32,31 +32,31 @@ func Test_CRUD(t *testing.T) {
 			name: "tip",
 			txs: []user{
 				{
-					userTx: database.UserTx{Nonce: 2, ToID: "0x0000000000000000000000000000000000000000", Tip: 250},
+					Tx:     database.Tx{Nonce: 2, ToID: "0x0000000000000000000000000000000000000000", Tip: 250},
 					hexKey: "9f332e3700d8fc2446eaf6d15034cf96e0c2745e40353deef032a5dbf1dfed93",
 				},
 				{
-					userTx: database.UserTx{Nonce: 2, ToID: "0x1111111111111111111111111111111111111111", Tip: 200},
+					Tx:     database.Tx{Nonce: 2, ToID: "0x1111111111111111111111111111111111111111", Tip: 200},
 					hexKey: "fae85851bdf5c9f49923722ce38f3c1defcfd3619ef5453230a58ad805499959",
 				},
 				{
-					userTx: database.UserTx{Nonce: 2, ToID: "0x2222222222222222222222222222222222222222", Tip: 75},
+					Tx:     database.Tx{Nonce: 2, ToID: "0x2222222222222222222222222222222222222222", Tip: 75},
 					hexKey: "aed31b6b5a341af8f27e66fb0b7633cf20fc27049e3eb7f6f623a4655b719ebb",
 				},
 				{
-					userTx: database.UserTx{Nonce: 1, ToID: "0x3333333333333333333333333333333333333333", Tip: 150},
+					Tx:     database.Tx{Nonce: 1, ToID: "0x3333333333333333333333333333333333333333", Tip: 150},
 					hexKey: "9f332e3700d8fc2446eaf6d15034cf96e0c2745e40353deef032a5dbf1dfed93",
 				},
 				{
-					userTx: database.UserTx{Nonce: 1, ToID: "0x4444444444444444444444444444444444444444", Tip: 75},
+					Tx:     database.Tx{Nonce: 1, ToID: "0x4444444444444444444444444444444444444444", Tip: 75},
 					hexKey: "fae85851bdf5c9f49923722ce38f3c1defcfd3619ef5453230a58ad805499959",
 				},
 				{
-					userTx: database.UserTx{Nonce: 1, ToID: "0x5555555555555555555555555555555555555555", Tip: 100},
+					Tx:     database.Tx{Nonce: 1, ToID: "0x5555555555555555555555555555555555555555", Tip: 100},
 					hexKey: "aed31b6b5a341af8f27e66fb0b7633cf20fc27049e3eb7f6f623a4655b719ebb",
 				},
 			},
-			best: map[database.AccountID]database.UserTx{
+			best: map[database.AccountID]database.Tx{
 				"0x3333333333333333333333333333333333333333": {Nonce: 1, Tip: 150},
 				"0x5555555555555555555555555555555555555555": {Nonce: 1, Tip: 100},
 				"0x4444444444444444444444444444444444444444": {Nonce: 1, Tip: 75},
@@ -77,7 +77,7 @@ func Test_CRUD(t *testing.T) {
 					}
 
 					for _, user := range tst.txs {
-						tx, err := sign(user.hexKey, user.userTx, 0)
+						tx, err := sign(user.hexKey, user.Tx, 0)
 						if err != nil {
 							t.Fatalf("\t%s\tTest %d:\tShould be able to sign/upsert transaction: %s", failed, testID, tx)
 						}
@@ -124,7 +124,7 @@ func Test_CRUD(t *testing.T) {
 
 // =============================================================================
 
-func sign(hexKey string, tx database.UserTx, gas uint) (database.BlockTx, error) {
+func sign(hexKey string, tx database.Tx, gas uint) (database.BlockTx, error) {
 	pk, err := crypto.HexToECDSA(hexKey)
 	if err != nil {
 		return database.BlockTx{}, err

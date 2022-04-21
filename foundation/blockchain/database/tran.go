@@ -14,8 +14,8 @@ import (
 
 // =============================================================================
 
-// UserTx is the transactional data submitted by a user.
-type UserTx struct {
+// Tx is the transactional information between two parties.
+type Tx struct {
 	Nonce uint      `json:"nonce"` // Unique id for the transaction supplied by the user.
 	ToID  AccountID `json:"to"`    // Account receiving the benefit of the transaction.
 	Value uint      `json:"value"` // Monetary value received from this transaction.
@@ -23,13 +23,13 @@ type UserTx struct {
 	Data  []byte    `json:"data"`  // Extra data related to the transaction.
 }
 
-// NewUserTx constructs a new user transaction.
-func NewUserTx(nonce uint, toID AccountID, value uint, tip uint, data []byte) (UserTx, error) {
+// NewTx constructs a new transaction.
+func NewTx(nonce uint, toID AccountID, value uint, tip uint, data []byte) (Tx, error) {
 	if !toID.IsAccountID() {
-		return UserTx{}, fmt.Errorf("to account is not properly formatted")
+		return Tx{}, fmt.Errorf("to account is not properly formatted")
 	}
 
-	userTx := UserTx{
+	tx := Tx{
 		Nonce: nonce,
 		ToID:  toID,
 		Value: value,
@@ -37,29 +37,30 @@ func NewUserTx(nonce uint, toID AccountID, value uint, tip uint, data []byte) (U
 		Data:  data,
 	}
 
-	return userTx, nil
+	return tx, nil
 }
 
-// Sign uses the specified private key to sign the user transaction.
-func (tx UserTx) Sign(privateKey *ecdsa.PrivateKey) (SignedTx, error) {
+// Sign uses the specified private key to sign the transaction.
+func (tx Tx) Sign(privateKey *ecdsa.PrivateKey) (SignedTx, error) {
 
-	// Validate the to account incase the UserTx value was hand constructed.
+	// Validate the to account address is a valid address.
 	if !tx.ToID.IsAccountID() {
 		return SignedTx{}, fmt.Errorf("to account is not properly formatted")
 	}
 
-	// Sign the hash with the private key to produce a signature.
+	// Sign the transaction with the private key to produce a signature.
 	v, r, s, err := signature.Sign(tx, privateKey)
 	if err != nil {
 		return SignedTx{}, err
 	}
 
-	// Construct the signed transaction.
+	// Construct the signed transaction by adding the signature
+	// in the [R|S|V] format.
 	signedTx := SignedTx{
-		UserTx: tx,
-		V:      v,
-		R:      r,
-		S:      s,
+		Tx: tx,
+		V:  v,
+		R:  r,
+		S:  s,
 	}
 
 	return signedTx, nil
@@ -67,10 +68,10 @@ func (tx UserTx) Sign(privateKey *ecdsa.PrivateKey) (SignedTx, error) {
 
 // =============================================================================
 
-// SignedTx is a signed version of the user transaction used internally by
-// the blockchain.
+// SignedTx is a signed version of the transaction. This is how clients like
+// a wallet provide transactions for inclusion into the blockchain.
 type SignedTx struct {
-	UserTx
+	Tx
 	V *big.Int `json:"v"` // Recovery identifier, either 29 or 30 with ardanID.
 	R *big.Int `json:"r"` // First coordinate of the ECDSA signature.
 	S *big.Int `json:"s"` // Second coordinate of the ECDSA signature.
@@ -80,20 +81,20 @@ type SignedTx struct {
 // standards and is associated with the data claimed to be signed. It also
 // checks the format of the to account.
 func (tx SignedTx) Validate() error {
-	if err := signature.VerifySignature(tx.UserTx, tx.V, tx.R, tx.S); err != nil {
-		return err
-	}
-
 	if !tx.ToID.IsAccountID() {
 		return errors.New("invalid account for to account")
+	}
+
+	if err := signature.VerifySignature(tx.Tx, tx.V, tx.R, tx.S); err != nil {
+		return err
 	}
 
 	return nil
 }
 
-// FromAccount extracts the account that signed the transaction.
+// FromAccount extracts the account id that signed the transaction.
 func (tx SignedTx) FromAccount() (AccountID, error) {
-	address, err := signature.FromAddress(tx.UserTx, tx.V, tx.R, tx.S)
+	address, err := signature.FromAddress(tx.Tx, tx.V, tx.R, tx.S)
 	return AccountID(address), err
 }
 
@@ -114,7 +115,8 @@ func (tx SignedTx) String() string {
 
 // =============================================================================
 
-// BlockTx represents the transaction recorded inside the blockchain.
+// BlockTx represents the transaction as it's recorded inside a block. This
+// includes a timestamp and gas fees.
 type BlockTx struct {
 	SignedTx
 	TimeStamp uint64 `json:"timestamp"` // The time the transaction was received.

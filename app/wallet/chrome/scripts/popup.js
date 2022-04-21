@@ -461,8 +461,8 @@ function createTransaction() {
     const amountStr = document.getElementById("sendamount").value.replace(/\$|,/g, '');
     const tipStr = document.getElementById("sendtip").value.replace(/\$|,/g, '');
 
-     // Construct a userTx with all the information.
-     const userTx = {
+     // Construct a transaction with all the information.
+     const tx = {
         nonce: nonce,
         to: document.getElementById("to").value,
         value: Number(amountStr),
@@ -470,8 +470,8 @@ function createTransaction() {
         data: null,
     };
 
-    // Marshal the userTx to a string and convert the string to bytes.
-    const marshal = JSON.stringify(userTx);
+    // Marshal the transaction to a string and convert the string to bytes.
+    const marshal = JSON.stringify(tx);
     const marshalBytes = ethers.utils.toUtf8Bytes(marshal);
 
     // Hash the transaction data into a 32 byte array. This will provide
@@ -486,11 +486,11 @@ function createTransaction() {
 
     // Since everything is built on promises, wait for the signature to
     // be calculated and then send the transaction to the node.
-    signature.then((sig) => sendTran(userTx, sig));
+    signature.then((sig) => sendTran(tx, sig));
 }
 
 // sendTran submits the signed transaction to the node for inclusion.
-function sendTran(userTx, sig) {
+function sendTran(tx, sig) {
 
     // Need to break out the R and S bytes from the signature.
     const byt = ethers.utils.arrayify(sig);
@@ -498,12 +498,12 @@ function sendTran(userTx, sig) {
     const sSlice = byt.slice(32, 64);
 
     // Add the signature fields to make this a signed transaction.
-    userTx.v = byt[64];
-    userTx.r = ethers.BigNumber.from(rSlice).toString();
-    userTx.s = ethers.BigNumber.from(sSlice).toString();
+    tx.v = byt[64];
+    tx.r = ethers.BigNumber.from(rSlice).toString();
+    tx.s = ethers.BigNumber.from(sSlice).toString();
     
     // Marshal into JSON for the payload.
-    var data = JSON.stringify(userTx);
+    var data = JSON.stringify(tx);
 
     // Go doesn't want big integers to be strings. Removing quotes.
     data = data.replace('r":"', 'r":');

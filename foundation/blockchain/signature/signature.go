@@ -36,7 +36,7 @@ func Hash(value any) string {
 	return hex.EncodeToString(hash[:])
 }
 
-// Sign uses the specified private key to sign the user transaction.
+// Sign uses the specified private key to sign the transaction.
 func Sign(value any, privateKey *ecdsa.PrivateKey) (v, r, s *big.Int, err error) {
 
 	// Prepare the transaction for signing.
@@ -153,8 +153,8 @@ func ToVRSFromHexSignature(sigStr string) (v, r, s *big.Int, err error) {
 
 // =============================================================================
 
-// stamp returns a hash of 32 bytes that represents this user
-// transaction with the Ardan stamp embedded into the final hash.
+// stamp returns a hash of 32 bytes that represents this transaction with
+// the Ardan stamp embedded into the final hash.
 func stamp(value any) ([]byte, error) {
 
 	// Marshal the data.
