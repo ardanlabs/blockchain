@@ -141,7 +141,7 @@ func (s *State) Shutdown() error {
 	return nil
 }
 
-// IsMiningAllowed identifies if we are allows to mine blocks. This
+// IsMiningAllowed identifies if we are allowed to mine blocks. This
 // might be turned off if the blockchain needs to be re-synced.
 func (s *State) IsMiningAllowed() bool {
 	s.mu.RLock()
