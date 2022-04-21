@@ -176,7 +176,7 @@ func (db *Database) ApplyMiningReward(beneficiary AccountID) {
 
 // ApplyTransaction performs the business logic for applying a transaction
 // to the database.
-func (db *Database) ApplyTransaction(minerID AccountID, tx BlockTx) error {
+func (db *Database) ApplyTransaction(beneficiary AccountID, tx BlockTx) error {
 
 	// Capture the from address from the signature of the transaction.
 	fromID, err := tx.FromAccount()
@@ -187,34 +187,55 @@ func (db *Database) ApplyTransaction(minerID AccountID, tx BlockTx) error {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 	{
+		// Capture these accounts from the database.
 		from := db.accounts[fromID]
 		to := db.accounts[tx.ToID]
-		miner := db.accounts[minerID]
+		bnfc := db.accounts[beneficiary]
 
-		if fromID == tx.ToID {
-			return fmt.Errorf("invalid transaction, sending money to yourself, from %s, to %s", fromID, tx.ToID)
+		// The account needs to pay the gas fee regardless. Take the
+		// remaining balance if the account doesn't hold enough for the
+		// full amount of gas.
+		gasFee := tx.GasPrice * tx.GasUnits
+		if gasFee > from.Balance {
+			gasFee = from.Balance
+		}
+		from.Balance -= gasFee
+		bnfc.Balance += gasFee
+
+		// Make sure these changes get applied.
+		db.accounts[fromID] = from
+		db.accounts[beneficiary] = bnfc
+
+		// Perform basic accounting checks.
+		{
+			if from.Balance == 0 || (tx.Value+tx.Tip) > from.Balance {
+				return fmt.Errorf("%s has an insufficient balance", fromID)
+			}
+
+			if fromID == tx.ToID {
+				return fmt.Errorf("invalid transaction, sending money to yourself, from %s, to %s", fromID, tx.ToID)
+			}
+
+			if tx.Nonce < from.Nonce {
+				return fmt.Errorf("invalid transaction, nonce too small, last %d, tx %d", from.Nonce, tx.Nonce)
+			}
 		}
 
-		if tx.Nonce < from.Nonce {
-			return fmt.Errorf("invalid transaction, nonce too small, last %d, tx %d", from.Nonce, tx.Nonce)
-		}
-
-		fee := (tx.GasPrice * tx.GasUnits) + tx.Tip
-		if tx.Value+fee > from.Balance {
-			return fmt.Errorf("%s has an insufficient balance", fromID)
-		}
-
+		// Update the balances between the two parties.
 		from.Balance -= tx.Value
 		to.Balance += tx.Value
 
-		from.Balance -= fee
-		miner.Balance += fee
+		// Give the beneficiary the tip.
+		from.Balance -= tx.Tip
+		bnfc.Balance += tx.Tip
 
+		// Update the nonce for the next transaction check.
 		from.Nonce = tx.Nonce
 
+		// Update the final changes to these accounts.
 		db.accounts[fromID] = from
 		db.accounts[tx.ToID] = to
-		db.accounts[minerID] = miner
+		db.accounts[beneficiary] = bnfc
 	}
 
 	return nil
