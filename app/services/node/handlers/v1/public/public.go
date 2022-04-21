@@ -86,9 +86,12 @@ func (h Handlers) SubmitWalletTransaction(ctx context.Context, w http.ResponseWr
 		return fmt.Errorf("unable to decode payload: %w", err)
 	}
 
-	// Ask the state package to add this transaction to the mempool and perform
-	// any other business logic.
 	h.Log.Infow("add tran", "traceid", v.TraceID, "from:nonce", signedTx, "to", signedTx.ToID, "value", signedTx.Value, "tip", signedTx.Tip)
+
+	// Ask the state package to add this transaction to the mempool. Only the
+	// checks are the transaction signature and the recipient account format.
+	// It's up to the wallet to make sure the account has a proper balance and
+	// nonce. Fees will be taken if this transaction is mined into a block.
 	if err := h.State.UpsertWalletTransaction(signedTx); err != nil {
 		return v1.NewRequestError(err, http.StatusBadRequest)
 	}

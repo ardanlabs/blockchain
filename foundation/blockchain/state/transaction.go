@@ -7,8 +7,8 @@ func (s *State) UpsertWalletTransaction(signedTx database.SignedTx) error {
 
 	// Just check the signed transaction has a proper signature and valid
 	// account for the recipient. It's up to the wallet to make sure the
-	// account has a proper balance. Fees will be taken if this transaction
-	// is mined into a block.
+	// account has a proper balance and nonce. Fees will be taken if this
+	// transaction is mined into a block.
 	if err := signedTx.Validate(); err != nil {
 		return err
 	}
