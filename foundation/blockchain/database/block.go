@@ -57,11 +57,12 @@ func POW(ctx context.Context, beneficiaryID AccountID, difficulty int, prevBlock
 	nb := Block{
 		Header: BlockHeader{
 			PrevBlockHash: prevBlockHash,
+			TimeStamp:     uint64(time.Now().UTC().Unix()), //
+			Nonce:         0,                               // Will be identified by the POW algorithm.
 			BeneficiaryID: beneficiaryID,
 			Difficulty:    difficulty,
 			Number:        prevBlock.Header.Number + 1,
 			TransRoot:     tree.MerkleRootHex(),
-			TimeStamp:     uint64(time.Now().UTC().Unix()),
 		},
 		Trans: tree,
 	}
