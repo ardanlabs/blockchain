@@ -53,6 +53,11 @@ func (s *State) ProcessProposedBlock(block database.Block) error {
 	s.evHandler("state: ValidateProposedBlock: started : block[%s]", block.Hash())
 	defer s.evHandler("state: ValidateProposedBlock: completed")
 
+	// Validate the block and then update the blockchain database.
+	if err := s.validateUpdateDatabase(block); err != nil {
+		return err
+	}
+
 	// If the runMiningOperation function is being executed it needs to stop
 	// immediately. The G executing runMiningOperation will not return from the
 	// function until done is called. That allows this function to complete
@@ -63,8 +68,7 @@ func (s *State) ProcessProposedBlock(block database.Block) error {
 		done()
 	}()
 
-	// Validate the block and then update the blockchain database.
-	return s.validateUpdateDatabase(block)
+	return nil
 }
 
 // =============================================================================

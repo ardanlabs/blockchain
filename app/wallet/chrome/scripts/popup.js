@@ -264,6 +264,10 @@ function transactions() {
         type: "get",
         url: "http://localhost:8080/v1/blocks/list/" + wallet.address,
         success: function (resp) {
+            if (resp == null) {
+                return;
+            }
+
             var msg = "";
             var count = 0;
             for (var i = 0; i < resp.length; i++) {
