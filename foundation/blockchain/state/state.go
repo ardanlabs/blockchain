@@ -18,9 +18,10 @@ import (
 	-- Chrome Wallet
 
 	-- Blockchain
+	Consider adding transaction receipts similar to Ethereum.
+	Don't cancel mining until you know the peer block is valid.
 	When a proposed block arrives, check if that node is in the peer list.
 	Add integration test for the state package.
-	Consider adding transaction receipts similar to Ethereum.
 	Change out HTTP to JSON-RPC.
 */
 
