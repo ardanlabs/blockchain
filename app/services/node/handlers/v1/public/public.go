@@ -131,7 +131,8 @@ func (h Handlers) Mempool(ctx context.Context, w http.ResponseWriter, r *http.Re
 			Tip:         tran.Tip,
 			Data:        tran.Data,
 			TimeStamp:   tran.TimeStamp,
-			Gas:         tran.Gas,
+			GasPrice:    tran.GasPrice,
+			GasUnits:    tran.GasUnits,
 			Sig:         tran.SignatureString(),
 		})
 	}
@@ -222,7 +223,8 @@ func (h Handlers) BlocksByAccount(ctx context.Context, w http.ResponseWriter, r 
 				Tip:         tran.Tip,
 				Data:        tran.Data,
 				TimeStamp:   tran.TimeStamp,
-				Gas:         tran.Gas,
+				GasPrice:    tran.GasPrice,
+				GasUnits:    tran.GasUnits,
 				Sig:         tran.SignatureString(),
 				Proof:       proof,
 				ProofOrder:  order,

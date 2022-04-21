@@ -199,7 +199,7 @@ func (db *Database) ApplyTransaction(minerID AccountID, tx BlockTx) error {
 			return fmt.Errorf("invalid transaction, nonce too small, last %d, tx %d", from.Nonce, tx.Nonce)
 		}
 
-		fee := tx.Gas + tx.Tip
+		fee := (tx.GasPrice * tx.GasUnits) + tx.Tip
 		if tx.Value+fee > from.Balance {
 			return fmt.Errorf("%s has an insufficient balance", fromID)
 		}

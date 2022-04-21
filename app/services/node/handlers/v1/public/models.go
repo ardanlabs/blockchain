@@ -27,7 +27,8 @@ type tx struct {
 	Tip         uint               `json:"tip"`
 	Data        []byte             `json:"data"`
 	TimeStamp   uint64             `json:"timestamp"`
-	Gas         uint               `json:"gas"`
+	GasPrice    uint               `json:"gas_price"`
+	GasUnits    uint               `json:"gas_units"`
 	Sig         string             `json:"sig"`
 	Proof       []string           `json:"proof"`
 	ProofOrder  []int64            `json:"proof_order"`

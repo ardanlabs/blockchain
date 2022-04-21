@@ -15,7 +15,7 @@ const (
 	failed  = "\u2717"
 )
 
-func sign(hexKey string, tx database.Tx, gas uint) (database.BlockTx, error) {
+func sign(hexKey string, tx database.Tx) (database.BlockTx, error) {
 	pk, err := crypto.HexToECDSA(hexKey)
 	if err != nil {
 		return database.BlockTx{}, err
@@ -26,14 +26,14 @@ func sign(hexKey string, tx database.Tx, gas uint) (database.BlockTx, error) {
 		return database.BlockTx{}, err
 	}
 
-	return database.NewBlockTx(signedTx, gas), nil
+	return database.NewBlockTx(signedTx, 0, 0), nil
 }
 
 func TestTipSort(t *testing.T) {
 	tran := func(nonce uint, hexKey string, tip uint, ts time.Time) database.BlockTx {
 		const toID = "0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76"
 
-		tx, err := sign(hexKey, database.Tx{Nonce: nonce, ToID: toID, Tip: tip}, 0)
+		tx, err := sign(hexKey, database.Tx{Nonce: nonce, ToID: toID, Tip: tip})
 		if err != nil {
 			t.Fatalf("\t%s \tShould be able to sign transaction: %s", failed, tx)
 		}

@@ -192,5 +192,5 @@ func sign(tx database.Tx, gas uint) (database.BlockTx, error) {
 		return database.BlockTx{}, err
 	}
 
-	return database.NewBlockTx(signedTx, gas), nil
+	return database.NewBlockTx(signedTx, gas, 1), nil
 }

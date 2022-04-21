@@ -77,7 +77,7 @@ func Test_CRUD(t *testing.T) {
 					}
 
 					for _, user := range tst.txs {
-						tx, err := sign(user.hexKey, user.Tx, 0)
+						tx, err := sign(user.hexKey, user.Tx)
 						if err != nil {
 							t.Fatalf("\t%s\tTest %d:\tShould be able to sign/upsert transaction: %s", failed, testID, tx)
 						}
@@ -124,7 +124,7 @@ func Test_CRUD(t *testing.T) {
 
 // =============================================================================
 
-func sign(hexKey string, tx database.Tx, gas uint) (database.BlockTx, error) {
+func sign(hexKey string, tx database.Tx) (database.BlockTx, error) {
 	pk, err := crypto.HexToECDSA(hexKey)
 	if err != nil {
 		return database.BlockTx{}, err
@@ -135,5 +135,5 @@ func sign(hexKey string, tx database.Tx, gas uint) (database.BlockTx, error) {
 		return database.BlockTx{}, err
 	}
 
-	return database.NewBlockTx(signedTx, gas), nil
+	return database.NewBlockTx(signedTx, 0, 0), nil
 }

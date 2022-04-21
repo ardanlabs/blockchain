@@ -18,7 +18,7 @@ func TestAdvancedSort(t *testing.T) {
 	tran := func(nonce uint, hexKey string, tip uint, ts time.Time) database.BlockTx {
 		const toID = "0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76"
 
-		tx, err := sign(hexKey, database.Tx{Nonce: nonce, ToID: toID, Tip: tip}, 0)
+		tx, err := sign(hexKey, database.Tx{Nonce: nonce, ToID: toID, Tip: tip})
 		if err != nil {
 			t.Fatalf("\t%s \tShould be able to sign transaction: %s", failed, tx)
 		}
