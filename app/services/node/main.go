@@ -64,7 +64,7 @@ func run(log *zap.SugaredLogger) error {
 			PrivateHost     string        `conf:"default:0.0.0.0:9080"`
 		}
 		State struct {
-			MinerName      string   `conf:"default:miner1"`
+			Beneficiary    string   `conf:"default:miner1"`
 			DBPath         string   `conf:"default:zblock/blocks.db"`
 			SelectStrategy string   `conf:"default:Tip"`
 			KnownPeers     []string `conf:"default:0.0.0.0:9080;0.0.0.0:9180"`
@@ -129,9 +129,9 @@ func run(log *zap.SugaredLogger) error {
 	// =========================================================================
 	// Blockchain Support
 
-	// Need to load the private key file for the configured miner so the account
-	// can get credited with fees and tips.
-	path := fmt.Sprintf("%s%s.ecdsa", cfg.NameService.Folder, cfg.State.MinerName)
+	// Need to load the private key file for the configured beneficiary so the
+	// account can get credited with fees and tips.
+	path := fmt.Sprintf("%s%s.ecdsa", cfg.NameService.Folder, cfg.State.Beneficiary)
 	privateKey, err := crypto.LoadECDSA(path)
 	if err != nil {
 		return fmt.Errorf("unable to load private key for node: %w", err)
@@ -157,7 +157,7 @@ func run(log *zap.SugaredLogger) error {
 	// The state value represents the blockchain node and manages the blockchain
 	// database and provides an API for application support.
 	state, err := state.New(state.Config{
-		Beneficiary:    database.PublicKeyToAccountID(privateKey.PublicKey),
+		BeneficiaryID:  database.PublicKeyToAccountID(privateKey.PublicKey),
 		Host:           cfg.Web.PrivateHost,
 		DBPath:         cfg.State.DBPath,
 		SelectStrategy: cfg.State.SelectStrategy,

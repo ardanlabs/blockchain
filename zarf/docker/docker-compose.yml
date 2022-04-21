@@ -27,7 +27,7 @@ services:
     container_name: blockchain-node-1
     environment:
       NODE_STATE_KNOWN_PEERS: "blockchain-node-1:9080;blockchain-node-2:9280;blockchain-node-3:9380"
-      NODE_STATE_MINER_NAME: miner1
+      NODE_STATE_BENEFICIARY: miner1
       NODE_WEB_PUBLIC_HOST: blockchain-node-1:8080
       NODE_WEB_PRIVATE_HOST: blockchain-node-1:9080
        # Use ephemeral filesystem on container for the node.
@@ -42,7 +42,7 @@ services:
     container_name: blockchain-node-2
     environment:
       NODE_STATE_KNOWN_PEERS: "blockchain-node-1:9080;blockchain-node-2:9280;blockchain-node-3:9380"
-      NODE_STATE_MINER_NAME: miner2
+      NODE_STATE_BENEFICIARY: miner2
       NODE_WEB_PUBLIC_HOST: blockchain-node-2:8280
       NODE_WEB_PRIVATE_HOST: blockchain-node-2:9280
       # Use ephemeral filesystem on container for node.
@@ -56,7 +56,7 @@ services:
     container_name: blockchain-node-3
     environment:
       NODE_STATE_KNOWN_PEERS: "blockchain-node-1:9080;blockchain-node-2:9280;blockchain-node-3:9380"
-      NODE_STATE_MINER_NAME: jeremy
+      NODE_STATE_BENEFICIARY: jeremy
       NODE_WEB_PUBLIC_HOST: blockchain-node-3:8380
       NODE_WEB_PRIVATE_HOST: blockchain-node-3:9380
       # Use ephemeral filesystem on container for node.

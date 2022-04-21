@@ -24,7 +24,7 @@ type BlockHeader struct {
 	PrevBlockHash string    `json:"prev_block_hash"` // Bitcoin: Hash of the previous block in the chain.
 	TimeStamp     uint64    `json:"timestamp"`       // Bitcoin: Time the block was mined.
 	Nonce         uint64    `json:"nonce"`           // Bitcoin: Value identified to solve the hash solution.
-	Beneficiary   AccountID `json:"beneficiary"`     // Ethereum: The account who is receiving fees and tips.
+	BeneficiaryID AccountID `json:"beneficiary"`     // Ethereum: The account who is receiving fees and tips.
 	Difficulty    int       `json:"difficulty"`      // Ethereum: Number of 0's needed to solve the hash solution.
 	Number        uint64    `json:"number"`          // Ethereum: Block number in the chain.
 	TransRoot     string    `json:"trans_root"`      // Bitcoin/Ethereum: Represents the merkle tree root hash for the transactions in this block.
@@ -38,7 +38,7 @@ type Block struct {
 
 // POW constructs a new Block and performs the work to find a nonce that
 // solves the cryptographic POW puzzel.
-func POW(ctx context.Context, beneficiary AccountID, difficulty int, prevBlock Block, trans []BlockTx, evHandler func(v string, args ...any)) (Block, error) {
+func POW(ctx context.Context, beneficiaryID AccountID, difficulty int, prevBlock Block, trans []BlockTx, evHandler func(v string, args ...any)) (Block, error) {
 
 	// When mining the first block, the previous block's hash will be zero.
 	prevBlockHash := signature.ZeroHash
@@ -57,7 +57,7 @@ func POW(ctx context.Context, beneficiary AccountID, difficulty int, prevBlock B
 	nb := Block{
 		Header: BlockHeader{
 			PrevBlockHash: prevBlockHash,
-			Beneficiary:   beneficiary,
+			BeneficiaryID: beneficiaryID,
 			Difficulty:    difficulty,
 			Number:        prevBlock.Header.Number + 1,
 			TransRoot:     tree.MerkleRootHex(),
