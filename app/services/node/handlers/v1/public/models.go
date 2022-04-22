@@ -37,7 +37,7 @@ type tx struct {
 type block struct {
 	PrevBlockHash string             `json:"prev_block_hash"`
 	BeneficiaryID database.AccountID `json:"beneficiary"`
-	Difficulty    int                `json:"difficulty"`
+	Difficulty    uint               `json:"difficulty"`
 	Number        uint64             `json:"number"`
 	TimeStamp     uint64             `json:"timestamp"`
 	Nonce         uint64             `json:"nonce"`

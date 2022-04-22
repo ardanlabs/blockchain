@@ -25,8 +25,15 @@ func (s *State) MineNewBlock(ctx context.Context) (database.Block, error) {
 
 	s.evHandler("state: MineNewBlock: MINING: perform POW")
 
+	// CORE NOTE: Blockchains do have a max block size limit. The bulk of the
+	// block size will come from the transactions. When picking the best
+	// transactions to add to the block, the Ardan blockchain is currently
+	// restricting the block size to a max number of transactions per block.
+
+	// Pick the best transactions from the mempool.
+	trans := s.mempool.PickBest(s.genesis.TransPerBlock)
+
 	// Attempt to create a new block by solving the POW puzzle. This can be cancelled.
-	trans := s.mempool.PickBest()
 	block, err := database.POW(ctx, s.beneficiaryID, s.genesis.Difficulty, s.RetrieveLatestBlock(), trans, s.evHandler)
 	if err != nil {
 		return database.Block{}, err

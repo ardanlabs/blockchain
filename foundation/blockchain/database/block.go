@@ -25,7 +25,7 @@ type BlockHeader struct {
 	TimeStamp     uint64    `json:"timestamp"`       // Bitcoin: Time the block was mined.
 	Nonce         uint64    `json:"nonce"`           // Bitcoin: Value identified to solve the hash solution.
 	BeneficiaryID AccountID `json:"beneficiary"`     // Ethereum: The account who is receiving fees and tips.
-	Difficulty    int       `json:"difficulty"`      // Ethereum: Number of 0's needed to solve the hash solution.
+	Difficulty    uint      `json:"difficulty"`      // Ethereum: Number of 0's needed to solve the hash solution.
 	Number        uint64    `json:"number"`          // Ethereum: Block number in the chain.
 	TransRoot     string    `json:"trans_root"`      // Bitcoin/Ethereum: Represents the merkle tree root hash for the transactions in this block.
 }
@@ -38,7 +38,7 @@ type Block struct {
 
 // POW constructs a new Block and performs the work to find a nonce that
 // solves the cryptographic POW puzzel.
-func POW(ctx context.Context, beneficiaryID AccountID, difficulty int, prevBlock Block, trans []BlockTx, evHandler func(v string, args ...any)) (Block, error) {
+func POW(ctx context.Context, beneficiaryID AccountID, difficulty uint, prevBlock Block, trans []BlockTx, evHandler func(v string, args ...any)) (Block, error) {
 
 	// When mining the first block, the previous block's hash will be zero.
 	prevBlockHash := signature.ZeroHash
@@ -209,7 +209,7 @@ func (b Block) ValidateBlock(previousBlock Block, evHandler func(v string, args 
 
 // isHashSolved checks the hash to make sure it complies with
 // the POW rules. We need to match a difficulty number of 0's.
-func isHashSolved(difficulty int, hash string) bool {
+func isHashSolved(difficulty uint, hash string) bool {
 	const match = "00000000000000000"
 
 	if len(hash) != 64 {

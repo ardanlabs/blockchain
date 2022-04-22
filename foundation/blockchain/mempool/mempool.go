@@ -102,11 +102,12 @@ func (mp *Mempool) Truncate() {
 }
 
 // PickBest uses the configured sort strategy to return the next set
-// of transactions for the next block.
-func (mp *Mempool) PickBest(howMany ...int) []database.BlockTx {
-	number := -1
+// of transactions for the next block. If 0 is passed, all transactions
+// in the mempool will be returned.
+func (mp *Mempool) PickBest(howMany ...uint) []database.BlockTx {
+	number := 0
 	if len(howMany) > 0 {
-		number = howMany[0]
+		number = int(howMany[0])
 	}
 
 	// Copy all the transactions for each account into separate
@@ -115,7 +116,7 @@ func (mp *Mempool) PickBest(howMany ...int) []database.BlockTx {
 	m := make(map[database.AccountID][]database.BlockTx)
 	mp.mu.RLock()
 	{
-		if number == -1 {
+		if number == 0 {
 			number = len(mp.pool)
 		}
 

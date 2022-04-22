@@ -22,7 +22,7 @@ var strategies = map[string]Func{
 
 // Func defines a function that takes a mempool of transactions grouped by
 // account and selects howMany of them in an order based on the functions
-// strategy. All selector functions MUST respect nonce ordering. Receiving -1
+// strategy. All selector functions MUST respect nonce ordering. Receiving 0
 // for howMany must return all the transactions in the strategies ordering.
 type Func func(transactions map[database.AccountID][]database.BlockTx, howMany int) []database.BlockTx
 
