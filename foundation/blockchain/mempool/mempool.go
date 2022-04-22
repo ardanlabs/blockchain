@@ -2,7 +2,9 @@
 package mempool
 
 import (
+	"errors"
 	"fmt"
+	"math"
 	"strings"
 	"sync"
 
@@ -50,9 +52,26 @@ func (mp *Mempool) Upsert(tx database.BlockTx) error {
 	mp.mu.Lock()
 	defer mp.mu.Unlock()
 
+	// Different blockchains have different algorithms to limit
+	// the size of the mempool. Some limit based on the amount of
+	// memory being consumed and some may limit based on the number
+	// of transaction. If a limit is met, then either the transaction
+	// that has the least return on investment or the oldest will be
+	// dropped from the pool to make room for new the transaction.
+
+	// For now, the Ardan blockchain in not imposing any limits.
 	key, err := mapKey(tx)
 	if err != nil {
 		return err
+	}
+
+	// Ethereum requires a 10% bump in the tip to replace an existing
+	// transaction in the mempool and so do we. We want to limit users
+	// from this sort of behavior.
+	if etx, exists := mp.pool[key]; exists {
+		if tx.Tip < uint(math.Round(float64(etx.Tip)*1.10)) {
+			return errors.New("replacing a transaction requires a 10% bump in the tip")
+		}
 	}
 
 	mp.pool[key] = tx

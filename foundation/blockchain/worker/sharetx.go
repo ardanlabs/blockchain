@@ -39,6 +39,13 @@ func (w *Worker) runShareTxOperation(tx database.BlockTx) {
 	w.evHandler("worker: runShareTxOperation: started")
 	defer w.evHandler("worker: runShareTxOperation: completed")
 
+	// Bitcoin does not send the full transaction immediately to save on
+	// bandwidth. A node will send the transaction's mempool key first so
+	// the receiving node can check if they already have the transaction or
+	// not. If the receiving node doesn't have it, then it will request the
+	// transaction based on the mempool key it received.
+
+	// For now, the Ardan blockchain just sends the full transaction.
 	for _, peer := range w.state.RetrieveKnownPeers() {
 		url := fmt.Sprintf("%s/tx/submit", fmt.Sprintf(w.baseURL, peer.Host))
 		if err := send(http.MethodPost, url, tx, nil); err != nil {
