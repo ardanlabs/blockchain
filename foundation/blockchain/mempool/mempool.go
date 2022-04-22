@@ -116,8 +116,8 @@ func (mp *Mempool) PickBest(howMany ...uint16) []database.BlockTx {
 	//
 	// When the selection algorithm does need to consider sizing, picking the
 	// right transactions that maximize profit gets really hard. On top of this,
-	// today a miner gets a mining reward for each mined block. In the
-	// future this could go away leaving just fees for the transactions that are
+	// today a miner gets a mining reward for each mined block. In the future
+	// this could go away leaving just fees for the transactions that are
 	// selected as the only form of revenue. This will change how transactions
 	// need to be selected.
 
