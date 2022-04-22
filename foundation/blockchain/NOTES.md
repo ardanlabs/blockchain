@@ -105,7 +105,3 @@ the base fee for the following block. Similarly, the protocol will decrease
 the base fee if the block size is less than the target block size. The amount
 by which the base fee is adjusted is proportional to how far the current block
 size is from the target.
-
-Commandments by Satoshi Nakamoto
-1. Blocks shall not be larger than 1MB
-2. 
