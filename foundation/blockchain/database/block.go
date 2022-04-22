@@ -134,9 +134,12 @@ func (b Block) Hash() string {
 		return signature.ZeroHash
 	}
 
-	// Hashing the block header not the whole block because the data is smaller
-	// for the unmarshal operation and the merkel root will let us validate
-	// transactions with a merkle proof.
+	// Hashing the block header and not the whole block so the blockchain can be
+	// cryptographically checked by only needing block headers and not full blocks
+	// with the transaction data. This will support the ability to have pruned
+	// nodes in the future. A pruned node may only keep 1000 full blocks of data
+	// and will still be capable of validating all new blocks and transactions in
+	// real time.
 
 	return signature.Hash(b.Header)
 }
