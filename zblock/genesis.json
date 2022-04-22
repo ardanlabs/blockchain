@@ -1,6 +1,6 @@
 {
     "date": "2021-12-17T00:00:00.000000000Z",
-    "chain_id": "the-ardan-blockchain",
+    "chain_id": 1,
     "trans_per_block": 10,
     "difficulty": 6,
 	"mining_reward": 700,

@@ -141,28 +141,6 @@ func (db *Database) CopyAccounts() map[AccountID]Account {
 	return accounts
 }
 
-// ValidateNonce validates the nonce for the specified transaction is larger
-// than the last nonce used by the account who signed the transaction.
-func (db *Database) ValidateNonce(tx SignedTx) error {
-	from, err := tx.FromAccount()
-	if err != nil {
-		return err
-	}
-
-	var account Account
-	db.mu.RLock()
-	{
-		account = db.accounts[from]
-	}
-	db.mu.RUnlock()
-
-	if tx.Nonce <= account.Nonce {
-		return fmt.Errorf("invalid nonce, got %d, exp > %d", tx.Nonce, account.Nonce)
-	}
-
-	return nil
-}
-
 // ApplyMiningReward gives the specififed account the mining reward.
 func (db *Database) ApplyMiningReward(beneficiaryID AccountID) {
 	db.mu.Lock()
@@ -208,6 +186,14 @@ func (db *Database) ApplyTransaction(beneficiaryID AccountID, tx BlockTx) error 
 
 		// Perform basic accounting checks.
 		{
+			if tx.ChainID != db.genesis.ChainID {
+				return fmt.Errorf("invalid chain id, got %d, exp > %d", tx.ChainID, db.genesis.ChainID)
+			}
+
+			if tx.Nonce <= from.Nonce {
+				return fmt.Errorf("invalid nonce, got %d, exp > %d", tx.Nonce, from.Nonce)
+			}
+
 			if from.Balance == 0 || (tx.Value+tx.Tip) > from.Balance {
 				return fmt.Errorf("%s has an insufficient balance", fromID)
 			}

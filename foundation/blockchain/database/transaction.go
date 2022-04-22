@@ -16,25 +16,27 @@ import (
 
 // Tx is the transactional information between two parties.
 type Tx struct {
-	Nonce uint      `json:"nonce"` // Ethereum: Unique id for the transaction supplied by the user.
-	ToID  AccountID `json:"to"`    // Ethereum: Account receiving the benefit of the transaction.
-	Value uint      `json:"value"` // Ethereum: Monetary value received from this transaction.
-	Tip   uint      `json:"tip"`   // Ethereum: Tip offered by the sender as an incentive to mine this transaction.
-	Data  []byte    `json:"data"`  // Ethereum: Extra data related to the transaction.
+	ChainID uint      `json:"chain_id"` // Ethereum: The chain id that is listed in the genesis file.
+	Nonce   uint      `json:"nonce"`    // Ethereum: Unique id for the transaction supplied by the user.
+	ToID    AccountID `json:"to"`       // Ethereum: Account receiving the benefit of the transaction.
+	Value   uint      `json:"value"`    // Ethereum: Monetary value received from this transaction.
+	Tip     uint      `json:"tip"`      // Ethereum: Tip offered by the sender as an incentive to mine this transaction.
+	Data    []byte    `json:"data"`     // Ethereum: Extra data related to the transaction.
 }
 
 // NewTx constructs a new transaction.
-func NewTx(nonce uint, toID AccountID, value uint, tip uint, data []byte) (Tx, error) {
+func NewTx(chainID uint, nonce uint, toID AccountID, value uint, tip uint, data []byte) (Tx, error) {
 	if !toID.IsAccountID() {
 		return Tx{}, fmt.Errorf("to account is not properly formatted")
 	}
 
 	tx := Tx{
-		Nonce: nonce,
-		ToID:  toID,
-		Value: value,
-		Tip:   tip,
-		Data:  data,
+		ChainID: chainID,
+		Nonce:   nonce,
+		ToID:    toID,
+		Value:   value,
+		Tip:     tip,
+		Data:    data,
 	}
 
 	return tx, nil

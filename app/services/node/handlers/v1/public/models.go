@@ -22,6 +22,7 @@ type tx struct {
 	FromName    string             `json:"from_name"`
 	To          database.AccountID `json:"to"`
 	ToName      string             `json:"to_name"`
+	ChainID     uint               `json:"chain_id"`
 	Nonce       uint               `json:"nonce"`
 	Value       uint               `json:"value"`
 	Tip         uint               `json:"tip"`

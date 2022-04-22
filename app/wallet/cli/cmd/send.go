@@ -53,7 +53,8 @@ func sendWithDetails(privateKey *ecdsa.PrivateKey) {
 		log.Fatal(err)
 	}
 
-	tx, err := database.NewTx(nonce, toAccount, value, tip, data)
+	const chainID = 1
+	tx, err := database.NewTx(chainID, nonce, toAccount, value, tip, data)
 	if err != nil {
 		log.Fatal(err)
 	}

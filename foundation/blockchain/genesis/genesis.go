@@ -10,7 +10,7 @@ import (
 // Genesis represents the genesis file.
 type Genesis struct {
 	Date          time.Time       `json:"date"`
-	ChainID       string          `json:"chain_id"`
+	ChainID       uint            `json:"chain_id"`        // The chain id represents an unique id for this running instance.
 	TransPerBlock uint            `json:"trans_per_block"` // The maximum number of transactions that can be in a block.
 	Difficulty    uint            `json:"difficulty"`      // How difficult it needs to be to solve the work problem.
 	MiningReward  uint            `json:"mining_reward"`   // Reward for mining a block.

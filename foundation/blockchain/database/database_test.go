@@ -163,12 +163,6 @@ func TestNonceValidation(t *testing.T) {
 					}
 					t.Logf("\t%s\tTest %d:\tShould be able to sign transaction.", success, testID)
 
-					err = db.ValidateNonce(blockTx.SignedTx)
-					if (tst.results[i] == nil && err != nil) || (tst.results[i] != nil && err == nil) {
-						t.Fatalf("\t%s\tTest %d:\tShould be able to validate nonce correctly.", failed, testID)
-					}
-					t.Logf("\t%s\tTest %d:\tShould be able to validate nonce correctly.", success, testID)
-
 					err = db.ApplyTransaction("test", blockTx)
 					if (tst.results[i] == nil && err != nil) || (tst.results[i] != nil && err == nil) {
 						t.Fatalf("\t%s\tTest %d:\tShould be able to apply transaction.", failed, testID)

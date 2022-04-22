@@ -1,4 +1,5 @@
 var nonce = 0;
+var chainID = 1;
 
 // Things to run when the wallet is opened.
 window.onload = function () {
@@ -337,6 +338,7 @@ function createTxHash(tx) {
 
     // Create a block transaction for hashing.
     const blockTx = {
+        chain_id: tx.chain_id,
         nonce: tx.nonce,
         to: tx.to,
         value: tx.value,
@@ -346,7 +348,8 @@ function createTxHash(tx) {
         r: ethers.BigNumber.from(rSlice).toString(),
         s: ethers.BigNumber.from(sSlice).toString(),
         timestamp: tx.timestamp,
-        gas: tx.gas
+        gas_price: tx.gas_price,
+        gas_units: tx.gas_units
     };
 
     // Marshal into JSON for the payload.
@@ -466,7 +469,8 @@ function createTransaction() {
     const tipStr = document.getElementById("sendtip").value.replace(/\$|,/g, '');
 
      // Construct a transaction with all the information.
-     const tx = {
+    const tx = {
+        chain_id: chainID,
         nonce: nonce,
         to: document.getElementById("to").value,
         value: Number(amountStr),
