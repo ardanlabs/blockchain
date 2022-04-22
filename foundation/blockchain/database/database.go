@@ -187,23 +187,19 @@ func (db *Database) ApplyTransaction(beneficiaryID AccountID, tx BlockTx) error 
 		// Perform basic accounting checks.
 		{
 			if tx.ChainID != db.genesis.ChainID {
-				return fmt.Errorf("invalid chain id, got %d, exp > %d", tx.ChainID, db.genesis.ChainID)
-			}
-
-			if tx.Nonce <= from.Nonce {
-				return fmt.Errorf("invalid nonce, got %d, exp > %d", tx.Nonce, from.Nonce)
-			}
-
-			if from.Balance == 0 || (tx.Value+tx.Tip) > from.Balance {
-				return fmt.Errorf("%s has an insufficient balance", fromID)
+				return fmt.Errorf("transaction invalid, wrong chain id, got %d, exp %d", tx.ChainID, db.genesis.ChainID)
 			}
 
 			if fromID == tx.ToID {
-				return fmt.Errorf("invalid transaction, sending money to yourself, from %s, to %s", fromID, tx.ToID)
+				return fmt.Errorf("transaction invalid, sending money to yourself, from %s, to %s", fromID, tx.ToID)
 			}
 
-			if tx.Nonce < from.Nonce {
-				return fmt.Errorf("invalid transaction, nonce too small, last %d, tx %d", from.Nonce, tx.Nonce)
+			if tx.Nonce <= from.Nonce {
+				return fmt.Errorf("transaction invalid, nonce too small, current %d, provided %d", from.Nonce, tx.Nonce)
+			}
+
+			if from.Balance == 0 || (tx.Value+tx.Tip) > from.Balance {
+				return fmt.Errorf("transaction invalid, insufficient funds, bal %d, needed %d", from.Balance, (tx.Value + tx.Tip))
 			}
 		}
 
