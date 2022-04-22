@@ -52,12 +52,11 @@ func (mp *Mempool) Upsert(tx database.BlockTx) error {
 	mp.mu.Lock()
 	defer mp.mu.Unlock()
 
-	// Different blockchains have different algorithms to limit
-	// the size of the mempool. Some limit based on the amount of
-	// memory being consumed and some may limit based on the number
-	// of transaction. If a limit is met, then either the transaction
-	// that has the least return on investment or the oldest will be
-	// dropped from the pool to make room for new the transaction.
+	// CORE NOTE: Different blockchains have different algorithms to limit the
+	// size of the mempool. Some limit based on the amount of memory being
+	// consumed and some may limit based on the number of transaction. If a limit
+	// is met, then either the transaction that has the least return on investment
+	// or the oldest will be dropped from the pool to make room for new the transaction.
 
 	// For now, the Ardan blockchain in not imposing any limits.
 	key, err := mapKey(tx)
