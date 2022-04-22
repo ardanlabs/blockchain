@@ -172,7 +172,7 @@ func (db *Database) ApplyTransaction(beneficiaryID AccountID, tx BlockTx) error 
 
 		// The account needs to pay the gas fee regardless. Take the
 		// remaining balance if the account doesn't hold enough for the
-		// full amount of gas.
+		// full amount of gas. This is the only way to stop bad actors.
 		gasFee := tx.GasPrice * tx.GasUnits
 		if gasFee > from.Balance {
 			gasFee = from.Balance
