@@ -137,8 +137,13 @@ func (b Block) Hash() string {
 	// CORE NOTE: Hashing the block header and not the whole block so the blockchain
 	// can be cryptographically checked by only needing block headers and not full
 	// blocks with the transaction data. This will support the ability to have pruned
-	// nodes in the future. A pruned node may only keep 1000 full blocks of data and
-	// will still be capable of validating all new blocks and transactions in real time.
+	// nodes and light clients in the future.
+	// - A pruned node stores all the block headers, but only a small number of full
+	//   blocks (maybe the last 1000 blocks). This allows for full cryptographic
+	//   validation of blocks and transactions without all the extra storage.
+	// - A light client keeps block headers and just enough sufficient information
+	//   to follow the latest set of blocks being produced. The do not validate
+	//   blocks, but can prove a transaction is in a block.
 
 	return signature.Hash(b.Header)
 }
