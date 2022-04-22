@@ -34,6 +34,13 @@ func (w *Worker) Sync() {
 			w.state.UpsertMempool(tx)
 		}
 
+		// Ideally you want to start by pulling just block headers and performing
+		// the cryptographic audit so you know your're not being attacked. After
+		// that you can start pulling the full block data for each block header
+		// if you are a full node and maybe only the last 1000 full blocks if you
+		// are a pruned node. That can be done in the background. Remember, you
+		// only need block headers to participate in blockchain activities.
+
 		// If this peer has blocks we don't have, we need to add them.
 		if peerStatus.LatestBlockNumber > w.state.RetrieveLatestBlock().Header.Number {
 			w.evHandler("worker: sync: retrievePeerBlocks: %s: latestBlockNumber[%d]", peer.Host, peerStatus.LatestBlockNumber)
