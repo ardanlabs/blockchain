@@ -16,16 +16,16 @@ import (
 
 // Tx is the transactional information between two parties.
 type Tx struct {
-	ChainID uint      `json:"chain_id"` // Ethereum: The chain id that is listed in the genesis file.
-	Nonce   uint      `json:"nonce"`    // Ethereum: Unique id for the transaction supplied by the user.
+	ChainID uint16    `json:"chain_id"` // Ethereum: The chain id that is listed in the genesis file.
+	Nonce   uint64    `json:"nonce"`    // Ethereum: Unique id for the transaction supplied by the user.
 	ToID    AccountID `json:"to"`       // Ethereum: Account receiving the benefit of the transaction.
-	Value   uint      `json:"value"`    // Ethereum: Monetary value received from this transaction.
-	Tip     uint      `json:"tip"`      // Ethereum: Tip offered by the sender as an incentive to mine this transaction.
+	Value   uint64    `json:"value"`    // Ethereum: Monetary value received from this transaction.
+	Tip     uint64    `json:"tip"`      // Ethereum: Tip offered by the sender as an incentive to mine this transaction.
 	Data    []byte    `json:"data"`     // Ethereum: Extra data related to the transaction.
 }
 
 // NewTx constructs a new transaction.
-func NewTx(chainID uint, nonce uint, toID AccountID, value uint, tip uint, data []byte) (Tx, error) {
+func NewTx(chainID uint16, nonce uint64, toID AccountID, value uint64, tip uint64, data []byte) (Tx, error) {
 	if !toID.IsAccountID() {
 		return Tx{}, fmt.Errorf("to account is not properly formatted")
 	}
@@ -122,12 +122,12 @@ func (tx SignedTx) String() string {
 type BlockTx struct {
 	SignedTx
 	TimeStamp uint64 `json:"timestamp"` // Ethereum: The time the transaction was received.
-	GasPrice  uint   `json:"gas_price"` // Ethereum: The price of one unit of gas to be paid for fees.
-	GasUnits  uint   `json:"gas_units"` // Ethereum: The number of units of gas used for this transaction.
+	GasPrice  uint64 `json:"gas_price"` // Ethereum: The price of one unit of gas to be paid for fees.
+	GasUnits  uint64 `json:"gas_units"` // Ethereum: The number of units of gas used for this transaction.
 }
 
 // NewBlockTx constructs a new block transaction.
-func NewBlockTx(signedTx SignedTx, gasPrice uint, unitsOfGas uint) BlockTx {
+func NewBlockTx(signedTx SignedTx, gasPrice uint64, unitsOfGas uint64) BlockTx {
 	return BlockTx{
 		SignedTx:  signedTx,
 		TimeStamp: uint64(time.Now().UTC().Unix()),

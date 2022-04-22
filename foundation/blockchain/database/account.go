@@ -9,8 +9,8 @@ import (
 
 // Account represents information stored in the database for an individual account.
 type Account struct {
-	Balance uint
-	Nonce   uint
+	Balance uint64
+	Nonce   uint64
 }
 
 // AccountID represents an account id that is used to sign transactions and is

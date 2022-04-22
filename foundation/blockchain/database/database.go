@@ -73,9 +73,9 @@ func New(dbPath string, genesis genesis.Genesis, evHandler func(v string, args .
 	// Update the databse with account balance information from blocks.
 	for _, block := range blocks {
 		for _, tx := range block.Trans.Values() {
-			db.ApplyTransaction(block.Header.BeneficiaryID, tx)
+			db.ApplyTransaction(block, tx)
 		}
-		db.ApplyMiningReward(block.Header.BeneficiaryID)
+		db.ApplyMiningReward(block)
 	}
 
 	return &db, nil
@@ -142,19 +142,19 @@ func (db *Database) CopyAccounts() map[AccountID]Account {
 }
 
 // ApplyMiningReward gives the specififed account the mining reward.
-func (db *Database) ApplyMiningReward(beneficiaryID AccountID) {
+func (db *Database) ApplyMiningReward(block Block) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 
-	account := db.accounts[beneficiaryID]
-	account.Balance += db.genesis.MiningReward
+	account := db.accounts[block.Header.BeneficiaryID]
+	account.Balance += block.Header.MiningReward
 
-	db.accounts[beneficiaryID] = account
+	db.accounts[block.Header.BeneficiaryID] = account
 }
 
 // ApplyTransaction performs the business logic for applying a transaction
 // to the database.
-func (db *Database) ApplyTransaction(beneficiaryID AccountID, tx BlockTx) error {
+func (db *Database) ApplyTransaction(block Block, tx BlockTx) error {
 
 	// Capture the from address from the signature of the transaction.
 	fromID, err := tx.FromAccount()
@@ -168,7 +168,7 @@ func (db *Database) ApplyTransaction(beneficiaryID AccountID, tx BlockTx) error 
 		// Capture these accounts from the database.
 		from := db.accounts[fromID]
 		to := db.accounts[tx.ToID]
-		bnfc := db.accounts[beneficiaryID]
+		bnfc := db.accounts[block.Header.BeneficiaryID]
 
 		// The account needs to pay the gas fee regardless. Take the
 		// remaining balance if the account doesn't hold enough for the
@@ -182,7 +182,7 @@ func (db *Database) ApplyTransaction(beneficiaryID AccountID, tx BlockTx) error 
 
 		// Make sure these changes get applied.
 		db.accounts[fromID] = from
-		db.accounts[beneficiaryID] = bnfc
+		db.accounts[block.Header.BeneficiaryID] = bnfc
 
 		// Perform basic accounting checks.
 		{
@@ -198,7 +198,7 @@ func (db *Database) ApplyTransaction(beneficiaryID AccountID, tx BlockTx) error 
 				return fmt.Errorf("transaction invalid, nonce too small, current %d, provided %d", from.Nonce, tx.Nonce)
 			}
 
-			if from.Balance == 0 || (tx.Value+tx.Tip) > from.Balance {
+			if from.Balance == 0 || from.Balance < (tx.Value+tx.Tip) {
 				return fmt.Errorf("transaction invalid, insufficient funds, bal %d, needed %d", from.Balance, (tx.Value + tx.Tip))
 			}
 		}
@@ -217,7 +217,7 @@ func (db *Database) ApplyTransaction(beneficiaryID AccountID, tx BlockTx) error 
 		// Update the final changes to these accounts.
 		db.accounts[fromID] = from
 		db.accounts[tx.ToID] = to
-		db.accounts[beneficiaryID] = bnfc
+		db.accounts[block.Header.BeneficiaryID] = bnfc
 	}
 
 	return nil

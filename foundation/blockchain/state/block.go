@@ -25,16 +25,18 @@ func (s *State) MineNewBlock(ctx context.Context) (database.Block, error) {
 
 	s.evHandler("state: MineNewBlock: MINING: perform POW")
 
-	// CORE NOTE: Blockchains do have a max block size limit. The bulk of the
-	// block size will come from the transactions. When picking the best
-	// transactions to add to the block, the Ardan blockchain is currently
-	// restricting the block size to a max number of transactions per block.
-
 	// Pick the best transactions from the mempool.
 	trans := s.mempool.PickBest(s.genesis.TransPerBlock)
 
 	// Attempt to create a new block by solving the POW puzzle. This can be cancelled.
-	block, err := database.POW(ctx, s.beneficiaryID, s.genesis.Difficulty, s.RetrieveLatestBlock(), trans, s.evHandler)
+	block, err := database.POW(ctx,
+		s.beneficiaryID,
+		s.genesis.Difficulty,
+		s.genesis.MiningReward,
+		s.RetrieveLatestBlock(),
+		trans,
+		s.evHandler,
+	)
 	if err != nil {
 		return database.Block{}, err
 	}
@@ -108,7 +110,7 @@ func (s *State) validateUpdateDatabase(block database.Block) error {
 		s.evHandler("state: updateLocalState: tx[%s] update and remove", tx)
 
 		// Apply the balance changes based on this transaction.
-		if err := s.db.ApplyTransaction(block.Header.BeneficiaryID, tx); err != nil {
+		if err := s.db.ApplyTransaction(block, tx); err != nil {
 			s.evHandler("state: updateLocalState: WARNING : %s", err)
 			continue
 		}
@@ -120,7 +122,7 @@ func (s *State) validateUpdateDatabase(block database.Block) error {
 	s.evHandler("state: updateLocalState: apply mining reward")
 
 	// Apply the mining reward for this block.
-	s.db.ApplyMiningReward(block.Header.BeneficiaryID)
+	s.db.ApplyMiningReward(block)
 
 	return nil
 }

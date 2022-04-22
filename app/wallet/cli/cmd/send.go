@@ -15,10 +15,10 @@ import (
 
 var (
 	url   string
-	nonce uint
+	nonce uint64
 	to    string
-	value uint
-	tip   uint
+	value uint64
+	tip   uint64
 	data  []byte
 )
 
@@ -31,10 +31,10 @@ var sendCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(sendCmd)
 	sendCmd.Flags().StringVarP(&url, "url", "u", "http://localhost:8080", "Url of the node.")
-	sendCmd.Flags().UintVarP(&nonce, "nonce", "n", 0, "id for the transaction.")
+	sendCmd.Flags().Uint64VarP(&nonce, "nonce", "n", 0, "id for the transaction.")
 	sendCmd.Flags().StringVarP(&to, "to", "t", "", "Url of the node.")
-	sendCmd.Flags().UintVarP(&value, "value", "v", 0, "Value to send.")
-	sendCmd.Flags().UintVarP(&tip, "tip", "c", 0, "Tip to send.")
+	sendCmd.Flags().Uint64VarP(&value, "value", "v", 0, "Value to send.")
+	sendCmd.Flags().Uint64VarP(&tip, "tip", "c", 0, "Tip to send.")
 	sendCmd.Flags().BytesHexVarP(&data, "data", "d", nil, "Data to send.")
 }
 

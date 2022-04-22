@@ -33,18 +33,18 @@ var advancedTipSelect = func(m map[database.AccountID][]database.BlockTx, howMan
 
 type advancedTips struct {
 	howMany   int
-	bestTip   uint
+	bestTip   uint64
 	bestPos   map[database.AccountID]int
-	groupTips map[database.AccountID][]uint
+	groupTips map[database.AccountID][]uint64
 	groups    []database.AccountID
 }
 
 func newAdvancedTips(m map[database.AccountID][]database.BlockTx, howMany int) *advancedTips {
-	groupTips := map[database.AccountID][]uint{}
+	groupTips := map[database.AccountID][]uint64{}
 	groups := []database.AccountID{}
 
 	for from := range m {
-		groupTips[from] = []uint{0}
+		groupTips[from] = []uint64{0}
 		groups = append(groups, from)
 	}
 
@@ -69,7 +69,7 @@ func (at *advancedTips) findBest() map[database.AccountID]int {
 	return at.bestPos
 }
 
-func (at *advancedTips) findBestTransactions(groupID, pos int, left int, currPos map[database.AccountID]int, prevTip uint) {
+func (at *advancedTips) findBestTransactions(groupID, pos int, left int, currPos map[database.AccountID]int, prevTip uint64) {
 	if prevTip > at.bestTip {
 		at.bestTip = prevTip
 		at.bestPos = currPos

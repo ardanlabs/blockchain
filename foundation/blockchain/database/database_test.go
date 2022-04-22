@@ -21,10 +21,10 @@ func Test_Transactions(t *testing.T) {
 	type table struct {
 		name        string
 		miner       database.AccountID
-		minerReward uint
-		gas         uint
-		balances    map[string]uint
-		final       map[database.AccountID]uint
+		minerReward uint64
+		gas         uint64
+		balances    map[string]uint64
+		final       map[database.AccountID]uint64
 		txs         []database.Tx
 	}
 
@@ -34,26 +34,30 @@ func Test_Transactions(t *testing.T) {
 			miner:       "0xFef311483Cc040e1A89fb9bb469eeB8A70935EF8",
 			minerReward: 100,
 			gas:         80,
-			balances: map[string]uint{
+			balances: map[string]uint64{
 				"0xdd6B972ffcc631a62CAE1BB9d80b7ff429c8ebA4": 1000,
 				"0xF01813E4B85e178A83e29B8E7bF26BD830a25f32": 0,
 				"0xFef311483Cc040e1A89fb9bb469eeB8A70935EF8": 0,
 			},
-			final: map[database.AccountID]uint{
+			final: map[database.AccountID]uint64{
 				"0xdd6B972ffcc631a62CAE1BB9d80b7ff429c8ebA4": 540,
 				"0xF01813E4B85e178A83e29B8E7bF26BD830a25f32": 200,
 				"0xFef311483Cc040e1A89fb9bb469eeB8A70935EF8": 360,
 			},
 			txs: []database.Tx{
 				{
-					ToID:  "0xF01813E4B85e178A83e29B8E7bF26BD830a25f32",
-					Value: 100,
-					Tip:   50,
+					ChainID: 1,
+					Nonce:   1,
+					ToID:    "0xF01813E4B85e178A83e29B8E7bF26BD830a25f32",
+					Value:   100,
+					Tip:     50,
 				},
 				{
-					ToID:  "0xF01813E4B85e178A83e29B8E7bF26BD830a25f32",
-					Value: 100,
-					Tip:   50,
+					ChainID: 1,
+					Nonce:   2,
+					ToID:    "0xF01813E4B85e178A83e29B8E7bF26BD830a25f32",
+					Value:   100,
+					Tip:     50,
 				},
 			},
 		},
@@ -65,7 +69,7 @@ func Test_Transactions(t *testing.T) {
 			t.Logf("\tTest %d:\tWhen handling a set of database.", testID)
 			{
 				f := func(t *testing.T) {
-					db, err := database.New("", genesis.Genesis{MiningReward: tst.minerReward, Balances: tst.balances}, nil)
+					db, err := database.New("", genesis.Genesis{ChainID: 1, MiningReward: tst.minerReward, Balances: tst.balances}, nil)
 					if err != nil {
 						t.Fatalf("\t%s\tTest %d:\tShould be able to open database: %v", failed, testID, err)
 					}
@@ -78,13 +82,13 @@ func Test_Transactions(t *testing.T) {
 						}
 						t.Logf("\t%s\tTest %d:\tShould be able to sign transaction.", success, testID)
 
-						if err := db.ApplyTransaction(tst.miner, blockTx); err != nil {
+						if err := db.ApplyTransaction(database.Block{Header: database.BlockHeader{BeneficiaryID: tst.miner}}, blockTx); err != nil {
 							t.Fatalf("\t%s\tTest %d:\tShould be able to apply transaction: %v", failed, testID, err)
 						}
 						t.Logf("\t%s\tTest %d:\tShould be able to apply transaction.", success, testID)
 					}
 
-					db.ApplyMiningReward(tst.miner)
+					db.ApplyMiningReward(database.Block{Header: database.BlockHeader{BeneficiaryID: tst.miner, MiningReward: tst.minerReward}})
 					t.Logf("\t%s\tTest %d:\tShould be able to apply miner reward.", success, testID)
 
 					accounts := db.CopyAccounts()
@@ -115,9 +119,10 @@ func Test_Transactions(t *testing.T) {
 func TestNonceValidation(t *testing.T) {
 	type table struct {
 		name        string
-		minerReward uint
-		gas         uint
-		balances    map[string]uint
+		miner       database.AccountID
+		minerReward uint64
+		gas         uint64
+		balances    map[string]uint64
 		txs         []database.Tx
 		results     []error
 	}
@@ -125,20 +130,24 @@ func TestNonceValidation(t *testing.T) {
 	tt := []table{
 		{
 			name:        "basic",
+			miner:       "0xFef311483Cc040e1A89fb9bb469eeB8A70935EF8",
 			minerReward: 100,
-			balances:    map[string]uint{},
+			balances:    map[string]uint64{"0xdd6B972ffcc631a62CAE1BB9d80b7ff429c8ebA4": 10},
 			txs: []database.Tx{
 				{
-					Nonce: 5,
-					ToID:  "0xF01813E4B85e178A83e29B8E7bF26BD830a25f32",
+					ChainID: 1,
+					Nonce:   5,
+					ToID:    "0xF01813E4B85e178A83e29B8E7bF26BD830a25f32",
 				},
 				{
-					Nonce: 3,
-					ToID:  "0xF01813E4B85e178A83e29B8E7bF26BD830a25f32",
+					ChainID: 1,
+					Nonce:   3,
+					ToID:    "0xF01813E4B85e178A83e29B8E7bF26BD830a25f32",
 				},
 				{
-					Nonce: 6,
-					ToID:  "0xF01813E4B85e178A83e29B8E7bF26BD830a25f32",
+					ChainID: 1,
+					Nonce:   6,
+					ToID:    "0xF01813E4B85e178A83e29B8E7bF26BD830a25f32",
 				},
 			},
 			results: []error{nil, errors.New("error"), nil},
@@ -150,7 +159,7 @@ func TestNonceValidation(t *testing.T) {
 		for testID, tst := range tt {
 			t.Logf("\tTest %d:\tWhen handling a set of transactions.", testID)
 			{
-				db, err := database.New("", genesis.Genesis{MiningReward: tst.minerReward, Balances: tst.balances}, nil)
+				db, err := database.New("", genesis.Genesis{ChainID: 1, MiningReward: tst.minerReward, Balances: tst.balances}, nil)
 				if err != nil {
 					t.Fatalf("\t%s\tTest %d:\tShould be able to open database: %v", failed, testID, err)
 				}
@@ -163,9 +172,9 @@ func TestNonceValidation(t *testing.T) {
 					}
 					t.Logf("\t%s\tTest %d:\tShould be able to sign transaction.", success, testID)
 
-					err = db.ApplyTransaction("test", blockTx)
+					err = db.ApplyTransaction(database.Block{Header: database.BlockHeader{BeneficiaryID: tst.miner}}, blockTx)
 					if (tst.results[i] == nil && err != nil) || (tst.results[i] != nil && err == nil) {
-						t.Fatalf("\t%s\tTest %d:\tShould be able to apply transaction.", failed, testID)
+						t.Fatalf("\t%s\tTest %d:\tShould be able to apply transaction : %s", failed, testID, err)
 					}
 				}
 			}
@@ -175,7 +184,7 @@ func TestNonceValidation(t *testing.T) {
 
 // =============================================================================
 
-func sign(tx database.Tx, gas uint) (database.BlockTx, error) {
+func sign(tx database.Tx, gas uint64) (database.BlockTx, error) {
 	pk, err := crypto.HexToECDSA("fae85851bdf5c9f49923722ce38f3c1defcfd3619ef5453230a58ad805499959")
 	if err != nil {
 		return database.BlockTx{}, err

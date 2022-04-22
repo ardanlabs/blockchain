@@ -68,7 +68,7 @@ func (mp *Mempool) Upsert(tx database.BlockTx) error {
 	// transaction in the mempool and so do we. We want to limit users
 	// from this sort of behavior.
 	if etx, exists := mp.pool[key]; exists {
-		if tx.Tip < uint(math.Round(float64(etx.Tip)*1.10)) {
+		if tx.Tip < uint64(math.Round(float64(etx.Tip)*1.10)) {
 			return errors.New("replacing a transaction requires a 10% bump in the tip")
 		}
 	}
@@ -101,18 +101,27 @@ func (mp *Mempool) Truncate() {
 	mp.pool = make(map[string]database.BlockTx)
 }
 
-// PickBest uses the configured sort strategy to return the next set
-// of transactions for the next block. If 0 is passed, all transactions
-// in the mempool will be returned.
-func (mp *Mempool) PickBest(howMany ...uint) []database.BlockTx {
+// PickBest uses the configured sort strategy to return a set of transactions.
+// If 0 is passed, all transactions in the mempool will be returned.
+func (mp *Mempool) PickBest(howMany ...uint16) []database.BlockTx {
 	number := 0
 	if len(howMany) > 0 {
 		number = int(howMany[0])
 	}
 
-	// Copy all the transactions for each account into separate
-	// slices for each account.
+	// CORE NOTE: Most blockchains do set a max block size limit and this size
+	// will determined which transactions are selected. When picking the best
+	// transactions for the next block, the Ardan blockchain is currently not
+	// focused on block size but a max number of transactions.
+	//
+	// When the selection algorithm does need to consider sizing, picking the
+	// right transactions that maximize profit gets really hard. On top of this,
+	// today a miner gets a mining reward for each mined block. In the
+	// future this could go away leaving just fees for the transactions that are
+	// selected as the only form of revenue. This will change how transactions
+	// need to be selected.
 
+	// Copy all the transactions for each account into separate slices.
 	m := make(map[database.AccountID][]database.BlockTx)
 	mp.mu.RLock()
 	{
@@ -127,6 +136,8 @@ func (mp *Mempool) PickBest(howMany ...uint) []database.BlockTx {
 	}
 	mp.mu.RUnlock()
 
+	// The selection algorithms is expecting this slice of transactions
+	// organized by account.
 	return mp.selectFn(m, number)
 }
 

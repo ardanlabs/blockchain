@@ -237,11 +237,12 @@ func (h Handlers) BlocksByAccount(ctx context.Context, w http.ResponseWriter, r 
 		}
 
 		b := block{
+			Number:        blk.Header.Number,
 			PrevBlockHash: blk.Header.PrevBlockHash,
+			TimeStamp:     blk.Header.TimeStamp,
 			BeneficiaryID: blk.Header.BeneficiaryID,
 			Difficulty:    blk.Header.Difficulty,
-			Number:        blk.Header.Number,
-			TimeStamp:     blk.Header.TimeStamp,
+			MiningReward:  blk.Header.MiningReward,
 			Nonce:         blk.Header.Nonce,
 			TransRoot:     blk.Header.TransRoot,
 			Transactions:  trans,

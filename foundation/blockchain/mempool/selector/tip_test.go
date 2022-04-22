@@ -30,7 +30,7 @@ func sign(hexKey string, tx database.Tx) (database.BlockTx, error) {
 }
 
 func TestTipSort(t *testing.T) {
-	tran := func(nonce uint, hexKey string, tip uint, ts time.Time) database.BlockTx {
+	tran := func(nonce uint64, hexKey string, tip uint64, ts time.Time) database.BlockTx {
 		const toID = "0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76"
 
 		tx, err := sign(hexKey, database.Tx{Nonce: nonce, ToID: toID, Tip: tip})
