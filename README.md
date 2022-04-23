@@ -6,11 +6,9 @@
 Copyright 2021, 2022, Ardan Labs  
 info@ardanlabs.com
 
-**This is an early work in progress and not complete for teaching at this time. That being said, I am doing my best to refactor constantly to make sure the code is correct and idiomatic.**
-
 ## Ultimate Blockchain Classes
 
-This class teaches you how to build a semantic correct blockchain service in Go. From the beginning, you will pair program with the instructor walking through the design philosophies and guidelines.
+This class teaches you how to build a semantically correct blockchain in Go. The implementation of the Ardan blockchain takes inspiration from both Bitcoin and Ethereum. The class is a mix of lecture and coding. During the class you will learn the different aspects of blockchain technology and pair program with the instructor as you build this code base from scratch.
 
 Learn more about the project:
 
