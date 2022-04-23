@@ -18,7 +18,6 @@ import (
 	-- Chrome Wallet
 
 	-- Blockchain
-	Ethereum: Consider adding transaction receipts.
 	When a proposed block arrives, check if that node is in the peer list.
 	Add integration test for the state package.
 	Change out HTTP to JSON-RPC.
