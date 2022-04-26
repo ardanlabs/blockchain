@@ -3,10 +3,7 @@
 package database
 
 import (
-	"bufio"
-	"encoding/json"
 	"fmt"
-	"os"
 	"sync"
 
 	"github.com/ardanlabs/blockchain/foundation/blockchain/genesis"
@@ -20,40 +17,24 @@ type Database struct {
 	latestBlock Block
 	accounts    map[AccountID]Account
 
-	dbPath string
-	dbFile *os.File
+	storage Storage
 }
 
 // New constructs a new database and applies account genesis information and
 // reads/writes the blockchain database on disk if a dbPath is provided.
-func New(dbPath string, genesis genesis.Genesis, evHandler func(v string, args ...any)) (*Database, error) {
-	var dbFile *os.File
-
-	// If not path is provided, the database will sync only to the
-	// genesis information.
-	if dbPath != "" {
-		var err error
-		dbFile, err = os.OpenFile(dbPath, os.O_APPEND|os.O_RDWR|os.O_CREATE, 0600)
-		if err != nil {
-			return nil, err
-		}
-	}
+func New(genesis genesis.Genesis, storage Storage, evHandler func(v string, args ...any)) (*Database, error) {
 
 	db := Database{
 		genesis:  genesis,
 		accounts: make(map[AccountID]Account),
-		dbPath:   dbPath,
-		dbFile:   dbFile,
+		storage:  storage,
 	}
 
 	// Read all the blocks from disk if a path is provided.
 	var blocks []Block
-	if dbFile != nil {
-		var err error
-		blocks, err = db.ReadAllBlocks(evHandler, true)
-		if err != nil {
-			return nil, err
-		}
+	blocks, err := db.ReadAllBlocks(evHandler, true)
+	if err != nil {
+		return nil, err
 	}
 
 	// Update the database with account balance information from genesis.
@@ -70,43 +51,24 @@ func New(dbPath string, genesis genesis.Genesis, evHandler func(v string, args .
 		db.latestBlock = blocks[len(blocks)-1]
 	}
 
-	// Update the databse with account balance information from blocks.
+	// Update the database with account balance information from blocks.
 	for _, block := range blocks {
 		for _, tx := range block.Trans.Values() {
 			db.ApplyTransaction(block, tx)
 		}
 		db.ApplyMiningReward(block)
 	}
-
 	return &db, nil
 }
 
 // Close closes the open blocks database.
 func (db *Database) Close() {
-	db.mu.Lock()
-	defer db.mu.Unlock()
-
-	db.dbFile.Close()
+	db.storage.Close()
 }
 
 // Reset re-initalizes the database back to the genesis state.
 func (db *Database) Reset() error {
-	db.mu.Lock()
-	defer db.mu.Unlock()
-
-	// Close and remove the current file.
-	db.dbFile.Close()
-	if err := os.Remove(db.dbPath); err != nil {
-		return err
-	}
-
-	// Open a new blockchain database file with create.
-	dbFile, err := os.OpenFile(db.dbPath, os.O_CREATE|os.O_RDWR, 0600)
-	if err != nil {
-		return err
-	}
-	db.dbFile = dbFile
-
+	db.storage.Reset()
 	// Initalizes the database back to the genesis information.
 	db.latestBlock = Block{}
 	db.accounts = make(map[AccountID]Account)
@@ -241,46 +203,21 @@ func (db *Database) LatestBlock() Block {
 
 // Write adds a new block to the chain.
 func (db *Database) Write(block BlockFS) error {
-	db.mu.Lock()
-	defer db.mu.Unlock()
-
-	// Marshal the block for writing to disk.
-	blockFSJson, err := json.Marshal(block)
-	if err != nil {
-		return err
-	}
-
-	// Write the new block to the chain on disk.
-	if _, err := db.dbFile.Write(append(blockFSJson, '\n')); err != nil {
-		return err
-	}
-
-	return nil
+	return db.storage.Write(block)
 }
 
 // ReadAllBlocks loads all existing blocks from storage into memory. In a real
 // world situation this would require a lot of memory.
 func (db *Database) ReadAllBlocks(evHandler func(v string, args ...any), validate bool) ([]Block, error) {
-	dbFile, err := os.Open(db.dbPath)
-	if err != nil {
-		return nil, err
-	}
-	defer dbFile.Close()
-
 	var blocks []Block
 	var latestBlock Block
-	scanner := bufio.NewScanner(dbFile)
-	for scanner.Scan() {
-		if err := scanner.Err(); err != nil {
+	iter := db.storage.Foreach()
+	for blockFS, err := iter.Next(); !iter.Done(); blockFS, err = iter.Next() {
+		if err != nil {
 			return nil, err
 		}
 
-		var blockFS BlockFS
-		if err := json.Unmarshal(scanner.Bytes(), &blockFS); err != nil {
-			return nil, err
-		}
-
-		block, err := ToBlock(blockFS)
+		block, err := ToBlock(*blockFS)
 		if err != nil {
 			return nil, err
 		}

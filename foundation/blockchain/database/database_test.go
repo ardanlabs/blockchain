@@ -69,7 +69,11 @@ func Test_Transactions(t *testing.T) {
 			t.Logf("\tTest %d:\tWhen handling a set of database.", testID)
 			{
 				f := func(t *testing.T) {
-					db, err := database.New("", genesis.Genesis{ChainID: 1, MiningReward: tst.minerReward, Balances: tst.balances}, nil)
+					storage, err := database.NewJSONStorage("test.db")
+					if err != nil {
+						t.Fatalf("\t%s\tTest %d:\tShould be able to open storage: %v", failed, testID, err)
+					}
+					db, err := database.New(genesis.Genesis{ChainID: 1, MiningReward: tst.minerReward, Balances: tst.balances}, storage, nil)
 					if err != nil {
 						t.Fatalf("\t%s\tTest %d:\tShould be able to open database: %v", failed, testID, err)
 					}
@@ -159,7 +163,11 @@ func TestNonceValidation(t *testing.T) {
 		for testID, tst := range tt {
 			t.Logf("\tTest %d:\tWhen handling a set of transactions.", testID)
 			{
-				db, err := database.New("", genesis.Genesis{ChainID: 1, MiningReward: tst.minerReward, Balances: tst.balances}, nil)
+				storage, err := database.NewJSONStorage("test.db")
+				if err != nil {
+					t.Fatalf("\t%s\tTest %d:\tShould be able to open storage: %v", failed, testID, err)
+				}
+				db, err := database.New(genesis.Genesis{ChainID: 1, MiningReward: tst.minerReward, Balances: tst.balances}, storage, nil)
 				if err != nil {
 					t.Fatalf("\t%s\tTest %d:\tShould be able to open database: %v", failed, testID, err)
 				}
