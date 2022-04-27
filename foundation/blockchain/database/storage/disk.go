@@ -97,6 +97,8 @@ func (d *Disk) getPath(blockNum uint64) string {
 	return path.Join(d.dbPath, fmt.Sprintf("%s.json", name))
 }
 
+// =============================================================================
+
 // DiskIterator represents the iteration implementation for walking
 // through and reading blocks on disk. This implements the database
 // Iterator interface.

@@ -9,9 +9,9 @@ import (
 	"github.com/ardanlabs/blockchain/foundation/blockchain/genesis"
 )
 
-// Serializer interface represents the behavior required to be implemented by any
-// package providing support for storing and reading the blockchain.
-type Serializer interface {
+// Storage interface represents the behavior required to be implemented by any
+// package providing support for reading and writing the blockchain.
+type Storage interface {
 	Write(blockData BlockData) error
 	GetBlock(num uint64) (BlockData, error)
 	ForEach() Iterator
@@ -28,25 +28,6 @@ type Iterator interface {
 
 // =============================================================================
 
-type DatabaseIterator struct {
-	iterator Iterator
-}
-
-// Next retrieves the next block from disk.
-func (di *DatabaseIterator) Next() (Block, error) {
-	blockData, err := di.iterator.Next()
-	if err != nil {
-		return Block{}, err
-	}
-
-	return ToBlock(blockData)
-}
-
-// Done returns the end of chain value.
-func (di *DatabaseIterator) Done() bool {
-	return di.iterator.Done()
-}
-
 // Database manages data related to accounts who have transacted on the blockchain.
 type Database struct {
 	mu sync.RWMutex
@@ -55,17 +36,16 @@ type Database struct {
 	latestBlock Block
 	accounts    map[AccountID]Account
 
-	serializer Serializer
+	storage Storage
 }
 
 // New constructs a new database and applies account genesis information and
 // reads/writes the blockchain database on disk if a dbPath is provided.
-func New(genesis genesis.Genesis, serializer Serializer, evHandler func(v string, args ...any)) (*Database, error) {
-
+func New(genesis genesis.Genesis, storage Storage, evHandler func(v string, args ...any)) (*Database, error) {
 	db := Database{
-		genesis:    genesis,
-		accounts:   make(map[AccountID]Account),
-		serializer: serializer,
+		genesis:  genesis,
+		accounts: make(map[AccountID]Account),
+		storage:  storage,
 	}
 
 	// Update the database with account balance information from genesis.
@@ -77,20 +57,17 @@ func New(genesis genesis.Genesis, serializer Serializer, evHandler func(v string
 		db.accounts[accountID] = Account{Balance: balance}
 	}
 
-	// Read all the blocks from disk if a path is provided.
+	// Capture the latest block after reading all the blocks from storage.
 	var latestBlock Block
 
-	iter := db.serializer.ForEach()
-	for blockData, err := iter.Next(); !iter.Done(); blockData, err = iter.Next() {
+	// Read all the blocks from storage.
+	iter := db.ForEach()
+	for block, err := iter.Next(); !iter.Done(); block, err = iter.Next() {
 		if err != nil {
 			return nil, err
 		}
 
-		block, err := ToBlock(blockData)
-		if err != nil {
-			return nil, err
-		}
-
+		// Validate the block values and cryptographic audit trail.
 		if err := block.ValidateBlock(latestBlock, evHandler); err != nil {
 			return nil, err
 		}
@@ -103,24 +80,28 @@ func New(genesis genesis.Genesis, serializer Serializer, evHandler func(v string
 			}
 			db.accounts[accountID] = Account{Balance: balance}
 		}
+
+		// Update the database with the transaction information.
 		for _, tx := range block.Trans.Values() {
 			db.ApplyTransaction(block, tx)
 		}
 		db.ApplyMiningReward(block)
 
+		// Update the current latest block.
 		latestBlock = block
 	}
+
 	return &db, nil
 }
 
 // Close closes the open blocks database.
 func (db *Database) Close() {
-	db.serializer.Close()
+	db.storage.Close()
 }
 
 // Reset re-initalizes the database back to the genesis state.
 func (db *Database) Reset() error {
-	db.serializer.Reset()
+	db.storage.Reset()
 
 	// Initalizes the database back to the genesis information.
 	db.latestBlock = Block{}
@@ -257,21 +238,45 @@ func (db *Database) LatestBlock() Block {
 
 // Write adds a new block to the chain.
 func (db *Database) Write(block Block) error {
-	return db.serializer.Write(NewBlockData(block))
+	return db.storage.Write(NewBlockData(block))
 }
 
 // ForEach returns an iterator to walk through all the blocks
 // starting with block number 1.
 func (db *Database) ForEach() DatabaseIterator {
-	return DatabaseIterator{iterator: db.serializer.ForEach()}
+	return DatabaseIterator{iterator: db.storage.ForEach()}
 }
 
 // GetBlock searches the blockchain on disk to locate and return the
 // contents of the specified block by number.
 func (db *Database) GetBlock(num uint64) (Block, error) {
-	blockData, err := db.serializer.GetBlock(num)
+	blockData, err := db.storage.GetBlock(num)
 	if err != nil {
 		return Block{}, err
 	}
+
 	return ToBlock(blockData)
+}
+
+// =============================================================================
+
+// DatabaseIterator provides support for iterating over the blocks in the
+// blockchain database using the configured storage option.
+type DatabaseIterator struct {
+	iterator Iterator
+}
+
+// Next retrieves the next block from disk.
+func (di *DatabaseIterator) Next() (Block, error) {
+	blockData, err := di.iterator.Next()
+	if err != nil {
+		return Block{}, err
+	}
+
+	return ToBlock(blockData)
+}
+
+// Done returns the end of chain value.
+func (di *DatabaseIterator) Done() bool {
+	return di.iterator.Done()
 }

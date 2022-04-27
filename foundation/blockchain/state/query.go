@@ -52,16 +52,19 @@ func (s *State) QueryBlocksByNumber(from uint64, to uint64) []database.Block {
 // from disk first.
 func (s *State) QueryBlocksByAccount(accountID database.AccountID) ([]database.Block, error) {
 	var out []database.Block
+
 	iter := s.db.ForEach()
 	for block, err := iter.Next(); !iter.Done(); block, err = iter.Next() {
 		if err != nil {
 			return nil, err
 		}
+
 		for _, tx := range block.Trans.Values() {
 			fromID, err := tx.FromAccount()
 			if err != nil {
 				continue
 			}
+
 			if accountID == "" || fromID == accountID || tx.ToID == accountID {
 				out = append(out, block)
 				break
