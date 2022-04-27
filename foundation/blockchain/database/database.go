@@ -28,6 +28,25 @@ type Iterator interface {
 
 // =============================================================================
 
+type DatabaseIterator struct {
+	iterator Iterator
+}
+
+// Next retrieves the next block from disk.
+func (di *DatabaseIterator) Next() (Block, error) {
+	blockData, err := di.iterator.Next()
+	if err != nil {
+		return Block{}, err
+	}
+
+	return ToBlock(blockData)
+}
+
+// Done returns the end of chain value.
+func (di *DatabaseIterator) Done() bool {
+	return di.iterator.Done()
+}
+
 // Database manages data related to accounts who have transacted on the blockchain.
 type Database struct {
 	mu sync.RWMutex
@@ -49,13 +68,6 @@ func New(genesis genesis.Genesis, serializer Serializer, evHandler func(v string
 		serializer: serializer,
 	}
 
-	// Read all the blocks from disk if a path is provided.
-	var blocks []Block
-	blocks, err := db.ReadAllBlocks(evHandler, true)
-	if err != nil {
-		return nil, err
-	}
-
 	// Update the database with account balance information from genesis.
 	for accountStr, balance := range genesis.Balances {
 		accountID, err := ToAccountID(accountStr)
@@ -65,17 +77,38 @@ func New(genesis genesis.Genesis, serializer Serializer, evHandler func(v string
 		db.accounts[accountID] = Account{Balance: balance}
 	}
 
-	// Set the current latest block in the chain.
-	if len(blocks) > 0 {
-		db.latestBlock = blocks[len(blocks)-1]
-	}
+	// Read all the blocks from disk if a path is provided.
+	var latestBlock Block
 
-	// Update the database with account balance information from blocks.
-	for _, block := range blocks {
+	iter := db.serializer.ForEach()
+	for blockData, err := iter.Next(); !iter.Done(); blockData, err = iter.Next() {
+		if err != nil {
+			return nil, err
+		}
+
+		block, err := ToBlock(blockData)
+		if err != nil {
+			return nil, err
+		}
+
+		if err := block.ValidateBlock(latestBlock, evHandler); err != nil {
+			return nil, err
+		}
+
+		// Update the database with account balance information from genesis.
+		for accountStr, balance := range genesis.Balances {
+			accountID, err := ToAccountID(accountStr)
+			if err != nil {
+				return nil, err
+			}
+			db.accounts[accountID] = Account{Balance: balance}
+		}
 		for _, tx := range block.Trans.Values() {
 			db.ApplyTransaction(block, tx)
 		}
 		db.ApplyMiningReward(block)
+
+		latestBlock = block
 	}
 	return &db, nil
 }
@@ -227,33 +260,18 @@ func (db *Database) Write(block Block) error {
 	return db.serializer.Write(NewBlockData(block))
 }
 
-// ReadAllBlocks loads all existing blocks from storage into memory. In a real
-// world situation this would require a lot of memory.
-func (db *Database) ReadAllBlocks(evHandler func(v string, args ...any), validate bool) ([]Block, error) {
-	var blocks []Block
-	var latestBlock Block
+// ForEach returns an iterator to walk through all the blocks
+// starting with block number 1.
+func (db *Database) ForEach() DatabaseIterator {
+	return DatabaseIterator{iterator: db.serializer.ForEach()}
+}
 
-	iter := db.serializer.ForEach()
-	for blockData, err := iter.Next(); !iter.Done(); blockData, err = iter.Next() {
-		if err != nil {
-			return nil, err
-		}
-
-		block, err := ToBlock(blockData)
-		if err != nil {
-			return nil, err
-		}
-
-		// We want to skip the block validation for query and retrieve operations.
-		if validate {
-			if err := block.ValidateBlock(latestBlock, evHandler); err != nil {
-				return nil, err
-			}
-		}
-
-		blocks = append(blocks, block)
-		latestBlock = block
+// GetBlock searches the blockchain on disk to locate and return the
+// contents of the specified block by number.
+func (db *Database) GetBlock(num uint64) (Block, error) {
+	blockData, err := db.serializer.GetBlock(num)
+	if err != nil {
+		return Block{}, err
 	}
-
-	return blocks, nil
+	return ToBlock(blockData)
 }

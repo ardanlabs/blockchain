@@ -80,8 +80,8 @@ func (d *Disk) GetBlock(num uint64) (database.BlockData, error) {
 	return blockData, nil
 }
 
-// ForEach returns an iterator to walk through all the blocks on
-// disk starting with block number 1.
+// ForEach returns an iterator to walk through all the blocks
+// starting with block number 1.
 func (d *Disk) ForEach() database.Iterator {
 	return &DiskIterator{disk: d}
 }
