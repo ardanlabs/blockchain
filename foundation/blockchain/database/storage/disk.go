@@ -118,7 +118,7 @@ func (di *DiskIterator) Next() (database.BlockData, error) {
 		di.eoc = true
 	}
 
-	return blockData, nil
+	return blockData, err
 }
 
 // Done returns the end of chain value.

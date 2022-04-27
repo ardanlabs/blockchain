@@ -37,7 +37,7 @@ func NewBlockData(block Block) BlockData {
 	return blockData
 }
 
-// ToDatabaseBlock converts a storage block into a database block.
+// ToBlock converts a storage block into a database block.
 func ToBlock(blockData BlockData) (Block, error) {
 	tree, err := merkle.NewTree(blockData.Trans)
 	if err != nil {

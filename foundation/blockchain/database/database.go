@@ -10,7 +10,7 @@ import (
 )
 
 // Serializer interface represents the behavior required to be implemented by any
-// package providing support for storing and reading the blockchain from disk.
+// package providing support for storing and reading the blockchain.
 type Serializer interface {
 	Write(blockData BlockData) error
 	GetBlock(num uint64) (BlockData, error)
@@ -20,7 +20,7 @@ type Serializer interface {
 }
 
 // Iterator interface represents the behavior required to be implemented by any
-// package providing support to iterate over the blocks stored on disk.
+// package providing support to iterate over the blocks.
 type Iterator interface {
 	Next() (BlockData, error)
 	Done() bool
