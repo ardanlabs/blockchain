@@ -2,3 +2,11 @@
     --main-height: 820px;
     --outer-box-heigth: 740px;
 }
+
+.block-class {
+	border: 2px solid black;
+	border-radius: 10px;
+	background: #60c4ff;
+	padding: 10px;
+	margin: 0 10px;
+}
