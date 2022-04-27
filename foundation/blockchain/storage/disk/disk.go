@@ -1,4 +1,6 @@
-package storage
+// Package disk implements the ability to read and write blocks to disk
+// using different serialization options.
+package disk
 
 import (
 	"encoding/json"

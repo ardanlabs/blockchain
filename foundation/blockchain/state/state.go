@@ -6,10 +6,10 @@ import (
 	"sync"
 
 	"github.com/ardanlabs/blockchain/foundation/blockchain/database"
-	"github.com/ardanlabs/blockchain/foundation/blockchain/database/storage"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/genesis"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/mempool"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/peer"
+	"github.com/ardanlabs/blockchain/foundation/blockchain/storage/disk"
 )
 
 /*
@@ -90,7 +90,7 @@ func New(cfg Config) (*State, error) {
 		return nil, err
 	}
 
-	storage, err := storage.NewDisk(cfg.DBPath)
+	storage, err := disk.NewDisk(cfg.DBPath)
 	if err != nil {
 		return nil, err
 	}
