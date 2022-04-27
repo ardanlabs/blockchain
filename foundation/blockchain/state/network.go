@@ -33,7 +33,7 @@ func NewNetBlock(block database.Block) NetBlock {
 	return netBlock
 }
 
-// toDatabaseBlock converts a storage block into a database block.
+// toDatabaseBlock converts a network block into a database block.
 func toDatabaseBlock(netBlock NetBlock) (database.Block, error) {
 	tree, err := merkle.NewTree(netBlock.Trans)
 	if err != nil {
@@ -90,11 +90,11 @@ func (s *State) NetSendTxToPeers(tx database.BlockTx) {
 	}
 }
 
-// NetQueryPeerStatus looks for new nodes on the blockchain by asking
+// NetRequestPeerStatus looks for new nodes on the blockchain by asking
 // known nodes for their peer list. New nodes are added to the list.
-func (s *State) NetQueryPeerStatus(pr peer.Peer) (peer.PeerStatus, error) {
-	s.evHandler("state: NetQueryPeerStatus: started: %s", pr)
-	defer s.evHandler("state: NetQueryPeerStatus: completed: %s", pr)
+func (s *State) NetRequestPeerStatus(pr peer.Peer) (peer.PeerStatus, error) {
+	s.evHandler("state: NetRequestPeerStatus: started: %s", pr)
+	defer s.evHandler("state: NetRequestPeerStatus: completed: %s", pr)
 
 	url := fmt.Sprintf("%s/status", fmt.Sprintf(baseURL, pr.Host))
 
@@ -103,15 +103,15 @@ func (s *State) NetQueryPeerStatus(pr peer.Peer) (peer.PeerStatus, error) {
 		return peer.PeerStatus{}, err
 	}
 
-	s.evHandler("state: NetQueryPeerStatus: peer-node[%s]: latest-blknum[%d]: peer-list[%s]", pr, ps.LatestBlockNumber, ps.KnownPeers)
+	s.evHandler("state: NetRequestPeerStatus: peer-node[%s]: latest-blknum[%d]: peer-list[%s]", pr, ps.LatestBlockNumber, ps.KnownPeers)
 
 	return ps, nil
 }
 
-// NetRetrievePeerMempool asks the peer for the transactions in their mempool.
-func (s *State) NetRetrievePeerMempool(pr peer.Peer) ([]database.BlockTx, error) {
-	s.evHandler("state: NetRetrievePeerMempool: started: %s", pr)
-	defer s.evHandler("state: NetRetrievePeerMempool: completed: %s", pr)
+// NetRequestPeerMempool asks the peer for the transactions in their mempool.
+func (s *State) NetRequestPeerMempool(pr peer.Peer) ([]database.BlockTx, error) {
+	s.evHandler("state: NetRequestPeerMempool: started: %s", pr)
+	defer s.evHandler("state: NetRequestPeerMempool: completed: %s", pr)
 
 	url := fmt.Sprintf("%s/tx/list", fmt.Sprintf(baseURL, pr.Host))
 
@@ -120,16 +120,16 @@ func (s *State) NetRetrievePeerMempool(pr peer.Peer) ([]database.BlockTx, error)
 		return nil, err
 	}
 
-	s.evHandler("state: sync: NetRetrievePeerMempool: len[%d]", len(mempool))
+	s.evHandler("state: sync: NetRequestPeerMempool: len[%d]", len(mempool))
 
 	return mempool, nil
 }
 
-// NetRetrievePeerBlocks queries the specified node asking for blocks this node does
+// NetRequestPeerBlocks queries the specified node asking for blocks this node does
 // not have, then writes them to disk.
-func (s *State) NetRetrievePeerBlocks(pr peer.Peer) error {
-	s.evHandler("worker: NetRetrievePeerBlocks: started: %s", pr)
-	defer s.evHandler("worker: NetRetrievePeerBlocks: completed: %s", pr)
+func (s *State) NetRequestPeerBlocks(pr peer.Peer) error {
+	s.evHandler("worker: NetRequestPeerBlocks: started: %s", pr)
+	defer s.evHandler("worker: NetRequestPeerBlocks: completed: %s", pr)
 
 	// CORE NOTE: Ideally you want to start by pulling just block headers and
 	// performing the cryptographic audit so you know your're not being attacked.
@@ -150,7 +150,7 @@ func (s *State) NetRetrievePeerBlocks(pr peer.Peer) error {
 		return err
 	}
 
-	s.evHandler("worker: NetRetrievePeerBlocks: found blocks[%d]", len(blocks))
+	s.evHandler("worker: NetRequestPeerBlocks: found blocks[%d]", len(blocks))
 
 	for _, block := range blocks {
 		if err := s.ProcessProposedBlock(block); err != nil {

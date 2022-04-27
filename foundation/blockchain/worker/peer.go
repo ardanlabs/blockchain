@@ -32,7 +32,7 @@ func (w *Worker) runPeersOperation() {
 	for _, peer := range w.state.RetrieveKnownPeers() {
 
 		// Retrieve the status of this peer.
-		peerStatus, err := w.state.NetQueryPeerStatus(peer)
+		peerStatus, err := w.state.NetRequestPeerStatus(peer)
 		if err != nil {
 			w.evHandler("worker: runPeersOperation: queryPeerStatus: %s: ERROR: %s", peer.Host, err)
 		}

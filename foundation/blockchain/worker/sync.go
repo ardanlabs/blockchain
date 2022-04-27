@@ -8,7 +8,7 @@ func (w *Worker) Sync() {
 	for _, peer := range w.state.RetrieveKnownPeers() {
 
 		// Retrieve the status of this peer.
-		peerStatus, err := w.state.NetQueryPeerStatus(peer)
+		peerStatus, err := w.state.NetRequestPeerStatus(peer)
 		if err != nil {
 			w.evHandler("worker: sync: queryPeerStatus: %s: ERROR: %s", peer.Host, err)
 		}
@@ -17,7 +17,7 @@ func (w *Worker) Sync() {
 		w.addNewPeers(peerStatus.KnownPeers)
 
 		// Retrieve the mempool from the peer.
-		pool, err := w.state.NetRetrievePeerMempool(peer)
+		pool, err := w.state.NetRequestPeerMempool(peer)
 		if err != nil {
 			w.evHandler("worker: sync: retrievePeerMempool: %s: ERROR: %s", peer.Host, err)
 		}
@@ -30,7 +30,7 @@ func (w *Worker) Sync() {
 		if peerStatus.LatestBlockNumber > w.state.RetrieveLatestBlock().Header.Number {
 			w.evHandler("worker: sync: retrievePeerBlocks: %s: latestBlockNumber[%d]", peer.Host, peerStatus.LatestBlockNumber)
 
-			if err := w.state.NetRetrievePeerBlocks(peer); err != nil {
+			if err := w.state.NetRequestPeerBlocks(peer); err != nil {
 				w.evHandler("worker: sync: retrievePeerBlocks: %s: ERROR %s", peer.Host, err)
 			}
 		}
