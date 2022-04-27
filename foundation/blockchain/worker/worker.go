@@ -3,11 +3,6 @@
 package worker
 
 import (
-	"bytes"
-	"encoding/json"
-	"errors"
-	"io"
-	"net/http"
 	"sync"
 	"time"
 
@@ -31,7 +26,6 @@ type Worker struct {
 	cancelMining chan chan struct{}
 	txSharing    chan database.BlockTx
 	evHandler    state.EventHandler
-	baseURL      string
 }
 
 // Run creates a worker, registers the worker with the state package, and
@@ -45,7 +39,6 @@ func Run(state *state.State, evHandler state.EventHandler) {
 		cancelMining: make(chan chan struct{}, 1),
 		txSharing:    make(chan database.BlockTx, maxTxShareRequests),
 		evHandler:    evHandler,
-		baseURL:      "http://%s/v1/node",
 	}
 
 	// Register this worker with the state package.
@@ -156,55 +149,4 @@ func (w *Worker) isShutdown() bool {
 	default:
 		return false
 	}
-}
-
-// send is a helper function to send an HTTP request to a node.
-func send(method string, url string, dataSend any, dataRecv any) error {
-	var req *http.Request
-
-	switch {
-	case dataSend != nil:
-		data, err := json.Marshal(dataSend)
-		if err != nil {
-			return err
-		}
-		req, err = http.NewRequest(method, url, bytes.NewReader(data))
-		if err != nil {
-			return err
-		}
-
-	default:
-		var err error
-		req, err = http.NewRequest(method, url, nil)
-		if err != nil {
-			return err
-		}
-	}
-
-	var client http.Client
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode == http.StatusNoContent {
-		return nil
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		msg, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return err
-		}
-		return errors.New(string(msg))
-	}
-
-	if dataRecv != nil {
-		if err := json.NewDecoder(resp.Body).Decode(dataRecv); err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
