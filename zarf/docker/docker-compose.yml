@@ -31,7 +31,7 @@ services:
       NODE_WEB_PUBLIC_HOST: blockchain-node-1:8080
       NODE_WEB_PRIVATE_HOST: blockchain-node-1:9080
        # Use ephemeral filesystem on container for the node.
-      NODE_STATE_DB_PATH: /blocks.db
+      NODE_STATE_DB_PATH: /blocks/
     ports:
       - 7080:7080
       - 8080:8080
@@ -46,7 +46,7 @@ services:
       NODE_WEB_PUBLIC_HOST: blockchain-node-2:8280
       NODE_WEB_PRIVATE_HOST: blockchain-node-2:9280
       # Use ephemeral filesystem on container for node.
-      NODE_STATE_DB_PATH: /blocks.db
+      NODE_STATE_DB_PATH: /blocks/
     ports:
       - 8280:8280
       - 9280:9280
@@ -60,7 +60,7 @@ services:
       NODE_WEB_PUBLIC_HOST: blockchain-node-3:8380
       NODE_WEB_PRIVATE_HOST: blockchain-node-3:9380
       # Use ephemeral filesystem on container for node.
-      NODE_STATE_DB_PATH: /blocks.db
+      NODE_STATE_DB_PATH: /blocks/
     ports:
       - 8380:8380
       - 9380:9380
