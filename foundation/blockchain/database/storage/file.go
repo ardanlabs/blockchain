@@ -39,7 +39,7 @@ func (ard *Ardan) Close() error {
 func (ard *Ardan) Write(dbBlock database.Block) error {
 
 	// Need to convert the block to the storage format.
-	block := newBlock(dbBlock)
+	block := NewBlock(dbBlock)
 
 	// Marshal the block for writing to disk in a more human readable format.
 	data, err := json.MarshalIndent(block, "", "  ")
@@ -74,13 +74,13 @@ func (ard *Ardan) GetBlock(num uint64) (database.Block, error) {
 	defer f.Close()
 
 	// Decode the contents of the block.
-	var block block
+	var block Block
 	if err := json.NewDecoder(f).Decode(&block); err != nil {
 		return database.Block{}, err
 	}
 
 	// Return the block as a database block.
-	return toDatabaseBlock(block)
+	return ToDatabaseBlock(block)
 }
 
 // ForEach returns an iterator to walk through all the blocks on

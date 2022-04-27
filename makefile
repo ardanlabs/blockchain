@@ -74,9 +74,6 @@ load3:
 	go run app/wallet/cli/main.go send -a kennedy -n 6 -t 0xa988b1866EaBF72B4c53b592c97aAD8e4b9bDCC0 -v 200
 	go run app/wallet/cli/main.go send -a pavel -n 6 -t 0x6Fe6CF3c8fF57c58d24BfC869668F48BCbDb3BD9 -v 250
 
-clear-db:
-	cat /dev/null > zblock/blocks.db
-
 # ==============================================================================
 # Viewer support
 

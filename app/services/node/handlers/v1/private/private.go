@@ -10,6 +10,7 @@ import (
 
 	v1 "github.com/ardanlabs/blockchain/business/web/v1"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/database"
+	"github.com/ardanlabs/blockchain/foundation/blockchain/database/storage"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/peer"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/state"
 	"github.com/ardanlabs/blockchain/foundation/nameservice"
@@ -58,14 +59,14 @@ func (h Handlers) SubmitNodeTransaction(ctx context.Context, w http.ResponseWrit
 func (h Handlers) ProposeBlock(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 
 	// Decode the JSON in the post call into a file system block.
-	var netBlock state.NetBlock
-	if err := web.Decode(r, &netBlock); err != nil {
+	var block storage.Block
+	if err := web.Decode(r, &block); err != nil {
 		return fmt.Errorf("unable to decode payload: %w", err)
 	}
 
 	// Ask the state package to validate the proposed block. If the block
 	// passes validation, it will be added to the blockchain database.
-	if err := h.State.ProcessProposedBlock(netBlock); err != nil {
+	if err := h.State.ProcessProposedBlock(block); err != nil {
 		if errors.Is(err, database.ErrChainForked) {
 			h.State.Resync()
 		}
@@ -125,12 +126,12 @@ func (h Handlers) BlocksByNumber(ctx context.Context, w http.ResponseWriter, r *
 		return web.Respond(ctx, w, nil, http.StatusNoContent)
 	}
 
-	netBlocks := make([]state.NetBlock, len(blocks))
+	storageBlocks := make([]storage.Block, len(blocks))
 	for i, block := range blocks {
-		netBlocks[i] = state.NewNetBlock(block)
+		storageBlocks[i] = storage.NewBlock(block)
 	}
 
-	return web.Respond(ctx, w, netBlocks, http.StatusOK)
+	return web.Respond(ctx, w, storageBlocks, http.StatusOK)
 }
 
 // Mempool returns the set of uncommitted transactions.

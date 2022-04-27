@@ -7,16 +7,16 @@ import (
 	"github.com/ardanlabs/blockchain/foundation/blockchain/merkle"
 )
 
-// block represents what serialized to disk.
-type block struct {
+// Block represents what serialized to disk and over the network.
+type Block struct {
 	Hash   string               `json:"hash"`
 	Header database.BlockHeader `json:"block"`
 	Trans  []database.BlockTx   `json:"trans"`
 }
 
-// newBlock constructs a block that can be serialized to disk.
-func newBlock(dbBlock database.Block) block {
-	block := block{
+// NewBlock constructs a block that can be serialized to disk and network.
+func NewBlock(dbBlock database.Block) Block {
+	block := Block{
 		Hash:   dbBlock.Hash(),
 		Header: dbBlock.Header,
 		Trans:  dbBlock.Trans.Values(),
@@ -25,8 +25,8 @@ func newBlock(dbBlock database.Block) block {
 	return block
 }
 
-// toDatabaseBlock converts a storage block into a database block.
-func toDatabaseBlock(block block) (database.Block, error) {
+// ToDatabaseBlock converts a storage block into a database block.
+func ToDatabaseBlock(block Block) (database.Block, error) {
 	tree, err := merkle.NewTree(block.Trans)
 	if err != nil {
 		return database.Block{}, err

@@ -9,44 +9,11 @@ import (
 	"net/http"
 
 	"github.com/ardanlabs/blockchain/foundation/blockchain/database"
-	"github.com/ardanlabs/blockchain/foundation/blockchain/merkle"
+	"github.com/ardanlabs/blockchain/foundation/blockchain/database/storage"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/peer"
 )
 
 const baseURL = "http://%s/v1/node"
-
-// NetBlock represents what is serialized over the network.
-type NetBlock struct {
-	Hash   string               `json:"hash"`
-	Header database.BlockHeader `json:"block"`
-	Trans  []database.BlockTx   `json:"trans"`
-}
-
-// NewNetBlock constructs a block that can be serialized over the network.
-func NewNetBlock(block database.Block) NetBlock {
-	netBlock := NetBlock{
-		Hash:   block.Hash(),
-		Header: block.Header,
-		Trans:  block.Trans.Values(),
-	}
-
-	return netBlock
-}
-
-// toDatabaseBlock converts a network block into a database block.
-func toDatabaseBlock(netBlock NetBlock) (database.Block, error) {
-	tree, err := merkle.NewTree(netBlock.Trans)
-	if err != nil {
-		return database.Block{}, err
-	}
-
-	block := database.Block{
-		Header: netBlock.Header,
-		Trans:  tree,
-	}
-
-	return block, nil
-}
 
 // NetSendBlockToPeers takes the new mined block and sends it to all know peers.
 func (s *State) NetSendBlockToPeers(block database.Block) error {
@@ -60,7 +27,7 @@ func (s *State) NetSendBlockToPeers(block database.Block) error {
 			Status string `json:"status"`
 		}
 
-		if err := send(http.MethodPost, url, NewNetBlock(block), &status); err != nil {
+		if err := send(http.MethodPost, url, storage.NewBlock(block), &status); err != nil {
 			return fmt.Errorf("%s: %s", peer.Host, err)
 		}
 
@@ -145,7 +112,7 @@ func (s *State) NetRequestPeerBlocks(pr peer.Peer) error {
 	from := s.RetrieveLatestBlock().Header.Number + 1
 	url := fmt.Sprintf("%s/block/list/%d/latest", fmt.Sprintf(baseURL, pr.Host), from)
 
-	var blocks []NetBlock
+	var blocks []storage.Block
 	if err := send(http.MethodGet, url, nil, &blocks); err != nil {
 		return err
 	}

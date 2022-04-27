@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/ardanlabs/blockchain/foundation/blockchain/database"
+	"github.com/ardanlabs/blockchain/foundation/blockchain/database/storage"
 )
 
 // ErrNoTransactions is returned when a block is requested to be created
@@ -59,11 +60,11 @@ func (s *State) MineNewBlock(ctx context.Context) (database.Block, error) {
 
 // ProcessProposedBlock takes a block received from a peer, validates it and
 // if that passes, adds the block to the local blockchain.
-func (s *State) ProcessProposedBlock(netBlock NetBlock) error {
+func (s *State) ProcessProposedBlock(storageBlock storage.Block) error {
 
-	// Convert the network block into a database block. This action will create
+	// Convert the storage block into a database block. This action will create
 	// a merkle tree for the set of transactions required for blockchain operations.
-	block, err := toDatabaseBlock(netBlock)
+	block, err := storage.ToDatabaseBlock(storageBlock)
 	if err != nil {
 		return fmt.Errorf("unable to decode block: %w", err)
 	}
