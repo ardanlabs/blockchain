@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/ardanlabs/blockchain/foundation/blockchain/database"
+	"github.com/ardanlabs/blockchain/foundation/blockchain/database/storage"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/genesis"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/mempool"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/peer"
@@ -89,11 +90,11 @@ func New(cfg Config) (*State, error) {
 		return nil, err
 	}
 
-	// storage := database.NewFilesStorage(cfg.DBPath)
-	storage, err := database.NewJSONStorage(cfg.DBPath)
+	storage, err := storage.NewArdan(cfg.DBPath)
 	if err != nil {
 		return nil, err
 	}
+
 	// Access the storage for the blockchain.
 	db, err := database.New(genesis, storage, ev)
 	if err != nil {

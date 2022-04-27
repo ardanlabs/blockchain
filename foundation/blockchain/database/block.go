@@ -227,36 +227,3 @@ func isHashSolved(difficulty uint16, hash string) bool {
 }
 
 // =============================================================================
-
-// BlockFS represents what is written to the DB file.
-type BlockFS struct {
-	Hash  string      `json:"hash"`
-	Block BlockHeader `json:"block"`
-	Trans []BlockTx   `json:"trans"`
-}
-
-// NewBlockFS constructs the value to serialize to disk.
-func NewBlockFS(block Block) BlockFS {
-	bfs := BlockFS{
-		Hash:  block.Hash(),
-		Block: block.Header,
-		Trans: block.Trans.Values(),
-	}
-
-	return bfs
-}
-
-// ToBlock converts a BlockFS into a Block.
-func ToBlock(blockFS BlockFS) (Block, error) {
-	tree, err := merkle.NewTree(blockFS.Trans)
-	if err != nil {
-		return Block{}, err
-	}
-
-	nb := Block{
-		Header: blockFS.Block,
-		Trans:  tree,
-	}
-
-	return nb, nil
-}

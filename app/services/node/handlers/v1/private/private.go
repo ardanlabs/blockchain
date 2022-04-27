@@ -58,21 +58,14 @@ func (h Handlers) SubmitNodeTransaction(ctx context.Context, w http.ResponseWrit
 func (h Handlers) ProposeBlock(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 
 	// Decode the JSON in the post call into a file system block.
-	var blockFS database.BlockFS
-	if err := web.Decode(r, &blockFS); err != nil {
+	var netBlock state.NetBlock
+	if err := web.Decode(r, &netBlock); err != nil {
 		return fmt.Errorf("unable to decode payload: %w", err)
-	}
-
-	// Convert the blockFS into a block. This action will create a merkle
-	// tree for the set of transactions required for blockchain operations.
-	block, err := database.ToBlock(blockFS)
-	if err != nil {
-		return fmt.Errorf("unable to decode block: %w", err)
 	}
 
 	// Ask the state package to validate the proposed block. If the block
 	// passes validation, it will be added to the blockchain database.
-	if err := h.State.ProcessProposedBlock(block); err != nil {
+	if err := h.State.ProcessProposedBlock(netBlock); err != nil {
 		if errors.Is(err, database.ErrChainForked) {
 			h.State.Resync()
 		}
@@ -132,12 +125,12 @@ func (h Handlers) BlocksByNumber(ctx context.Context, w http.ResponseWriter, r *
 		return web.Respond(ctx, w, nil, http.StatusNoContent)
 	}
 
-	blocksFS := make([]database.BlockFS, len(blocks))
+	netBlocks := make([]state.NetBlock, len(blocks))
 	for i, block := range blocks {
-		blocksFS[i] = database.NewBlockFS(block)
+		netBlocks[i] = state.NewNetBlock(block)
 	}
 
-	return web.Respond(ctx, w, blocksFS, http.StatusOK)
+	return web.Respond(ctx, w, netBlocks, http.StatusOK)
 }
 
 // Mempool returns the set of uncommitted transactions.

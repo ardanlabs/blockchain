@@ -9,6 +9,25 @@ import (
 	"github.com/ardanlabs/blockchain/foundation/blockchain/genesis"
 )
 
+// Storage interface represents the behavior required to be implemented by any
+// package providing support for storing and reading the blockchain from disk.
+type Storage interface {
+	Write(block Block) error
+	GetBlock(num uint64) (Block, error)
+	ForEach() Iterator
+	Close() error
+	Reset() error
+}
+
+// Iterator interface represents the behavior required to be implemented by any
+// package providing support to iterate over the blocks stored on disk.
+type Iterator interface {
+	Next() (Block, error)
+	Done() bool
+}
+
+// =============================================================================
+
 // Database manages data related to accounts who have transacted on the blockchain.
 type Database struct {
 	mu sync.RWMutex
@@ -202,7 +221,7 @@ func (db *Database) LatestBlock() Block {
 }
 
 // Write adds a new block to the chain.
-func (db *Database) Write(block BlockFS) error {
+func (db *Database) Write(block Block) error {
 	return db.storage.Write(block)
 }
 
@@ -211,13 +230,9 @@ func (db *Database) Write(block BlockFS) error {
 func (db *Database) ReadAllBlocks(evHandler func(v string, args ...any), validate bool) ([]Block, error) {
 	var blocks []Block
 	var latestBlock Block
-	iter := db.storage.Foreach()
-	for blockFS, err := iter.Next(); !iter.Done(); blockFS, err = iter.Next() {
-		if err != nil {
-			return nil, err
-		}
 
-		block, err := ToBlock(*blockFS)
+	iter := db.storage.ForEach()
+	for block, err := iter.Next(); !iter.Done(); block, err = iter.Next() {
 		if err != nil {
 			return nil, err
 		}

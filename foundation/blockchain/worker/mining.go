@@ -147,7 +147,7 @@ func (w *Worker) proposeBlockToPeers(block database.Block) error {
 			Status string `json:"status"`
 		}
 
-		if err := send(http.MethodPost, url, database.NewBlockFS(block), &status); err != nil {
+		if err := send(http.MethodPost, url, state.NewNetBlock(block), &status); err != nil {
 			return fmt.Errorf("%s: %s", peer.Host, err)
 		}
 

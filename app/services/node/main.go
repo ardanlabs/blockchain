@@ -65,7 +65,7 @@ func run(log *zap.SugaredLogger) error {
 		}
 		State struct {
 			Beneficiary    string   `conf:"default:miner1"`
-			DBPath         string   `conf:"default:zblock/blocks.db"`
+			DBPath         string   `conf:"default:zblock/miner1/"`
 			SelectStrategy string   `conf:"default:Tip"`
 			KnownPeers     []string `conf:"default:0.0.0.0:9080;0.0.0.0:9180"`
 		}

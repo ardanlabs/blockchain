@@ -6,6 +6,7 @@ import (
 
 	"github.com/ardanlabs/blockchain/foundation/blockchain/database"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/peer"
+	"github.com/ardanlabs/blockchain/foundation/blockchain/state"
 )
 
 // Sync updates the peer list, mempool and blocks.
@@ -82,20 +83,14 @@ func (w *Worker) retrievePeerBlocks(pr peer.Peer) error {
 	from := w.state.RetrieveLatestBlock().Header.Number + 1
 	url := fmt.Sprintf("%s/block/list/%d/latest", fmt.Sprintf(w.baseURL, pr.Host), from)
 
-	var blocksFS []database.BlockFS
-	if err := send(http.MethodGet, url, nil, &blocksFS); err != nil {
+	var blocks []state.NetBlock
+	if err := send(http.MethodGet, url, nil, &blocks); err != nil {
 		return err
 	}
 
-	w.evHandler("worker: sync: retrievePeerBlocks: found blocks[%d]", len(blocksFS))
+	w.evHandler("worker: sync: retrievePeerBlocks: found blocks[%d]", len(blocks))
 
-	for _, blockFS := range blocksFS {
-		block, err := database.ToBlock(blockFS)
-		if err != nil {
-			return err
-		}
-
-		w.evHandler("worker: sync: retrievePeerBlocks: prevBlk[%s]: newBlk[%s]: numTrans[%d]", block.Header.PrevBlockHash, block.Hash(), len(block.Trans.Values()))
+	for _, block := range blocks {
 		if err := w.state.ProcessProposedBlock(block); err != nil {
 			return err
 		}
