@@ -9,7 +9,6 @@ import (
 	"net/http"
 
 	"github.com/ardanlabs/blockchain/foundation/blockchain/database"
-	"github.com/ardanlabs/blockchain/foundation/blockchain/database/storage"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/peer"
 )
 
@@ -27,7 +26,7 @@ func (s *State) NetSendBlockToPeers(block database.Block) error {
 			Status string `json:"status"`
 		}
 
-		if err := send(http.MethodPost, url, storage.NewBlock(block), &status); err != nil {
+		if err := send(http.MethodPost, url, database.NewBlockData(block), &status); err != nil {
 			return fmt.Errorf("%s: %s", peer.Host, err)
 		}
 
@@ -112,14 +111,19 @@ func (s *State) NetRequestPeerBlocks(pr peer.Peer) error {
 	from := s.RetrieveLatestBlock().Header.Number + 1
 	url := fmt.Sprintf("%s/block/list/%d/latest", fmt.Sprintf(baseURL, pr.Host), from)
 
-	var blocks []storage.Block
-	if err := send(http.MethodGet, url, nil, &blocks); err != nil {
+	var blocksData []database.BlockData
+	if err := send(http.MethodGet, url, nil, &blocksData); err != nil {
 		return err
 	}
 
-	s.evHandler("worker: NetRequestPeerBlocks: found blocks[%d]", len(blocks))
+	s.evHandler("worker: NetRequestPeerBlocks: found blocks[%d]", len(blocksData))
 
-	for _, block := range blocks {
+	for _, blockData := range blocksData {
+		block, err := database.ToBlock(blockData)
+		if err != nil {
+			return err
+		}
+
 		if err := s.ProcessProposedBlock(block); err != nil {
 			return err
 		}

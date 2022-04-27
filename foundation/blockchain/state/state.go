@@ -90,7 +90,7 @@ func New(cfg Config) (*State, error) {
 		return nil, err
 	}
 
-	storage, err := storage.NewArdan(cfg.DBPath)
+	storage, err := storage.NewDisk(cfg.DBPath)
 	if err != nil {
 		return nil, err
 	}

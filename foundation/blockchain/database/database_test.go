@@ -202,8 +202,8 @@ func sign(tx database.Tx, gas uint64) (database.BlockTx, error) {
 
 type MockIterator struct{}
 
-func (mi MockIterator) Next() (database.Block, error) {
-	return database.Block{}, nil
+func (mi MockIterator) Next() (database.BlockData, error) {
+	return database.BlockData{}, nil
 }
 
 func (mi MockIterator) Done() bool {
@@ -212,12 +212,12 @@ func (mi MockIterator) Done() bool {
 
 type MockStorage struct{}
 
-func (ms MockStorage) Write(block database.Block) error {
+func (ms MockStorage) Write(block database.BlockData) error {
 	return nil
 }
 
-func (ms MockStorage) GetBlock(num uint64) (database.Block, error) {
-	return database.Block{}, nil
+func (ms MockStorage) GetBlock(num uint64) (database.BlockData, error) {
+	return database.BlockData{}, nil
 }
 
 func (ms MockStorage) ForEach() database.Iterator {

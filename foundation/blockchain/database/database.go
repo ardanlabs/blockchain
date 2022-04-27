@@ -9,11 +9,11 @@ import (
 	"github.com/ardanlabs/blockchain/foundation/blockchain/genesis"
 )
 
-// Storage interface represents the behavior required to be implemented by any
+// Serializer interface represents the behavior required to be implemented by any
 // package providing support for storing and reading the blockchain from disk.
-type Storage interface {
-	Write(block Block) error
-	GetBlock(num uint64) (Block, error)
+type Serializer interface {
+	Write(blockData BlockData) error
+	GetBlock(num uint64) (BlockData, error)
 	ForEach() Iterator
 	Close() error
 	Reset() error
@@ -22,7 +22,7 @@ type Storage interface {
 // Iterator interface represents the behavior required to be implemented by any
 // package providing support to iterate over the blocks stored on disk.
 type Iterator interface {
-	Next() (Block, error)
+	Next() (BlockData, error)
 	Done() bool
 }
 
@@ -36,17 +36,17 @@ type Database struct {
 	latestBlock Block
 	accounts    map[AccountID]Account
 
-	storage Storage
+	serializer Serializer
 }
 
 // New constructs a new database and applies account genesis information and
 // reads/writes the blockchain database on disk if a dbPath is provided.
-func New(genesis genesis.Genesis, storage Storage, evHandler func(v string, args ...any)) (*Database, error) {
+func New(genesis genesis.Genesis, serializer Serializer, evHandler func(v string, args ...any)) (*Database, error) {
 
 	db := Database{
-		genesis:  genesis,
-		accounts: make(map[AccountID]Account),
-		storage:  storage,
+		genesis:    genesis,
+		accounts:   make(map[AccountID]Account),
+		serializer: serializer,
 	}
 
 	// Read all the blocks from disk if a path is provided.
@@ -82,12 +82,13 @@ func New(genesis genesis.Genesis, storage Storage, evHandler func(v string, args
 
 // Close closes the open blocks database.
 func (db *Database) Close() {
-	db.storage.Close()
+	db.serializer.Close()
 }
 
 // Reset re-initalizes the database back to the genesis state.
 func (db *Database) Reset() error {
-	db.storage.Reset()
+	db.serializer.Reset()
+
 	// Initalizes the database back to the genesis information.
 	db.latestBlock = Block{}
 	db.accounts = make(map[AccountID]Account)
@@ -96,6 +97,7 @@ func (db *Database) Reset() error {
 		if err != nil {
 			return err
 		}
+
 		db.accounts[accountID] = Account{Balance: balance}
 	}
 
@@ -222,7 +224,7 @@ func (db *Database) LatestBlock() Block {
 
 // Write adds a new block to the chain.
 func (db *Database) Write(block Block) error {
-	return db.storage.Write(block)
+	return db.serializer.Write(NewBlockData(block))
 }
 
 // ReadAllBlocks loads all existing blocks from storage into memory. In a real
@@ -231,8 +233,13 @@ func (db *Database) ReadAllBlocks(evHandler func(v string, args ...any), validat
 	var blocks []Block
 	var latestBlock Block
 
-	iter := db.storage.ForEach()
-	for block, err := iter.Next(); !iter.Done(); block, err = iter.Next() {
+	iter := db.serializer.ForEach()
+	for blockData, err := iter.Next(); !iter.Done(); blockData, err = iter.Next() {
+		if err != nil {
+			return nil, err
+		}
+
+		block, err := ToBlock(blockData)
 		if err != nil {
 			return nil, err
 		}
