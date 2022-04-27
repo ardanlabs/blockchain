@@ -58,14 +58,14 @@ func (h Handlers) SubmitNodeTransaction(ctx context.Context, w http.ResponseWrit
 func (h Handlers) ProposeBlock(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 
 	// Decode the JSON in the post call into a file system block.
-	var blockFS database.BlockFS
-	if err := web.Decode(r, &blockFS); err != nil {
+	var blockData database.BlockData
+	if err := web.Decode(r, &blockData); err != nil {
 		return fmt.Errorf("unable to decode payload: %w", err)
 	}
 
-	// Convert the blockFS into a block. This action will create a merkle
+	// Convert the block data into a block. This action will create a merkle
 	// tree for the set of transactions required for blockchain operations.
-	block, err := database.ToBlock(blockFS)
+	block, err := database.ToBlock(blockData)
 	if err != nil {
 		return fmt.Errorf("unable to decode block: %w", err)
 	}
@@ -132,12 +132,12 @@ func (h Handlers) BlocksByNumber(ctx context.Context, w http.ResponseWriter, r *
 		return web.Respond(ctx, w, nil, http.StatusNoContent)
 	}
 
-	blocksFS := make([]database.BlockFS, len(blocks))
+	blockData := make([]database.BlockData, len(blocks))
 	for i, block := range blocks {
-		blocksFS[i] = database.NewBlockFS(block)
+		blockData[i] = database.NewBlockData(block)
 	}
 
-	return web.Respond(ctx, w, blocksFS, http.StatusOK)
+	return web.Respond(ctx, w, blockData, http.StatusOK)
 }
 
 // Mempool returns the set of uncommitted transactions.

@@ -1,13 +1,5 @@
 package worker
 
-import (
-	"fmt"
-	"net/http"
-
-	"github.com/ardanlabs/blockchain/foundation/blockchain/database"
-	"github.com/ardanlabs/blockchain/foundation/blockchain/peer"
-)
-
 // Sync updates the peer list, mempool and blocks.
 func (w *Worker) Sync() {
 	w.evHandler("worker: sync: started")
@@ -16,7 +8,7 @@ func (w *Worker) Sync() {
 	for _, peer := range w.state.RetrieveKnownPeers() {
 
 		// Retrieve the status of this peer.
-		peerStatus, err := w.queryPeerStatus(peer)
+		peerStatus, err := w.state.NetRequestPeerStatus(peer)
 		if err != nil {
 			w.evHandler("worker: sync: queryPeerStatus: %s: ERROR: %s", peer.Host, err)
 		}
@@ -25,7 +17,7 @@ func (w *Worker) Sync() {
 		w.addNewPeers(peerStatus.KnownPeers)
 
 		// Retrieve the mempool from the peer.
-		pool, err := w.retrievePeerMempool(peer)
+		pool, err := w.state.NetRequestPeerMempool(peer)
 		if err != nil {
 			w.evHandler("worker: sync: retrievePeerMempool: %s: ERROR: %s", peer.Host, err)
 		}
@@ -34,72 +26,13 @@ func (w *Worker) Sync() {
 			w.state.UpsertMempool(tx)
 		}
 
-		// CORE NOTE: Ideally you want to start by pulling just block headers and
-		// performing the cryptographic audit so you know your're not being attacked.
-		// After that you can start pulling the full block data for each block header
-		// if you are a full node and maybe only the last 1000 full blocks if you
-		// are a pruned node. That can be done in the background. Remember, you
-		// only need block headers to validate new blocks.
-
-		// Currently the Ardan blockchain is a full node only system and needs the
-		// transactions to have a complete account database. The cryptographic audit
-		// does take place as each full block is downloaded from peers.
-
 		// If this peer has blocks we don't have, we need to add them.
 		if peerStatus.LatestBlockNumber > w.state.RetrieveLatestBlock().Header.Number {
 			w.evHandler("worker: sync: retrievePeerBlocks: %s: latestBlockNumber[%d]", peer.Host, peerStatus.LatestBlockNumber)
 
-			if err := w.retrievePeerBlocks(peer); err != nil {
+			if err := w.state.NetRequestPeerBlocks(peer); err != nil {
 				w.evHandler("worker: sync: retrievePeerBlocks: %s: ERROR %s", peer.Host, err)
 			}
 		}
 	}
-}
-
-// retrievePeerMempool asks the peer for the transactions in their mempool.
-func (w *Worker) retrievePeerMempool(pr peer.Peer) ([]database.BlockTx, error) {
-	w.evHandler("worker: sync: retrievePeerMempool: started: %s", pr)
-	defer w.evHandler("worker: sync: retrievePeerMempool: completed: %s", pr)
-
-	url := fmt.Sprintf("%s/tx/list", fmt.Sprintf(w.baseURL, pr.Host))
-
-	var mempool []database.BlockTx
-	if err := send(http.MethodGet, url, nil, &mempool); err != nil {
-		return nil, err
-	}
-
-	w.evHandler("worker: sync: retrievePeerMempool: len[%d]", len(mempool))
-
-	return mempool, nil
-}
-
-// retrievePeerBlocks queries the specified node asking for blocks this node does
-// not have, then writes them to disk.
-func (w *Worker) retrievePeerBlocks(pr peer.Peer) error {
-	w.evHandler("worker: sync: retrievePeerBlocks: started: %s", pr)
-	defer w.evHandler("worker: sync: retrievePeerBlocks: completed: %s", pr)
-
-	from := w.state.RetrieveLatestBlock().Header.Number + 1
-	url := fmt.Sprintf("%s/block/list/%d/latest", fmt.Sprintf(w.baseURL, pr.Host), from)
-
-	var blocksFS []database.BlockFS
-	if err := send(http.MethodGet, url, nil, &blocksFS); err != nil {
-		return err
-	}
-
-	w.evHandler("worker: sync: retrievePeerBlocks: found blocks[%d]", len(blocksFS))
-
-	for _, blockFS := range blocksFS {
-		block, err := database.ToBlock(blockFS)
-		if err != nil {
-			return err
-		}
-
-		w.evHandler("worker: sync: retrievePeerBlocks: prevBlk[%s]: newBlk[%s]: numTrans[%d]", block.Header.PrevBlockHash, block.Hash(), len(block.Trans.Values()))
-		if err := w.state.ProcessProposedBlock(block); err != nil {
-			return err
-		}
-	}
-
-	return nil
 }

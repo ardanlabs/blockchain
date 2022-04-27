@@ -69,7 +69,7 @@ func Test_Transactions(t *testing.T) {
 			t.Logf("\tTest %d:\tWhen handling a set of database.", testID)
 			{
 				f := func(t *testing.T) {
-					db, err := database.New("", genesis.Genesis{ChainID: 1, MiningReward: tst.minerReward, Balances: tst.balances}, nil)
+					db, err := database.New(genesis.Genesis{ChainID: 1, MiningReward: tst.minerReward, Balances: tst.balances}, MockStorage{}, nil)
 					if err != nil {
 						t.Fatalf("\t%s\tTest %d:\tShould be able to open database: %v", failed, testID, err)
 					}
@@ -159,7 +159,7 @@ func TestNonceValidation(t *testing.T) {
 		for testID, tst := range tt {
 			t.Logf("\tTest %d:\tWhen handling a set of transactions.", testID)
 			{
-				db, err := database.New("", genesis.Genesis{ChainID: 1, MiningReward: tst.minerReward, Balances: tst.balances}, nil)
+				db, err := database.New(genesis.Genesis{ChainID: 1, MiningReward: tst.minerReward, Balances: tst.balances}, MockStorage{}, nil)
 				if err != nil {
 					t.Fatalf("\t%s\tTest %d:\tShould be able to open database: %v", failed, testID, err)
 				}
@@ -196,4 +196,38 @@ func sign(tx database.Tx, gas uint64) (database.BlockTx, error) {
 	}
 
 	return database.NewBlockTx(signedTx, gas, 1), nil
+}
+
+// =============================================================================
+
+type MockIterator struct{}
+
+func (mi MockIterator) Next() (database.BlockData, error) {
+	return database.BlockData{}, nil
+}
+
+func (mi MockIterator) Done() bool {
+	return true
+}
+
+type MockStorage struct{}
+
+func (ms MockStorage) Write(block database.BlockData) error {
+	return nil
+}
+
+func (ms MockStorage) GetBlock(num uint64) (database.BlockData, error) {
+	return database.BlockData{}, nil
+}
+
+func (ms MockStorage) ForEach() database.Iterator {
+	return &MockIterator{}
+}
+
+func (ms MockStorage) Close() error {
+	return nil
+}
+
+func (ms MockStorage) Reset() error {
+	return nil
 }

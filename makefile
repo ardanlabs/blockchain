@@ -33,7 +33,7 @@ up:
 	go run app/services/node/main.go -race | go run app/tooling/logfmt/main.go
 
 up2:
-	go run app/services/node/main.go -race --web-debug-host 0.0.0.0:7181 --web-public-host 0.0.0.0:8180 --web-private-host 0.0.0.0:9180 --state-beneficiary=miner2 --state-db-path zblock/blocks2.db | go run app/tooling/logfmt/main.go
+	go run app/services/node/main.go -race --web-debug-host 0.0.0.0:7181 --web-public-host 0.0.0.0:8180 --web-private-host 0.0.0.0:9180 --state-beneficiary=miner2 --state-db-path zblock/miner2/ | go run app/tooling/logfmt/main.go
 
 down:
 	kill -INT $(shell ps | grep "main -race" | grep -v grep | sed -n 1,1p | cut -c1-5)
@@ -73,9 +73,6 @@ load3:
 	go run app/wallet/cli/main.go send -a pavel -n 5 -t 0xa988b1866EaBF72B4c53b592c97aAD8e4b9bDCC0 -v 125
 	go run app/wallet/cli/main.go send -a kennedy -n 6 -t 0xa988b1866EaBF72B4c53b592c97aAD8e4b9bDCC0 -v 200
 	go run app/wallet/cli/main.go send -a pavel -n 6 -t 0x6Fe6CF3c8fF57c58d24BfC869668F48BCbDb3BD9 -v 250
-
-clear-db:
-	cat /dev/null > zblock/blocks.db
 
 # ==============================================================================
 # Viewer support

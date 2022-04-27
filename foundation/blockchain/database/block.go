@@ -19,6 +19,41 @@ var ErrChainForked = errors.New("blockchain forked, start resync")
 
 // =============================================================================
 
+// BlockData represents what can be serialized to disk and over the network.
+type BlockData struct {
+	Hash   string      `json:"hash"`
+	Header BlockHeader `json:"block"`
+	Trans  []BlockTx   `json:"trans"`
+}
+
+// NewBlockData constructs block data from a block.
+func NewBlockData(block Block) BlockData {
+	blockData := BlockData{
+		Hash:   block.Hash(),
+		Header: block.Header,
+		Trans:  block.Trans.Values(),
+	}
+
+	return blockData
+}
+
+// ToBlock converts a storage block into a database block.
+func ToBlock(blockData BlockData) (Block, error) {
+	tree, err := merkle.NewTree(blockData.Trans)
+	if err != nil {
+		return Block{}, err
+	}
+
+	block := Block{
+		Header: blockData.Header,
+		Trans:  tree,
+	}
+
+	return block, nil
+}
+
+// =============================================================================
+
 // BlockHeader represents common information required for each block.
 type BlockHeader struct {
 	Number        uint64    `json:"number"`          // Ethereum: Block number in the chain.
@@ -224,39 +259,4 @@ func isHashSolved(difficulty uint16, hash string) bool {
 	}
 
 	return hash[:difficulty] == match[:difficulty]
-}
-
-// =============================================================================
-
-// BlockFS represents what is written to the DB file.
-type BlockFS struct {
-	Hash  string      `json:"hash"`
-	Block BlockHeader `json:"block"`
-	Trans []BlockTx   `json:"trans"`
-}
-
-// NewBlockFS constructs the value to serialize to disk.
-func NewBlockFS(block Block) BlockFS {
-	bfs := BlockFS{
-		Hash:  block.Hash(),
-		Block: block.Header,
-		Trans: block.Trans.Values(),
-	}
-
-	return bfs
-}
-
-// ToBlock converts a BlockFS into a Block.
-func ToBlock(blockFS BlockFS) (Block, error) {
-	tree, err := merkle.NewTree(blockFS.Trans)
-	if err != nil {
-		return Block{}, err
-	}
-
-	nb := Block{
-		Header: blockFS.Block,
-		Trans:  tree,
-	}
-
-	return nb, nil
 }

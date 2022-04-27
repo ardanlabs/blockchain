@@ -3,14 +3,30 @@
 package database
 
 import (
-	"bufio"
-	"encoding/json"
 	"fmt"
-	"os"
 	"sync"
 
 	"github.com/ardanlabs/blockchain/foundation/blockchain/genesis"
 )
+
+// Storage interface represents the behavior required to be implemented by any
+// package providing support for reading and writing the blockchain.
+type Storage interface {
+	Write(blockData BlockData) error
+	GetBlock(num uint64) (BlockData, error)
+	ForEach() Iterator
+	Close() error
+	Reset() error
+}
+
+// Iterator interface represents the behavior required to be implemented by any
+// package providing support to iterate over the blocks.
+type Iterator interface {
+	Next() (BlockData, error)
+	Done() bool
+}
+
+// =============================================================================
 
 // Database manages data related to accounts who have transacted on the blockchain.
 type Database struct {
@@ -20,40 +36,16 @@ type Database struct {
 	latestBlock Block
 	accounts    map[AccountID]Account
 
-	dbPath string
-	dbFile *os.File
+	storage Storage
 }
 
 // New constructs a new database and applies account genesis information and
 // reads/writes the blockchain database on disk if a dbPath is provided.
-func New(dbPath string, genesis genesis.Genesis, evHandler func(v string, args ...any)) (*Database, error) {
-	var dbFile *os.File
-
-	// If not path is provided, the database will sync only to the
-	// genesis information.
-	if dbPath != "" {
-		var err error
-		dbFile, err = os.OpenFile(dbPath, os.O_APPEND|os.O_RDWR|os.O_CREATE, 0600)
-		if err != nil {
-			return nil, err
-		}
-	}
-
+func New(genesis genesis.Genesis, storage Storage, evHandler func(v string, args ...any)) (*Database, error) {
 	db := Database{
 		genesis:  genesis,
 		accounts: make(map[AccountID]Account),
-		dbPath:   dbPath,
-		dbFile:   dbFile,
-	}
-
-	// Read all the blocks from disk if a path is provided.
-	var blocks []Block
-	if dbFile != nil {
-		var err error
-		blocks, err = db.ReadAllBlocks(evHandler, true)
-		if err != nil {
-			return nil, err
-		}
+		storage:  storage,
 	}
 
 	// Update the database with account balance information from genesis.
@@ -65,17 +57,38 @@ func New(dbPath string, genesis genesis.Genesis, evHandler func(v string, args .
 		db.accounts[accountID] = Account{Balance: balance}
 	}
 
-	// Set the current latest block in the chain.
-	if len(blocks) > 0 {
-		db.latestBlock = blocks[len(blocks)-1]
-	}
+	// Capture the latest block after reading all the blocks from storage.
+	var latestBlock Block
 
-	// Update the databse with account balance information from blocks.
-	for _, block := range blocks {
+	// Read all the blocks from storage.
+	iter := db.ForEach()
+	for block, err := iter.Next(); !iter.Done(); block, err = iter.Next() {
+		if err != nil {
+			return nil, err
+		}
+
+		// Validate the block values and cryptographic audit trail.
+		if err := block.ValidateBlock(latestBlock, evHandler); err != nil {
+			return nil, err
+		}
+
+		// Update the database with account balance information from genesis.
+		for accountStr, balance := range genesis.Balances {
+			accountID, err := ToAccountID(accountStr)
+			if err != nil {
+				return nil, err
+			}
+			db.accounts[accountID] = Account{Balance: balance}
+		}
+
+		// Update the database with the transaction information.
 		for _, tx := range block.Trans.Values() {
 			db.ApplyTransaction(block, tx)
 		}
 		db.ApplyMiningReward(block)
+
+		// Update the current latest block.
+		latestBlock = block
 	}
 
 	return &db, nil
@@ -83,29 +96,12 @@ func New(dbPath string, genesis genesis.Genesis, evHandler func(v string, args .
 
 // Close closes the open blocks database.
 func (db *Database) Close() {
-	db.mu.Lock()
-	defer db.mu.Unlock()
-
-	db.dbFile.Close()
+	db.storage.Close()
 }
 
 // Reset re-initalizes the database back to the genesis state.
 func (db *Database) Reset() error {
-	db.mu.Lock()
-	defer db.mu.Unlock()
-
-	// Close and remove the current file.
-	db.dbFile.Close()
-	if err := os.Remove(db.dbPath); err != nil {
-		return err
-	}
-
-	// Open a new blockchain database file with create.
-	dbFile, err := os.OpenFile(db.dbPath, os.O_CREATE|os.O_RDWR, 0600)
-	if err != nil {
-		return err
-	}
-	db.dbFile = dbFile
+	db.storage.Reset()
 
 	// Initalizes the database back to the genesis information.
 	db.latestBlock = Block{}
@@ -115,6 +111,7 @@ func (db *Database) Reset() error {
 		if err != nil {
 			return err
 		}
+
 		db.accounts[accountID] = Account{Balance: balance}
 	}
 
@@ -240,61 +237,46 @@ func (db *Database) LatestBlock() Block {
 }
 
 // Write adds a new block to the chain.
-func (db *Database) Write(block BlockFS) error {
-	db.mu.Lock()
-	defer db.mu.Unlock()
-
-	// Marshal the block for writing to disk.
-	blockFSJson, err := json.Marshal(block)
-	if err != nil {
-		return err
-	}
-
-	// Write the new block to the chain on disk.
-	if _, err := db.dbFile.Write(append(blockFSJson, '\n')); err != nil {
-		return err
-	}
-
-	return nil
+func (db *Database) Write(block Block) error {
+	return db.storage.Write(NewBlockData(block))
 }
 
-// ReadAllBlocks loads all existing blocks from storage into memory. In a real
-// world situation this would require a lot of memory.
-func (db *Database) ReadAllBlocks(evHandler func(v string, args ...any), validate bool) ([]Block, error) {
-	dbFile, err := os.Open(db.dbPath)
+// ForEach returns an iterator to walk through all the blocks
+// starting with block number 1.
+func (db *Database) ForEach() DatabaseIterator {
+	return DatabaseIterator{iterator: db.storage.ForEach()}
+}
+
+// GetBlock searches the blockchain on disk to locate and return the
+// contents of the specified block by number.
+func (db *Database) GetBlock(num uint64) (Block, error) {
+	blockData, err := db.storage.GetBlock(num)
 	if err != nil {
-		return nil, err
-	}
-	defer dbFile.Close()
-
-	var blocks []Block
-	var latestBlock Block
-	scanner := bufio.NewScanner(dbFile)
-	for scanner.Scan() {
-		if err := scanner.Err(); err != nil {
-			return nil, err
-		}
-
-		var blockFS BlockFS
-		if err := json.Unmarshal(scanner.Bytes(), &blockFS); err != nil {
-			return nil, err
-		}
-
-		block, err := ToBlock(blockFS)
-		if err != nil {
-			return nil, err
-		}
-
-		// We want to skip the block validation for query and retrieve operations.
-		if validate {
-			if err := block.ValidateBlock(latestBlock, evHandler); err != nil {
-				return nil, err
-			}
-		}
-
-		blocks = append(blocks, block)
-		latestBlock = block
+		return Block{}, err
 	}
 
-	return blocks, nil
+	return ToBlock(blockData)
+}
+
+// =============================================================================
+
+// DatabaseIterator provides support for iterating over the blocks in the
+// blockchain database using the configured storage option.
+type DatabaseIterator struct {
+	iterator Iterator
+}
+
+// Next retrieves the next block from disk.
+func (di *DatabaseIterator) Next() (Block, error) {
+	blockData, err := di.iterator.Next()
+	if err != nil {
+		return Block{}, err
+	}
+
+	return ToBlock(blockData)
+}
+
+// Done returns the end of chain value.
+func (di *DatabaseIterator) Done() bool {
+	return di.iterator.Done()
 }
