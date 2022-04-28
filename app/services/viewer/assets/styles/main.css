@@ -3,6 +3,10 @@
     --outer-box-heigth: 740px;
 }
 
+#flex-container {
+  display: flex;
+}
+
 .block-class {
 	border: 2px solid black;
 	border-radius: 10px;
