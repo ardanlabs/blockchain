@@ -9,9 +9,20 @@ import (
 
 // Account represents information stored in the database for an individual account.
 type Account struct {
-	Balance uint64
-	Nonce   uint64
+	AccountID AccountID
+	Nonce     uint64
+	Balance   uint64
 }
+
+// newAccount constructs a new account value for use.
+func newAccount(accountID AccountID, balance uint64) Account {
+	return Account{
+		AccountID: accountID,
+		Balance:   balance,
+	}
+}
+
+// =============================================================================
 
 // AccountID represents an account id that is used to sign transactions and is
 // associated with transactions on the blockchain.
@@ -70,4 +81,25 @@ func isHex(a AccountID) bool {
 // isHexCharacter returns bool of c being a valid hexadecimal.
 func isHexCharacter(c byte) bool {
 	return ('0' <= c && c <= '9') || ('a' <= c && c <= 'f') || ('A' <= c && c <= 'F')
+}
+
+// =============================================================================
+
+// byAccount provides sorting support by the account id value.
+type byAccount []Account
+
+// Len returns the number of transactions in the list.
+func (ba byAccount) Len() int {
+	return len(ba)
+}
+
+// Less helps to sort the list by account id in ascending order to keep the
+// accounts in the right order of processing.
+func (ba byAccount) Less(i, j int) bool {
+	return ba[i].AccountID < ba[j].AccountID
+}
+
+// Swap moves accounts in the order of the account id value.
+func (ba byAccount) Swap(i, j int) {
+	ba[i], ba[j] = ba[j], ba[i]
 }

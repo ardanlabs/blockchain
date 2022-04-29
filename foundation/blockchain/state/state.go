@@ -19,7 +19,6 @@ import (
 	-- Chrome Wallet
 
 	-- Blockchain
-	Add a StateRoot which creates a hash of the account database which can be verified.
 	Add a memory storage system for running tests.
 	On chain fork, only remove the block files that need to be removed and reset.
 	When a proposed block arrives, check if that node is in the peer list.

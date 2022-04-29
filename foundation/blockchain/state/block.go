@@ -29,14 +29,15 @@ func (s *State) MineNewBlock(ctx context.Context) (database.Block, error) {
 	trans := s.mempool.PickBest(s.genesis.TransPerBlock)
 
 	// Attempt to create a new block by solving the POW puzzle. This can be cancelled.
-	block, err := database.POW(ctx,
-		s.beneficiaryID,
-		s.genesis.Difficulty,
-		s.genesis.MiningReward,
-		s.RetrieveLatestBlock(),
-		trans,
-		s.evHandler,
-	)
+	block, err := database.POW(ctx, database.POWArgs{
+		BeneficiaryID: s.beneficiaryID,
+		Difficulty:    s.genesis.Difficulty,
+		MiningReward:  s.genesis.MiningReward,
+		PrevBlock:     s.db.LatestBlock(),
+		StateRoot:     s.db.HashState(),
+		Trans:         trans,
+		EvHandler:     s.evHandler,
+	})
 	if err != nil {
 		return database.Block{}, err
 	}
@@ -91,7 +92,7 @@ func (s *State) validateUpdateDatabase(block database.Block) error {
 
 	s.evHandler("state: updateLocalState: validate block")
 
-	if err := block.ValidateBlock(s.db.LatestBlock(), s.evHandler); err != nil {
+	if err := block.ValidateBlock(s.db.LatestBlock(), s.db.HashState(), s.evHandler); err != nil {
 		return err
 	}
 
