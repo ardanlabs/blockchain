@@ -62,6 +62,7 @@ type BlockHeader struct {
 	BeneficiaryID AccountID `json:"beneficiary"`     // Ethereum: The account who is receiving fees and tips.
 	Difficulty    uint16    `json:"difficulty"`      // Ethereum: Number of 0's needed to solve the hash solution.
 	MiningReward  uint64    `json:"mining_reward"`   // Ethereum: The reward for mining this block.
+	StateRoot     string    `json:"state_root"`      // Ethereum: Represents a hash of the accounts and their balances.
 	TransRoot     string    `json:"trans_root"`      // Both: Represents the merkle tree root hash for the transactions in this block.
 	Nonce         uint64    `json:"nonce"`           // Both: Value identified to solve the hash solution.
 }
@@ -72,19 +73,30 @@ type Block struct {
 	Trans  *merkle.Tree[BlockTx]
 }
 
+// POWArgs represents the set of arguments required to run POW.
+type POWArgs struct {
+	BeneficiaryID AccountID
+	Difficulty    uint16
+	MiningReward  uint64
+	PrevBlock     Block
+	StateRoot     string
+	Trans         []BlockTx
+	EvHandler     func(v string, args ...any)
+}
+
 // POW constructs a new Block and performs the work to find a nonce that
 // solves the cryptographic POW puzzel.
-func POW(ctx context.Context, beneficiaryID AccountID, difficulty uint16, miningReward uint64, prevBlock Block, trans []BlockTx, evHandler func(v string, args ...any)) (Block, error) {
+func POW(ctx context.Context, args POWArgs) (Block, error) {
 
 	// When mining the first block, the previous block's hash will be zero.
 	prevBlockHash := signature.ZeroHash
-	if prevBlock.Header.Number > 0 {
-		prevBlockHash = prevBlock.Hash()
+	if args.PrevBlock.Header.Number > 0 {
+		prevBlockHash = args.PrevBlock.Hash()
 	}
 
 	// Construct a merkle tree from the transaction for this block. The root
 	// of this tree will be part of the block to be mined.
-	tree, err := merkle.NewTree(trans)
+	tree, err := merkle.NewTree(args.Trans)
 	if err != nil {
 		return Block{}, err
 	}
@@ -92,12 +104,13 @@ func POW(ctx context.Context, beneficiaryID AccountID, difficulty uint16, mining
 	// Construct the block to be mined.
 	nb := Block{
 		Header: BlockHeader{
-			Number:        prevBlock.Header.Number + 1,
+			Number:        args.PrevBlock.Header.Number + 1,
 			PrevBlockHash: prevBlockHash,
 			TimeStamp:     uint64(time.Now().UTC().Unix()),
-			BeneficiaryID: beneficiaryID,
-			Difficulty:    difficulty,
-			MiningReward:  miningReward,
+			BeneficiaryID: args.BeneficiaryID,
+			Difficulty:    args.Difficulty,
+			MiningReward:  args.MiningReward,
+			StateRoot:     args.StateRoot,
 			TransRoot:     tree.MerkleRootHex(), //
 			Nonce:         0,                    // Will be identified by the POW algorithm.
 		},
@@ -105,7 +118,7 @@ func POW(ctx context.Context, beneficiaryID AccountID, difficulty uint16, mining
 	}
 
 	// Peform the proof of work mining operation.
-	if err := nb.performPOW(ctx, evHandler); err != nil {
+	if err := nb.performPOW(ctx, args.EvHandler); err != nil {
 		return Block{}, err
 	}
 
@@ -186,7 +199,7 @@ func (b Block) Hash() string {
 }
 
 // ValidateBlock takes a block and validates it to be included into the blockchain.
-func (b Block) ValidateBlock(previousBlock Block, evHandler func(v string, args ...any)) error {
+func (b Block) ValidateBlock(previousBlock Block, stateRoot string, evHandler func(v string, args ...any)) error {
 	evHandler("storage: ValidateBlock: validate: blk[%d]: check: chain is not forked", b.Header.Number)
 
 	// The node who sent this block has a chain that is two or more blocks ahead
@@ -238,6 +251,12 @@ func (b Block) ValidateBlock(previousBlock Block, evHandler func(v string, args 
 		// if dur.Seconds() > time.Duration(15*time.Second).Seconds() {
 		// 	return fmt.Errorf("block is older than 15 minutes, duration %v", dur)
 		// }
+	}
+
+	evHandler("storage: ValidateBlock: validate: blk[%d]: check: state root hash does match current database", b.Header.Number)
+
+	if b.Header.StateRoot != stateRoot {
+		return fmt.Errorf("state of the accounts are wrong, current %s, expected %s", stateRoot, b.Header.StateRoot)
 	}
 
 	evHandler("storage: ValidateBlock: validate: blk[%d]: check: merkle root does match transactions", b.Header.Number)
