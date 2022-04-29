@@ -96,17 +96,7 @@ func (h Handlers) AddPeer(ctx context.Context, w http.ResponseWriter, r *http.Re
 		return fmt.Errorf("unable to decode payload: %w", err)
 	}
 
-	knownPeer := false
-	for _, peer := range h.State.RetrieveKnownPeers() {
-		if peer.Match(p.Host) {
-			knownPeer = true
-			break
-		}
-	}
-
-	if !knownPeer {
-		h.State.AddKnownPeer(p)
-	}
+	h.State.AddKnownPeer(p)
 
 	return web.Respond(ctx, w, nil, http.StatusOK)
 }
