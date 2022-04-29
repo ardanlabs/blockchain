@@ -60,6 +60,14 @@ func (ps *PeerSet) Add(peer Peer) bool {
 	return false
 }
 
+// Remove removes a node from the set.
+func (ps *PeerSet) Remove(peer Peer) {
+	ps.mu.Lock()
+	defer ps.mu.Unlock()
+
+	delete(ps.set, peer)
+}
+
 // Copy returns a list of the known peers.
 func (ps *PeerSet) Copy(host string) []Peer {
 	ps.mu.RLock()

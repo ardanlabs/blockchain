@@ -10,6 +10,10 @@ func (s *State) AddKnownPeer(peer peer.Peer) bool {
 	return s.knownPeers.Add(peer)
 }
 
+func (s *State) RemoveKnownPeer(peer peer.Peer) {
+	s.knownPeers.Remove(peer)
+}
+
 // UpsertMempool adds a new transaction to the mempool.
 func (s *State) UpsertMempool(tx database.BlockTx) error {
 	return s.mempool.Upsert(tx)

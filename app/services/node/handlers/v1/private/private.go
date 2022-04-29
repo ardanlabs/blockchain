@@ -89,6 +89,28 @@ func (h Handlers) ProposeBlock(ctx context.Context, w http.ResponseWriter, r *ht
 	return web.Respond(ctx, w, resp, http.StatusOK)
 }
 
+func (h Handlers) AddPeer(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	var p peer.Peer
+
+	if err := web.Decode(r, &p); err != nil {
+		return fmt.Errorf("unable to decode payload: %w", err)
+	}
+
+	knownPeer := false
+	for _, peer := range h.State.RetrieveKnownPeers() {
+		if peer.Match(p.Host) {
+			knownPeer = true
+			break
+		}
+	}
+
+	if !knownPeer {
+		h.State.AddKnownPeer(p)
+	}
+
+	return web.Respond(ctx, w, nil, http.StatusOK)
+}
+
 // Status returns the current status of the node.
 func (h Handlers) Status(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	latestBlock := h.State.RetrieveLatestBlock()

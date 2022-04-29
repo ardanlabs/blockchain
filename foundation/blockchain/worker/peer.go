@@ -35,10 +35,18 @@ func (w *Worker) runPeersOperation() {
 		peerStatus, err := w.state.NetRequestPeerStatus(peer)
 		if err != nil {
 			w.evHandler("worker: runPeersOperation: queryPeerStatus: %s: ERROR: %s", peer.Host, err)
+			w.state.RemoveKnownPeer(peer)
 		}
 
 		// Add new peers to this nodes list.
 		w.addNewPeers(peerStatus.KnownPeers)
+	}
+
+	// get the latest peers and let them know this node is available to chat
+	for _, peer := range w.state.RetrieveKnownPeers() {
+		if err := w.state.NetRequestAddPeer(peer); err != nil {
+			w.evHandler("worker: runPeersOperation: addPeer: %s: ERROR: %s", peer.Host, err)
+		}
 	}
 }
 

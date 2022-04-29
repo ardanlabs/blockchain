@@ -74,6 +74,17 @@ func (s *State) NetRequestPeerStatus(pr peer.Peer) (peer.PeerStatus, error) {
 	return ps, nil
 }
 
+// NetRequestAddPeer registers the current host state with the given peer.Peer.
+func (s *State) NetRequestAddPeer(pr peer.Peer) error {
+	s.evHandler("state: NetRequestAddPeer: started: %s", pr)
+	defer s.evHandler("state: NetRequestAddPeer: completed: %s", pr)
+
+	url := fmt.Sprintf("%s/peers", fmt.Sprintf(baseURL, pr.Host))
+	host := peer.Peer{Host: s.RetrieveHost()}
+
+	return send(http.MethodPost, url, host, nil)
+}
+
 // NetRequestPeerMempool asks the peer for the transactions in their mempool.
 func (s *State) NetRequestPeerMempool(pr peer.Peer) ([]database.BlockTx, error) {
 	s.evHandler("state: NetRequestPeerMempool: started: %s", pr)

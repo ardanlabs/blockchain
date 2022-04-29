@@ -35,4 +35,11 @@ func (w *Worker) Sync() {
 			}
 		}
 	}
+
+	// get the latest peers and let them know this node is available to chat
+	for _, peer := range w.state.RetrieveKnownPeers() {
+		if err := w.state.NetRequestAddPeer(peer); err != nil {
+			w.evHandler("worker: runPeersOperation: addPeer: %s: ERROR: %s", peer.Host, err)
+		}
+	}
 }
