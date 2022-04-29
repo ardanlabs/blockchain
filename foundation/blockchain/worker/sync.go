@@ -35,4 +35,7 @@ func (w *Worker) Sync() {
 			}
 		}
 	}
+
+	// Share with peers this node is available to participate in the network.
+	w.state.NetSendNodeAvailableToPeers()
 }

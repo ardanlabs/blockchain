@@ -67,7 +67,7 @@ func run(log *zap.SugaredLogger) error {
 			Beneficiary    string   `conf:"default:miner1"`
 			DBPath         string   `conf:"default:zblock/miner1/"`
 			SelectStrategy string   `conf:"default:Tip"`
-			KnownPeers     []string `conf:"default:0.0.0.0:9080;0.0.0.0:9180"`
+			OriginPeers    []string `conf:"default:0.0.0.0:9080"`
 		}
 		NameService struct {
 			Folder string `conf:"default:zblock/accounts/"`
@@ -140,7 +140,7 @@ func run(log *zap.SugaredLogger) error {
 	// A peer set is a collection of known nodes in the network so transactions
 	// and blocks can be shared.
 	peerSet := peer.NewPeerSet()
-	for _, host := range cfg.State.KnownPeers {
+	for _, host := range cfg.State.OriginPeers {
 		peerSet.Add(peer.New(host))
 	}
 
