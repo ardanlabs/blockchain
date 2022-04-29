@@ -14,3 +14,15 @@
 	padding: 10px;
 	margin: 0 10px 5px 10px;
 }
+
+.log-block-class {
+	border: 2px solid black;
+	border-radius: 10px;
+	background: #60c4ff;
+	padding: 10px;
+	margin: 0 10px 5px 10px;
+	height: 800px;
+	width: 500px;
+  	overflow-y: scroll;
+	overflow-x: scroll;
+}
