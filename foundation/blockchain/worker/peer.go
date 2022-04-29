@@ -11,6 +11,8 @@ func (w *Worker) peerOperations() {
 	w.evHandler("worker: peerOperations: G started")
 	defer w.evHandler("worker: peerOperations: G completed")
 
+	w.runPeersOperation()
+
 	for {
 		select {
 		case <-w.ticker.C:
@@ -34,7 +36,9 @@ func (w *Worker) runPeersOperation() {
 		// Retrieve the status of this peer.
 		peerStatus, err := w.state.NetRequestPeerStatus(peer)
 		if err != nil {
-			w.evHandler("worker: runPeersOperation: queryPeerStatus: %s: ERROR: %s", peer.Host, err)
+			w.evHandler("worker: runPeersOperation: requestPeerStatus: %s: ERROR: %s", peer.Host, err)
+
+			// Since this known peer is unavailable, remove them from the list.
 			w.state.RemoveKnownPeer(peer)
 		}
 
@@ -42,12 +46,8 @@ func (w *Worker) runPeersOperation() {
 		w.addNewPeers(peerStatus.KnownPeers)
 	}
 
-	// get the latest peers and let them know this node is available to chat
-	for _, peer := range w.state.RetrieveKnownPeers() {
-		if err := w.state.NetRequestAddPeer(peer); err != nil {
-			w.evHandler("worker: runPeersOperation: addPeer: %s: ERROR: %s", peer.Host, err)
-		}
-	}
+	// Share with peers this node is available to participate in the network.
+	w.state.NetSendNodeAvailableToPeers()
 }
 
 // addNewPeers takes the list of known peers and makes sure they are included

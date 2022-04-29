@@ -56,6 +56,22 @@ func (s *State) NetSendTxToPeers(tx database.BlockTx) {
 	}
 }
 
+// NetSendNodeAvailableToPeers shares this node is available to
+// participate in the network with the known peers.
+func (s *State) NetSendNodeAvailableToPeers() {
+	s.evHandler("state: NetSendNodeAvailableToPeers: started")
+	defer s.evHandler("state: NetSendNodeAvailableToPeers: completed")
+
+	host := peer.Peer{Host: s.RetrieveHost()}
+
+	for _, peer := range s.RetrieveKnownPeers() {
+		url := fmt.Sprintf("%s/peers", fmt.Sprintf(baseURL, peer.Host))
+		if err := send(http.MethodPost, url, host, nil); err != nil {
+			s.evHandler("state: NetSendNodeAvailableToPeers: WARNING: %s", err)
+		}
+	}
+}
+
 // NetRequestPeerStatus looks for new nodes on the blockchain by asking
 // known nodes for their peer list. New nodes are added to the list.
 func (s *State) NetRequestPeerStatus(pr peer.Peer) (peer.PeerStatus, error) {
@@ -72,17 +88,6 @@ func (s *State) NetRequestPeerStatus(pr peer.Peer) (peer.PeerStatus, error) {
 	s.evHandler("state: NetRequestPeerStatus: peer-node[%s]: latest-blknum[%d]: peer-list[%s]", pr, ps.LatestBlockNumber, ps.KnownPeers)
 
 	return ps, nil
-}
-
-// NetRequestAddPeer registers the current host state with the given peer.Peer.
-func (s *State) NetRequestAddPeer(pr peer.Peer) error {
-	s.evHandler("state: NetRequestAddPeer: started: %s", pr)
-	defer s.evHandler("state: NetRequestAddPeer: completed: %s", pr)
-
-	url := fmt.Sprintf("%s/peers", fmt.Sprintf(baseURL, pr.Host))
-	host := peer.Peer{Host: s.RetrieveHost()}
-
-	return send(http.MethodPost, url, host, nil)
 }
 
 // NetRequestPeerMempool asks the peer for the transactions in their mempool.
