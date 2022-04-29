@@ -140,6 +140,22 @@ func (db *Database) CopyAccounts() map[AccountID]Account {
 	return accounts
 }
 
+// HashState returns a hash based on the contents of the accounts and
+// their balances. This is added to each block and checked by peers.
+func (db *Database) HashState() string {
+	accounts := make([]Account, 0, len(db.accounts))
+	db.mu.RLock()
+	{
+		for _, account := range db.accounts {
+			accounts = append(accounts, account)
+		}
+	}
+	db.mu.RUnlock()
+
+	sort.Sort(byAccount(accounts))
+	return signature.Hash(accounts)
+}
+
 // ApplyMiningReward gives the specififed account the mining reward.
 func (db *Database) ApplyMiningReward(block Block) {
 	db.mu.Lock()
@@ -236,22 +252,6 @@ func (db *Database) LatestBlock() Block {
 	defer db.mu.RUnlock()
 
 	return db.latestBlock
-}
-
-// HashState returns a hash based on the contents of the accounts and
-// their balances. This is added to each block and checked by peers.
-func (db *Database) HashState() string {
-	accounts := make([]Account, 0, len(db.accounts))
-	db.mu.RLock()
-	{
-		for _, account := range db.accounts {
-			accounts = append(accounts, account)
-		}
-	}
-	db.mu.RUnlock()
-
-	sort.Sort(byAccount(accounts))
-	return signature.Hash(accounts)
 }
 
 // Write adds a new block to the chain.
