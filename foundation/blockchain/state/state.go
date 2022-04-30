@@ -19,9 +19,11 @@ import (
 	-- Chrome Wallet
 
 	-- Blockchain
-	Add a memory storage system for running tests.
-	On chain fork, only remove the block files that need to be removed and reset.
-	Add integration test for the state package.
+	On chain fork, only remove the block need to be removed and reset.
+
+	-- Testing
+	Fork Test
+	Mining Test
 */
 
 // =============================================================================
