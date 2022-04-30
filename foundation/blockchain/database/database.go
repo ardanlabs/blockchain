@@ -1,5 +1,5 @@
 // Package database handles all the lower level support for maintaining the
-// blockchain on disk and maintaining an in memory databse of account information.
+// blockchain in storage and maintaining an in-memory databse of account information.
 package database
 
 import (
@@ -32,13 +32,11 @@ type Iterator interface {
 
 // Database manages data related to accounts who have transacted on the blockchain.
 type Database struct {
-	mu sync.RWMutex
-
+	mu          sync.RWMutex
 	genesis     genesis.Genesis
 	latestBlock Block
 	accounts    map[AccountID]Account
-
-	storage Storage
+	storage     Storage
 }
 
 // New constructs a new database and applies account genesis information and
