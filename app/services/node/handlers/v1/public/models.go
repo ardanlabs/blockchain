@@ -42,6 +42,7 @@ type block struct {
 	BeneficiaryID database.AccountID `json:"beneficiary"`
 	Difficulty    uint16             `json:"difficulty"`
 	MiningReward  uint64             `json:"mining_reward"`
+	StateRoot     string             `json:"state_root"`
 	TransRoot     string             `json:"trans_root"`
 	Nonce         uint64             `json:"nonce"`
 	Transactions  []tx               `json:"txs"`

@@ -1,5 +1,5 @@
 // Package disk implements the ability to read and write blocks to disk
-// using different serialization options.
+// writing each block to a separate block numbered file.
 package disk
 
 import (
@@ -21,8 +21,8 @@ type Disk struct {
 	dbPath string
 }
 
-// NewDisk constructs an Ardan value for use.
-func NewDisk(dbPath string) (*Disk, error) {
+// New constructs an Disk value for use.
+func New(dbPath string) (*Disk, error) {
 	if err := os.MkdirAll(dbPath, 0755); err != nil {
 		return nil, err
 	}
@@ -85,7 +85,7 @@ func (d *Disk) GetBlock(num uint64) (database.BlockData, error) {
 // ForEach returns an iterator to walk through all the blocks
 // starting with block number 1.
 func (d *Disk) ForEach() database.Iterator {
-	return &DiskIterator{disk: d}
+	return &diskIterator{storage: d}
 }
 
 // Reset will clear out the blockchain on disk.
@@ -105,23 +105,23 @@ func (d *Disk) getPath(blockNum uint64) string {
 
 // =============================================================================
 
-// DiskIterator represents the iteration implementation for walking
+// diskIterator represents the iteration implementation for walking
 // through and reading blocks on disk. This implements the database
 // Iterator interface.
-type DiskIterator struct {
-	disk    *Disk  // Access to the Ardan storage API.
+type diskIterator struct {
+	storage *Disk  // Access to the storage API.
 	current uint64 // Currenet block number being iterated over.
 	eoc     bool   // Represents the iterator is at the end of the chain.
 }
 
 // Next retrieves the next block from disk.
-func (di *DiskIterator) Next() (database.BlockData, error) {
+func (di *diskIterator) Next() (database.BlockData, error) {
 	if di.eoc {
 		return database.BlockData{}, errors.New("end of chain")
 	}
 
 	di.current++
-	blockData, err := di.disk.GetBlock(di.current)
+	blockData, err := di.storage.GetBlock(di.current)
 	if errors.Is(err, fs.ErrNotExist) {
 		di.eoc = true
 	}
@@ -130,6 +130,6 @@ func (di *DiskIterator) Next() (database.BlockData, error) {
 }
 
 // Done returns the end of chain value.
-func (di *DiskIterator) Done() bool {
+func (di *diskIterator) Done() bool {
 	return di.eoc
 }

@@ -19,7 +19,7 @@ SHELL := /bin/bash
 # curl -il -X GET http://localhost:8080/v1/accounts/list
 # curl -il -X GET http://localhost:8080/v1/tx/uncommitted/list
 # curl -il -X GET http://localhost:8080/v1/blocks/list
-# curl -il -X GET http://localhost:8080/v1/blocks/list/1/latest
+# curl -il -X GET http://localhost:9080/v1/node/block/list/1/latest
 #
 # Wallet Stuff
 # go run app/wallet/cli/main.go generate

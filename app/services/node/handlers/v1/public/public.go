@@ -187,15 +187,21 @@ func (h Handlers) Accounts(ctx context.Context, w http.ResponseWriter, r *http.R
 
 // BlocksByAccount returns all the blocks and their details.
 func (h Handlers) BlocksByAccount(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	accountStr, err := database.ToAccountID(web.Param(r, "account"))
+	var accountID database.AccountID
+	accountStr := web.Param(r, "account")
+	if accountStr != "" {
+		var err error
+		accountID, err = database.ToAccountID(web.Param(r, "account"))
+		if err != nil {
+			return err
+		}
+	}
+
+	dbBlocks, err := h.State.QueryBlocksByAccount(accountID)
 	if err != nil {
 		return err
 	}
 
-	dbBlocks, err := h.State.QueryBlocksByAccount(accountStr)
-	if err != nil {
-		return err
-	}
 	if len(dbBlocks) == 0 {
 		return web.Respond(ctx, w, nil, http.StatusNoContent)
 	}
@@ -247,6 +253,7 @@ func (h Handlers) BlocksByAccount(ctx context.Context, w http.ResponseWriter, r 
 			Difficulty:    blk.Header.Difficulty,
 			MiningReward:  blk.Header.MiningReward,
 			Nonce:         blk.Header.Nonce,
+			StateRoot:     blk.Header.StateRoot,
 			TransRoot:     blk.Header.TransRoot,
 			Transactions:  trans,
 		}

@@ -90,13 +90,13 @@ func (s *State) validateUpdateDatabase(block database.Block) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	s.evHandler("state: updateLocalState: validate block")
+	s.evHandler("state: validateUpdateDatabase: validate block")
 
 	if err := block.ValidateBlock(s.db.LatestBlock(), s.db.HashState(), s.evHandler); err != nil {
 		return err
 	}
 
-	s.evHandler("state: updateLocalState: write to disk")
+	s.evHandler("state: validateUpdateDatabase: write to disk")
 
 	// Write the new block to the chain on disk.
 	if err := s.db.Write(block); err != nil {
@@ -104,23 +104,23 @@ func (s *State) validateUpdateDatabase(block database.Block) error {
 	}
 	s.db.UpdateLatestBlock(block)
 
-	s.evHandler("state: updateLocalState: update accounts and remove from mempool")
+	s.evHandler("state: validateUpdateDatabase: update accounts and remove from mempool")
 
 	// Process the transactions and update the accounts.
 	for _, tx := range block.Trans.Values() {
-		s.evHandler("state: updateLocalState: tx[%s] update and remove", tx)
-
-		// Apply the balance changes based on this transaction.
-		if err := s.db.ApplyTransaction(block, tx); err != nil {
-			s.evHandler("state: updateLocalState: WARNING : %s", err)
-			continue
-		}
+		s.evHandler("state: validateUpdateDatabase: tx[%s] update and remove", tx)
 
 		// Remove this transaction from the mempool.
 		s.mempool.Delete(tx)
+
+		// Apply the balance changes based on this transaction.
+		if err := s.db.ApplyTransaction(block, tx); err != nil {
+			s.evHandler("state: validateUpdateDatabase: WARNING : %s", err)
+			continue
+		}
 	}
 
-	s.evHandler("state: updateLocalState: apply mining reward")
+	s.evHandler("state: validateUpdateDatabase: apply mining reward")
 
 	// Apply the mining reward for this block.
 	s.db.ApplyMiningReward(block)

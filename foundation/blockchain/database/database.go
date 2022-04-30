@@ -181,9 +181,20 @@ func (db *Database) ApplyTransaction(block Block, tx BlockTx) error {
 	defer db.mu.Unlock()
 	{
 		// Capture these accounts from the database.
-		from := db.accounts[fromID]
-		to := db.accounts[tx.ToID]
-		bnfc := db.accounts[block.Header.BeneficiaryID]
+		from, exists := db.accounts[fromID]
+		if !exists {
+			from = newAccount(fromID, 0)
+		}
+
+		to, exists := db.accounts[tx.ToID]
+		if !exists {
+			to = newAccount(tx.ToID, 0)
+		}
+
+		bnfc, exists := db.accounts[block.Header.BeneficiaryID]
+		if !exists {
+			bnfc = newAccount(block.Header.BeneficiaryID, 0)
+		}
 
 		// The account needs to pay the gas fee regardless. Take the
 		// remaining balance if the account doesn't hold enough for the
