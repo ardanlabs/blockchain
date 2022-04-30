@@ -21,9 +21,7 @@ import (
 	-- Blockchain
 	Add a memory storage system for running tests.
 	On chain fork, only remove the block files that need to be removed and reset.
-	When a proposed block arrives, check if that node is in the peer list.
 	Add integration test for the state package.
-	Change out HTTP to JSON-RPC.
 */
 
 // =============================================================================
