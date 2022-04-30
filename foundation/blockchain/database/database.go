@@ -59,9 +59,6 @@ func New(genesis genesis.Genesis, storage Storage, evHandler func(v string, args
 		db.accounts[accountID] = newAccount(accountID, balance)
 	}
 
-	// Capture the latest block after reading all the blocks from storage.
-	var latestBlock Block
-
 	// Read all the blocks from storage.
 	iter := db.ForEach()
 	for block, err := iter.Next(); !iter.Done(); block, err = iter.Next() {
@@ -70,7 +67,7 @@ func New(genesis genesis.Genesis, storage Storage, evHandler func(v string, args
 		}
 
 		// Validate the block values and cryptographic audit trail.
-		if err := block.ValidateBlock(latestBlock, db.HashState(), evHandler); err != nil {
+		if err := block.ValidateBlock(db.latestBlock, db.HashState(), evHandler); err != nil {
 			return nil, err
 		}
 
@@ -90,7 +87,7 @@ func New(genesis genesis.Genesis, storage Storage, evHandler func(v string, args
 		db.ApplyMiningReward(block)
 
 		// Update the current latest block.
-		latestBlock = block
+		db.latestBlock = block
 	}
 
 	return &db, nil
@@ -103,6 +100,9 @@ func (db *Database) Close() {
 
 // Reset re-initalizes the database back to the genesis state.
 func (db *Database) Reset() error {
+	db.mu.Lock()
+	defer db.mu.Unlock()
+
 	db.storage.Reset()
 
 	// Initalizes the database back to the genesis information.

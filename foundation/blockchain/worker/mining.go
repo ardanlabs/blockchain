@@ -9,6 +9,11 @@ import (
 	"github.com/ardanlabs/blockchain/foundation/blockchain/state"
 )
 
+// CORE NOTE: The POW mining operation is managed by this goroutine. When
+// a startMining signal is received (mainly because a wallet transaction
+// was received) a block is created and then the POW operation starts. This
+// operation can be cancelled if a proposed block is received and is validated.
+
 // miningOperations handles mining.
 func (w *Worker) miningOperations() {
 	w.evHandler("worker: miningOperations: G started")

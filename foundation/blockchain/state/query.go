@@ -34,11 +34,15 @@ func (s *State) QueryBlocksByNumber(from uint64, to uint64) []database.Block {
 		from = s.db.LatestBlock().Header.Number
 		to = from
 	}
+	if to == QueryLastest {
+		to = s.db.LatestBlock().Header.Number
+	}
 
 	var out []database.Block
 	for i := from; i <= to; i++ {
 		block, err := s.db.GetBlock(i)
 		if err != nil {
+			s.evHandler("state: getblock: ERROR: %s", err)
 			return nil
 		}
 		out = append(out, block)
