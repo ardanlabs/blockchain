@@ -20,17 +20,16 @@ func (s *State) NetSendBlockToPeers(block database.Block) error {
 	defer s.evHandler("state: NetSendBlockToPeers: completed")
 
 	for _, peer := range s.RetrieveKnownPeers() {
+		s.evHandler("state: NetSendBlockToPeers: send: block[%s] to peer[%s]", block.Hash(), peer)
+
 		url := fmt.Sprintf("%s/block/propose", fmt.Sprintf(baseURL, peer.Host))
 
 		var status struct {
 			Status string `json:"status"`
 		}
-
 		if err := send(http.MethodPost, url, database.NewBlockData(block), &status); err != nil {
 			return fmt.Errorf("%s: %s", peer.Host, err)
 		}
-
-		s.evHandler("state: NetSendBlockToPeers: sent to peer[%s]", peer)
 	}
 
 	return nil
@@ -49,7 +48,10 @@ func (s *State) NetSendTxToPeers(tx database.BlockTx) {
 
 	// For now, the Ardan blockchain just sends the full transaction.
 	for _, peer := range s.RetrieveKnownPeers() {
+		s.evHandler("state: NetSendTxToPeers: send: tx[%s] to peer[%s]", tx, peer)
+
 		url := fmt.Sprintf("%s/tx/submit", fmt.Sprintf(baseURL, peer.Host))
+
 		if err := send(http.MethodPost, url, tx, nil); err != nil {
 			s.evHandler("state: NetSendTxToPeers: WARNING: %s", err)
 		}
@@ -65,7 +67,10 @@ func (s *State) NetSendNodeAvailableToPeers() {
 	host := peer.Peer{Host: s.RetrieveHost()}
 
 	for _, peer := range s.RetrieveKnownPeers() {
+		s.evHandler("state: NetSendNodeAvailableToPeers: send: host[%s] to peer[%s]", host, peer)
+
 		url := fmt.Sprintf("%s/peers", fmt.Sprintf(baseURL, peer.Host))
+
 		if err := send(http.MethodPost, url, host, nil); err != nil {
 			s.evHandler("state: NetSendNodeAvailableToPeers: WARNING: %s", err)
 		}
@@ -102,7 +107,7 @@ func (s *State) NetRequestPeerMempool(pr peer.Peer) ([]database.BlockTx, error) 
 		return nil, err
 	}
 
-	s.evHandler("state: sync: NetRequestPeerMempool: len[%d]", len(mempool))
+	s.evHandler("state: NetRequestPeerMempool: len[%d]", len(mempool))
 
 	return mempool, nil
 }
@@ -110,8 +115,8 @@ func (s *State) NetRequestPeerMempool(pr peer.Peer) ([]database.BlockTx, error) 
 // NetRequestPeerBlocks queries the specified node asking for blocks this node does
 // not have, then writes them to disk.
 func (s *State) NetRequestPeerBlocks(pr peer.Peer) error {
-	s.evHandler("worker: NetRequestPeerBlocks: started: %s", pr)
-	defer s.evHandler("worker: NetRequestPeerBlocks: completed: %s", pr)
+	s.evHandler("state: NetRequestPeerBlocks: started: %s", pr)
+	defer s.evHandler("state: NetRequestPeerBlocks: completed: %s", pr)
 
 	// CORE NOTE: Ideally you want to start by pulling just block headers and
 	// performing the cryptographic audit so you know your're not being attacked.
@@ -132,7 +137,7 @@ func (s *State) NetRequestPeerBlocks(pr peer.Peer) error {
 		return err
 	}
 
-	s.evHandler("worker: NetRequestPeerBlocks: found blocks[%d]", len(blocksData))
+	s.evHandler("state: NetRequestPeerBlocks: found blocks[%d]", len(blocksData))
 
 	for _, blockData := range blocksData {
 		block, err := database.ToBlock(blockData)

@@ -74,7 +74,7 @@ func (w *Worker) addNewPeers(knownPeers []peer.Peer) error {
 
 		// Only log when the peer is new.
 		if w.state.AddKnownPeer(peer) {
-			w.evHandler("worker: runPeerUpdatesOperation: addNewPeers: add peer nodes: adding peer-node %s", peer)
+			w.evHandler("worker: runPeerUpdatesOperation: addNewPeers: add peer nodes: adding peer-node %s", peer.Host)
 		}
 	}
 

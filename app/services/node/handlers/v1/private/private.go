@@ -91,13 +91,19 @@ func (h Handlers) ProposeBlock(ctx context.Context, w http.ResponseWriter, r *ht
 
 // SubmitPeer is called by a node so they can be added to the known peer list.
 func (h Handlers) SubmitPeer(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	var peer peer.Peer
+	v, err := web.GetValues(ctx)
+	if err != nil {
+		return web.NewShutdownError("web value missing from context")
+	}
 
+	var peer peer.Peer
 	if err := web.Decode(r, &peer); err != nil {
 		return fmt.Errorf("unable to decode payload: %w", err)
 	}
 
-	h.State.AddKnownPeer(peer)
+	if !h.State.AddKnownPeer(peer) {
+		h.Log.Infow("adding peer", "traceid", v.TraceID, "host", peer.Host)
+	}
 
 	return web.Respond(ctx, w, nil, http.StatusOK)
 }
