@@ -1,7 +1,16 @@
-function connect(url, id) {
-    let socket = new WebSocket(url);
+function reqListener() {
+	console.log(this.responseText);
+}
+
+function connect(wsUrl, httpUrl, id) {
+    let socket = new WebSocket(wsUrl);
     socket.onopen = function() {
         document.getElementById(`first-msg${id}`).innerHTML = `Node ${id}: Connection open`;
+
+		var oReq = new XMLHttpRequest();
+		oReq.addEventListener("load", reqListener);
+		oReq.open("GET", httpUrl);
+		oReq.send();
     };
   
     socket.onmessage = function(event) {
@@ -65,7 +74,7 @@ function connect(url, id) {
         console.log('Socket is closed. Reconnect will be attempted in 1 second.', event.reason);
         document.getElementById(`first-msg${id}`).innerHTML = `Node ${id}: Connecting...`;
         setTimeout(function() {
-            connect(url, id);
+            connect(wsUrl, httpUrl, id);
         }, 1000);
     };
   
@@ -75,6 +84,6 @@ function connect(url, id) {
     };
   }
   
-connect('ws://localhost:8080/v1/events', '1');
-connect('ws://localhost:8180/v1/events', '2');
-connect('ws://localhost:8280/v1/events', '3');
+connect('ws://localhost:8080/v1/events', 'http://localhost:9080/node/block/list/1/latest', '1');
+connect('ws://localhost:8180/v1/events', 'http://localhost:9180/node/block/list/1/latest', '2');
+connect('ws://localhost:8280/v1/events', 'http://localhost:9280/node/block/list/1/latest', '3');
