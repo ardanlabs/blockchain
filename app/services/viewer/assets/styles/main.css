@@ -20,6 +20,13 @@
     border-collapse: collapse;
 }
 
+.block-class table, td.key {
+    border-right: none;
+}
+.block-class table, td.value {
+    border-left: none;
+}
+
 .log-block-class {
     border: 2px solid black;
     border-radius: 10px;

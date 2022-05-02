@@ -22,34 +22,38 @@ function connect(url, id) {
             <div class="block-class">
                 <table>
                     <tr>
-                        <td>Own Hash</td>
-                        <td colspan="5">${block.hash}</td>
+                        <td class="key">Own Hash:</td>
+                        <td colspan="5" class="value">${block.hash}</td>
                     </tr>
                     <tr>
-                        <td>Previous Hash</td>
-                        <td colspan="5">${block.header.prev_block_hash}</td>
+                        <td class="key">Previous Hash:</td>
+                        <td colspan="5" class="value">${block.header.prev_block_hash}</td>
                     </tr>
                     <tr>
-                        <td>Block Number</td>
-                        <td>${block.header.number}</td>
-                        <td>Mining Difficulty</td>
-                        <td>${block.header.difficulty}</td>
-                        <td>Mining Reward</td>
-                        <td>${block.header.mining_reward}</td>
+                        <td class="key">Block Number:</td>
+                        <td class="value">${block.header.number}</td>
+                        <td class="key">Mining Difficulty:</td>
+                        <td class="value">${block.header.difficulty}</td>
+                        <td class="key">Mining Reward:</td>
+                        <td class="value">${block.header.mining_reward}</td>
                     </tr>
                     <tr>
-                        <td>Timestamp</td>
-                        <td colspan="2">${block.header.timestamp}</td>
-                        <td>Nonce</td>
-                        <td colspan="2">${block.header.nonce}</td>
+                        <td class="key">Timestamp:</td>
+                        <td colspan="2" class="value">${block.header.timestamp}</td>
+                        <td class="key">Nonce:</td>
+                        <td colspan="2" class="value">${block.header.nonce}</td>
                     </tr>
                     <tr>
-                        <td>Beneficiary</td>
-                        <td colspan="5">${block.header.beneficiary}</td>
+                        <td class="key">Beneficiary:</td>
+                        <td colspan="5" class="value">${block.header.beneficiary}</td>
                     </tr>
                     <tr>
-                        <td>Transaction Root</td>
-                        <td colspan="5">${block.header.trans_root}</td>
+                        <td class="key">Transaction Root:</td>
+                        <td colspan="5" class="value">${block.header.trans_root}</td>
+                    </tr>
+                    <tr>
+                        <td class="key">State Root:</td>
+                        <td colspan="5" class="value">${block.header.state_root}</td>
                     </tr>
                 </table>
             </div>
