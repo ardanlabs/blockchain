@@ -84,6 +84,6 @@ function connect(wsUrl, httpUrl, id) {
     };
   }
   
-connect('ws://localhost:8080/v1/events', 'http://localhost:9080/node/block/list/1/latest', '1');
-connect('ws://localhost:8180/v1/events', 'http://localhost:9180/node/block/list/1/latest', '2');
-connect('ws://localhost:8280/v1/events', 'http://localhost:9280/node/block/list/1/latest', '3');
+connect('ws://localhost:8080/v1/events', 'http://localhost:9080/v1/node/block/list/1/latest', '1');
+connect('ws://localhost:8180/v1/events', 'http://localhost:9180/v1/node/block/list/1/latest', '2');
+connect('ws://localhost:8280/v1/events', 'http://localhost:9280/v1/node/block/list/1/latest', '3');

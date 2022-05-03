@@ -68,6 +68,7 @@ func PrivateMux(cfg MuxConfig) http.Handler {
 		mid.Logger(cfg.Log),
 		mid.Errors(cfg.Log),
 		mid.Metrics(),
+		mid.Cors("*"),
 		mid.Panics(),
 	)
 
