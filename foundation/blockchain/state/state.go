@@ -166,10 +166,9 @@ func (s *State) TurnMiningOn() {
 	s.allowMining = true
 }
 
-// Resync resets the chain both on disk and in memory. This is used to
-// correct an identified fork. No mining is allowed to take place while this
-// process is running. New transactions can be placed into the mempool.
-func (s *State) Resync() error {
+// Reorganize corrects an identified fork. No mining is allowed to take place
+// while this process is running. New transactions can be placed into the mempool.
+func (s *State) Reorganize() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 

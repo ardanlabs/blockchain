@@ -74,7 +74,7 @@ func (h Handlers) ProposeBlock(ctx context.Context, w http.ResponseWriter, r *ht
 	// passes validation, it will be added to the blockchain database.
 	if err := h.State.ProcessProposedBlock(block); err != nil {
 		if errors.Is(err, database.ErrChainForked) {
-			h.State.Resync()
+			h.State.Reorganize()
 		}
 
 		return v1.NewRequestError(errors.New("block not accepted"), http.StatusNotAcceptable)
