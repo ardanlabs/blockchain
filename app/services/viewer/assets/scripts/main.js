@@ -1,6 +1,7 @@
 function connect(wsUrl, httpUrl, id) {
     let blockHashes = new Set();
     let lastBlockHash = "";
+
     const handleNewBlock = function(hash, block) {
         if (blockHashes.size === 0) {
             document.getElementById(`first-msg${id}`).innerHTML = getBlockTable(hash, block);
@@ -126,5 +127,5 @@ function addArrow(id) {
 }
 
 connect('ws://localhost:8080/v1/events', 'http://localhost:9080/v1/node/block/list/1/latest', '1');
-connect('ws://localhost:8180/v1/events', 'http://localhost:9180/v1/node/block/list/1/latest', '2');
-connect('ws://localhost:8280/v1/events', 'http://localhost:9280/v1/node/block/list/1/latest', '3');
+connect('ws://localhost:8280/v1/events', 'http://localhost:9280/v1/node/block/list/1/latest', '2');
+connect('ws://localhost:8380/v1/events', 'http://localhost:9380/v1/node/block/list/1/latest', '3');

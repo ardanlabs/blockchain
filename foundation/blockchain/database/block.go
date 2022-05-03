@@ -102,7 +102,7 @@ func POW(ctx context.Context, args POWArgs) (Block, error) {
 	}
 
 	// Construct the block to be mined.
-	nb := Block{
+	block := Block{
 		Header: BlockHeader{
 			Number:        args.PrevBlock.Header.Number + 1,
 			PrevBlockHash: prevBlockHash,
@@ -118,11 +118,11 @@ func POW(ctx context.Context, args POWArgs) (Block, error) {
 	}
 
 	// Peform the proof of work mining operation.
-	if err := nb.performPOW(ctx, args.EvHandler); err != nil {
+	if err := block.performPOW(ctx, args.EvHandler); err != nil {
 		return Block{}, err
 	}
 
-	return nb, nil
+	return block, nil
 }
 
 // performPOW does the work of mining to find a valid hash for a specified
@@ -271,11 +271,12 @@ func (b Block) ValidateBlock(previousBlock Block, stateRoot string, evHandler fu
 // isHashSolved checks the hash to make sure it complies with
 // the POW rules. We need to match a difficulty number of 0's.
 func isHashSolved(difficulty uint16, hash string) bool {
-	const match = "00000000000000000"
+	const match = "0x00000000000000000"
 
-	if len(hash) != 64 {
+	if len(hash) != 66 {
 		return false
 	}
 
+	difficulty += 2
 	return hash[:difficulty] == match[:difficulty]
 }

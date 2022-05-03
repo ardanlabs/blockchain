@@ -140,7 +140,9 @@ func NewBlockTx(signedTx SignedTx, gasPrice uint64, unitsOfGas uint64) BlockTx {
 // of a block transaction.
 func (tx BlockTx) Hash() ([]byte, error) {
 	str := signature.Hash(tx)
-	return hex.DecodeString(str)
+
+	// Need to remove the 0x prefix from the hash.
+	return hex.DecodeString(str[2:])
 }
 
 // Equals implements the merkle Hashable interface for providing an equality
