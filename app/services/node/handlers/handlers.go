@@ -68,8 +68,17 @@ func PrivateMux(cfg MuxConfig) http.Handler {
 		mid.Logger(cfg.Log),
 		mid.Errors(cfg.Log),
 		mid.Metrics(),
+		mid.Cors("*"),
 		mid.Panics(),
 	)
+
+	// Accept CORS 'OPTIONS' preflight requests if config has been provided.
+	// Don't forget to apply the CORS middleware to the routes that need it.
+	// Example Config: `conf:"default:https://MY_DOMAIN.COM"`
+	h := func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+		return nil
+	}
+	app.Handle(http.MethodOptions, "", "/*", h, mid.Cors("*"))
 
 	// Load the v1 routes.
 	v1.PrivateRoutes(app, v1.Config{

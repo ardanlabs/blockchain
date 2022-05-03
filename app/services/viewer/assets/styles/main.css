@@ -2,3 +2,39 @@
     --main-height: 820px;
     --outer-box-heigth: 740px;
 }
+
+#flex-container {
+  display: flex;
+}
+
+.block-class {
+    border: 2px solid black;
+    border-radius: 10px;
+    background: #60c4ff;
+    padding: 10px;
+    margin: 0 10px 5px 10px;
+}
+
+.block-class table, td {
+    border: thin solid;
+    border-collapse: collapse;
+}
+
+.block-class table, td.key {
+    border-right: none;
+}
+.block-class table, td.value {
+    border-left: none;
+}
+
+.log-block-class {
+    border: 2px solid black;
+    border-radius: 10px;
+    background: #60c4ff;
+    padding: 10px;
+    margin: 0 10px 5px 10px;
+    height: 800px;
+    width: 500px;
+    overflow-y: scroll;
+    overflow-x: scroll;
+}

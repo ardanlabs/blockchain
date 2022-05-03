@@ -46,13 +46,13 @@ services:
     environment:
       NODE_STATE_ORIGIN_PEERS: "blockchain-node-1:9080"
       NODE_STATE_BENEFICIARY: miner2
-      NODE_WEB_PUBLIC_HOST: blockchain-node-2:8280
-      NODE_WEB_PRIVATE_HOST: blockchain-node-2:9280
+      NODE_WEB_PUBLIC_HOST: blockchain-node-2:8180
+      NODE_WEB_PRIVATE_HOST: blockchain-node-2:9180
       # Use ephemeral filesystem on container for node.
       NODE_STATE_DB_PATH: /blocks/
     ports:
-      - 8280:8280
-      - 9280:9280
+      - 8180:8180
+      - 9180:9180
 
   node-3:
     <<: *node
@@ -62,13 +62,13 @@ services:
     environment:
       NODE_STATE_ORIGIN_PEERS: "blockchain-node-1:9080"
       NODE_STATE_BENEFICIARY: jeremy
-      NODE_WEB_PUBLIC_HOST: blockchain-node-3:8380
-      NODE_WEB_PRIVATE_HOST: blockchain-node-3:9380
+      NODE_WEB_PUBLIC_HOST: blockchain-node-3:8280
+      NODE_WEB_PRIVATE_HOST: blockchain-node-3:9280
       # Use ephemeral filesystem on container for node.
       NODE_STATE_DB_PATH: /blocks/
     ports:
-      - 8380:8380
-      - 9380:9380
+      - 8280:8280
+      - 9280:9280
 
   #viewer:
   #  image: golang:1.18
