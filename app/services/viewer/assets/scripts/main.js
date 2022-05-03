@@ -1,21 +1,40 @@
-function reqListener(id) {
-	console.log(this.responseText);
-    var responseJson = JSON.parse(this.responseText);
-    msgBlock = document.getElementById(`msg-block${id}`);
-    for(i = 0; i < responseJson.length; i++) {
-        addBlock(id, responseJson[i].hash, responseJson[i].block);
-    }
-}
-
 function connect(wsUrl, httpUrl, id) {
+    let blockHashes = new Set();
+    let lastBlockHash = "";
+    const handleNewBlock = function(hash, block) {
+        if (blockHashes.size === 0) {
+            document.getElementById(`first-msg${id}`).innerHTML = getBlockTable(hash, block);
+            blockHashes.add(hash);
+            lastBlockHash = hash;
+            return;
+        }
+        if (blockHashes.has(hash)) {
+            return;
+        }
+        if (block.prev_block_hash === lastBlockHash) {
+            addArrow(id);
+        }
+        addBlock(id, hash, block);
+        blockHashes.add(hash);
+        lastBlockHash = hash;
+    }
+
+    const reqListener = function() {
+        var responseJson = JSON.parse(this.responseText);
+        msgBlock = document.getElementById(`msg-block${id}`);
+        for (i = 0; i < responseJson.length; i++) {
+            handleNewBlock(responseJson[i].hash, responseJson[i].block);
+        }
+    }
+
     let socket = new WebSocket(wsUrl);
     socket.onopen = function() {
         document.getElementById(`first-msg${id}`).innerHTML = `Node ${id}: Connection open`;
 
-		var oReq = new XMLHttpRequest();
-		oReq.addEventListener("load", reqListener.bind(oReq, id), false);
-		oReq.open("GET", httpUrl);
-		oReq.send();
+        var oReq = new XMLHttpRequest();
+        oReq.addEventListener("load", reqListener.bind(oReq, id), false);
+        oReq.open("GET", httpUrl);
+        oReq.send();
     };
   
     socket.onmessage = function(event) {
@@ -26,7 +45,7 @@ function connect(wsUrl, httpUrl, id) {
         }
         text = text.substring(blockMsgStart.length);
         let block = JSON.parse(text);
-        addBlock(id, block.hash, block.header);
+        handleNewBlock(block.hash, block.header);
     };
   
     socket.onclose = function(event) {
@@ -41,17 +60,10 @@ function connect(wsUrl, httpUrl, id) {
       console.error('Socket encountered error: ', err.message, 'Closing socket');
       socket.close();
     };
-  }
+}
 
-function addBlock(id, hash, block) {
-    msgBlock = document.getElementById(`msg-block${id}`);
-    msgBlock.innerHTML += `
-        <svg version="1.1" xmlns="http://www.w3.org/2000/svg" height="32" viewBox="0 0 300 34">
-            <line stroke="rgb(0,0,0)" stroke-opacity="1.0" stroke-width="2.5" x1="220" y1="0" x2="220" y2="32"/>
-            <line stroke="rgb(0,0,0)" stroke-opacity="1.0" stroke-width="2.5" x1="212" y1="24" x2="220" y2="32"/>
-            <line stroke="rgb(0,0,0)" stroke-opacity="1.0" stroke-width="2.5" x1="228" y1="24" x2="220" y2="32"/>
-        </svg>
-        <div class="block-class">
+function getBlockTable(hash, block) {
+    return `
             <table>
                 <tr>
                     <td class="key">Own Hash:</td>
@@ -88,9 +100,29 @@ function addBlock(id, hash, block) {
                     <td colspan="5" class="value">${block.state_root}</td>
                 </tr>
             </table>
+    `;
+}
+
+function addBlock(id, hash, block) {
+    msgBlock = document.getElementById(`msg-block${id}`);
+    blockTable = getBlockTable(hash, block)
+    msgBlock.innerHTML += `
+        <div class="block-class">
+            ${blockTable}
         </div>
     `;
     msgBlock.scrollTop = msgBlock.scrollHeight;
+}
+
+function addArrow(id) {
+    msgBlock = document.getElementById(`msg-block${id}`);
+    msgBlock.innerHTML += `
+        <svg version="1.1" xmlns="http://www.w3.org/2000/svg" height="32" viewBox="0 0 300 34">
+            <line stroke="rgb(0,0,0)" stroke-opacity="1.0" stroke-width="2.5" x1="220" y1="0" x2="220" y2="32"/>
+            <line stroke="rgb(0,0,0)" stroke-opacity="1.0" stroke-width="2.5" x1="212" y1="24" x2="220" y2="32"/>
+            <line stroke="rgb(0,0,0)" stroke-opacity="1.0" stroke-width="2.5" x1="228" y1="24" x2="220" y2="32"/>
+        </svg>
+    `;
 }
 
 connect('ws://localhost:8080/v1/events', 'http://localhost:9080/v1/node/block/list/1/latest', '1');
