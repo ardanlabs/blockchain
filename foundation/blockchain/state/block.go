@@ -82,7 +82,7 @@ func (s *State) ProcessProposedBlock(block database.Block) error {
 		s.evHandler("state: ValidateProposedBlock: signal runMiningOperation to terminate")
 		done()
 
-		s.sendBlockToWebsocket(block) // Let the viewer know about the new block
+		s.blockEvent(block)
 	}()
 
 	return nil
@@ -90,15 +90,19 @@ func (s *State) ProcessProposedBlock(block database.Block) error {
 
 // =============================================================================
 
-func (s *State) sendBlockToWebsocket(block database.Block) {
+// blockEvent provides a specific event about a new block in the chain for
+// application specific support.
+func (s *State) blockEvent(block database.Block) {
 	blockHeaderJSON, err := json.Marshal(block.Header)
 	if err != nil {
 		blockHeaderJSON = []byte(fmt.Sprintf("%q", err.Error()))
 	}
+
 	blockTransJSON, err := json.Marshal(block.Trans)
 	if err != nil {
 		blockTransJSON = []byte(fmt.Sprintf("%q", err.Error()))
 	}
+
 	s.evHandler(`viewer: block: {"hash":%q,"header":%s,"trans":%s}`, block.Hash(), string(blockHeaderJSON), string(blockTransJSON))
 }
 
