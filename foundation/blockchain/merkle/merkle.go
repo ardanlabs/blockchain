@@ -267,6 +267,13 @@ func (t *Tree[T]) String() string {
 	return s
 }
 
+// MarshalText implements the TextMarshaler interface and produces a panic
+// if anyone tries to marshal the Merkle tree. I don't want this to happen.
+// Use the Values function to return a slice that can be marshaled.
+func (t *Tree[T]) MarshalText() (text []byte, err error) {
+	panic("do not marshal the merkle tree, use Values")
+}
+
 // =============================================================================
 
 // Node represents a node, root, or leaf in the tree. It stores pointers to its
