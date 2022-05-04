@@ -2,9 +2,9 @@ function connect(wsUrl, httpUrl, id) {
     let blockHashes = new Set();
     let lastBlockHash = "";
 
-    const handleNewBlock = function(hash, block) {
+    const handleNewBlock = function(hash, block, trans) {
         if (blockHashes.size === 0) {
-            document.getElementById(`first-msg${id}`).innerHTML = getBlockTable(hash, block);
+            document.getElementById(`first-msg${id}`).innerHTML = getBlockTable(hash, block, trans);
             blockHashes.add(hash);
             lastBlockHash = hash;
             return;
@@ -15,7 +15,7 @@ function connect(wsUrl, httpUrl, id) {
         if (block.prev_block_hash === lastBlockHash) {
             addArrow(id);
         }
-        addBlock(id, hash, block);
+        addBlock(id, hash, block, trans);
         blockHashes.add(hash);
         lastBlockHash = hash;
     }
@@ -24,7 +24,7 @@ function connect(wsUrl, httpUrl, id) {
         var responseJson = JSON.parse(this.responseText);
         msgBlock = document.getElementById(`msg-block${id}`);
         for (i = 0; i < responseJson.length; i++) {
-            handleNewBlock(responseJson[i].hash, responseJson[i].block);
+            handleNewBlock(responseJson[i].hash, responseJson[i].block, responseJson[i].trans);
         }
     }
 
@@ -46,7 +46,7 @@ function connect(wsUrl, httpUrl, id) {
         }
         text = text.substring(blockMsgStart.length);
         let block = JSON.parse(text);
-        handleNewBlock(block.hash, block.header);
+        handleNewBlock(block.hash, block.header, block.trans);
     };
   
     socket.onclose = function(event) {
@@ -63,7 +63,7 @@ function connect(wsUrl, httpUrl, id) {
     };
 }
 
-function getBlockTable(hash, block) {
+function getBlockTable(hash, block, trans) {
     return `
             <table>
                 <tr>
@@ -84,9 +84,11 @@ function getBlockTable(hash, block) {
                 </tr>
                 <tr>
                     <td class="key">Timestamp:</td>
-                    <td colspan="2" class="value">${block.timestamp}</td>
+                    <td class="value">${block.timestamp}</td>
+                    <td class="key">No. of Transactions:</td>
+                    <td class="value">${trans.length}</td>
                     <td class="key">Nonce:</td>
-                    <td colspan="2" class="value">${block.nonce}</td>
+                    <td class="value">${block.nonce}</td>
                 </tr>
                 <tr>
                     <td class="key">Beneficiary:</td>
@@ -104,9 +106,9 @@ function getBlockTable(hash, block) {
     `;
 }
 
-function addBlock(id, hash, block) {
+function addBlock(id, hash, block, trans) {
     msgBlock = document.getElementById(`msg-block${id}`);
-    blockTable = getBlockTable(hash, block)
+    blockTable = getBlockTable(hash, block, trans)
     msgBlock.innerHTML += `
         <div class="block-class">
             ${blockTable}
