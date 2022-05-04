@@ -56,9 +56,6 @@ func (s *State) MineNewBlock(ctx context.Context) (database.Block, error) {
 		return database.Block{}, err
 	}
 
-	// Let the viewer know about the new block
-	s.sendBlockToWebsocket(block)
-
 	return block, nil
 }
 
@@ -81,30 +78,12 @@ func (s *State) ProcessProposedBlock(block database.Block) error {
 	defer func() {
 		s.evHandler("state: ValidateProposedBlock: signal runMiningOperation to terminate")
 		done()
-
-		s.blockEvent(block)
 	}()
 
 	return nil
 }
 
 // =============================================================================
-
-// blockEvent provides a specific event about a new block in the chain for
-// application specific support.
-func (s *State) blockEvent(block database.Block) {
-	blockHeaderJSON, err := json.Marshal(block.Header)
-	if err != nil {
-		blockHeaderJSON = []byte(fmt.Sprintf("%q", err.Error()))
-	}
-
-	blockTransJSON, err := json.Marshal(block.Trans)
-	if err != nil {
-		blockTransJSON = []byte(fmt.Sprintf("%q", err.Error()))
-	}
-
-	s.evHandler(`viewer: block: {"hash":%q,"header":%s,"trans":%s}`, block.Hash(), string(blockHeaderJSON), string(blockTransJSON))
-}
 
 // validateUpdateDatabase takes the block and validates the block against the
 // consensus rules. If the block passes, then the state of the node is updated
@@ -148,5 +127,24 @@ func (s *State) validateUpdateDatabase(block database.Block) error {
 	// Apply the mining reward for this block.
 	s.db.ApplyMiningReward(block)
 
+	// Send an event about this new block.
+	s.blockEvent(block)
+
 	return nil
+}
+
+// blockEvent provides a specific event about a new block in the chain for
+// application specific support.
+func (s *State) blockEvent(block database.Block) {
+	blockHeaderJSON, err := json.Marshal(block.Header)
+	if err != nil {
+		blockHeaderJSON = []byte(fmt.Sprintf("%q", err.Error()))
+	}
+
+	blockTransJSON, err := json.Marshal(block.Trans)
+	if err != nil {
+		blockTransJSON = []byte(fmt.Sprintf("%q", err.Error()))
+	}
+
+	s.evHandler(`viewer: block: {"hash":%q,"header":%s,"trans":%s}`, block.Hash(), string(blockHeaderJSON), string(blockTransJSON))
 }

@@ -80,7 +80,7 @@ func Test_Hash(t *testing.T) {
 	}{
 		Name: "Bill",
 	}
-	hash := "0f6887ac85101d6d6425a617edf35bd721b5f619fb92c36c3d2224e3bdb0ee5a"
+	hash := "0x0f6887ac85101d6d6425a617edf35bd721b5f619fb92c36c3d2224e3bdb0ee5a"
 
 	t.Log("Given the need to verify the hash function is working.")
 	{
