@@ -80,6 +80,8 @@ Occasionally we run into material that we feel is important. This is a section p
 [Strike: Bitcoin Wallet](https://strike.me/en/)  
 [Tendermint: Building the most powerful tools for distributed networks](https://tendermint.com/)  
 [The Graph: The Graph is an indexing protocol for querying networks like Ethereum and IPFS](https://thegraph.com/en/)  
+[Terra: Programmable money for the internet](https://www.terra.money/)  
+[Anchor: Banking on the blockchain](https://www.app-achnorprotocol.com/)  
 
 ### Conferences
 [Miami Hack Week](https://www.miamihackweek.com/)  
