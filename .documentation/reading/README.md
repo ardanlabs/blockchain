@@ -185,6 +185,7 @@ Ethereum documentation that helps to better understand that blockchain project.
 [Beacon Chain](https://ethereum.org/en/upgrades/beacon-chain/)  
 [Proof of Stake FAQ](https://vitalik.ca/general/2017/12/31/pos_faq.html) - Vitalik Buterin    
 [The Beacon Chain Ethereum 2.0 explainer you need to read first](https://ethos.dev/beacon-chain/) - ethos.dev  
+[Prysm: An Ethereum Consensus Implementation Written in Go](https://github.com/prysmaticlabs/prysm)  
 
 ### Zero Address
 [Etherscan Address Zero](https://etherscan.io/address/0x0000000000000000000000000000000000000000)  
