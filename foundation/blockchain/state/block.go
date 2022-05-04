@@ -141,7 +141,7 @@ func (s *State) blockEvent(block database.Block) {
 		blockHeaderJSON = []byte(fmt.Sprintf("%q", err.Error()))
 	}
 
-	blockTransJSON, err := json.Marshal(block.Trans)
+	blockTransJSON, err := json.Marshal(block.Trans.Values())
 	if err != nil {
 		blockTransJSON = []byte(fmt.Sprintf("%q", err.Error()))
 	}
