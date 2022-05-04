@@ -94,6 +94,11 @@ func (s *State) validateUpdateDatabase(block database.Block) error {
 
 	s.evHandler("state: validateUpdateDatabase: validate block")
 
+	// CORE NOTE: I could add logic to determine if this block was mined by this
+	// node or a peer. If the block is mined by this node, even if a peer beat
+	// me to this function for the same block number, I could replace the peer
+	// block with my own and attempt to have other peers accept my block instead.
+
 	if err := block.ValidateBlock(s.db.LatestBlock(), s.db.HashState(), s.evHandler); err != nil {
 		return err
 	}
