@@ -46,7 +46,7 @@ function connect(wsUrl, httpUrl, id) {
         }
         text = text.substring(blockMsgStart.length);
         let block = JSON.parse(text);
-        handleNewBlock(block.hash, block.header, block.trans);
+        handleNewBlock(block.hash, block.block, block.trans);
     };
   
     socket.onclose = function(event) {
