@@ -208,16 +208,16 @@ func (h Handlers) BlocksByAccount(ctx context.Context, w http.ResponseWriter, r 
 
 	blocks := make([]block, len(dbBlocks))
 	for j, blk := range dbBlocks {
-		values := blk.Trans.Values()
+		values := blk.MerkleTree.Values()
 
-		trans := make([]tx, len(blk.Trans.Values()))
+		trans := make([]tx, len(values))
 		for i, tran := range values {
 			account, err := tran.FromAccount()
 			if err != nil {
 				return err
 			}
 
-			rawProof, order, err := blk.Trans.MerkleProof(tran)
+			rawProof, order, err := blk.MerkleTree.Proof(tran)
 			if err != nil {
 				return err
 			}

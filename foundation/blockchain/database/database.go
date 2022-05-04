@@ -79,7 +79,7 @@ func New(genesis genesis.Genesis, storage Storage, evHandler func(v string, args
 		}
 
 		// Update the database with the transaction information.
-		for _, tx := range block.Trans.Values() {
+		for _, tx := range block.MerkleTree.Values() {
 			db.ApplyTransaction(block, tx)
 		}
 		db.ApplyMiningReward(block)

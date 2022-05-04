@@ -77,7 +77,7 @@ func Test_RebuildTree(t *testing.T) {
 		if err != nil {
 			t.Errorf("[case:%d] error: unexpected error: %v", table[i].testCaseID, err)
 		}
-		err = tree.RebuildTree()
+		err = tree.Rebuild()
 		if err != nil {
 			t.Errorf("[case:%d] error: unexpected error:  %v", table[i].testCaseID, err)
 		}
@@ -93,7 +93,7 @@ func Test_RebuildTreeWith(t *testing.T) {
 		if err != nil {
 			t.Errorf("[case:%d] error: unexpected error: %v", table[i].testCaseID, err)
 		}
-		err = tree.GenerateTree(table[i+1].data)
+		err = tree.Generate(table[i+1].data)
 		if err != nil {
 			t.Errorf("[case:%d] error: unexpected error: %v", table[i].testCaseID, err)
 		}
@@ -109,12 +109,12 @@ func Test_VerifyTree(t *testing.T) {
 		if err != nil {
 			t.Errorf("[case:%d] error: unexpected error: %v", table[i].testCaseID, err)
 		}
-		if err := tree.VerifyTree(); err != nil {
+		if err := tree.Verify(); err != nil {
 			t.Errorf("[case:%d] error: expected tree to be valid", table[i].testCaseID)
 		}
 		tree.Root.Hash = []byte{1}
 		tree.MerkleRoot = []byte{1}
-		if err := tree.VerifyTree(); err == nil {
+		if err := tree.Verify(); err == nil {
 			t.Errorf("[case:%d] error: expected tree to be invalid", table[i].testCaseID)
 		}
 	}
@@ -147,7 +147,7 @@ func Test_VerifyData(t *testing.T) {
 			if err := tree.VerifyData(table[i].data[0]); err == nil {
 				t.Errorf("[case:%d] error: expected invalid content", table[i].testCaseID)
 			}
-			if err := tree.RebuildTree(); err != nil {
+			if err := tree.Rebuild(); err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -176,9 +176,9 @@ func Test_MerklePath(t *testing.T) {
 			t.Errorf("[case:%d] error: unexpected error: %v", table[i].testCaseID, err)
 		}
 		for j := 0; j < len(table[i].data); j++ {
-			merkleProof, index, _ := tree.MerkleProof(table[i].data[j])
+			merkleProof, index, _ := tree.Proof(table[i].data[j])
 
-			hash, err := tree.Leafs[j].CalculateNodeHash()
+			hash, err := tree.Leafs[j].CalculateHash()
 			if err != nil {
 				t.Errorf("[case:%d] error: calculateNodeHash error: %v", table[i].testCaseID, err)
 			}

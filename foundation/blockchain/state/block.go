@@ -62,7 +62,7 @@ func (s *State) MineNewBlock(ctx context.Context) (database.Block, error) {
 // ProcessProposedBlock takes a block received from a peer, validates it and
 // if that passes, adds the block to the local blockchain.
 func (s *State) ProcessProposedBlock(block database.Block) error {
-	s.evHandler("state: ValidateProposedBlock: started: prevBlk[%s]: newBlk[%s]: numTrans[%d]", block.Header.PrevBlockHash, block.Hash(), len(block.Trans.Values()))
+	s.evHandler("state: ValidateProposedBlock: started: prevBlk[%s]: newBlk[%s]: numTrans[%d]", block.Header.PrevBlockHash, block.Hash(), len(block.MerkleTree.Values()))
 	defer s.evHandler("state: ValidateProposedBlock: completed: newBlk[%s]", block.Hash())
 
 	// Validate the block and then update the blockchain database.
@@ -109,7 +109,7 @@ func (s *State) validateUpdateDatabase(block database.Block) error {
 	s.evHandler("state: validateUpdateDatabase: update accounts and remove from mempool")
 
 	// Process the transactions and update the accounts.
-	for _, tx := range block.Trans.Values() {
+	for _, tx := range block.MerkleTree.Values() {
 		s.evHandler("state: validateUpdateDatabase: tx[%s] update and remove", tx)
 
 		// Remove this transaction from the mempool.
@@ -141,7 +141,7 @@ func (s *State) blockEvent(block database.Block) {
 		blockHeaderJSON = []byte(fmt.Sprintf("%q", err.Error()))
 	}
 
-	blockTransJSON, err := json.Marshal(block.Trans.Values())
+	blockTransJSON, err := json.Marshal(block.MerkleTree.Values())
 	if err != nil {
 		blockTransJSON = []byte(fmt.Sprintf("%q", err.Error()))
 	}

@@ -31,7 +31,7 @@ func NewBlockData(block Block) BlockData {
 	blockData := BlockData{
 		Hash:   block.Hash(),
 		Header: block.Header,
-		Trans:  block.Trans.Values(),
+		Trans:  block.MerkleTree.Values(),
 	}
 
 	return blockData
@@ -45,8 +45,8 @@ func ToBlock(blockData BlockData) (Block, error) {
 	}
 
 	block := Block{
-		Header: blockData.Header,
-		Trans:  tree,
+		Header:     blockData.Header,
+		MerkleTree: tree,
 	}
 
 	return block, nil
@@ -69,8 +69,8 @@ type BlockHeader struct {
 
 // Block represents a group of transactions batched together.
 type Block struct {
-	Header BlockHeader
-	Trans  *merkle.Tree[BlockTx]
+	Header     BlockHeader
+	MerkleTree *merkle.Tree[BlockTx]
 }
 
 // POWArgs represents the set of arguments required to run POW.
@@ -111,10 +111,10 @@ func POW(ctx context.Context, args POWArgs) (Block, error) {
 			Difficulty:    args.Difficulty,
 			MiningReward:  args.MiningReward,
 			StateRoot:     args.StateRoot,
-			TransRoot:     tree.MerkleRootHex(), //
-			Nonce:         0,                    // Will be identified by the POW algorithm.
+			TransRoot:     tree.RootHex(), //
+			Nonce:         0,              // Will be identified by the POW algorithm.
 		},
-		Trans: tree,
+		MerkleTree: tree,
 	}
 
 	// Peform the proof of work mining operation.
@@ -132,7 +132,7 @@ func (b *Block) performPOW(ctx context.Context, ev func(v string, args ...any)) 
 	defer ev("database: PerformPOW: MINING: completed")
 
 	// Log the transactions that are a part of this potential block.
-	for _, tx := range b.Trans.Values() {
+	for _, tx := range b.MerkleTree.Values() {
 		ev("database: PerformPOW: MINING: tx[%s]", tx)
 	}
 
@@ -261,8 +261,8 @@ func (b Block) ValidateBlock(previousBlock Block, stateRoot string, evHandler fu
 
 	evHandler("database: ValidateBlock: validate: blk[%d]: check: merkle root does match transactions", b.Header.Number)
 
-	if b.Header.TransRoot != b.Trans.MerkleRootHex() {
-		return fmt.Errorf("merkle root does not match transactions, got %s, exp %s", b.Trans.MerkleRootHex(), b.Header.TransRoot)
+	if b.Header.TransRoot != b.MerkleTree.RootHex() {
+		return fmt.Errorf("merkle root does not match transactions, got %s, exp %s", b.MerkleTree.RootHex(), b.Header.TransRoot)
 	}
 
 	return nil

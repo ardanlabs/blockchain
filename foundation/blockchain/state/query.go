@@ -63,7 +63,7 @@ func (s *State) QueryBlocksByAccount(accountID database.AccountID) ([]database.B
 			return nil, err
 		}
 
-		for _, tx := range block.Trans.Values() {
+		for _, tx := range block.MerkleTree.Values() {
 			fromID, err := tx.FromAccount()
 			if err != nil {
 				continue

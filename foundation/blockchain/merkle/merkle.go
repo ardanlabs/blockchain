@@ -55,17 +55,17 @@ func NewTree[T Hashable[T]](values []T, options ...func(t *Tree[T])) (*Tree[T], 
 		option(&t)
 	}
 
-	if err := t.GenerateTree(values); err != nil {
+	if err := t.Generate(values); err != nil {
 		return nil, err
 	}
 
 	return &t, nil
 }
 
-// GenerateTree constructs the leafs and nodes of the tree from the specified
+// Generate constructs the leafs and nodes of the tree from the specified
 // data. If the tree has been generated previously, the tree is re-generated
 // from scratch.
-func (t *Tree[T]) GenerateTree(values []T) error {
+func (t *Tree[T]) Generate(values []T) error {
 	if len(values) == 0 {
 		return errors.New("cannot construct tree with no content")
 	}
@@ -108,22 +108,22 @@ func (t *Tree[T]) GenerateTree(values []T) error {
 	return nil
 }
 
-// RebuildTree is a helper function that will rebuild the tree reusing only the
+// Rebuild is a helper function that will rebuild the tree reusing only the
 // data that it currently holds in the leaves.
-func (t *Tree[T]) RebuildTree() error {
+func (t *Tree[T]) Rebuild() error {
 	var data []T
 	for _, node := range t.Leafs {
 		data = append(data, node.Value)
 	}
 
-	if err := t.GenerateTree(data); err != nil {
+	if err := t.Generate(data); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-// MerkleProof returns the set of hashes and the order of concatenating those
+// Proof returns the set of hashes and the order of concatenating those
 // hashes for proving a transaction is in the tree. This is how you can use
 // the information returned by this function.
 //
@@ -148,7 +148,7 @@ func (t *Tree[T]) RebuildTree() error {
 //  root = sha256.Sum256(bytes)
 //
 // The calculated root should match merkle_root.
-func (t *Tree[T]) MerkleProof(data T) ([][]byte, []int64, error) {
+func (t *Tree[T]) Proof(data T) ([][]byte, []int64, error) {
 	for _, node := range t.Leafs {
 		if !node.Value.Equals(data) {
 			continue
@@ -176,10 +176,10 @@ func (t *Tree[T]) MerkleProof(data T) ([][]byte, []int64, error) {
 	return nil, nil, errors.New("unable to find data in tree")
 }
 
-// VerifyTree validates the hashes at each level of the tree and returns true
+// Verify validates the hashes at each level of the tree and returns true
 // if the resulting hash at the root of the tree matches the resulting root hash.
-func (t *Tree[T]) VerifyTree() error {
-	calculatedMerkleRoot, err := t.Root.verifyNode()
+func (t *Tree[T]) Verify() error {
+	calculatedMerkleRoot, err := t.Root.verify()
 	if err != nil {
 		return err
 	}
@@ -204,12 +204,12 @@ func (t *Tree[T]) VerifyData(data T) error {
 
 		currentParent := node.Parent
 		for currentParent != nil {
-			rightBytes, err := currentParent.Right.CalculateNodeHash()
+			rightBytes, err := currentParent.Right.CalculateHash()
 			if err != nil {
 				return err
 			}
 
-			leftBytes, err := currentParent.Left.CalculateNodeHash()
+			leftBytes, err := currentParent.Left.CalculateHash()
 			if err != nil {
 				return err
 			}
@@ -249,8 +249,8 @@ func (t *Tree[T]) Values() []T {
 	return values
 }
 
-// MerkleRootHex converts the merkle root byte hash to a hex encoded string.
-func (t *Tree[T]) MerkleRootHex() string {
+// RootHex converts the merkle root byte hash to a hex encoded string.
+func (t *Tree[T]) RootHex() string {
 	return ToHex(t.MerkleRoot)
 }
 
@@ -282,19 +282,19 @@ type Node[T Hashable[T]] struct {
 	dup    bool
 }
 
-// verifyNode walks down the tree until hitting a leaf, calculating the hash at
+// verify walks down the tree until hitting a leaf, calculating the hash at
 // each level and returning the resulting hash of the node.
-func (n *Node[T]) verifyNode() ([]byte, error) {
+func (n *Node[T]) verify() ([]byte, error) {
 	if n.leaf {
 		return n.Value.Hash()
 	}
 
-	rightBytes, err := n.Right.verifyNode()
+	rightBytes, err := n.Right.verify()
 	if err != nil {
 		return nil, err
 	}
 
-	leftBytes, err := n.Left.verifyNode()
+	leftBytes, err := n.Left.verify()
 	if err != nil {
 		return nil, err
 	}
@@ -307,8 +307,8 @@ func (n *Node[T]) verifyNode() ([]byte, error) {
 	return h.Sum(nil), nil
 }
 
-// CalculateNodeHash is a helper function that calculates the hash of the node.
-func (n *Node[T]) CalculateNodeHash() ([]byte, error) {
+// CalculateHash is a helper function that calculates the hash of the node.
+func (n *Node[T]) CalculateHash() ([]byte, error) {
 	if n.leaf {
 		return n.Value.Hash()
 	}
