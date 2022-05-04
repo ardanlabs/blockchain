@@ -2,29 +2,33 @@ function connect(wsUrl, httpUrl, id) {
     let blockHashes = new Set();
     let lastBlockHash = "";
 
-    const handleNewBlock = function(hash, block, trans) {
+    const handleNewBlock = function(block) {
         if (blockHashes.size === 0) {
-            document.getElementById(`first-msg${id}`).innerHTML = getBlockTable(hash, block, trans);
-            blockHashes.add(hash);
-            lastBlockHash = hash;
+            document.getElementById(`first-msg${id}`).innerHTML = getBlockTable(block);
+            if (block.hash) {
+                blockHashes.add(block.hash);
+                lastBlockHash = block.hash;
+            }
             return;
         }
-        if (blockHashes.has(hash)) {
-            return;
+        if (block.hash) {
+            if (blockHashes.has(block.hash)) {
+                return;
+            }
+            if (block.block.prev_block_hash === lastBlockHash) {
+                addArrow(id);
+            }
+            blockHashes.add(block.hash);
+            lastBlockHash = block.hash;
         }
-        if (block.prev_block_hash === lastBlockHash) {
-            addArrow(id);
-        }
-        addBlock(id, hash, block, trans);
-        blockHashes.add(hash);
-        lastBlockHash = hash;
+        addBlock(id, block);
     }
 
     const reqListener = function() {
         var responseJson = JSON.parse(this.responseText);
         msgBlock = document.getElementById(`msg-block${id}`);
         for (i = 0; i < responseJson.length; i++) {
-            handleNewBlock(responseJson[i].hash, responseJson[i].block, responseJson[i].trans);
+            handleNewBlock(responseJson[i]);
         }
     }
 
@@ -46,7 +50,7 @@ function connect(wsUrl, httpUrl, id) {
         }
         text = text.substring(blockMsgStart.length);
         let block = JSON.parse(text);
-        handleNewBlock(block.hash, block.block, block.trans);
+        handleNewBlock(block);
     };
   
     socket.onclose = function(event) {
@@ -63,52 +67,58 @@ function connect(wsUrl, httpUrl, id) {
     };
 }
 
-function getBlockTable(hash, block, trans) {
-    return `
-            <table>
-                <tr>
-                    <td class="key">Own Hash:</td>
-                    <td colspan="5" class="value">${hash}</td>
-                </tr>
-                <tr>
-                    <td class="key">Previous Hash:</td>
-                    <td colspan="5" class="value">${block.prev_block_hash}</td>
-                </tr>
-                <tr>
-                    <td class="key">Block Number:</td>
-                    <td class="value">${block.number}</td>
-                    <td class="key">Mining Difficulty:</td>
-                    <td class="value">${block.difficulty}</td>
-                    <td class="key">Mining Reward:</td>
-                    <td class="value">${block.mining_reward}</td>
-                </tr>
-                <tr>
-                    <td class="key">Timestamp:</td>
-                    <td class="value">${block.timestamp}</td>
-                    <td class="key">No. of Transactions:</td>
-                    <td class="value">${trans.length}</td>
-                    <td class="key">Nonce:</td>
-                    <td class="value">${block.nonce}</td>
-                </tr>
-                <tr>
-                    <td class="key">Beneficiary:</td>
-                    <td colspan="5" class="value">${block.beneficiary}</td>
-                </tr>
-                <tr>
-                    <td class="key">Transaction Root:</td>
-                    <td colspan="5" class="value">${block.trans_root}</td>
-                </tr>
-                <tr>
-                    <td class="key">State Root:</td>
-                    <td colspan="5" class="value">${block.state_root}</td>
-                </tr>
-            </table>
-    `;
+function getBlockTable(block) {
+    if (block.hash) {
+        return `
+                <table>
+                    <tr>
+                        <td class="key">Own Hash:</td>
+                        <td colspan="5" class="value">${block.hash}</td>
+                    </tr>
+                    <tr>
+                        <td class="key">Previous Hash:</td>
+                        <td colspan="5" class="value">${block.block.prev_block_hash}</td>
+                    </tr>
+                    <tr>
+                        <td class="key">Block Number:</td>
+                        <td class="value">${block.block.number}</td>
+                        <td class="key">Mining Difficulty:</td>
+                        <td class="value">${block.block.difficulty}</td>
+                        <td class="key">Mining Reward:</td>
+                        <td class="value">${block.block.mining_reward}</td>
+                    </tr>
+                    <tr>
+                        <td class="key">Timestamp:</td>
+                        <td class="value">${block.block.timestamp}</td>
+                        <td class="key">No. of Transactions:</td>
+                        <td class="value">${block.trans.length}</td>
+                        <td class="key">Nonce:</td>
+                        <td class="value">${block.block.nonce}</td>
+                    </tr>
+                    <tr>
+                        <td class="key">Beneficiary:</td>
+                        <td colspan="5" class="value">${block.block.beneficiary}</td>
+                    </tr>
+                    <tr>
+                        <td class="key">Transaction Root:</td>
+                        <td colspan="5" class="value">${block.block.trans_root}</td>
+                    </tr>
+                    <tr>
+                        <td class="key">State Root:</td>
+                        <td colspan="5" class="value">${block.block.state_root}</td>
+                    </tr>
+                </table>
+        `;
+    } else {
+        return `
+            <p>${block.error}</p>
+        `;
+    }
 }
 
-function addBlock(id, hash, block, trans) {
+function addBlock(id, block) {
     msgBlock = document.getElementById(`msg-block${id}`);
-    blockTable = getBlockTable(hash, block, trans)
+    blockTable = getBlockTable(block)
     msgBlock.innerHTML += `
         <div class="block-class">
             ${blockTable}

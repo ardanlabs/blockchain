@@ -141,8 +141,7 @@ func (s *State) validateUpdateDatabase(block database.Block) error {
 // blockEvent provides a specific event about a new block in the chain for
 // application specific support.
 func (s *State) blockEvent(block database.Block) {
-	blockData := database.NewBlockData(block)
-	data, err := json.Marshal(blockData)
+	data, err := json.Marshal(database.NewBlockData(block))
 	if err != nil {
 		data = []byte(fmt.Sprintf("{error: %q}", err.Error()))
 	}
