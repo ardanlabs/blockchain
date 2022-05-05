@@ -1,33 +1,28 @@
-function connect(wsUrl, httpUrl, id) {
+var allTransactions = new Array();
+
+function connect(wsUrl, httpUrl, nodeID) {
     let blockHashes = new Set();
     let lastBlockHash = "";
+    allTransactions.push(new Array());
 
     const handleNewBlock = function(block) {
-        if (blockHashes.size === 0) {
-            addArrow(id);
-            addBlock(id, block);
-            if (block.hash) {
-                blockHashes.add(block.hash);
-                lastBlockHash = block.hash;
-            }
-            return;
-        }
         if (block.hash) {
             if (blockHashes.has(block.hash)) {
                 return;
             }
             if (block.block.prev_block_hash === lastBlockHash) {
-                addArrow(id);
+                addArrow(nodeID);
             }
             blockHashes.add(block.hash);
             lastBlockHash = block.hash;
+            allTransactions[nodeID - 1].push(block.trans)
         }
-        addBlock(id, block);
+        addBlock(nodeID, blockHashes.size, block);
     }
 
     const reqListener = function() {
         var responseJson = JSON.parse(this.responseText);
-        msgBlock = document.getElementById(`msg-block${id}`);
+        msgBlock = document.getElementById(`msg-block${nodeID}`);
         for (i = 0; i < responseJson.length; i++) {
             handleNewBlock(responseJson[i]);
         }
@@ -35,10 +30,10 @@ function connect(wsUrl, httpUrl, id) {
 
     let socket = new WebSocket(wsUrl);
     socket.onopen = function() {
-        document.getElementById(`first-msg${id}`).innerHTML = `Node ${id}: Connection open`;
+        document.getElementById(`first-msg${nodeID}`).innerHTML = `Node ${nodeID}: Connection open`;
 
         var oReq = new XMLHttpRequest();
-        oReq.addEventListener("load", reqListener.bind(oReq, id), false);
+        oReq.addEventListener("load", reqListener.bind(oReq, nodeID), false);
         oReq.open("GET", httpUrl);
         oReq.send();
     };
@@ -53,12 +48,12 @@ function connect(wsUrl, httpUrl, id) {
             return;
         }
         if (text.includes("MINING: completed")) {
-            document.getElementById(`first-msg${id}`).innerHTML = `Node ${id}: Connected`;
+            document.getElementById(`first-msg${nodeID}`).innerHTML = `Node ${nodeID}: Connected`;
             return;
         }
 
         if (text.includes("MINING")) {
-            document.getElementById(`first-msg${id}`).innerHTML = `Node ${id}: Mining...`;
+            document.getElementById(`first-msg${nodeID}`).innerHTML = `Node ${nodeID}: Mining...`;
             return;
         }
         return;
@@ -66,9 +61,9 @@ function connect(wsUrl, httpUrl, id) {
   
     socket.onclose = function(event) {
         console.log('Socket is closed. Reconnect will be attempted in 1 second.', event.reason);
-        document.getElementById(`first-msg${id}`).innerHTML = `Node ${id}: Connecting...`;
+        document.getElementById(`first-msg${nodeID}`).innerHTML = `Node ${nodeID}: Connecting...`;
         setTimeout(function() {
-            connect(wsUrl, httpUrl, id);
+            connect(wsUrl, httpUrl, nodeID);
         }, 1000);
     };
   
@@ -127,19 +122,19 @@ function getBlockTable(block) {
     }
 }
 
-function addBlock(id, block) {
-    msgBlock = document.getElementById(`msg-block${id}`);
-    blockTable = getBlockTable(block)
+function addBlock(nodeID, blockNumber, block) {
+    msgBlock = document.getElementById(`msg-block${nodeID}`);
+    blockTable = getBlockTable(block);
     msgBlock.innerHTML += `
-        <div class="block-class">
+        <div id="block-${nodeID}-${blockNumber}" class="block-class" onclick="showTransactions(${nodeID}, ${blockNumber})">
             ${blockTable}
         </div>
     `;
     msgBlock.scrollTop = msgBlock.scrollHeight;
 }
 
-function addArrow(id) {
-    msgBlock = document.getElementById(`msg-block${id}`);
+function addArrow(nodeID) {
+    msgBlock = document.getElementById(`msg-block${nodeID}`);
     msgBlock.innerHTML += `
         <svg version="1.1" xmlns="http://www.w3.org/2000/svg" height="32" viewBox="0 0 300 34">
             <line stroke="rgb(0,0,0)" stroke-opacity="1.0" stroke-width="2.5" x1="220" y1="0" x2="220" y2="32"/>
@@ -149,6 +144,11 @@ function addArrow(id) {
     `;
 }
 
-connect('ws://localhost:8080/v1/events', 'http://localhost:9080/v1/node/block/list/1/latest', '1');
-connect('ws://localhost:8280/v1/events', 'http://localhost:9280/v1/node/block/list/1/latest', '2');
-connect('ws://localhost:8380/v1/events', 'http://localhost:9380/v1/node/block/list/1/latest', '3');
+function showTransactions(nodeID, blockNumber) {
+    console.log(`Show transactions of node ${nodeID}, block ${blockNumber}:`);
+    console.log(allTransactions[nodeID - 1][blockNumber - 1])
+}
+
+connect('ws://localhost:8080/v1/events', 'http://localhost:9080/v1/node/block/list/1/latest', 1);
+connect('ws://localhost:8280/v1/events', 'http://localhost:9280/v1/node/block/list/1/latest', 2);
+connect('ws://localhost:8380/v1/events', 'http://localhost:9380/v1/node/block/list/1/latest', 3);
