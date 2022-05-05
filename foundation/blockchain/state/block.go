@@ -146,5 +146,5 @@ func (s *State) blockEvent(block database.Block) {
 		data = []byte(fmt.Sprintf("{error: %q}", err.Error()))
 	}
 
-	s.evHandler("viewer: block: %s" + string(data))
+	s.evHandler("viewer: block: %s", string(data))
 }
