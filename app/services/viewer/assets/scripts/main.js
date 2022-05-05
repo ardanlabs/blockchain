@@ -4,7 +4,8 @@ function connect(wsUrl, httpUrl, id) {
 
     const handleNewBlock = function(block) {
         if (blockHashes.size === 0) {
-            document.getElementById(`first-msg${id}`).innerHTML = getBlockTable(block);
+            addArrow(id);
+            addBlock(id, block);
             if (block.hash) {
                 blockHashes.add(block.hash);
                 lastBlockHash = block.hash;
@@ -45,12 +46,22 @@ function connect(wsUrl, httpUrl, id) {
     socket.onmessage = function(event) {
         const blockMsgStart = 'viewer: block: ';
         let text = event.data;
-        if (!text.startsWith(blockMsgStart)) {
+        if (text.startsWith(blockMsgStart)) {
+            text = text.substring(blockMsgStart.length);
+            let block = JSON.parse(text);
+            handleNewBlock(block);
             return;
         }
-        text = text.substring(blockMsgStart.length);
-        let block = JSON.parse(text);
-        handleNewBlock(block);
+        if (text.includes("MINING: completed")) {
+            document.getElementById(`first-msg${id}`).innerHTML = `Node ${id}: Connected`;
+            return;
+        }
+
+        if (text.includes("MINING")) {
+            document.getElementById(`first-msg${id}`).innerHTML = `Node ${id}: Mining...`;
+            return;
+        }
+        return;
     };
   
     socket.onclose = function(event) {
