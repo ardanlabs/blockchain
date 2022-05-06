@@ -129,8 +129,8 @@ function getBlockTable(block) {
 }
 
 function addBlock(nodeID, blockNumber, block, successfullNode) {
-    msgBlock = document.getElementById(`msg-block${nodeID}`);
-    blockTable = getBlockTable(block);
+    const msgBlock = document.getElementById(`msg-block${nodeID}`);
+    const blockTable = getBlockTable(block);
     let extraClass = "";
     if (successfullNode) {
         extraClass = " mine";
@@ -144,7 +144,7 @@ function addBlock(nodeID, blockNumber, block, successfullNode) {
 }
 
 function addArrow(nodeID) {
-    msgBlock = document.getElementById(`msg-block${nodeID}`);
+    const msgBlock = document.getElementById(`msg-block${nodeID}`);
     msgBlock.innerHTML += `
         <svg version="1.1" xmlns="http://www.w3.org/2000/svg" height="32" viewBox="0 0 300 34">
             <line stroke="rgb(0,0,0)" stroke-opacity="1.0" stroke-width="2.5" x1="220" y1="0" x2="220" y2="32"/>
@@ -155,20 +155,72 @@ function addArrow(nodeID) {
 }
 
 function showTransactions(nodeID, blockNumber) {
-    console.log(`Show transactions of node ${nodeID}, block ${blockNumber}:`);
-    transactions = document.getElementById("transactions");
+    const transactions = document.getElementById("transactions");
     transactions.style.display = "block";
 
-    transactionsContent = document.getElementById("transactions-content");
-    transactionsContent.innerHTML = allTransactions[nodeID - 1][blockNumber - 1];
+    const transactionsContent = document.getElementById("transactions-content");
+    const trans = allTransactions[nodeID - 1][blockNumber - 1];
+    for (const t of trans) {
+        const transTable = getTransTable(t)
+        transactionsContent.innerHTML += `
+            <div class="trans">
+                ${transTable}
+            </div>
+        `;
+    }
 }
 
 function hideTransactions(nodeID, blockNumber) {
-    transactions = document.getElementById("transactions");
+    const transactions = document.getElementById("transactions");
     transactions.style.display = "none";
 
-    transactionsContent = document.getElementById("transactions-content");
+    const transactionsContent = document.getElementById("transactions-content");
     transactionsContent.innerHTML = "";
+}
+
+function getTransTable(t) {
+    return `
+            <table>
+                <tr>
+                    <td class="key">Chain ID:</td>
+                    <td class="value">${t.chain_id}</td>
+                    <td class="key">Nonce:</td>
+                    <td class="value">${t.nonce}</td>
+                    <td class="key">Value:</td>
+                    <td class="value">${t.value}</td>
+                </tr>
+                <tr>
+                    <td class="key">To:</td>
+                    <td colspan="5" class="value">${t.to}</td>
+                </tr>
+                <tr>
+                    <td class="key">Tip:</td>
+                    <td class="value">${t.tip}</td>
+                    <td class="key">V:</td>
+                    <td class="value">${t.v}</td>
+                    <td class="key">Timestamp:</td>
+                    <td class="value">${t.timestamp}</td>
+                </tr>
+                <tr>
+                    <td class="key">Gas Price:</td>
+                    <td colspan="2" class="value">${t.gas_price}</td>
+                    <td class="key">Gas Units:</td>
+                    <td colspan="2" class="value">${t.gas_units}</td>
+                </tr>
+                <tr>
+                    <td class="key">Data:</td>
+                    <td colspan="5" class="value">${t.data}</td>
+                </tr>
+                <tr>
+                    <td class="key">R:</td>
+                    <td colspan="5" class="value">${t.r}</td>
+                </tr>
+                <tr>
+                    <td class="key">S:</td>
+                    <td colspan="5" class="value">${t.s}</td>
+                </tr>
+            </table>
+    `;
 }
 
 connect('ws://localhost:8080/v1/events', 'http://localhost:9080/v1/node/block/list/1/latest', 1);
