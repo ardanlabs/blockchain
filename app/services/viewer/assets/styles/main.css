@@ -15,6 +15,14 @@
     margin: 0 10px 5px 10px;
 }
 
+.block.info {
+    background: #ffff60;
+}
+
+.block.mine {
+    background: #60c460;
+}
+
 .block table, td {
     border: thin solid;
     border-collapse: collapse;

@@ -131,12 +131,12 @@ function getBlockTable(block) {
 function addBlock(nodeID, blockNumber, block, successfullNode) {
     msgBlock = document.getElementById(`msg-block${nodeID}`);
     blockTable = getBlockTable(block);
-    let style = "";
+    let extraClass = "";
     if (successfullNode) {
-        style = "background: #65ff60;";
+        extraClass = " mine";
     }
     msgBlock.innerHTML += `
-        <div id="block-${nodeID}-${blockNumber}" class="block" onclick="showTransactions(${nodeID}, ${blockNumber})" style="${style}">
+        <div id="block-${nodeID}-${blockNumber}" class="block${extraClass}" onclick="showTransactions(${nodeID}, ${blockNumber})">
             ${blockTable}
         </div>
     `;
