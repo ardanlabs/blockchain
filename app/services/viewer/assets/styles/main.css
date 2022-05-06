@@ -7,7 +7,7 @@
   display: flex;
 }
 
-.block-class {
+.block {
     border: 2px solid black;
     border-radius: 10px;
     background: #60c4ff;
@@ -15,14 +15,14 @@
     margin: 0 10px 5px 10px;
 }
 
-.block-class table, td {
+.block table, td {
     border: thin solid;
     border-collapse: collapse;
 }
 
-.block-class table, td.key {
+.block table, td.key {
     border-right: none;
 }
-.block-class table, td.value {
+.block table, td.value {
     border-left: none;
 }

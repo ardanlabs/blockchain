@@ -136,7 +136,7 @@ function addBlock(nodeID, blockNumber, block, successfullNode) {
         style = "background: #65ff60;";
     }
     msgBlock.innerHTML += `
-        <div id="block-${nodeID}-${blockNumber}" class="block-class" onclick="showTransactions(${nodeID}, ${blockNumber})" style="${style}">
+        <div id="block-${nodeID}-${blockNumber}" class="block" onclick="showTransactions(${nodeID}, ${blockNumber})" style="${style}">
             ${blockTable}
         </div>
     `;
