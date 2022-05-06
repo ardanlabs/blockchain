@@ -3,6 +3,7 @@ var allTransactions = new Array();
 function connect(wsUrl, httpUrl, nodeID) {
     let blockHashes = new Set();
     let lastBlockHash = "";
+    let successfullNode = false;
     allTransactions.push(new Array());
 
     const handleNewBlock = function(block) {
@@ -17,7 +18,8 @@ function connect(wsUrl, httpUrl, nodeID) {
             lastBlockHash = block.hash;
             allTransactions[nodeID - 1].push(block.trans)
         }
-        addBlock(nodeID, blockHashes.size, block);
+        addBlock(nodeID, blockHashes.size, block, successfullNode);
+        successfullNode = false;
     }
 
     const reqListener = function() {
@@ -52,6 +54,10 @@ function connect(wsUrl, httpUrl, nodeID) {
             return;
         }
 
+        if (text.includes("MINING: SOLVED")) {
+            successfullNode = true;
+            return;
+        }
         if (text.includes("MINING")) {
             document.getElementById(`first-msg${nodeID}`).innerHTML = `Node ${nodeID}: Mining...`;
             return;
@@ -122,11 +128,15 @@ function getBlockTable(block) {
     }
 }
 
-function addBlock(nodeID, blockNumber, block) {
+function addBlock(nodeID, blockNumber, block, successfullNode) {
     msgBlock = document.getElementById(`msg-block${nodeID}`);
     blockTable = getBlockTable(block);
+    let style = "";
+    if (successfullNode) {
+        style = "background: #65ff60;";
+    }
     msgBlock.innerHTML += `
-        <div id="block-${nodeID}-${blockNumber}" class="block-class" onclick="showTransactions(${nodeID}, ${blockNumber})">
+        <div id="block-${nodeID}-${blockNumber}" class="block-class" onclick="showTransactions(${nodeID}, ${blockNumber})" style="${style}">
             ${blockTable}
         </div>
     `;
