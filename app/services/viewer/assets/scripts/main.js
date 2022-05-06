@@ -156,7 +156,19 @@ function addArrow(nodeID) {
 
 function showTransactions(nodeID, blockNumber) {
     console.log(`Show transactions of node ${nodeID}, block ${blockNumber}:`);
-    console.log(allTransactions[nodeID - 1][blockNumber - 1])
+    transactions = document.getElementById("transactions");
+    transactions.style.display = "block";
+
+    transactionsContent = document.getElementById("transactions-content");
+    transactionsContent.innerHTML = allTransactions[nodeID - 1][blockNumber - 1];
+}
+
+function hideTransactions(nodeID, blockNumber) {
+    transactions = document.getElementById("transactions");
+    transactions.style.display = "none";
+
+    transactionsContent = document.getElementById("transactions-content");
+    transactionsContent.innerHTML = "";
 }
 
 connect('ws://localhost:8080/v1/events', 'http://localhost:9080/v1/node/block/list/1/latest', 1);

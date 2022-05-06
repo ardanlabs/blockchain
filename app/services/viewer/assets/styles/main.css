@@ -4,7 +4,30 @@
 }
 
 #flex-container {
-  display: flex;
+    display: flex;
+}
+
+#transactions {
+    display: none;
+    border: 2px solid black;
+    background: #ffff60;
+    padding: 10px;
+    margin: 20px;
+    width: 90%;
+    height: 90%;
+    z-index: 1000;
+    position: absolute;
+    top: 0;
+}
+
+#transactions button {
+    position: absolute;
+    right: 0;
+    margin: 5px;
+    padding: 3px;
+    background: #5dc955;
+    color: red;
+    border: 1px solid black;
 }
 
 .block {
