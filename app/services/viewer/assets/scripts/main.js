@@ -1,12 +1,12 @@
 var allTransactions = new Array();
 
-function connect(wsUrl, httpUrl, nodeID) {
+function connect(wsUrl, httpUrl, nodeID, accountID) {
     let blockHashes = new Set();
     let lastBlockHash = "";
-    let successfullNode = false;
     allTransactions.push(new Array());
-
+    
     const handleNewBlock = function(block) {
+        let successfullNode = false;
         if (block.hash) {
             if (blockHashes.has(block.hash)) {
                 return;
@@ -18,8 +18,10 @@ function connect(wsUrl, httpUrl, nodeID) {
             lastBlockHash = block.hash;
             allTransactions[nodeID - 1].push(block.trans)
         }
+        if (block.block.beneficiary == accountID) {
+            successfullNode = true;
+        }
         addBlock(nodeID, blockHashes.size, block, successfullNode);
-        successfullNode = false;
     }
 
     const reqListener = function() {
@@ -53,11 +55,6 @@ function connect(wsUrl, httpUrl, nodeID) {
             document.getElementById(`first-msg${nodeID}`).innerHTML = `Node ${nodeID}: Connected`;
             return;
         }
-
-        if (text.includes("MINING: SOLVED")) {
-            successfullNode = true;
-            return;
-        }
         if (text.includes("MINING")) {
             document.getElementById(`first-msg${nodeID}`).innerHTML = `Node ${nodeID}: Mining...`;
             return;
@@ -69,7 +66,7 @@ function connect(wsUrl, httpUrl, nodeID) {
         console.log('Socket is closed. Reconnect will be attempted in 1 second.', event.reason);
         document.getElementById(`first-msg${nodeID}`).innerHTML = `Node ${nodeID}: Connecting...`;
         setTimeout(function() {
-            connect(wsUrl, httpUrl, nodeID);
+            connect(wsUrl, httpUrl, nodeID, accountID);
         }, 1000);
     };
   
@@ -171,6 +168,6 @@ function hideTransactions(nodeID, blockNumber) {
     transactionsContent.innerHTML = "";
 }
 
-connect('ws://localhost:8080/v1/events', 'http://localhost:9080/v1/node/block/list/1/latest', 1);
-connect('ws://localhost:8280/v1/events', 'http://localhost:9280/v1/node/block/list/1/latest', 2);
-connect('ws://localhost:8380/v1/events', 'http://localhost:9380/v1/node/block/list/1/latest', 3);
+connect('ws://localhost:8080/v1/events', 'http://localhost:9080/v1/node/block/list/1/latest', 1, '0xFef311483Cc040e1A89fb9bb469eeB8A70935EF8');
+connect('ws://localhost:8280/v1/events', 'http://localhost:9280/v1/node/block/list/1/latest', 2, '0xb8Ee4c7ac4ca3269fEc242780D7D960bd6272a61');
+connect('ws://localhost:8380/v1/events', 'http://localhost:9380/v1/node/block/list/1/latest', 3, '0x616c90073c78ac073D89E750836401a92B16dE7e');

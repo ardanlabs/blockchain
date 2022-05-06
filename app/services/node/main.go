@@ -123,7 +123,7 @@ func run(log *zap.SugaredLogger) error {
 
 	// Logging the accounts for documentation in the logs.
 	for account, name := range ns.Copy() {
-		log.Infow("startup", "status", "nameservce", "name", name, "account", account)
+		log.Infow("startup", "status", "nameservice", "name", name, "account", account)
 	}
 
 	// =========================================================================
