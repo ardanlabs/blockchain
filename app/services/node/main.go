@@ -150,7 +150,7 @@ func run(log *zap.SugaredLogger) error {
 	// client that is connected into the system through the events package.
 	evts := events.New()
 	ev := func(v string, args ...any) {
-		const websocketPrefix = "viewer: "
+		const websocketPrefix = "viewer:"
 
 		s := fmt.Sprintf(v, args...)
 		log.Infow(s, "traceid", "00000000-0000-0000-0000-000000000000")

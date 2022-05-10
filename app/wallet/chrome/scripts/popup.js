@@ -134,7 +134,7 @@ function connect() {
             return;
         }
 
-        if (event.data.includes("MINING")) {
+        if (event.data.includes("MINING: running")) {
             conn.className = "mining";
             conn.innerHTML = "MINING...";
             return;

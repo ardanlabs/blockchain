@@ -18,14 +18,14 @@ var ErrNoTransactions = errors.New("no transactions in mempool")
 // MineNewBlock attempts to create a new block with a proper hash that can become
 // the next block in the chain.
 func (s *State) MineNewBlock(ctx context.Context) (database.Block, error) {
+	defer s.evHandler("viewer: MineNewBlock: MINING: completed")
+
 	s.evHandler("state: MineNewBlock: MINING: check mempool count")
 
 	// Are there enough transactions in the pool.
 	if s.mempool.Count() == 0 {
 		return database.Block{}, ErrNoTransactions
 	}
-
-	s.evHandler("state: MineNewBlock: MINING: perform POW")
 
 	// Pick the best transactions from the mempool.
 	trans := s.mempool.PickBest(s.genesis.TransPerBlock)

@@ -42,9 +42,8 @@ function connect(wsUrl, httpUrl, nodeID, accountID) {
     };
   
     socket.onmessage = function(event) {
-        const blockMsgStart = 'viewer: block: ';
         let text = event.data;
-        if (text.startsWith(blockMsgStart)) {
+        if (text.startsWith("viewer: block:")) {
             text = text.substring(blockMsgStart.length);
             let block = JSON.parse(text);
             handleNewBlock(block);
@@ -54,7 +53,7 @@ function connect(wsUrl, httpUrl, nodeID, accountID) {
             document.getElementById(`first-msg${nodeID}`).innerHTML = `Node ${nodeID}: Connected`;
             return;
         }
-        if (text.includes("MINING")) {
+        if (text.includes("MINING: running")) {
             document.getElementById(`first-msg${nodeID}`).innerHTML = `Node ${nodeID}: Mining...`;
             return;
         }

@@ -144,12 +144,14 @@ func (b *Block) performPOW(ctx context.Context, ev func(v string, args ...any)) 
 	}
 	b.Header.Nonce = nBig.Uint64()
 
+	ev("viewer: PerformPOW: MINING: running")
+
 	// Loop until we or another node finds a solution for the next block.
 	var attempts uint64
 	for {
 		attempts++
 		if attempts%1_000_000 == 0 {
-			ev("database: PerformPOW: MINING: attempts[%d]", attempts)
+			ev("viewer: PerformPOW: MINING: running: attempts[%d]", attempts)
 		}
 
 		// Did we timeout trying to solve the problem.
