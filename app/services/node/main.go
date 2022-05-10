@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -151,7 +152,9 @@ func run(log *zap.SugaredLogger) error {
 	ev := func(v string, args ...any) {
 		s := fmt.Sprintf(v, args...)
 		log.Infow(s, "traceid", "00000000-0000-0000-0000-000000000000")
-		evts.Send(s)
+		if strings.HasPrefix(s, "viewer: ") {
+			evts.Send(s)
+		}
 	}
 
 	// The state value represents the blockchain node and manages the blockchain
