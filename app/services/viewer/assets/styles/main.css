@@ -32,12 +32,39 @@
     border: 1px solid black;
 }
 
+#mempool {
+    display: none;
+    border: 2px solid black;
+    background: #ffff60;
+    padding: 10px;
+    margin: 20px;
+    width: 90vw;
+    max-width: 60rem;
+    height: 95vh;
+    z-index: 1000;
+    position: absolute;
+    top: 0;
+    overflow-y: scroll;
+    overflow-x: scroll;
+}
+
+#mempool button {
+    position: absolute;
+    right: 0;
+    margin: 5px;
+    padding: 3px;
+    background: #5dc955;
+    color: red;
+    border: 1px solid black;
+}
+
 .trans {
     border: 2px solid black;
     border-radius: 10px;
     background: #60c4ff;
     padding: 10px;
     margin: 5px 50px 5px 10px;
+    overflow: auto;
 }
 
 .trans table, td {

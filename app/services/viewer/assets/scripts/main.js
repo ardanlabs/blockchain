@@ -26,7 +26,6 @@ function connect(wsUrl, httpUrl, nodeID, accountID) {
 
     const reqListener = function() {
         var responseJson = JSON.parse(this.responseText);
-        msgBlock = document.getElementById(`msg-block${nodeID}`);
         for (i = 0; i < responseJson.length; i++) {
             handleNewBlock(responseJson[i]);
         }
@@ -215,6 +214,95 @@ function getTransTable(t) {
                 <tr>
                     <td class="key">S:</td>
                     <td colspan="5" class="value">${t.s}</td>
+                </tr>
+            </table>
+    `;
+}
+
+function showMempool(nodeID, port) {
+    
+    const reqListener = function() {
+        const mempool = document.getElementById("mempool");
+        mempool.style.display = "block";
+    
+        const mempoolContent = document.getElementById("mempool-content");
+        var responseJson = JSON.parse(this.responseText);
+        for (i = 0; i < responseJson.length; i++) {
+            mempoolTable = getMempoolTable(responseJson[i]);
+            mempoolContent.innerHTML += `
+            <div class="trans">
+                ${mempoolTable}
+            </div>
+            `;
+        }
+
+    }
+    var oReq = new XMLHttpRequest();
+    oReq.addEventListener("load", reqListener.bind(oReq, nodeID), false);
+    oReq.open("GET", `http://localhost:${port}/v1/tx/uncommitted/list`);
+    oReq.send();
+}
+
+function hideMempool(nodeID, blockNumber) {
+    const transactions = document.getElementById("mempool");
+    transactions.style.display = "none";
+
+    const transactionsContent = document.getElementById("mempool-content");
+    transactionsContent.innerHTML = "";
+}
+
+function getMempoolTable(t) {
+    return `
+            <table>
+                <tr>
+                    <td class="key">From:</td>
+                    <td colspan="5" class="value">${t.from}</td>
+                </tr>
+                <tr>
+                    <td class="key">From Name:</td>
+                    <td colspan="5" class="value">${t.from_name}</td>
+                </tr>
+                <tr>
+                    <td class="key">To:</td>
+                    <td colspan="5" class="value">${t.to}</td>
+                </tr>
+                <tr>
+                    <td class="key">To Name:</td>
+                    <td colspan="5" class="value">${t.to_name}</td>
+                </tr>
+                <tr>
+                    <td class="key">Chain ID:</td>
+                    <td class="value">${t.chain_id}</td>
+                    <td class="key">Nonce:</td>
+                    <td class="value">${t.nonce}</td>
+                    <td class="key">Value:</td>
+                    <td class="value">${t.value}</td>
+                </tr>
+                <tr>
+                    <td class="key">Tip:</td>
+                    <td class="value">${t.tip}</td>
+                    <td class="key">Data:</td>
+                    <td class="value">${t.data}</td>
+                    <td class="key">Timestamp:</td>
+                    <td class="value">${t.timestamp}</td>
+                </tr>
+                <tr>
+                    <td class="key">Gas Price:</td>
+                    <td colspan="2" class="value">${t.gas_price}</td>
+                    <td class="key">Gas Units:</td>
+                    <td colspan="2" class="value">${t.gas_units}</td>
+                </tr>
+                <tr>
+                    <td class="key">Sig:</td>
+                    <td colspan="5" class="value">${t.sig}</td>
+                </tr>
+                <tr>
+                    <td class="key">Proof:</td>
+                    <td colspan="5" class="value">${t.proof}</td>
+                </tr>
+                <tr>
+                    <td class="key">Proof Order:</td>
+                    <td colspan="5" class="value">${t.proof_order}</td>
                 </tr>
             </table>
     `;
