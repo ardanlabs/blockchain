@@ -141,15 +141,10 @@ func (s *State) validateUpdateDatabase(block database.Block) error {
 // blockEvent provides a specific event about a new block in the chain for
 // application specific support.
 func (s *State) blockEvent(block database.Block) {
-	blockHeaderJSON, err := json.Marshal(block.Header)
+	data, err := json.Marshal(database.NewBlockData(block))
 	if err != nil {
-		blockHeaderJSON = []byte(fmt.Sprintf("%q", err.Error()))
+		data = []byte(fmt.Sprintf("{error: %q}", err.Error()))
 	}
 
-	blockTransJSON, err := json.Marshal(block.MerkleTree.Values())
-	if err != nil {
-		blockTransJSON = []byte(fmt.Sprintf("%q", err.Error()))
-	}
-
-	s.evHandler(`viewer: block: {"hash":%q,"header":%s,"trans":%s}`, block.Hash(), string(blockHeaderJSON), string(blockTransJSON))
+	s.evHandler("viewer: block: %s", string(data))
 }

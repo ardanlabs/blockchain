@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -25,6 +26,9 @@ import (
 
 // build is the git version of this program. It is set using build flags in the makefile.
 var build = "develop"
+
+// websocketPrefix is the prefix of all messages that should be sent over the websocket.
+const websocketPrefix = "viewer: "
 
 func main() {
 
@@ -123,7 +127,7 @@ func run(log *zap.SugaredLogger) error {
 
 	// Logging the accounts for documentation in the logs.
 	for account, name := range ns.Copy() {
-		log.Infow("startup", "status", "nameservce", "name", name, "account", account)
+		log.Infow("startup", "status", "nameservice", "name", name, "account", account)
 	}
 
 	// =========================================================================
@@ -151,7 +155,9 @@ func run(log *zap.SugaredLogger) error {
 	ev := func(v string, args ...any) {
 		s := fmt.Sprintf(v, args...)
 		log.Infow(s, "traceid", "00000000-0000-0000-0000-000000000000")
-		evts.Send(s)
+		if strings.HasPrefix(s, websocketPrefix) {
+			evts.Send(s)
+		}
 	}
 
 	// The state value represents the blockchain node and manages the blockchain
