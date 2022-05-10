@@ -27,6 +27,9 @@ import (
 // build is the git version of this program. It is set using build flags in the makefile.
 var build = "develop"
 
+// websocketPrefix is the prefix of all messages that should be sent over the websocket.
+const websocketPrefix = "viewer: "
+
 func main() {
 
 	// Construct the application logger.
@@ -152,7 +155,7 @@ func run(log *zap.SugaredLogger) error {
 	ev := func(v string, args ...any) {
 		s := fmt.Sprintf(v, args...)
 		log.Infow(s, "traceid", "00000000-0000-0000-0000-000000000000")
-		if strings.HasPrefix(s, "viewer: ") {
+		if strings.HasPrefix(s, websocketPrefix) {
 			evts.Send(s)
 		}
 	}
