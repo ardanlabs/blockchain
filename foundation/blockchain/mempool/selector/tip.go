@@ -67,13 +67,12 @@ var tipSelect = func(m map[database.AccountID][]database.BlockTx, howMany int) [
 	// pulling transactions from each row until the amount of fulfilled or
 	// there are no more transactions.
 	final := []database.BlockTx{}
-done:
 	for _, row := range rows {
 		need := howMany - len(final)
 		if len(row) > need {
 			sort.Sort(byTip(row))
 			final = append(final, row[:need]...)
-			break done
+			break
 		}
 		final = append(final, row...)
 	}
