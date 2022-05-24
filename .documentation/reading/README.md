@@ -126,6 +126,9 @@ Occasionally we run into material that we feel is important. This is a section p
 [Building an EVM from Scratch - Part I](https://www.notion.so/Building-an-EVM-from-scratch-part-1-c28ebb4200c94f6fb75948a5feffc686)  
 [Merkel Trees and LevelDB](https://web3.coach/golang-blockchain-filesystem-and-merkle-trees) - Lukas Lukac  
 
+### Repositories
+[Ethereum HD Wallet derivations. Implements the go-ethereum accounts.Wallet interface](https://github.com/miguelmota/go-ethereum-hdwallet) 
+
 ### Video
 [Is It Possible To Get The Same 24 BIP39 Seed Words?](https://www.youtube.com/watch?v=hjRntYh0ot8) - John Chow  
 [What the Hell are NFT's?](https://www.youtube.com/watch?v=XwMjPWOailQ) - Josh Strife Hayes  
