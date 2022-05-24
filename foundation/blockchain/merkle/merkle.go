@@ -10,10 +10,11 @@ package merkle
 import (
 	"bytes"
 	"crypto/sha256"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"hash"
+
+	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 
 // Hashable represents the behavior concrete data must exhibit to be used in
@@ -251,7 +252,7 @@ func (t *Tree[T]) Values() []T {
 
 // RootHex converts the merkle root byte hash to a hex encoded string.
 func (t *Tree[T]) RootHex() string {
-	return ToHex(t.MerkleRoot)
+	return hexutil.Encode(t.MerkleRoot)
 }
 
 // String returns a string representation of the tree. Only leaf nodes are
@@ -334,11 +335,6 @@ func (n *Node[T]) String() string {
 }
 
 // =============================================================================
-
-// ToHex converts a hash in bytes to a hex encoded string.
-func ToHex(hash []byte) string {
-	return fmt.Sprintf("0x%s", hex.EncodeToString(hash))
-}
 
 // buildIntermediate is a helper function that for a given list of leaf nodes,
 // constructs the intermediate and root levels of the tree. Returns the resulting

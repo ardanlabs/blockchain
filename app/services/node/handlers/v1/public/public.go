@@ -9,11 +9,11 @@ import (
 
 	v1 "github.com/ardanlabs/blockchain/business/web/v1"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/database"
-	"github.com/ardanlabs/blockchain/foundation/blockchain/merkle"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/state"
 	"github.com/ardanlabs/blockchain/foundation/events"
 	"github.com/ardanlabs/blockchain/foundation/nameservice"
 	"github.com/ardanlabs/blockchain/foundation/web"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/gorilla/websocket"
 	"go.uber.org/zap"
 )
@@ -223,7 +223,7 @@ func (h Handlers) BlocksByAccount(ctx context.Context, w http.ResponseWriter, r 
 			}
 			proof := make([]string, len(rawProof))
 			for i, rp := range rawProof {
-				proof[i] = merkle.ToHex(rp)
+				proof[i] = hexutil.Encode(rp)
 			}
 
 			trans[i] = tx{

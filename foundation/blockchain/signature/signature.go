@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
@@ -33,7 +34,7 @@ func Hash(value any) string {
 	}
 
 	hash := sha256.Sum256(data)
-	return "0x" + hex.EncodeToString(hash[:])
+	return hexutil.Encode(hash[:])
 }
 
 // Sign uses the specified private key to sign the data.
@@ -133,7 +134,7 @@ func FromAddress(value any, v, r, s *big.Int) (string, error) {
 
 // SignatureString returns the signature as a string.
 func SignatureString(v, r, s *big.Int) string {
-	return "0x" + hex.EncodeToString(ToSignatureBytesWithArdanID(v, r, s))
+	return hexutil.Encode(ToSignatureBytesWithArdanID(v, r, s))
 }
 
 // ToVRSFromHexSignature converts a hex representation of the signature into
