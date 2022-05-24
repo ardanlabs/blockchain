@@ -4,12 +4,10 @@ package signature
 
 import (
 	"crypto/ecdsa"
-	"crypto/elliptic"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -52,14 +50,25 @@ func Sign(value any, privateKey *ecdsa.PrivateKey) (v, r, s *big.Int, err error)
 		return nil, nil, nil, err
 	}
 
+	// Extract the public key from the data and the signature.
+	publicKey, err := crypto.SigToPub(data, sig)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	// Check the public key extracted from the data and signature.
+	rs := sig[:crypto.RecoveryIDOffset]
+	if !crypto.VerifySignature(crypto.FromECDSAPub(publicKey), data, rs) {
+		return nil, nil, nil, errors.New("invalid signature")
+	}
+
 	// Convert the 65 byte signature into the [R|S|V] format.
 	v, r, s = toSignatureValues(sig)
 
 	return v, r, s, nil
 }
 
-// VerifySignature verifies the signature conforms to our standards and
-// is associated with the data claimed to be signed.
+// VerifySignature verifies the signature conforms to our standards.
 func VerifySignature(value any, v, r, s *big.Int) error {
 
 	// Check the recovery id is either 0 or 1.
@@ -73,32 +82,16 @@ func VerifySignature(value any, v, r, s *big.Int) error {
 		return errors.New("invalid signature values")
 	}
 
-	// Prepare the data for recovery and validation.
-	data, err := stamp(value)
-	if err != nil {
-		return err
-	}
-
-	// Convert the [R|S|V] format into the original 65 bytes.
-	sig := ToSignatureBytes(v, r, s)
-
-	// Capture the uncompressed public key associated with this signature.
-	sigPublicKey, err := crypto.Ecrecover(data, sig)
-	if err != nil {
-		return fmt.Errorf("ecrecover, %w", err)
-	}
-
-	// Check that the given public key created the signature over the data.
-	rs := sig[:crypto.RecoveryIDOffset]
-	if !crypto.VerifySignature(sigPublicKey, data, rs) {
-		return errors.New("invalid signature")
-	}
-
 	return nil
 }
 
 // FromAddress extracts the address for the account that signed the data.
 func FromAddress(value any, v, r, s *big.Int) (string, error) {
+
+	// NOTE: If the same exact data for the given signature is not provided
+	// we will get the wrong from address for this transaction. There is no
+	// way to check this on the node since we don't have a copy of the public
+	// key used. The public key is being extracted from the data and signature.
 
 	// Prepare the data for public key extraction.
 	data, err := stamp(value)
@@ -109,27 +102,14 @@ func FromAddress(value any, v, r, s *big.Int) (string, error) {
 	// Convert the [R|S|V] format into the original 65 bytes.
 	sig := ToSignatureBytes(v, r, s)
 
-	// Validate the signature since there can be conversion issues
-	// between [R|S|V] to []bytes. Leading 0's are truncated by big package.
-	var sigPublicKey []byte
-	{
-		sigPublicKey, err = crypto.Ecrecover(data, sig)
-		if err != nil {
-			return "", err
-		}
-
-		rs := sig[:crypto.RecoveryIDOffset]
-		if !crypto.VerifySignature(sigPublicKey, data, rs) {
-			return "", errors.New("invalid signature")
-		}
+	// Capture the public key associated with this data and signature.
+	publicKey, err := crypto.SigToPub(data, sig)
+	if err != nil {
+		return "", err
 	}
 
-	// Capture the public key associated with this signature.
-	x, y := elliptic.Unmarshal(crypto.S256(), sigPublicKey)
-	publicKey := ecdsa.PublicKey{Curve: crypto.S256(), X: x, Y: y}
-
 	// Extract the account address from the public key.
-	return crypto.PubkeyToAddress(publicKey).String(), nil
+	return crypto.PubkeyToAddress(*publicKey).String(), nil
 }
 
 // SignatureString returns the signature as a string.

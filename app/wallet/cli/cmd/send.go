@@ -59,12 +59,12 @@ func sendWithDetails(privateKey *ecdsa.PrivateKey) {
 		log.Fatal(err)
 	}
 
-	walletTx, err := tx.Sign(privateKey)
+	signedTx, err := tx.Sign(privateKey)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	data, err := json.Marshal(walletTx)
+	data, err := json.Marshal(signedTx)
 	if err != nil {
 		log.Fatal(err)
 	}
