@@ -50,16 +50,18 @@ func Sign(value any, privateKey *ecdsa.PrivateKey) (v, r, s *big.Int, err error)
 		return nil, nil, nil, err
 	}
 
-	// Extract the public key from the data and the signature.
-	publicKey, err := crypto.SigToPub(data, sig)
-	if err != nil {
-		return nil, nil, nil, err
+	// Extract the bytes for the original public key.
+	publicKeyOrg := privateKey.Public()
+	publicKeyECDSA, ok := publicKeyOrg.(*ecdsa.PublicKey)
+	if !ok {
+		return nil, nil, nil, errors.New("error casting public key to ECDSA")
 	}
+	publicKeyBytes := crypto.FromECDSAPub(publicKeyECDSA)
 
-	// Check the public key extracted from the data and signature.
+	// Check the public key validates the data and signature.
 	rs := sig[:crypto.RecoveryIDOffset]
-	if !crypto.VerifySignature(crypto.FromECDSAPub(publicKey), data, rs) {
-		return nil, nil, nil, errors.New("invalid signature")
+	if !crypto.VerifySignature(publicKeyBytes, data, rs) {
+		return nil, nil, nil, errors.New("invalid signature produced")
 	}
 
 	// Convert the 65 byte signature into the [R|S|V] format.
