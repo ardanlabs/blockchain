@@ -36,10 +36,10 @@ func Hash(value any) string {
 	return "0x" + hex.EncodeToString(hash[:])
 }
 
-// Sign uses the specified private key to sign the transaction.
+// Sign uses the specified private key to sign the data.
 func Sign(value any, privateKey *ecdsa.PrivateKey) (v, r, s *big.Int, err error) {
 
-	// Prepare the transaction for signing.
+	// Prepare the data for signing.
 	data, err := stamp(value)
 	if err != nil {
 		return nil, nil, nil, err
@@ -72,8 +72,8 @@ func VerifySignature(value any, v, r, s *big.Int) error {
 		return errors.New("invalid signature values")
 	}
 
-	// Prepare the transaction for recovery and validation.
-	tran, err := stamp(value)
+	// Prepare the data for recovery and validation.
+	data, err := stamp(value)
 	if err != nil {
 		return err
 	}
@@ -82,25 +82,25 @@ func VerifySignature(value any, v, r, s *big.Int) error {
 	sig := ToSignatureBytes(v, r, s)
 
 	// Capture the uncompressed public key associated with this signature.
-	sigPublicKey, err := crypto.Ecrecover(tran, sig)
+	sigPublicKey, err := crypto.Ecrecover(data, sig)
 	if err != nil {
 		return fmt.Errorf("ecrecover, %w", err)
 	}
 
 	// Check that the given public key created the signature over the data.
 	rs := sig[:crypto.RecoveryIDOffset]
-	if !crypto.VerifySignature(sigPublicKey, tran, rs) {
+	if !crypto.VerifySignature(sigPublicKey, data, rs) {
 		return errors.New("invalid signature")
 	}
 
 	return nil
 }
 
-// FromAddress extracts the address for the account that signed the transaction.
+// FromAddress extracts the address for the account that signed the data.
 func FromAddress(value any, v, r, s *big.Int) (string, error) {
 
-	// Prepare the transaction for public key extraction.
-	tran, err := stamp(value)
+	// Prepare the data for public key extraction.
+	data, err := stamp(value)
 	if err != nil {
 		return "", err
 	}
@@ -112,13 +112,13 @@ func FromAddress(value any, v, r, s *big.Int) (string, error) {
 	// between [R|S|V] to []bytes. Leading 0's are truncated by big package.
 	var sigPublicKey []byte
 	{
-		sigPublicKey, err = crypto.Ecrecover(tran, sig)
+		sigPublicKey, err = crypto.Ecrecover(data, sig)
 		if err != nil {
 			return "", err
 		}
 
 		rs := sig[:crypto.RecoveryIDOffset]
-		if !crypto.VerifySignature(sigPublicKey, tran, rs) {
+		if !crypto.VerifySignature(sigPublicKey, data, rs) {
 			return "", errors.New("invalid signature")
 		}
 	}
@@ -153,30 +153,30 @@ func ToVRSFromHexSignature(sigStr string) (v, r, s *big.Int, err error) {
 
 // =============================================================================
 
-// stamp returns a hash of 32 bytes that represents this transaction with
+// stamp returns a hash of 32 bytes that represents this data with
 // the Ardan stamp embedded into the final hash.
 func stamp(value any) ([]byte, error) {
 
 	// Marshal the data.
-	data, err := json.Marshal(value)
+	v, err := json.Marshal(value)
 	if err != nil {
 		return nil, err
 	}
 
-	// Hash the transaction data into a 32 byte array. This will provide
-	// a data length consistency with all transactions.
-	txHash := crypto.Keccak256Hash(data)
+	// Hash the data data into a 32 byte array. This will provide
+	// a data length consistency with all data.
+	txHash := crypto.Keccak256(v)
 
 	// Convert the stamp into a slice of bytes. This stamp is
-	// used so signatures we produce when signing transactions
+	// used so signatures we produce when signing data
 	// are always unique to the Ardan blockchain.
 	stamp := []byte("\x19Ardan Signed Message:\n32")
 
 	// Hash the stamp and txHash together in a final 32 byte array
-	// that represents the transaction data.
-	tran := crypto.Keccak256Hash(stamp, txHash.Bytes())
+	// that represents the data.
+	data := crypto.Keccak256(stamp, txHash)
 
-	return tran.Bytes(), nil
+	return data, nil
 }
 
 // toSignatureValues converts the signature into the r, s, v values.
