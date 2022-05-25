@@ -69,15 +69,6 @@ func New(genesis genesis.Genesis, storage Storage, evHandler func(v string, args
 			return nil, err
 		}
 
-		// Update the database with account balance information from genesis.
-		for accountStr, balance := range genesis.Balances {
-			accountID, err := ToAccountID(accountStr)
-			if err != nil {
-				return nil, err
-			}
-			db.accounts[accountID] = newAccount(accountID, balance)
-		}
-
 		// Update the database with the transaction information.
 		for _, tx := range block.MerkleTree.Values() {
 			db.ApplyTransaction(block, tx)
