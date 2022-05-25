@@ -2,6 +2,9 @@
 
 Occasionally we run into new articles that we feel are important. This is a section place for those new articles. If you have new articles we should add, please send us an email.
 
+### May 2022
+[Ethereum Rollup Startup StarkWare Closes Series D At $8B Valuation](https://thedefiant.io/ethereum-rollup-startup-starkware-closes-series-d-at-8b-valuation/) - Samuel Haig  
+
 ### Mar 2022
 [They’re all Aped in! Yuga Labs raises $450M at $4B valuation to build NFT metaverse](https://refreshmiami.com/theyre-all-aped-in-yuga-labs-raises-450m-at-4b-valuation-to-build-nft-metaverse/) - Nancy Dahlberg  
 

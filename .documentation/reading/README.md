@@ -35,6 +35,7 @@ Occasionally we run into material that we feel is important. This is a section p
 [A Brief Tour of FLP Impossibility](https://www.the-paper-trail.org/post/2008-08-13-a-brief-tour-of-flp-impossibility) - The Paper Trail  
 [The Mystery Behind Block Time](https://medium.facilelogin.com/the-mystery-behind-block-time-63351e35603a) - Prabath Siriwardena  
 [The Technological Case Against Bitcoin and Blockchain](https://lukeplant.me.uk/blog/posts/the-technological-case-against-bitcoin-and-blockchain/) - Luke Plant  
+[How Zero-Knowledge Proofs Became Ethereum’s Magic Bullets](https://thedefiant.io/zero-knowledge-ethereum-layer-1/) - Alex Shipp  
 
 ### Bitcoin
 [Bitcoin in Go: libsv](https://github.com/libsv)  
