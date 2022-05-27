@@ -61,17 +61,6 @@ func (w *Worker) runMiningOperation() {
 		}
 	}()
 
-	// If mining is signalled to be cancelled by the WriteNextBlock function,
-	// this G can't terminate until it is told it can.
-	var wait chan struct{}
-	defer func() {
-		if wait != nil {
-			w.evHandler("worker: runMiningOperation: MINING: termination signal: waiting")
-			<-wait
-			w.evHandler("worker: runMiningOperation: MINING: termination signal: received")
-		}
-	}()
-
 	// Drain the cancel mining channel before starting.
 	select {
 	case <-w.cancelMining:
@@ -95,7 +84,7 @@ func (w *Worker) runMiningOperation() {
 		}()
 
 		select {
-		case wait = <-w.cancelMining:
+		case <-w.cancelMining:
 			w.evHandler("worker: runMiningOperation: MINING: CANCEL: requested")
 		case <-ctx.Done():
 		}

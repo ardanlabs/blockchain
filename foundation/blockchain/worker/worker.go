@@ -23,7 +23,7 @@ type Worker struct {
 	ticker       time.Ticker
 	shut         chan struct{}
 	startMining  chan bool
-	cancelMining chan chan struct{}
+	cancelMining chan bool
 	txSharing    chan database.BlockTx
 	evHandler    state.EventHandler
 }
@@ -36,7 +36,7 @@ func Run(state *state.State, evHandler state.EventHandler) {
 		ticker:       *time.NewTicker(peerUpdateInterval),
 		shut:         make(chan struct{}),
 		startMining:  make(chan bool, 1),
-		cancelMining: make(chan chan struct{}, 1),
+		cancelMining: make(chan bool, 1),
 		txSharing:    make(chan database.BlockTx, maxTxShareRequests),
 		evHandler:    evHandler,
 	}
@@ -89,8 +89,7 @@ func (w *Worker) Shutdown() {
 	w.ticker.Stop()
 
 	w.evHandler("worker: shutdown: signal cancel mining")
-	done := w.SignalCancelMining()
-	done()
+	w.SignalCancelMining()
 
 	w.evHandler("worker: shutdown: terminate goroutines")
 	close(w.shut)
@@ -113,19 +112,13 @@ func (w *Worker) SignalStartMining() {
 }
 
 // SignalCancelMining signals the G executing the runMiningOperation function
-// to stop immediately. That G will not return from the function until done
-// is called. This allows the caller to complete any state changes before a new
-// mining operation takes place.
-func (w *Worker) SignalCancelMining() (done func()) {
-	wait := make(chan struct{})
-
+// to stop immediately.
+func (w *Worker) SignalCancelMining() {
 	select {
-	case w.cancelMining <- wait:
+	case w.cancelMining <- true:
 	default:
 	}
 	w.evHandler("worker: SignalCancelMining: MINING: CANCEL: signaled")
-
-	return func() { close(wait) }
 }
 
 // SignalShareTx signals a share transaction operation. If

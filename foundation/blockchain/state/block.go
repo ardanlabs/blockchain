@@ -71,14 +71,8 @@ func (s *State) ProcessProposedBlock(block database.Block) error {
 	}
 
 	// If the runMiningOperation function is being executed it needs to stop
-	// immediately. The G executing runMiningOperation will not return from the
-	// function until done is called. That allows this function to complete
-	// its state changes before a new mining operation takes place.
-	done := s.Worker.SignalCancelMining()
-	defer func() {
-		s.evHandler("state: ValidateProposedBlock: signal runMiningOperation to terminate")
-		done()
-	}()
+	// immediately.
+	s.Worker.SignalCancelMining()
 
 	return nil
 }
