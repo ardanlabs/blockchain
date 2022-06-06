@@ -120,6 +120,7 @@ Occasionally we run into material that we feel is important. This is a section p
 [Paper Review - GHOST Protocol](http://ajainuary.com/2019/10/17/need-for-speed/) -  Anurag Jain  
 [WEF Digital Currency Governance Consortium White Paper Series](https://www.weforum.org/reports/digital-currency-governance-consortium-white-paper-series) - World Economic Forum  
 [Blockchain software patterns for the design of decentralized applications: A systematic literature review](https://www.sciencedirect.com/science/article/pii/S209672092200001X) - ScienceDirect  
+[Dr. Martin Kleppmann and the various things he does](https://martin.kleppmann.com/) - Dr. Martin Kleppmann  
 
 ### Code Examples
 [Basic Proof of Wallet Code](https://go.dev/play/p/A_66_Kz9tpl) - Pavel Aborilov  
