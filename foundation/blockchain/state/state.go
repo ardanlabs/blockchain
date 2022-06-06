@@ -49,6 +49,7 @@ type Config struct {
 	BeneficiaryID  database.AccountID
 	Host           string
 	Storage        database.Storage
+	Genesis        genesis.Genesis
 	SelectStrategy string
 	KnownPeers     *peer.PeerSet
 	EvHandler      EventHandler
@@ -84,15 +85,8 @@ func New(cfg Config) (*State, error) {
 		}
 	}
 
-	// Load the genesis file to get starting balances for
-	// founders of the block chain.
-	genesis, err := genesis.Load()
-	if err != nil {
-		return nil, err
-	}
-
 	// Access the storage for the blockchain.
-	db, err := database.New(genesis, cfg.Storage, ev)
+	db, err := database.New(cfg.Genesis, cfg.Storage, ev)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +106,7 @@ func New(cfg Config) (*State, error) {
 		allowMining:   true,
 
 		knownPeers: cfg.KnownPeers,
-		genesis:    genesis,
+		genesis:    cfg.Genesis,
 		mempool:    mempool,
 		db:         db,
 	}
