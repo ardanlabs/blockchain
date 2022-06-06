@@ -57,17 +57,16 @@ type Config struct {
 
 // State manages the blockchain database.
 type State struct {
-	mu sync.RWMutex
+	mu          sync.RWMutex
+	resyncWG    sync.WaitGroup
+	allowMining bool
 
 	beneficiaryID database.AccountID
 	host          string
-	storage       database.Storage
 	evHandler     EventHandler
 
-	allowMining bool
-	resyncWG    sync.WaitGroup
-
 	knownPeers *peer.PeerSet
+	storage    database.Storage
 	genesis    genesis.Genesis
 	mempool    *mempool.Mempool
 	db         *database.Database

@@ -161,13 +161,13 @@ func run(log *zap.SugaredLogger) error {
 		}
 	}
 
+	// Construct the use of disk storage.
 	storage, err := disk.New(cfg.State.DBPath)
 	if err != nil {
 		return err
 	}
 
-	// Load the genesis file to get starting balances for
-	// founders of the block chain.
+	// Load the genesis file for blockchain settings and origin balances.
 	genesis, err := genesis.Load()
 	if err != nil {
 		return err
