@@ -15,6 +15,7 @@ import (
 	"github.com/ardanlabs/blockchain/foundation/blockchain/database"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/peer"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/state"
+	"github.com/ardanlabs/blockchain/foundation/blockchain/storage/disk"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/worker"
 	"github.com/ardanlabs/blockchain/foundation/events"
 	"github.com/ardanlabs/blockchain/foundation/logger"
@@ -159,12 +160,17 @@ func run(log *zap.SugaredLogger) error {
 		}
 	}
 
+	storage, err := disk.New(cfg.State.DBPath)
+	if err != nil {
+		return err
+	}
+
 	// The state value represents the blockchain node and manages the blockchain
 	// database and provides an API for application support.
 	state, err := state.New(state.Config{
 		BeneficiaryID:  database.PublicKeyToAccountID(privateKey.PublicKey),
 		Host:           cfg.Web.PrivateHost,
-		DBPath:         cfg.State.DBPath,
+		Storage:        storage,
 		SelectStrategy: cfg.State.SelectStrategy,
 		KnownPeers:     peerSet,
 		EvHandler:      ev,

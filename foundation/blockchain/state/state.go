@@ -9,7 +9,6 @@ import (
 	"github.com/ardanlabs/blockchain/foundation/blockchain/genesis"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/mempool"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/peer"
-	"github.com/ardanlabs/blockchain/foundation/blockchain/storage/disk"
 )
 
 /*
@@ -49,7 +48,7 @@ type Worker interface {
 type Config struct {
 	BeneficiaryID  database.AccountID
 	Host           string
-	DBPath         string
+	Storage        database.Storage
 	SelectStrategy string
 	KnownPeers     *peer.PeerSet
 	EvHandler      EventHandler
@@ -61,7 +60,7 @@ type State struct {
 
 	beneficiaryID database.AccountID
 	host          string
-	dbPath        string
+	storage       database.Storage
 	evHandler     EventHandler
 
 	allowMining bool
@@ -92,11 +91,7 @@ func New(cfg Config) (*State, error) {
 		return nil, err
 	}
 
-	storage, err := disk.New(cfg.DBPath)
-	//storage, err := memory.New()
-	if err != nil {
-		return nil, err
-	}
+	storage := cfg.Storage
 
 	// Access the storage for the blockchain.
 	db, err := database.New(genesis, storage, ev)
@@ -114,7 +109,7 @@ func New(cfg Config) (*State, error) {
 	state := State{
 		beneficiaryID: cfg.BeneficiaryID,
 		host:          cfg.Host,
-		dbPath:        cfg.DBPath,
+		storage:       storage,
 		evHandler:     ev,
 		allowMining:   true,
 
