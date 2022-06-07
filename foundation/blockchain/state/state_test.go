@@ -96,8 +96,7 @@ func Test_MineAndErrChainForkedDetection(t *testing.T) {
 		case i == 12:
 			err := node2.ProcessProposedBlock(blk)
 			if !errors.Is(err, database.ErrChainForked) {
-				t.Fatal("Error handling missing blocks - should have received" +
-					" ErrChainForked error")
+				t.Fatal("Error handling missing blocks: should have received ErrChainForked")
 			}
 		}
 	}
@@ -153,7 +152,7 @@ func Test_MineAndForceMissingBlock(t *testing.T) {
 		case i == 11:
 			err := node2.ProcessProposedBlock(blk)
 			if err == nil {
-				t.Fatal("Error handling missing block: error should have been triggered when processing 11th block")
+				t.Fatal("Error handling missing block: should have received error about block number")
 			}
 		}
 	}
