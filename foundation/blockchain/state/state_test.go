@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math/rand"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 
@@ -19,6 +18,164 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
+// ============================ TESTS CASES ===================================
+
+// Test_MineAndSyncBlock - Simple happy path. We do a transaction, mine a
+// block and offer it to another miner - no issues should be found.
+func Test_MineAndSyncBlock(t *testing.T) {
+
+	log, err := logger.New("TEST")
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+	defer log.Sync()
+
+	state1 := newMiner(t, MINER1_ECDSA)
+	state2 := newMiner(t, MINER2_ECDSA)
+
+	txOpts := newSignedTx(t)
+
+	state1.UpsertWalletTransaction(txOpts)
+
+	// Let them interact.
+	blk, err := state1.MineNewBlock(context.Background())
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+
+	err = state2.ProcessProposedBlock(blk)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+
+	log.Info("Done")
+}
+
+// Test_MineAndSyncBlocksNotRespectingOrder - in this scenario we will create
+// 2 Miners, mine some blocks on Miner 1, and then, provide the blocks to Miner 2,
+// but some blocks will be missing and we expect to see it raising a database.ErrChainForked.
+func Test_MineAndForceRescynError(t *testing.T) {
+
+	log, err := logger.New("TEST")
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+
+	defer log.Sync()
+
+	state1 := newMiner(t, MINER1_ECDSA)
+	state2 := newMiner(t, MINER2_ECDSA)
+
+	// Creating some blocks.
+	blocks := make([]database.Block, 0)
+	for i := 0; i < 20; i++ {
+		txOpts := newSignedTx(t)
+		err = state1.UpsertWalletTransaction(txOpts)
+		if err != nil {
+			t.Error(err)
+			t.FailNow()
+		}
+
+		blk, err := state1.MineNewBlock(context.Background())
+		if err != nil {
+			t.Error(err)
+			t.FailNow()
+		}
+		blocks = append(blocks, blk)
+	}
+
+	// Lets pass them to the 2nd miner, with exception of 2.
+	// This should trigger the ErrChainForked.
+
+	for i, b := range blocks {
+
+		switch {
+		case i == 12:
+			err = state2.ProcessProposedBlock(b)
+			if err == nil {
+				t.Fatal("Should have failed here, fork issue")
+			} else if err == database.ErrChainForked {
+				t.Logf("Failling gracefully due to fork in blocks: %s", err.Error())
+				return
+			} else {
+				t.Fatalf("Ohoh - we gotta an unplanned error: %s", err.Error())
+			}
+		case i != 10 && i != 11:
+			err = state2.ProcessProposedBlock(b)
+			if err != nil {
+				t.Fatal(err)
+			}
+		default:
+			t.Log("This is the 10th or 11th, lets skip it and see.")
+		}
+
+	}
+}
+
+// Test_MineAndSyncBlocksNotRespectingOrder - in this scenario we will create
+// 2 Miners, mine some blocks on Miner 1, and then, provide the blocks to Miner 2,
+// but one blocks will be missing and we expect to see it raising an error.
+func Test_MineAndForceMissingBlock(t *testing.T) {
+
+	log, err := logger.New("TEST")
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+	defer log.Sync()
+
+	state1 := newMiner(t, MINER1_ECDSA)
+
+	state2 := newMiner(t, MINER2_ECDSA)
+
+	// Creating the blocks.
+	blocks := make([]database.Block, 0)
+	for i := 0; i < 20; i++ {
+		txOpts := newSignedTx(t)
+		err = state1.UpsertWalletTransaction(txOpts)
+		if err != nil {
+			t.Error(err)
+			t.FailNow()
+		}
+		blk, err := state1.MineNewBlock(context.Background())
+		if err != nil {
+			t.Error(err)
+			t.FailNow()
+		}
+		blocks = append(blocks, blk)
+	}
+
+	//Lets pass them to the 2nd miner, with exception of 1.
+	for i, b := range blocks {
+
+		switch {
+		case i == 11:
+			err = state2.ProcessProposedBlock(b)
+			if err == nil {
+				t.Fatal("Should have failed here, fork issue")
+			} else if err == database.ErrChainForked {
+				t.Fatalf("Ohoh - we gotta an unplanned error: %s", err.Error())
+				return
+			} else {
+				t.Logf("Nice, there should be an error here: %s", err.Error())
+				return
+			}
+		case i != 10:
+			err = state2.ProcessProposedBlock(b)
+			if err != nil {
+				t.Fatal(err)
+			}
+		default:
+			t.Log("This is the 10th, lets skip it and see.")
+		}
+
+	}
+}
+
 // ================== TOOLKIT FOR TESTS =======================================
 
 const (
@@ -28,14 +185,14 @@ const (
 	PERSONA1_ECDSA = "9f332e3700d8fc2446eaf6d15034cf96e0c2745e40353deef032a5dbf1dfed93"
 	PERSONA2_ECDSA = "aed31b6b5a341af8f27e66fb0b7633cf20fc27049e3eb7f6f623a4655b719ebb"
 	PERSONA3_ECDSA = "601d7574860c135e9d3c1d52b0ee997404130edc2a1177c78fda92dd6a3dc2f7"
+	NONCE_ZERO     = uint64(0)
 )
 
 // Simple worker - required for the proper operation with states,
 // but it does nothing.
 // The production one will work with other goroutines - we dont want this
 // in our test cases.
-type noopWorker struct {
-}
+type noopWorker struct{}
 
 func (n *noopWorker) Shutdown()                              {}
 func (n *noopWorker) Sync()                                  {}
@@ -54,7 +211,7 @@ type signedTxOpts struct {
 	data   []byte
 }
 
-// createSignedTX - will create 1 signed transaction.
+// createSignedTX - This is method will encapsulate the creation of a signed transaction.
 func createSignedTX(opts signedTxOpts) (database.SignedTx, error) {
 
 	privateKey, err := crypto.HexToECDSA(opts.keyHex)
@@ -79,7 +236,7 @@ func createSignedTX(opts signedTxOpts) (database.SignedTx, error) {
 
 // newGenesis will create a new Genesis to be used later.
 func newGenesis() genesis.Genesis {
-	minergenesis := genesis.Genesis{
+	g := genesis.Genesis{
 		Date:          time.Now().Add(time.Hour * 24 * -365),
 		ChainID:       1,
 		TransPerBlock: 10,
@@ -92,35 +249,30 @@ func newGenesis() genesis.Genesis {
 		},
 	}
 
-	return minergenesis
+	return g
 }
 
-// newTxFactory will create a method that will provide us database.SignedTx
-// with random value at each call, but preserving control over nonce.
-func newTxFactory(t *testing.T) func() database.SignedTx {
-	nonce := uint64(0)
-	mx := sync.Mutex{}
+// newSignedTx will manage nonces and give us a new transaction with random value
+// at each call.
+var nonce = NONCE_ZERO //Lets seed the nonce
+func newSignedTx(t *testing.T) database.SignedTx {
 	s1 := rand.NewSource(time.Now().UnixNano())
 	r1 := rand.New(s1)
-	ret := func() database.SignedTx {
-		mx.Lock()
-		defer mx.Unlock()
-		nonce++
-		so := signedTxOpts{
-			keyHex: PERSONA1_ECDSA,
-			nonce:  nonce,
-			to:     "0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76",
-			value:  r1.Uint64(),
-			tip:    0,
-			data:   []byte{},
-		}
-		ret, err := createSignedTX(so)
-		if err != nil {
-			t.Errorf("Error creating database transaction: %s", err.Error())
-			t.FailNow()
-			return database.SignedTx{}
-		}
-		return ret
+
+	nonce++
+	so := signedTxOpts{
+		keyHex: PERSONA1_ECDSA,
+		nonce:  nonce,
+		to:     "0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76",
+		value:  r1.Uint64(),
+		tip:    0,
+		data:   []byte{},
+	}
+	ret, err := createSignedTX(so)
+	if err != nil {
+		t.Errorf("Error creating database transaction: %s", err.Error())
+		t.FailNow()
+		return database.SignedTx{}
 	}
 
 	return ret
@@ -172,161 +324,4 @@ func newMiner(t *testing.T, strkey string) *state.State {
 
 	ret.Worker = &noopWorker{}
 	return ret
-}
-
-// ============================ TESTS CASES ===================================
-
-// Test_MineAndSyncBlock - Simple happy path. We do a transaction, mine a
-// block and offer it to another miner - no issues should be found.
-func Test_MineAndSyncBlock(t *testing.T) {
-
-	log, err := logger.New("TEST")
-	if err != nil {
-		t.Error(err)
-		t.FailNow()
-	}
-	defer log.Sync()
-
-	state1 := newMiner(t, MINER1_ECDSA)
-	state2 := newMiner(t, MINER2_ECDSA)
-	txFactory := newTxFactory(t)
-
-	txOpts := txFactory()
-
-	state1.UpsertWalletTransaction(txOpts)
-
-	// Let them interact.
-	blk, err := state1.MineNewBlock(context.Background())
-	if err != nil {
-		t.Error(err)
-		t.FailNow()
-	}
-
-	err = state2.ProcessProposedBlock(blk)
-	if err != nil {
-		t.Error(err)
-		t.FailNow()
-	}
-
-	log.Info("Done")
-}
-
-// Test_MineAndSyncBlocksNotRespectingOrder - in this scenario we will create
-// 2 Miners, mine some blocks on Miner 1, and then, provide the blocks to Miner 2,
-// but some blocks will be missing and we expect to see it raising a database.ErrChainForked.
-func Test_MineAndForceRescynError(t *testing.T) {
-
-	log, err := logger.New("TEST")
-	if err != nil {
-		t.Error(err)
-		t.FailNow()
-	}
-
-	defer log.Sync()
-
-	state1 := newMiner(t, MINER1_ECDSA)
-	state2 := newMiner(t, MINER2_ECDSA)
-	txFactory := newTxFactory(t)
-
-	// Creating some blocks.
-	blocks := make([]database.Block, 0)
-	for i := 0; i < 20; i++ {
-		txOpts := txFactory()
-		err = state1.UpsertWalletTransaction(txOpts)
-		if err != nil {
-			t.Error(err)
-			t.FailNow()
-		}
-
-		blk, err := state1.MineNewBlock(context.Background())
-		if err != nil {
-			t.Error(err)
-			t.FailNow()
-		}
-		blocks = append(blocks, blk)
-	}
-
-	// Lets pass them to the 2nd miner, with exception of 2.
-	// This should trigger the ErrChainForked.
-	for i, b := range blocks {
-
-		if i == 12 {
-			err = state2.ProcessProposedBlock(b)
-			if err == nil {
-				t.Fatal("Should have failed here, fork issue")
-			} else if err == database.ErrChainForked {
-				t.Logf("Failling gracefully due to fork in blocks: %s", err.Error())
-				return
-			} else {
-				t.Fatalf("Ohoh - we gotta an unplanned error: %s", err.Error())
-			}
-		} else if i != 10 && i != 11 {
-			err = state2.ProcessProposedBlock(b)
-			if err != nil {
-				t.Fatal(err)
-			}
-		} else {
-			t.Log("This is the 10th, lets skip it and see.")
-		}
-	}
-}
-
-// Test_MineAndSyncBlocksNotRespectingOrder - in this scenario we will create
-// 2 Miners, mine some blocks on Miner 1, and then, provide the blocks to Miner 2,
-// but one blocks will be missing and we expect to see it raising an error.
-func Test_MineAndForceMissingBlock(t *testing.T) {
-
-	log, err := logger.New("TEST")
-	if err != nil {
-		t.Error(err)
-		t.FailNow()
-	}
-	defer log.Sync()
-
-	state1 := newMiner(t, MINER1_ECDSA)
-
-	state2 := newMiner(t, MINER2_ECDSA)
-
-	txFactory := newTxFactory(t)
-
-	// Creating the blocks.
-	blocks := make([]database.Block, 0)
-	for i := 0; i < 20; i++ {
-		txOpts := txFactory()
-		err = state1.UpsertWalletTransaction(txOpts)
-		if err != nil {
-			t.Error(err)
-			t.FailNow()
-		}
-		blk, err := state1.MineNewBlock(context.Background())
-		if err != nil {
-			t.Error(err)
-			t.FailNow()
-		}
-		blocks = append(blocks, blk)
-	}
-
-	//Lets pass them to the 2nd miner, with exception of 1.
-	for i, b := range blocks {
-
-		if i == 11 {
-			err = state2.ProcessProposedBlock(b)
-			if err == nil {
-				t.Fatal("Should have failed here, fork issue")
-			} else if err == database.ErrChainForked {
-				t.Fatalf("Ohoh - we gotta an unplanned error: %s", err.Error())
-				return
-			} else {
-				t.Logf("Nice, there should be an error here: %s", err.Error())
-				return
-			}
-		} else if i != 10 {
-			err = state2.ProcessProposedBlock(b)
-			if err != nil {
-				t.Fatal(err)
-			}
-		} else {
-			t.Log("This is the 10th, lets skip it and see.")
-		}
-	}
 }
