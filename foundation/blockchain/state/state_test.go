@@ -52,9 +52,9 @@ func Test_MineAndSyncBlock(t *testing.T) {
 // The number of blocks to use in the first node for these test scenarios.
 const blocksToHave = 15
 
-// Test_MineAndHandleProposeBlockValidation is an umbrella, holding different
+// Test_ProposeBlockValidation is an umbrella, holding different
 // scenarios to validate proper handling of issues regarding block proposals.
-func Test_MineAndHandleProposeBlockValidation(t *testing.T) {
+func Test_ProposeBlockValidation(t *testing.T) {
 	var blocks []database.Block
 
 	// Let's add 15 blocks to Node1 starting with Nonce 1.
