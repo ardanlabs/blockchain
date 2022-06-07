@@ -13,6 +13,7 @@ import (
 
 	"github.com/ardanlabs/blockchain/app/services/node/handlers"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/database"
+	"github.com/ardanlabs/blockchain/foundation/blockchain/genesis"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/peer"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/state"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/storage/disk"
@@ -160,7 +161,14 @@ func run(log *zap.SugaredLogger) error {
 		}
 	}
 
+	// Construct the use of disk storage.
 	storage, err := disk.New(cfg.State.DBPath)
+	if err != nil {
+		return err
+	}
+
+	// Load the genesis file for blockchain settings and origin balances.
+	genesis, err := genesis.Load()
 	if err != nil {
 		return err
 	}
@@ -171,6 +179,7 @@ func run(log *zap.SugaredLogger) error {
 		BeneficiaryID:  database.PublicKeyToAccountID(privateKey.PublicKey),
 		Host:           cfg.Web.PrivateHost,
 		Storage:        storage,
+		Genesis:        genesis,
 		SelectStrategy: cfg.State.SelectStrategy,
 		KnownPeers:     peerSet,
 		EvHandler:      ev,
