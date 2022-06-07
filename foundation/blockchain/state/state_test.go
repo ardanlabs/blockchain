@@ -153,9 +153,7 @@ func Test_MineAndForceMissingBlock(t *testing.T) {
 		case i == 11:
 			err := node2.ProcessProposedBlock(blk)
 			if err == nil {
-				t.Fatal(
-					"Error handling missing block - and error should have " +
-						"been triggered when processing 11th block")
+				t.Fatal("Error handling missing block: error should have been triggered when processing 11th block")
 			}
 		}
 	}
