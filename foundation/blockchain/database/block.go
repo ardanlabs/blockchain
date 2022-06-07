@@ -241,7 +241,7 @@ func (b Block) ValidateBlock(previousBlock Block, stateRoot string, evHandler fu
 
 		parentTime := time.Unix(int64(previousBlock.Header.TimeStamp), 0)
 		blockTime := time.Unix(int64(b.Header.TimeStamp), 0)
-		if !blockTime.After(parentTime) {
+		if blockTime.Before(parentTime) {
 			return fmt.Errorf("block timestamp is before parent block, parent %s, block %s", parentTime, blockTime)
 		}
 
