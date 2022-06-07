@@ -79,8 +79,6 @@ func Test_ProposeBlockValidation(t *testing.T) {
 			t.Fatalf("Error mining new block: %v", err)
 		}
 
-		t.Logf("BLK: %d", blk.Header.Number)
-
 		blocks = append(blocks, blk)
 	}
 
