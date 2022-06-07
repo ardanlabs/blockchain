@@ -130,7 +130,7 @@ type BlockTx struct {
 func NewBlockTx(signedTx SignedTx, gasPrice uint64, unitsOfGas uint64) BlockTx {
 	return BlockTx{
 		SignedTx:  signedTx,
-		TimeStamp: uint64(time.Now().UTC().Unix()),
+		TimeStamp: uint64(time.Now().UTC().UnixMilli()),
 		GasPrice:  gasPrice,
 		GasUnits:  unitsOfGas,
 	}

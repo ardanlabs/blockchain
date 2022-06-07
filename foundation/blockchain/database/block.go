@@ -106,7 +106,7 @@ func POW(ctx context.Context, args POWArgs) (Block, error) {
 		Header: BlockHeader{
 			Number:        args.PrevBlock.Header.Number + 1,
 			PrevBlockHash: prevBlockHash,
-			TimeStamp:     uint64(time.Now().UTC().Unix()),
+			TimeStamp:     uint64(time.Now().UTC().UnixMilli()),
 			BeneficiaryID: args.BeneficiaryID,
 			Difficulty:    args.Difficulty,
 			MiningReward:  args.MiningReward,
