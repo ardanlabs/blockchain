@@ -47,12 +47,11 @@ func Test_MineAndSyncBlock(t *testing.T) {
 	}
 }
 
-// Test_MineAndErrChainForkedDetection will create 2 nodes, mine some blocks on
-// node 1, then provide the blocks to node 2. Some blocks won't be forwarded to
-// node 2. This scenario should raise a database.ErrChainForked.
-func Test_MineAndErrChainForkedDetection(t *testing.T) {
+// Test_MineAndHandleMissingBlocksErrors is an umbrella, holding different
+// scenarios to validate proper handling of issues regarding synchronization
+// of nodes.
+func Test_MineAndHandleMissingBlocksErrors(t *testing.T) {
 	node1 := newNode(MINER1_PRIVATEKEY, t)
-	node2 := newNode(MINER2_PRIVATEKEY, t)
 
 	// Let's add 15 blocks to Node1 starting with Nonce 1.
 	var blocks []database.Block
@@ -80,82 +79,65 @@ func Test_MineAndErrChainForkedDetection(t *testing.T) {
 		blocks = append(blocks, blk)
 	}
 
-	// Let's add the first 10 blocks to node2, then skip blocks 11 and 12,
-	// then try to add block 13. Remember zero indexing.
+	// "Force ErrChainRaised" scenario will create 2 nodes, mine some blocks on
+	// node 1, then provide the blocks to node 2. Some blocks won't be forwarded
+	// to node 2. This scenario should raise a database.ErrChainForked.
+	t.Run("Force ErrChainRaised", func(t *testing.T) {
+		node2 := newNode(MINER2_PRIVATEKEY, t)
 
-	for i, blk := range blocks[:13] {
-		switch {
-		case i < 10:
-			if err := node2.ProcessProposedBlock(blk); err != nil {
-				t.Fatalf("Error proposing new block %d: %v", i, err)
-			}
+		// Let's add the first 10 blocks to node2, then skip blocks #11 and #12,
+		// then try to add block #13. Remember zero indexing.
 
-		case i == 10 || i == 11:
-			continue
+		for i, blk := range blocks[:13] {
+			switch {
+			case i < 10:
+				if err := node2.ProcessProposedBlock(blk); err != nil {
+					t.Fatalf("Error proposing new block %d: %v", i, err)
+				}
 
-		case i == 12:
-			err := node2.ProcessProposedBlock(blk)
-			if !errors.Is(err, database.ErrChainForked) {
-				t.Fatal("Error handling missing blocks: should have received ErrChainForked")
-			}
-		}
-	}
-}
+			case i == 10 || i == 11:
+				continue
 
-// Test_MineAndForceMissingBlock - in this scenario we will create
-// 2 Miners, mine some blocks on Miner 1, and then, provide the blocks to Miner
-// 2 but one block will be missing. A error with the message: "this block is not
-// the next number, got 12, exp 11". is expected as result.
-func Test_MineAndForceMissingBlock(t *testing.T) {
-	node1 := newNode(MINER1_PRIVATEKEY, t)
-	node2 := newNode(MINER2_PRIVATEKEY, t)
-
-	// Let's add 15 blocks to Node1 starting with Nonce 1.
-	var blocks []database.Block
-
-	for i := 1; i <= 15; i++ {
-		tx := database.Tx{
-			ChainID: CHAIN_ID,
-			Nonce:   uint64(i),
-			ToID:    KENNEDY_ACCOUNTID,
-			Value:   1,
-			Tip:     0,
-			Data:    nil,
-		}
-
-		signedTx := newSignedTx(tx, JACK_PRIVATEKEY, t)
-		if err := node1.UpsertWalletTransaction(signedTx); err != nil {
-			t.Fatalf("Error upserting wallet transaction: %v", err)
-		}
-
-		blk, err := node1.MineNewBlock(context.Background())
-		if err != nil {
-			t.Fatalf("Error mining new block: %v", err)
-		}
-
-		blocks = append(blocks, blk)
-	}
-
-	// Let's add the first 10 blocks to node2, then skip blocks 11 and 12,
-	// then try to add block 13. Remember zero indexing.
-
-	for i, blk := range blocks[:13] {
-		switch {
-		case i < 10:
-			if err := node2.ProcessProposedBlock(blk); err != nil {
-				t.Fatalf("Error proposing new block %d: %v", i, err)
-			}
-
-		case i == 10:
-			continue
-
-		case i == 11:
-			err := node2.ProcessProposedBlock(blk)
-			if err == nil {
-				t.Fatal("Error handling missing block: should have received error about block number")
+			case i == 12:
+				err := node2.ProcessProposedBlock(blk)
+				if !errors.Is(err, database.ErrChainForked) {
+					t.Fatal("Error handling missing blocks: should have received ErrChainForked")
+				}
 			}
 		}
-	}
+
+	})
+
+	// "One missing block" - in this scenario we will create
+	// 2 Miners, mine some blocks on Miner 1, and then, provide the blocks to
+	// Miner 2 but one block will be missing. A error with the message:
+	// "this block is not the next number, got 12, exp 11" is expected.
+	t.Run("One missing block", func(t *testing.T) {
+		node2 := newNode(MINER2_PRIVATEKEY, t)
+
+		// Let's add the first 10 blocks to node2, then skip block #11,
+		// then try to add block #12. Remember zero indexing.
+
+		for i, blk := range blocks[:13] {
+			switch {
+			case i < 10:
+				if err := node2.ProcessProposedBlock(blk); err != nil {
+					t.Fatalf("Error proposing new block %d: %v", i, err)
+				}
+
+			case i == 10:
+				continue
+
+			case i == 11:
+				err := node2.ProcessProposedBlock(blk)
+				if err == nil {
+					t.Fatal("Error handling missing block: should have received error about block number")
+				}
+			}
+		}
+
+	})
+
 }
 
 // ================== TOOLKIT FOR TESTS =======================================
