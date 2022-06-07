@@ -55,10 +55,10 @@ const blocksToHave = 15
 // Test_ProposeBlockValidation is an umbrella, holding different
 // scenarios to validate proper handling of issues regarding block proposals.
 func Test_ProposeBlockValidation(t *testing.T) {
-	var blocks []database.Block
 	node1 := newNode(MINER1_PRIVATEKEY, t)
 
 	// Let's add 15 blocks to Node1 starting with Nonce 1.
+	var blocks []database.Block
 	for i := 1; i <= blocksToHave; i++ {
 		tx := database.Tx{
 			ChainID: CHAIN_ID,
