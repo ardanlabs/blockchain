@@ -3,8 +3,6 @@ package state_test
 import (
 	"context"
 	"errors"
-	"fmt"
-	"os"
 	"testing"
 	"time"
 
@@ -13,24 +11,8 @@ import (
 	"github.com/ardanlabs/blockchain/foundation/blockchain/peer"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/state"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/storage/memory"
-	"github.com/ardanlabs/blockchain/foundation/logger"
 	"github.com/ethereum/go-ethereum/crypto"
-	"go.uber.org/zap"
 )
-
-var log *zap.SugaredLogger
-
-func Test_Main(m *testing.M) {
-	var err error
-	log, err = logger.New("TEST")
-	if err != nil {
-		fmt.Printf("TEST FAILED: Error constructing logger: %v\n", err)
-		os.Exit(1)
-	}
-	defer log.Sync()
-
-	os.Exit(m.Run())
-}
 
 // ============================ TESTS CASES ===================================
 
@@ -65,8 +47,9 @@ func Test_MineAndSyncBlock(t *testing.T) {
 	}
 }
 
-// Test_MineAndErrChainForkedDetection will create 2 nodes, mine some
-// blocks on node 1, then provide the blocks to node 2. FINISH COMMENT!
+// Test_MineAndErrChainForkedDetection will create 2 nodes, mine some blocks on
+// node 1, then provide the blocks to node 2. Some blocks won't be forwarded to
+// node 2. This scenario should raise a database.ErrChainForked.
 func Test_MineAndErrChainForkedDetection(t *testing.T) {
 	node1 := newNode(MINER1_PRIVATEKEY, t)
 	node2 := newNode(MINER2_PRIVATEKEY, t)
@@ -113,60 +96,68 @@ func Test_MineAndErrChainForkedDetection(t *testing.T) {
 		case i == 12:
 			err := node2.ProcessProposedBlock(blk)
 			if !errors.Is(err, database.ErrChainForked) {
-				t.Fatal("Should have received ErrChainForked error")
+				t.Fatal("Error handling missing blocks - should have received" +
+					" ErrChainForked error")
 			}
 		}
 	}
 }
 
-// Test_MineAndSyncBlocksNotRespectingOrder - in this scenario we will create
-// 2 Miners, mine some blocks on Miner 1, and then, provide the blocks to Miner 2,
-// but one blocks will be missing and we expect to see it raising an error.
+// Test_MineAndForceMissingBlock - in this scenario we will create
+// 2 Miners, mine some blocks on Miner 1, and then, provide the blocks to Miner
+// 2 but one block will be missing. A error with the message: "this block is not
+// the next number, got 12, exp 11". is expected as result.
 func Test_MineAndForceMissingBlock(t *testing.T) {
 	node1 := newNode(MINER1_PRIVATEKEY, t)
 	node2 := newNode(MINER2_PRIVATEKEY, t)
 
-	// Creating the blocks.
-	blocks := make([]database.Block, 0)
-	for i := 0; i < 20; i++ {
-		txOpts := newSignedTx(t)
-		err = state1.UpsertWalletTransaction(txOpts)
-		if err != nil {
-			t.Error(err)
-			t.FailNow()
+	// Let's add 15 blocks to Node1 starting with Nonce 1.
+	var blocks []database.Block
+
+	for i := 1; i <= 15; i++ {
+		tx := database.Tx{
+			ChainID: CHAIN_ID,
+			Nonce:   uint64(i),
+			ToID:    KENNEDY_ACCOUNTID,
+			Value:   1,
+			Tip:     0,
+			Data:    nil,
 		}
-		blk, err := state1.MineNewBlock(context.Background())
-		if err != nil {
-			t.Error(err)
-			t.FailNow()
+
+		signedTx := newSignedTx(tx, JACK_PRIVATEKEY, t)
+		if err := node1.UpsertWalletTransaction(signedTx); err != nil {
+			t.Fatalf("Error upserting wallet transaction: %v", err)
 		}
+
+		blk, err := node1.MineNewBlock(context.Background())
+		if err != nil {
+			t.Fatalf("Error mining new block: %v", err)
+		}
+
 		blocks = append(blocks, blk)
 	}
 
-	//Lets pass them to the 2nd miner, with exception of 1.
-	for i, b := range blocks {
+	// Let's add the first 10 blocks to node2, then skip blocks 11 and 12,
+	// then try to add block 13. Remember zero indexing.
 
+	for i, blk := range blocks[:13] {
 		switch {
-		case i == 11:
-			err = state2.ProcessProposedBlock(b)
-			if err == nil {
-				t.Fatal("Should have failed here, fork issue")
-			} else if err == database.ErrChainForked {
-				t.Fatalf("Ohoh - we gotta an unplanned error: %s", err.Error())
-				return
-			} else {
-				t.Logf("Nice, there should be an error here: %s", err.Error())
-				return
+		case i < 10:
+			if err := node2.ProcessProposedBlock(blk); err != nil {
+				t.Fatalf("Error proposing new block %d: %v", i, err)
 			}
-		case i != 10:
-			err = state2.ProcessProposedBlock(b)
-			if err != nil {
-				t.Fatal(err)
-			}
-		default:
-			t.Log("This is the 10th, lets skip it and see.")
-		}
 
+		case i == 10:
+			continue
+
+		case i == 11:
+			err := node2.ProcessProposedBlock(blk)
+			if err == nil {
+				t.Fatal(
+					"Error handling missing block - and error should have " +
+						"been triggered when processing 11th block")
+			}
+		}
 	}
 }
 
@@ -209,7 +200,7 @@ func (n noopWorker) SignalShareTx(blockTx database.BlockTx) {}
 
 // =============================================================================
 
-// newGenesis will create a new Genesis to be used later.
+// newGenesis will create a new Genesis.
 func newGenesis() genesis.Genesis {
 	g := genesis.Genesis{
 		Date:          time.Now().Add(time.Hour * 24 * -365),
@@ -255,7 +246,7 @@ func newNode(hexKey string, t *testing.T) *state.State {
 
 	storage, err := memory.New()
 	if err != nil {
-		t.Fatalf("Unable to construct memory storage: %v", err)
+		t.Fatalf("Error setting up memory storage: %v", err)
 	}
 
 	state, err := state.New(state.Config{
