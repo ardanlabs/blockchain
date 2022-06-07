@@ -3,6 +3,8 @@ package state_test
 import (
 	"context"
 	"errors"
+	"fmt"
+	"os"
 	"testing"
 	"time"
 
@@ -13,19 +15,28 @@ import (
 	"github.com/ardanlabs/blockchain/foundation/blockchain/storage/memory"
 	"github.com/ardanlabs/blockchain/foundation/logger"
 	"github.com/ethereum/go-ethereum/crypto"
+	"go.uber.org/zap"
 )
+
+var log *zap.SugaredLogger
+
+func Test_Main(m *testing.M) {
+	var err error
+	log, err = logger.New("TEST")
+	if err != nil {
+		fmt.Printf("TEST FAILED: Error constructing logger: %v\n", err)
+		os.Exit(1)
+	}
+	defer log.Sync()
+
+	os.Exit(m.Run())
+}
 
 // ============================ TESTS CASES ===================================
 
 // Test_MineAndSyncBlock is the simple happy path. We do a transaction, mine a
 // block and offer it to another miner. No issues should be found.
 func Test_MineAndSyncBlock(t *testing.T) {
-	log, err := logger.New("TEST")
-	if err != nil {
-		t.Fatalf("Error constructing logger: %v", err)
-	}
-	defer log.Sync()
-
 	node1 := newNode(MINER1_PRIVATEKEY, t)
 	node2 := newNode(MINER2_PRIVATEKEY, t)
 
@@ -57,12 +68,6 @@ func Test_MineAndSyncBlock(t *testing.T) {
 // Test_MineAndErrChainForkedDetection will create 2 nodes, mine some
 // blocks on node 1, then provide the blocks to node 2. FINISH COMMENT!
 func Test_MineAndErrChainForkedDetection(t *testing.T) {
-	log, err := logger.New("TEST")
-	if err != nil {
-		t.Fatalf("Error constructing logger: %v", err)
-	}
-	defer log.Sync()
-
 	node1 := newNode(MINER1_PRIVATEKEY, t)
 	node2 := newNode(MINER2_PRIVATEKEY, t)
 
@@ -98,8 +103,7 @@ func Test_MineAndErrChainForkedDetection(t *testing.T) {
 	for i, blk := range blocks[:13] {
 		switch {
 		case i < 10:
-			err = node2.ProcessProposedBlock(blk)
-			if err != nil {
+			if err := node2.ProcessProposedBlock(blk); err != nil {
 				t.Fatalf("Error proposing new block %d: %v", i, err)
 			}
 
@@ -119,12 +123,6 @@ func Test_MineAndErrChainForkedDetection(t *testing.T) {
 // 2 Miners, mine some blocks on Miner 1, and then, provide the blocks to Miner 2,
 // but one blocks will be missing and we expect to see it raising an error.
 func Test_MineAndForceMissingBlock(t *testing.T) {
-	log, err := logger.New("TEST")
-	if err != nil {
-		t.Fatalf("Error constructing logger: %v", err)
-	}
-	defer log.Sync()
-
 	node1 := newNode(MINER1_PRIVATEKEY, t)
 	node2 := newNode(MINER2_PRIVATEKEY, t)
 
