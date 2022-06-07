@@ -47,16 +47,18 @@ func Test_MineAndSyncBlock(t *testing.T) {
 	}
 }
 
-// Test_MineAndHandleMissingBlocksErrors is an umbrella, holding different
-// scenarios to validate proper handling of issues regarding synchronization
-// of nodes.
-func Test_MineAndHandleMissingBlocksErrors(t *testing.T) {
-	node1 := newNode(MINER1_PRIVATEKEY, t)
+// =============================================================================
 
-	// Let's add 15 blocks to Node1 starting with Nonce 1.
+// The number of blocks to use in the first node for these test scenarios.
+const blocksToHave = 15
+
+// Test_MineAndHandleProposeBlockValidation is an umbrella, holding different
+// scenarios to validate proper handling of issues regarding block proposals.
+func Test_MineAndHandleProposeBlockValidation(t *testing.T) {
 	var blocks []database.Block
 
-	for i := 1; i <= 15; i++ {
+	// Let's add 15 blocks to Node1 starting with Nonce 1.
+	for i := 1; i <= blocksToHave; i++ {
 		tx := database.Tx{
 			ChainID: CHAIN_ID,
 			Nonce:   uint64(i),
@@ -65,6 +67,8 @@ func Test_MineAndHandleMissingBlocksErrors(t *testing.T) {
 			Tip:     0,
 			Data:    nil,
 		}
+
+		node1 := newNode(MINER1_PRIVATEKEY, t)
 
 		signedTx := newSignedTx(tx, JACK_PRIVATEKEY, t)
 		if err := node1.UpsertWalletTransaction(signedTx); err != nil {
@@ -79,16 +83,19 @@ func Test_MineAndHandleMissingBlocksErrors(t *testing.T) {
 		blocks = append(blocks, blk)
 	}
 
-	// "Force ErrChainRaised" scenario will create 2 nodes, mine some blocks on
-	// node 1, then provide the blocks to node 2. Some blocks won't be forwarded
-	// to node 2. This scenario should raise a database.ErrChainForked.
-	t.Run("Force ErrChainRaised", func(t *testing.T) {
+	t.Run("Force ErrChainRaised", proposeBlockErrChainRaised(blocks))
+	t.Run("One missing block", proposeBlockOneMissingBlock(blocks))
+}
+
+// proposeBlockErrChainRaised validates an ErrChainForked error is returned
+// by the ProcessProposedBlock function. It does this by adding the first 10
+// blocks to node2, then skipping blocks #11 and #12, and finally trying to
+// add block #13. Remember zero indexing.
+func proposeBlockErrChainRaised(blocks []database.Block) func(t *testing.T) {
+	f := func(t *testing.T) {
 		node2 := newNode(MINER2_PRIVATEKEY, t)
 
-		// Let's add the first 10 blocks to node2, then skip blocks #11 and #12,
-		// then try to add block #13. Remember zero indexing.
-
-		for i, blk := range blocks[:13] {
+		for i, blk := range blocks[:blocksToHave-2] {
 			switch {
 			case i < 10:
 				if err := node2.ProcessProposedBlock(blk); err != nil {
@@ -105,20 +112,19 @@ func Test_MineAndHandleMissingBlocksErrors(t *testing.T) {
 				}
 			}
 		}
+	}
 
-	})
+	return f
+}
 
-	// "One missing block" - in this scenario we will create
-	// 2 Miners, mine some blocks on Miner 1, and then, provide the blocks to
-	// Miner 2 but one block will be missing. A error with the message:
-	// "this block is not the next number, got 12, exp 11" is expected.
-	t.Run("One missing block", func(t *testing.T) {
+// proposeBlockOneMissingBlock will validate an error occurs when blocks are out
+// of order. It does this by adding the first 10 blocks to node2, then skipping
+// block #11, and finally trying to add block #12. Remember zero indexing.
+func proposeBlockOneMissingBlock(blocks []database.Block) func(t *testing.T) {
+	f := func(t *testing.T) {
 		node2 := newNode(MINER2_PRIVATEKEY, t)
 
-		// Let's add the first 10 blocks to node2, then skip block #11,
-		// then try to add block #12. Remember zero indexing.
-
-		for i, blk := range blocks[:13] {
+		for i, blk := range blocks[:blocksToHave-2] {
 			switch {
 			case i < 10:
 				if err := node2.ProcessProposedBlock(blk); err != nil {
@@ -135,12 +141,12 @@ func Test_MineAndHandleMissingBlocksErrors(t *testing.T) {
 				}
 			}
 		}
+	}
 
-	})
-
+	return f
 }
 
-// ================== TOOLKIT FOR TESTS =======================================
+// ============================== TOOLKIT FOR TESTS ============================
 
 const (
 	MINER1_PRIVATEKEY = "8dc79feefd3b86e2f9991def0e5ccd9a5128e104682407b308594bc1032ac7f0"
