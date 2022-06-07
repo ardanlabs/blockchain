@@ -56,6 +56,7 @@ const blocksToHave = 15
 // scenarios to validate proper handling of issues regarding block proposals.
 func Test_ProposeBlockValidation(t *testing.T) {
 	var blocks []database.Block
+	node1 := newNode(MINER1_PRIVATEKEY, t)
 
 	// Let's add 15 blocks to Node1 starting with Nonce 1.
 	for i := 1; i <= blocksToHave; i++ {
@@ -68,8 +69,6 @@ func Test_ProposeBlockValidation(t *testing.T) {
 			Data:    nil,
 		}
 
-		node1 := newNode(MINER1_PRIVATEKEY, t)
-
 		signedTx := newSignedTx(tx, JACK_PRIVATEKEY, t)
 		if err := node1.UpsertWalletTransaction(signedTx); err != nil {
 			t.Fatalf("Error upserting wallet transaction: %v", err)
@@ -79,6 +78,8 @@ func Test_ProposeBlockValidation(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error mining new block: %v", err)
 		}
+
+		t.Logf("BLK: %d", blk.Header.Number)
 
 		blocks = append(blocks, blk)
 	}
