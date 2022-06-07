@@ -2,7 +2,6 @@ package state_test
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"math/rand"
 	"strings"
@@ -29,20 +28,12 @@ const (
 	PERSONA1_ECDSA = "9f332e3700d8fc2446eaf6d15034cf96e0c2745e40353deef032a5dbf1dfed93"
 	PERSONA2_ECDSA = "aed31b6b5a341af8f27e66fb0b7633cf20fc27049e3eb7f6f623a4655b719ebb"
 	PERSONA3_ECDSA = "601d7574860c135e9d3c1d52b0ee997404130edc2a1177c78fda92dd6a3dc2f7"
-	GENESIS        = `{
-		"date": "2021-12-17T00:00:00.000000000Z",
-		"chain_id": 1,
-		"trans_per_block": 10,
-		"difficulty": 1,
-		"mining_reward": 700,
-		"gas_price": 15,
-		"balances": {
-			"0xF01813E4B85e178A83e29B8E7bF26BD830a25f32": 1000000,
-			"0xdd6B972ffcc631a62CAE1BB9d80b7ff429c8ebA4": 1000000
-		}
-	}`
 )
 
+// Simple worker - required for the proper operation with states,
+// but it does nothing.
+// The production one will work with other goroutines - we dont want this
+// in our test cases.
 type noopWorker struct {
 }
 
@@ -52,6 +43,8 @@ func (n *noopWorker) SignalStartMining()                     {}
 func (n *noopWorker) SignalCancelMining()                    {}
 func (n *noopWorker) SignalShareTx(blockTx database.BlockTx) {}
 
+// signedTxOpts allows us to simplify creating signed TX, when
+// calling createSignedTX.
 type signedTxOpts struct {
 	keyHex string
 	nonce  uint64
@@ -61,6 +54,7 @@ type signedTxOpts struct {
 	data   []byte
 }
 
+// createSignedTX - will create 1 signed transaction.
 func createSignedTX(opts signedTxOpts) (database.SignedTx, error) {
 
 	privateKey, err := crypto.HexToECDSA(opts.keyHex)
@@ -83,17 +77,21 @@ func createSignedTX(opts signedTxOpts) (database.SignedTx, error) {
 
 }
 
-func ifErrFailNow(t *testing.T, err error) {
-	if err != nil {
-		t.Error(err)
-		t.FailNow()
+// newGenesis will create a new Genesis to be used later.
+func newGenesis() genesis.Genesis {
+	minergenesis := genesis.Genesis{
+		Date:          time.Now().Add(time.Hour * 24 * -365),
+		ChainID:       1,
+		TransPerBlock: 10,
+		Difficulty:    1,
+		MiningReward:  700,
+		GasPrice:      15,
+		Balances: map[string]uint64{
+			"0xF01813E4B85e178A83e29B8E7bF26BD830a25f32": 1000000,
+			"0xdd6B972ffcc631a62CAE1BB9d80b7ff429c8ebA4": 1000000,
+		},
 	}
-}
 
-func newGenesis(t *testing.T) genesis.Genesis {
-	minergenesis := genesis.Genesis{}
-	err := json.Unmarshal([]byte(GENESIS), &minergenesis)
-	ifErrFailNow(t, err)
 	return minergenesis
 }
 
@@ -128,7 +126,7 @@ func newTxFactory(t *testing.T) func() database.SignedTx {
 	return ret
 }
 
-// newMiner will create an in memory miner
+// newMiner will create an in memory miner.
 func newMiner(t *testing.T, strkey string) *state.State {
 	if strkey == "" {
 		t.Fatalf("please provide a string w an ECDSA key as strkey")
@@ -136,10 +134,16 @@ func newMiner(t *testing.T, strkey string) *state.State {
 	var err error
 
 	storage, err := memory.New()
-	ifErrFailNow(t, err)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
 
 	key, err := crypto.HexToECDSA(MINER1_ECDSA)
-	ifErrFailNow(t, err)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
 
 	evts := events.New()
 
@@ -147,7 +151,6 @@ func newMiner(t *testing.T, strkey string) *state.State {
 		const websocketPrefix = "viewer:"
 
 		s := fmt.Sprintf(v, args...)
-		//log.Infow(s, "traceid", "00000000-0000-0000-0000-000000000000")
 		if strings.HasPrefix(s, websocketPrefix) {
 			evts.Send(s)
 		}
@@ -156,13 +159,16 @@ func newMiner(t *testing.T, strkey string) *state.State {
 	ret, err := state.New(state.Config{
 		BeneficiaryID:  database.PublicKeyToAccountID(key.PublicKey),
 		Host:           "http://localhost:9080",
-		Genesis:        newGenesis(t),
+		Genesis:        newGenesis(),
 		Storage:        storage,
 		SelectStrategy: "Tip",
 		KnownPeers:     peer.NewPeerSet(),
 		EvHandler:      ev,
 	})
-	ifErrFailNow(t, err)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
 
 	ret.Worker = &noopWorker{}
 	return ret
@@ -175,10 +181,11 @@ func newMiner(t *testing.T, strkey string) *state.State {
 func Test_MineAndSyncBlock(t *testing.T) {
 
 	log, err := logger.New("TEST")
-	ifErrFailNow(t, err)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
 	defer log.Sync()
-
-	// Miner 1
 
 	state1 := newMiner(t, MINER1_ECDSA)
 	state2 := newMiner(t, MINER2_ECDSA)
@@ -188,42 +195,59 @@ func Test_MineAndSyncBlock(t *testing.T) {
 
 	state1.UpsertWalletTransaction(txOpts)
 
-	// Let them interact
+	// Let them interact.
 	blk, err := state1.MineNewBlock(context.Background())
-	ifErrFailNow(t, err)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
 
 	err = state2.ProcessProposedBlock(blk)
-	ifErrFailNow(t, err)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
 
 	log.Info("Done")
 }
 
 // Test_MineAndSyncBlocksNotRespectingOrder - in this scenario we will create
 // 2 Miners, mine some blocks on Miner 1, and then, provide the blocks to Miner 2,
-// but some blocks will be missing and we expect to see it raising a database.ErrChainForked
+// but some blocks will be missing and we expect to see it raising a database.ErrChainForked.
 func Test_MineAndForceRescynError(t *testing.T) {
 
 	log, err := logger.New("TEST")
-	ifErrFailNow(t, err)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+
 	defer log.Sync()
 
 	state1 := newMiner(t, MINER1_ECDSA)
-
 	state2 := newMiner(t, MINER2_ECDSA)
-
 	txFactory := newTxFactory(t)
 
-	// lets play with states now
+	// Creating some blocks.
 	blocks := make([]database.Block, 0)
 	for i := 0; i < 20; i++ {
 		txOpts := txFactory()
 		err = state1.UpsertWalletTransaction(txOpts)
-		ifErrFailNow(t, err)
+		if err != nil {
+			t.Error(err)
+			t.FailNow()
+		}
+
 		blk, err := state1.MineNewBlock(context.Background())
-		ifErrFailNow(t, err)
+		if err != nil {
+			t.Error(err)
+			t.FailNow()
+		}
 		blocks = append(blocks, blk)
 	}
 
+	// Lets pass them to the 2nd miner, with exception of 2.
+	// This should trigger the ErrChainForked.
 	for i, b := range blocks {
 
 		if i == 12 {
@@ -249,11 +273,14 @@ func Test_MineAndForceRescynError(t *testing.T) {
 
 // Test_MineAndSyncBlocksNotRespectingOrder - in this scenario we will create
 // 2 Miners, mine some blocks on Miner 1, and then, provide the blocks to Miner 2,
-// but some blocks will be missing and we expect to see it raising a database.ErrChainForked
+// but one blocks will be missing and we expect to see it raising an error.
 func Test_MineAndForceMissingBlock(t *testing.T) {
 
 	log, err := logger.New("TEST")
-	ifErrFailNow(t, err)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
 	defer log.Sync()
 
 	state1 := newMiner(t, MINER1_ECDSA)
@@ -262,17 +289,24 @@ func Test_MineAndForceMissingBlock(t *testing.T) {
 
 	txFactory := newTxFactory(t)
 
-	// lets play with states now
+	// Creating the blocks.
 	blocks := make([]database.Block, 0)
 	for i := 0; i < 20; i++ {
 		txOpts := txFactory()
 		err = state1.UpsertWalletTransaction(txOpts)
-		ifErrFailNow(t, err)
+		if err != nil {
+			t.Error(err)
+			t.FailNow()
+		}
 		blk, err := state1.MineNewBlock(context.Background())
-		ifErrFailNow(t, err)
+		if err != nil {
+			t.Error(err)
+			t.FailNow()
+		}
 		blocks = append(blocks, blk)
 	}
 
+	//Lets pass them to the 2nd miner, with exception of 1.
 	for i, b := range blocks {
 
 		if i == 11 {
