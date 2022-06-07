@@ -8,14 +8,6 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
-// Success and failure markers.
-const (
-	success = "\u2713"
-	failed  = "\u2717"
-)
-
-// =============================================================================
-
 func Test_CRUD(t *testing.T) {
 	type user struct {
 		Tx     database.Tx
@@ -65,60 +57,49 @@ func Test_CRUD(t *testing.T) {
 		},
 	}
 
-	t.Log("Given the need to validate mempool api.")
-	{
-		for testID, tst := range tt {
-			t.Logf("\tTest %d:\tWhen handling a set of transaction.", testID)
-			{
-				f := func(t *testing.T) {
-					mp, err := mempool.New()
-					if err != nil {
-						t.Fatalf("\t%s\tTest %d:\tShould be able to construct a mempool: %s", failed, testID, err)
-					}
+	for _, tst := range tt {
+		f := func(t *testing.T) {
+			mp, err := mempool.New()
+			if err != nil {
+				t.Fatalf("Test %s:\tShould be able to construct a mempool: %s", tst.name, err)
+			}
 
-					for _, user := range tst.txs {
-						tx, err := sign(user.hexKey, user.Tx)
-						if err != nil {
-							t.Fatalf("\t%s\tTest %d:\tShould be able to sign/upsert transaction: %s", failed, testID, tx)
-						}
-						t.Logf("\t%s\tTest %d:\tShould be able to sign/upsert transaction: %s", success, testID, tx)
-
-						mp.Upsert(tx)
-					}
-
-					txs := mp.PickBest(4)
-					if len(txs) != 4 {
-						t.Fatalf("\t%s\tTest %d:\tShould get back the 4 transactions.", failed, testID)
-					}
-					t.Logf("\t%s\tTest %d:\tShould get back the 4 transactions", success, testID)
-
-					for _, tx := range txs {
-						if _, exists := tst.best[tx.ToID]; !exists {
-							t.Fatalf("\t%s\tTest %d:\tShould get back the right account/tip: %s/%d", failed, testID, tx.ToID, tx.Tip)
-						}
-						t.Logf("\t%s\tTest %d:\tShould get back the right account/tip: %s/%d", success, testID, tx.ToID, tx.Tip)
-					}
-
-					mp.Delete(txs[1])
-					txs = mp.PickBest()
-					if len(txs) != len(tst.txs)-1 {
-						t.Logf("\t%s\tTest %d:\tgot: %d", failed, testID, len(txs))
-						t.Logf("\t%s\tTest %d:\texp: %d", failed, testID, len(tst.txs)-1)
-						t.Fatalf("\t%s\tTest %d:\tShould be able to remove a transaction.", failed, testID)
-					}
-					t.Logf("\t%s\tTest %d:\tShould be able to remove a transaction.", success, testID)
-
-					mp.Truncate()
-					txs = mp.PickBest()
-					if len(txs) != 0 {
-						t.Fatalf("\t%s\tTest %d:\tShould be able to truncate mempool.", failed, testID)
-					}
-					t.Logf("\t%s\tTest %d:\tShould be able to truncate mempool.", success, testID)
+			for _, user := range tst.txs {
+				tx, err := sign(user.hexKey, user.Tx)
+				if err != nil {
+					t.Fatalf("Test %s:\tShould be able to sign/upsert transaction: %s", tst.name, tx)
 				}
 
-				t.Run(tst.name, f)
+				mp.Upsert(tx)
+			}
+
+			txs := mp.PickBest(4)
+			if len(txs) != 4 {
+				t.Fatalf("Test %s:\tShould get back the 4 transactions.", tst.name)
+			}
+
+			for _, tx := range txs {
+				if _, exists := tst.best[tx.ToID]; !exists {
+					t.Fatalf("Test %s:\tShould get back the right account/tip: %s/%d", tst.name, tx.ToID, tx.Tip)
+				}
+			}
+
+			mp.Delete(txs[1])
+			txs = mp.PickBest()
+			if len(txs) != len(tst.txs)-1 {
+				t.Logf("Test %s:\tgot: %d", tst.name, len(txs))
+				t.Logf("Test %s:\texp: %d", tst.name, len(tst.txs)-1)
+				t.Fatalf("Test %s:\tShould be able to remove a transaction.", tst.name)
+			}
+
+			mp.Truncate()
+			txs = mp.PickBest()
+			if len(txs) != 0 {
+				t.Fatalf("Test %s:\tShould be able to truncate mempool.", tst.name)
 			}
 		}
+
+		t.Run(tst.name, f)
 	}
 }
 

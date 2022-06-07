@@ -20,7 +20,7 @@ func TestAdvancedSort(t *testing.T) {
 
 		tx, err := sign(hexKey, database.Tx{Nonce: nonce, ToID: toID, Tip: tip})
 		if err != nil {
-			t.Fatalf("\t%s \tShould be able to sign transaction: %s", failed, tx)
+			t.Fatalf("Should be able to sign transaction: %s", tx)
 		}
 		return tx
 	}
@@ -104,59 +104,52 @@ func TestAdvancedSort(t *testing.T) {
 		},
 	}
 
-	t.Log("Given the need to pick best transactions from mempool.")
-	{
-		for testID, tst := range tt {
-			t.Logf("\tTest %d:\tWhen handling a set of transaction.", testID)
-			{
-				f := func(t *testing.T) {
-					m := make(map[database.AccountID][]database.BlockTx)
-					for _, tx := range tst.txs {
-						from, err := tx.FromAccount()
-						if err != nil {
-							t.Fatalf("\t%s\tTest %d:\tShould be able to get from account: %s", failed, testID, err)
-						}
+	for _, tst := range tt {
+		f := func(t *testing.T) {
+			m := make(map[database.AccountID][]database.BlockTx)
+			for _, tx := range tst.txs {
+				from, err := tx.FromAccount()
+				if err != nil {
+					t.Fatalf("Test %s:\tShould be able to get from account: %s", tst.name, err)
+				}
 
-						m[from] = append(m[from], tx)
-					}
+				m[from] = append(m[from], tx)
+			}
 
-					sort, err := selector.Retrieve(selector.StrategyTipAdvanced)
+			sort, err := selector.Retrieve(selector.StrategyTipAdvanced)
+			if err != nil {
+				t.Fatalf("Test %s:\tShould be able to get sort strategy function: %s", tst.name, err)
+			}
+
+			txs := sort(m, tst.howMany)
+			if len(tst.txs) > tst.howMany && len(txs) < tst.howMany {
+				t.Fatalf("Test %s:\tShould to get %d after sort, but got %d", tst.name, tst.howMany, len(txs))
+			}
+			for _, exp := range tst.best {
+				expFrom, err := exp.FromAccount()
+				if err != nil {
+					t.Fatalf("Test %s:\tShould be able to get from account: %s", tst.name, err)
+				}
+
+				found := false
+				for _, tx := range txs {
+					gotFrom, err := tx.FromAccount()
 					if err != nil {
-						t.Fatalf("\t%s\tTest %d:\tShould be able to get sort strategy function: %s", failed, testID, err)
+						t.Fatalf("Test %s:\tShould be able to get from account: %s", tst.name, err)
 					}
 
-					txs := sort(m, tst.howMany)
-					if len(tst.txs) > tst.howMany && len(txs) < tst.howMany {
-						t.Fatalf("\t%s\tTest %d:\tShould to get %d after sort, but got %d", failed, testID, tst.howMany, len(txs))
-					}
-					for _, exp := range tst.best {
-						expFrom, err := exp.FromAccount()
-						if err != nil {
-							t.Fatalf("\t%s\tTest %d:\tShould be able to get from account: %s", failed, testID, err)
-						}
-
-						found := false
-						for _, tx := range txs {
-							gotFrom, err := tx.FromAccount()
-							if err != nil {
-								t.Fatalf("\t%s\tTest %d:\tShould be able to get from account: %s", failed, testID, err)
-							}
-
-							if exp.Nonce == tx.Nonce && expFrom == gotFrom {
-								found = true
-								break
-							}
-						}
-
-						if !found {
-							t.Fatalf("\t%s\tTest %d:\tShould get back the right from/nonce: %s/%d", failed, testID, expFrom, exp.Nonce)
-						}
-						t.Logf("\t%s\tTest %d:\tShould get back the right from/nonce: %s/%d", success, testID, expFrom, exp.Nonce)
+					if exp.Nonce == tx.Nonce && expFrom == gotFrom {
+						found = true
+						break
 					}
 				}
 
-				t.Run(tst.name, f)
+				if !found {
+					t.Fatalf("Test %s:\tShould get back the right from/nonce: %s/%d", tst.name, expFrom, exp.Nonce)
+				}
 			}
 		}
+
+		t.Run(tst.name, f)
 	}
 }

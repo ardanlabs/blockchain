@@ -9,14 +9,6 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
-// Success and failure markers.
-const (
-	success = "\u2713"
-	failed  = "\u2717"
-)
-
-// =============================================================================
-
 func Test_Transactions(t *testing.T) {
 	type table struct {
 		name        string
@@ -63,56 +55,42 @@ func Test_Transactions(t *testing.T) {
 		},
 	}
 
-	t.Log("Given the need to validate the transactions.")
-	{
-		for testID, tst := range tt {
-			t.Logf("\tTest %d:\tWhen handling a set of database.", testID)
-			{
-				f := func(t *testing.T) {
-					db, err := database.New(genesis.Genesis{ChainID: 1, MiningReward: tst.minerReward, Balances: tst.balances}, MockStorage{}, nil)
-					if err != nil {
-						t.Fatalf("\t%s\tTest %d:\tShould be able to open database: %v", failed, testID, err)
-					}
-					t.Logf("\t%s\tTest %d:\tShould be able to open database.", success, testID)
+	for _, tst := range tt {
+		f := func(t *testing.T) {
+			db, err := database.New(genesis.Genesis{ChainID: 1, MiningReward: tst.minerReward, Balances: tst.balances}, MockStorage{}, nil)
+			if err != nil {
+				t.Fatalf("Test %s:\tShould be able to open database: %v", tst.name, err)
+			}
 
-					for _, tx := range tst.txs {
-						blockTx, err := sign(tx, tst.gas)
-						if err != nil {
-							t.Fatalf("\t%s\tTest %d:\tShould be able to sign transaction: %v", failed, testID, err)
-						}
-						t.Logf("\t%s\tTest %d:\tShould be able to sign transaction.", success, testID)
-
-						if err := db.ApplyTransaction(database.Block{Header: database.BlockHeader{BeneficiaryID: tst.miner}}, blockTx); err != nil {
-							t.Fatalf("\t%s\tTest %d:\tShould be able to apply transaction: %v", failed, testID, err)
-						}
-						t.Logf("\t%s\tTest %d:\tShould be able to apply transaction.", success, testID)
-					}
-
-					db.ApplyMiningReward(database.Block{Header: database.BlockHeader{BeneficiaryID: tst.miner, MiningReward: tst.minerReward}})
-					t.Logf("\t%s\tTest %d:\tShould be able to apply miner reward.", success, testID)
-
-					accounts := db.CopyAccounts()
-					for account, info := range accounts {
-						finalValue, exists := tst.final[account]
-						if !exists {
-							t.Errorf("\t%s\tTest %d:\tShould have account %s in balances.", failed, testID, account)
-						} else {
-							t.Logf("\t%s\tTest %d:\tShould have account %s in balances.", success, testID, account)
-						}
-
-						if finalValue != info.Balance {
-							t.Errorf("\t%s\tTest %d:\tShould have correct balances for %s.", failed, testID, account)
-							t.Logf("\t%s\tTest %d:\tgot: %d", failed, testID, info.Balance)
-							t.Logf("\t%s\tTest %d:\texp: %d", failed, testID, finalValue)
-						} else {
-							t.Logf("\t%s\tTest %d:\tShould have correct balances for %s.", success, testID, account)
-						}
-					}
+			for _, tx := range tst.txs {
+				blockTx, err := sign(tx, tst.gas)
+				if err != nil {
+					t.Fatalf("Test %s:\tShould be able to sign transaction: %v", tst.name, err)
 				}
 
-				t.Run(tst.name, f)
+				if err := db.ApplyTransaction(database.Block{Header: database.BlockHeader{BeneficiaryID: tst.miner}}, blockTx); err != nil {
+					t.Fatalf("Test %s:\tShould be able to apply transaction: %v", tst.name, err)
+				}
+			}
+
+			db.ApplyMiningReward(database.Block{Header: database.BlockHeader{BeneficiaryID: tst.miner, MiningReward: tst.minerReward}})
+
+			accounts := db.CopyAccounts()
+			for account, info := range accounts {
+				finalValue, exists := tst.final[account]
+				if !exists {
+					t.Errorf("Test %s:\tShould have account %s in balances.", tst.name, account)
+				}
+
+				if finalValue != info.Balance {
+					t.Errorf("Test %s:\tShould have correct balances for %s.", tst.name, account)
+					t.Logf("Test %s:\tgot: %d", tst.name, info.Balance)
+					t.Logf("Test %s:\texp: %d", tst.name, finalValue)
+				}
 			}
 		}
+
+		t.Run(tst.name, f)
 	}
 }
 
@@ -154,29 +132,21 @@ func TestNonceValidation(t *testing.T) {
 		},
 	}
 
-	t.Log("Given the need to validate new transactions use a proper nonce.")
-	{
-		for testID, tst := range tt {
-			t.Logf("\tTest %d:\tWhen handling a set of transactions.", testID)
-			{
-				db, err := database.New(genesis.Genesis{ChainID: 1, MiningReward: tst.minerReward, Balances: tst.balances}, MockStorage{}, nil)
-				if err != nil {
-					t.Fatalf("\t%s\tTest %d:\tShould be able to open database: %v", failed, testID, err)
-				}
-				t.Logf("\t%s\tTest %d:\tShould be able to open database.", success, testID)
+	for _, tst := range tt {
+		db, err := database.New(genesis.Genesis{ChainID: 1, MiningReward: tst.minerReward, Balances: tst.balances}, MockStorage{}, nil)
+		if err != nil {
+			t.Fatalf("Test %s:\tShould be able to open database: %v", tst.name, err)
+		}
 
-				for i, tx := range tst.txs {
-					blockTx, err := sign(tx, tst.gas)
-					if err != nil {
-						t.Fatalf("\t%s\tTest %d:\tShould be able to sign transaction: %v", failed, testID, err)
-					}
-					t.Logf("\t%s\tTest %d:\tShould be able to sign transaction.", success, testID)
+		for i, tx := range tst.txs {
+			blockTx, err := sign(tx, tst.gas)
+			if err != nil {
+				t.Fatalf("Test %s:\tShould be able to sign transaction: %v", tst.name, err)
+			}
 
-					err = db.ApplyTransaction(database.Block{Header: database.BlockHeader{BeneficiaryID: tst.miner}}, blockTx)
-					if (tst.results[i] == nil && err != nil) || (tst.results[i] != nil && err == nil) {
-						t.Fatalf("\t%s\tTest %d:\tShould be able to apply transaction : %s", failed, testID, err)
-					}
-				}
+			err = db.ApplyTransaction(database.Block{Header: database.BlockHeader{BeneficiaryID: tst.miner}}, blockTx)
+			if (tst.results[i] == nil && err != nil) || (tst.results[i] != nil && err == nil) {
+				t.Fatalf("Test %s:\tShould be able to apply transaction : %s", tst.name, err)
 			}
 		}
 	}

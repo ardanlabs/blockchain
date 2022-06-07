@@ -7,12 +7,6 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
-// Success and failure markers.
-const (
-	success = "\u2713"
-	failed  = "\u2717"
-)
-
 const (
 	pkHexKey = "fae85851bdf5c9f49923722ce38f3c1defcfd3619ef5453230a58ad805499959"
 	from     = "0xdd6B972ffcc631a62CAE1BB9d80b7ff429c8ebA4"
@@ -28,49 +22,36 @@ func Test_Signing(t *testing.T) {
 		Name: "Bill",
 	}
 
-	t.Log("Given the need to the validate signatures.")
-	{
-		testID := 0
-		t.Logf("\tTest %d:\tWhen handling a specific private/public key.", testID)
-		{
-			pk, err := crypto.HexToECDSA(pkHexKey)
-			if err != nil {
-				t.Fatalf("\t%s\tTest %d:\tShould be able to generate a private key: %s", failed, testID, err)
-			}
-			t.Logf("\t%s\tTest %d:\tShould be able to generate a private key.", success, testID)
+	pk, err := crypto.HexToECDSA(pkHexKey)
+	if err != nil {
+		t.Fatalf("Should be able to generate a private key: %s", err)
+	}
 
-			v, r, s, err := signature.Sign(value, pk)
-			if err != nil {
-				t.Fatalf("\t%s\tTest %d:\tShould be able to sign data: %s", failed, testID, err)
-			}
-			t.Logf("\t%s\tTest %d:\tShould be able to sign data.", success, testID)
+	v, r, s, err := signature.Sign(value, pk)
+	if err != nil {
+		t.Fatalf("Should be able to sign data: %s", err)
+	}
 
-			if err := signature.VerifySignature(value, v, r, s); err != nil {
-				t.Fatalf("\t%s\tTest %d:\tShould be able to verify the signature: %s", failed, testID, err)
-			}
-			t.Logf("\t%s\tTest %d:\tShould be able to verify the signature.", success, testID)
+	if err := signature.VerifySignature(value, v, r, s); err != nil {
+		t.Fatalf("Should be able to verify the signature: %s", err)
+	}
 
-			addr, err := signature.FromAddress(value, v, r, s)
-			if err != nil {
-				t.Fatalf("\t%s\tTest %d:\tShould be able to generate from address: %s", failed, testID, err)
-			}
-			t.Logf("\t%s\tTest %d:\tShould be able to generate from address.", success, testID)
+	addr, err := signature.FromAddress(value, v, r, s)
+	if err != nil {
+		t.Fatalf("Should be able to generate from address: %s", err)
+	}
 
-			if from != addr {
-				t.Logf("\t%s\tTest %d:\tgot: %s", failed, testID, addr)
-				t.Logf("\t%s\tTest %d:\texp: %s", failed, testID, from)
-				t.Fatalf("\t%s\tTest %d:\tShould get back the right address.", failed, testID)
-			}
-			t.Logf("\t%s\tTest %d:\tShould get back the right address: %s", success, testID, addr[:10])
+	if from != addr {
+		t.Logf("got: %s", addr)
+		t.Logf("exp: %s", from)
+		t.Fatalf("Should get back the right address.")
+	}
 
-			str := signature.SignatureString(v, r, s)
-			if from != addr {
-				t.Logf("\t%s\tTest %d:\tgot: %s", failed, testID, str[:10])
-				t.Logf("\t%s\tTest %d:\texp: %s", failed, testID, sigStr[:10])
-				t.Fatalf("\t%s\tTest %d:\tShould get back the right signature string.", failed, testID)
-			}
-			t.Logf("\t%s\tTest %d:\tShould get back the right signature string: %s", success, testID, str[:6])
-		}
+	str := signature.SignatureString(v, r, s)
+	if from != addr {
+		t.Logf("got: %s", str[:10])
+		t.Logf("exp: %s", sigStr[:10])
+		t.Fatalf("Should get back the right signature string.")
 	}
 }
 
@@ -82,27 +63,18 @@ func Test_Hash(t *testing.T) {
 	}
 	hash := "0x0f6887ac85101d6d6425a617edf35bd721b5f619fb92c36c3d2224e3bdb0ee5a"
 
-	t.Log("Given the need to verify the hash function is working.")
-	{
-		testID := 0
-		t.Logf("\tTest %d:\tWhen handling a specific value.", testID)
-		{
-			h := signature.Hash(value)
-			if h != hash {
-				t.Logf("\t%s\tTest %d:\tgot: %s", failed, testID, h)
-				t.Logf("\t%s\tTest %d:\texp: %s", failed, testID, hash)
-				t.Fatalf("\t%s\tTest %d:\tShould get back the right hash: %s", failed, testID, h[:6])
-			}
-			t.Logf("\t%s\tTest %d:\tShould get back the right hash: %s", success, testID, h[:6])
+	h := signature.Hash(value)
+	if h != hash {
+		t.Logf("got: %s", h)
+		t.Logf("exp: %s", hash)
+		t.Fatalf("Should get back the right hash: %s", h[:6])
+	}
 
-			h = signature.Hash(value)
-			if h != hash {
-				t.Logf("\t%s\tTest %d:\tgot: %s", failed, testID, h)
-				t.Logf("\t%s\tTest %d:\texp: %s", failed, testID, hash)
-				t.Fatalf("\t%s\tTest %d:\tShould get back the same hash twice.", failed, testID)
-			}
-			t.Logf("\t%s\tTest %d:\tShould get back the same hash twice: %s", success, testID, h[:6])
-		}
+	h = signature.Hash(value)
+	if h != hash {
+		t.Logf("got: %s", h)
+		t.Logf("exp: %s", hash)
+		t.Fatalf("Should get back the same hash twice.")
 	}
 }
 
@@ -118,47 +90,34 @@ func Test_SignConsistency(t *testing.T) {
 		Name: "Jill",
 	}
 
-	t.Log("Given the need to verify signatures are working.")
-	{
-		testID := 0
-		t.Logf("\tTest %d:\tWhen handling a set of transaction.", testID)
-		{
-			pk, err := crypto.HexToECDSA(pkHexKey)
-			if err != nil {
-				t.Fatalf("\t%s\tTest %d:\tShould be able to generate a private key: %s", failed, testID, err)
-			}
-			t.Logf("\t%s\tTest %d:\tShould be able to generate a private key.", success, testID)
+	pk, err := crypto.HexToECDSA(pkHexKey)
+	if err != nil {
+		t.Fatalf("Should be able to generate a private key: %s", err)
+	}
 
-			v1, r1, s1, err := signature.Sign(value1, pk)
-			if err != nil {
-				t.Fatalf("\t%s\tTest %d:\tShould be able to sign data: %s", failed, testID, err)
-			}
-			t.Logf("\t%s\tTest %d:\tShould be able to sign data.", success, testID)
+	v1, r1, s1, err := signature.Sign(value1, pk)
+	if err != nil {
+		t.Fatalf("Should be able to sign data: %s", err)
+	}
 
-			addr1, err := signature.FromAddress(value1, v1, r1, s1)
-			if err != nil {
-				t.Fatalf("\t%s\tTest %d:\tShould be able to generate an address: %s", failed, testID, err)
-			}
-			t.Logf("\t%s\tTest %d:\tShould be able to generate an address.", success, testID)
+	addr1, err := signature.FromAddress(value1, v1, r1, s1)
+	if err != nil {
+		t.Fatalf("Should be able to generate an address: %s", err)
+	}
 
-			v2, r2, s2, err := signature.Sign(value2, pk)
-			if err != nil {
-				t.Fatalf("\t%s\tTest %d:\tShould be able to sign data: %s", failed, testID, err)
-			}
-			t.Logf("\t%s\tTest %d:\tShould be able to sign data.", success, testID)
+	v2, r2, s2, err := signature.Sign(value2, pk)
+	if err != nil {
+		t.Fatalf("Should be able to sign data: %s", err)
+	}
 
-			addr2, err := signature.FromAddress(value2, v2, r2, s2)
-			if err != nil {
-				t.Fatalf("\t%s\tTest %d:\tShould be able to generate an address: %s", failed, testID, err)
-			}
-			t.Logf("\t%s\tTest %d:\tShould be able to generate an address.", success, testID)
+	addr2, err := signature.FromAddress(value2, v2, r2, s2)
+	if err != nil {
+		t.Fatalf("Should be able to generate an address: %s", err)
+	}
 
-			if addr1 != addr2 {
-				t.Errorf("\t%s\tTest %d:\tGot: %s", failed, testID, addr1)
-				t.Errorf("\t%s\tTest %d:\tGot: %s", failed, testID, addr2)
-				t.Fatalf("\t%s\tTest %d:\tShould have the same address.", failed, testID)
-			}
-			t.Logf("\t%s\tTest %d:\tShould have the same address.", success, testID)
-		}
+	if addr1 != addr2 {
+		t.Errorf("Got: %s", addr1)
+		t.Errorf("Got: %s", addr2)
+		t.Fatalf("Should have the same address.")
 	}
 }
