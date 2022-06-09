@@ -191,6 +191,11 @@ Ethereum documentation that helps to better understand that blockchain project.
 [Proof of Stake FAQ](https://vitalik.ca/general/2017/12/31/pos_faq.html) - Vitalik Buterin    
 [The Beacon Chain Ethereum 2.0 explainer you need to read first](https://ethos.dev/beacon-chain/) - ethos.dev  
 [Prysm: An Ethereum Consensus Implementation Written in Go](https://github.com/prysmaticlabs/prysm)  
+[Analyzing Ethereum Cryptoeconomics](https://docs.google.com/document/d/1r640UQOm2z-Q9nsJzqBq3BVgCtTL1_Yc7WnPp4jEBgk/edit#) - Chorus  
+[Validator Shuffling](https://github.com/sigp/eth2.0-resources/blob/master/shuffling.md) - Paul Hauner  
+[Upgrading Ethereum: A technical handbook on Ethereum's move to proof of stake and beyond](https://eth2book.info/altair/) - Ben Edgington  
+[The Ultimate Guide to Ethereum 2.0](https://blockdaemon.com/documentation/guides/the-ultimate-guide-to-ethereum-2-0) - Blockdaemon  
+[Optimistic Rollups](https://docs.ethhub.io/ethereum-roadmap/layer-2-scaling/optimistic_rollups) - EthHub  
 
 ### Zero Address
 [Etherscan Address Zero](https://etherscan.io/address/0x0000000000000000000000000000000000000000)  
