@@ -14,6 +14,12 @@ import (
 // and updating the blockchain on disk with missing blocks.
 const peerUpdateInterval = time.Minute
 
+// The set of different consensus protocols that can be used.
+const (
+	ConsensusPOW = "pow"
+	ConsensusPOA = "poa"
+)
+
 // =============================================================================
 
 // Worker manages the POW workflows for the blockchain.
@@ -30,7 +36,7 @@ type Worker struct {
 
 // Run creates a worker, registers the worker with the state package, and
 // starts up all the background processes.
-func Run(state *state.State, evHandler state.EventHandler) {
+func Run(state *state.State, consensus string, evHandler state.EventHandler) {
 	w := Worker{
 		state:        state,
 		ticker:       *time.NewTicker(peerUpdateInterval),
@@ -47,11 +53,17 @@ func Run(state *state.State, evHandler state.EventHandler) {
 	// Update this node before starting any support G's.
 	w.Sync()
 
+	// Select the consensus operation to run.
+	var consensusOperation func()
+	if consensus == ConsensusPOW {
+		consensusOperation = w.powOperations
+	}
+
 	// Load the set of operations we need to run.
 	operations := []func(){
 		w.peerOperations,
-		w.miningOperations,
 		w.shareTxOperations,
+		consensusOperation,
 	}
 
 	// Set waitgroup to match the number of G's we need for the set

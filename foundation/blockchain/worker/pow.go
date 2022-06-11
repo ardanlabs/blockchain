@@ -14,33 +14,33 @@ import (
 // was received) a block is created and then the POW operation starts. This
 // operation can be cancelled if a proposed block is received and is validated.
 
-// miningOperations handles mining.
-func (w *Worker) miningOperations() {
-	w.evHandler("worker: miningOperations: G started")
-	defer w.evHandler("worker: miningOperations: G completed")
+// powOperations handles mining.
+func (w *Worker) powOperations() {
+	w.evHandler("worker: powOperations: G started")
+	defer w.evHandler("worker: powOperations: G completed")
 
 	for {
 		select {
 		case <-w.startMining:
 			if !w.isShutdown() {
-				w.runMiningOperation()
+				w.runPowOperation()
 			}
 		case <-w.shut:
-			w.evHandler("worker: miningOperations: received shut signal")
+			w.evHandler("worker: powOperations: received shut signal")
 			return
 		}
 	}
 }
 
-// runMiningOperation takes all the transactions from the mempool and writes a
+// runPowOperation takes all the transactions from the mempool and writes a
 // new block to the database.
-func (w *Worker) runMiningOperation() {
-	w.evHandler("worker: runMiningOperation: MINING: started")
-	defer w.evHandler("worker: runMiningOperation: MINING: completed")
+func (w *Worker) runPowOperation() {
+	w.evHandler("worker: runPowOperation: MINING: started")
+	defer w.evHandler("worker: runPowOperation: MINING: completed")
 
 	// Validate we are allowed to mine and we are not in a resync.
 	if !w.state.IsMiningAllowed() {
-		w.evHandler("worker: runMiningOperation: MINING: turned off")
+		w.evHandler("worker: runPowOperation: MINING: turned off")
 		return
 	}
 
