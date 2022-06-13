@@ -14,12 +14,6 @@ import (
 // and updating the blockchain on disk with missing blocks.
 const peerUpdateInterval = time.Minute
 
-// The set of different consensus protocols that can be used.
-const (
-	ConsensusPOW = "pow"
-	ConsensusPOA = "poa"
-)
-
 // =============================================================================
 
 // Worker manages the POW workflows for the blockchain.
@@ -36,9 +30,9 @@ type Worker struct {
 
 // Run creates a worker, registers the worker with the state package, and
 // starts up all the background processes.
-func Run(state *state.State, consensus string, evHandler state.EventHandler) {
+func Run(st *state.State, evHandler state.EventHandler) {
 	w := Worker{
-		state:        state,
+		state:        st,
 		ticker:       *time.NewTicker(peerUpdateInterval),
 		shut:         make(chan struct{}),
 		startMining:  make(chan bool, 1),
@@ -48,15 +42,15 @@ func Run(state *state.State, consensus string, evHandler state.EventHandler) {
 	}
 
 	// Register this worker with the state package.
-	state.Worker = &w
+	st.Worker = &w
 
 	// Update this node before starting any support G's.
 	w.Sync()
 
 	// Select the consensus operation to run.
-	var consensusOperation func()
-	if consensus == ConsensusPOW {
-		consensusOperation = w.powOperations
+	consensusOperation := w.powOperations
+	if st.RetrieveConsensus() == state.ConsensusPOA {
+		consensusOperation = w.poaOperations
 	}
 
 	// Load the set of operations we need to run.
@@ -116,6 +110,11 @@ func (w *Worker) SignalStartMining() {
 		return
 	}
 
+	// Only PoW requires signalling to start mining.
+	if w.state.RetrieveConsensus() != state.ConsensusPOW {
+		return
+	}
+
 	select {
 	case w.startMining <- true:
 	default:
@@ -126,6 +125,12 @@ func (w *Worker) SignalStartMining() {
 // SignalCancelMining signals the G executing the runMiningOperation function
 // to stop immediately.
 func (w *Worker) SignalCancelMining() {
+
+	// Only PoW requires signalling to cancel mining.
+	if w.state.RetrieveConsensus() != state.ConsensusPOW {
+		return
+	}
+
 	select {
 	case w.cancelMining <- true:
 	default:

@@ -71,7 +71,7 @@ func run(log *zap.SugaredLogger) error {
 			DBPath         string   `conf:"default:zblock/miner1/"`
 			SelectStrategy string   `conf:"default:Tip"`
 			OriginPeers    []string `conf:"default:0.0.0.0:9080"`
-			Consensus      string   `conf:"default:pow"`
+			Consensus      string   `conf:"default:POW"`
 		}
 		NameService struct {
 			Folder string `conf:"default:zblock/accounts/"`
@@ -183,6 +183,7 @@ func run(log *zap.SugaredLogger) error {
 		Genesis:        genesis,
 		SelectStrategy: cfg.State.SelectStrategy,
 		KnownPeers:     peerSet,
+		Consensus:      cfg.State.Consensus,
 		EvHandler:      ev,
 	})
 	if err != nil {
@@ -193,7 +194,7 @@ func run(log *zap.SugaredLogger) error {
 	// The worker package implements the different workflows such as mining,
 	// transaction peer sharing, and peer updates. The worker will register
 	// itself with the state.
-	worker.Run(state, cfg.State.Consensus, ev)
+	worker.Run(state, ev)
 
 	// =========================================================================
 	// Start Debug Service

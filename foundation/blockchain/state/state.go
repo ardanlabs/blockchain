@@ -27,6 +27,14 @@ import (
 
 // =============================================================================
 
+// The set of different consensus protocols that can be used.
+const (
+	ConsensusPOW = "POW"
+	ConsensusPOA = "POA"
+)
+
+// =============================================================================
+
 // EventHandler defines a function that is called when events
 // occur in the processing of persisting blocks.
 type EventHandler func(v string, args ...any)
@@ -53,6 +61,7 @@ type Config struct {
 	SelectStrategy string
 	KnownPeers     *peer.PeerSet
 	EvHandler      EventHandler
+	Consensus      string
 }
 
 // State manages the blockchain database.
@@ -64,6 +73,7 @@ type State struct {
 	beneficiaryID database.AccountID
 	host          string
 	evHandler     EventHandler
+	consensus     string
 
 	knownPeers *peer.PeerSet
 	storage    database.Storage
@@ -102,6 +112,7 @@ func New(cfg Config) (*State, error) {
 		host:          cfg.Host,
 		storage:       cfg.Storage,
 		evHandler:     ev,
+		consensus:     cfg.Consensus,
 		allowMining:   true,
 
 		knownPeers: cfg.KnownPeers,

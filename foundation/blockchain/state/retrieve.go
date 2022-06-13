@@ -11,6 +11,11 @@ func (s *State) RetrieveHost() string {
 	return s.host
 }
 
+// RetrieveConsensus returns a copy of consensus algorithm being used.
+func (s *State) RetrieveConsensus() string {
+	return s.consensus
+}
+
 // RetrieveGenesis returns a copy of the genesis information.
 func (s *State) RetrieveGenesis() genesis.Genesis {
 	return s.genesis
@@ -31,7 +36,14 @@ func (s *State) RetrieveAccounts() map[database.AccountID]database.Account {
 	return s.db.CopyAccounts()
 }
 
-// RetrieveKnownPeers retrieves a copy of the known peer list.
-func (s *State) RetrieveKnownPeers() []peer.Peer {
+// RetrieveKnownExternalPeers retrieves a copy of the known peer list without
+// including this node.
+func (s *State) RetrieveKnownExternalPeers() []peer.Peer {
 	return s.knownPeers.Copy(s.host)
+}
+
+// RetrieveAllPeers retrieves a copy of the full known peer list which includes
+// this node as well. Used by the PoA selection algorithm.
+func (s *State) RetrieveKnownPeers() []peer.Peer {
+	return s.knownPeers.Copy("")
 }

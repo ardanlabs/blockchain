@@ -115,7 +115,7 @@ func (h Handlers) Status(ctx context.Context, w http.ResponseWriter, r *http.Req
 	status := peer.PeerStatus{
 		LatestBlockHash:   latestBlock.Hash(),
 		LatestBlockNumber: latestBlock.Header.Number,
-		KnownPeers:        h.State.RetrieveKnownPeers(),
+		KnownPeers:        h.State.RetrieveKnownExternalPeers(),
 	}
 
 	return web.Respond(ctx, w, status, http.StatusOK)

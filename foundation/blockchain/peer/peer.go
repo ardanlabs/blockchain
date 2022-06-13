@@ -2,7 +2,9 @@
 // of know peers and their status.
 package peer
 
-import "sync"
+import (
+	"sync"
+)
 
 // Peer represents information about a Node in the network.
 type Peer struct {

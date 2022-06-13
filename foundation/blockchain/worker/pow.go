@@ -35,12 +35,12 @@ func (w *Worker) powOperations() {
 // runPowOperation takes all the transactions from the mempool and writes a
 // new block to the database.
 func (w *Worker) runPowOperation() {
-	w.evHandler("worker: runPowOperation: MINING: started")
-	defer w.evHandler("worker: runPowOperation: MINING: completed")
+	w.evHandler("worker: runMiningOperation: MINING: started")
+	defer w.evHandler("worker: runMiningOperation: MINING: completed")
 
 	// Validate we are allowed to mine and we are not in a resync.
 	if !w.state.IsMiningAllowed() {
-		w.evHandler("worker: runPowOperation: MINING: turned off")
+		w.evHandler("worker: runMiningOperation: MINING: turned off")
 		return
 	}
 

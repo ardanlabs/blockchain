@@ -10,7 +10,7 @@ func (w *Worker) Sync() {
 	w.evHandler("worker: sync: started")
 	defer w.evHandler("worker: sync: completed")
 
-	for _, peer := range w.state.RetrieveKnownPeers() {
+	for _, peer := range w.state.RetrieveKnownExternalPeers() {
 
 		// Retrieve the status of this peer.
 		peerStatus, err := w.state.NetRequestPeerStatus(peer)
