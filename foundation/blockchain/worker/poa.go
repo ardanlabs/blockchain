@@ -146,6 +146,9 @@ func (w *Worker) selection() string {
 	// Retrive the know peers list which includes this node.
 	peers := w.state.RetrieveKnownPeers()
 
+	// Just log information so we are clear what the list looks like.
+	w.evHandler("worker: runPoaOperation: selection: Host %s, List %v", w.state.RetrieveHost(), peers)
+
 	// Sort the current list of peers by host.
 	names := make([]string, len(peers))
 	for i, peer := range peers {

@@ -147,6 +147,7 @@ func run(log *zap.SugaredLogger) error {
 	for _, host := range cfg.State.OriginPeers {
 		peerSet.Add(peer.New(host))
 	}
+	peerSet.Add(peer.New(cfg.Web.PrivateHost))
 
 	// The blockchain packages accept a function of this signature to allow the
 	// application to log. For now, these raw messages are sent to any websocket
