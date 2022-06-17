@@ -6,6 +6,7 @@ Occasionally we run into material that we feel is important. This is a section p
 [Technical Discussion About Blockchains and Cryptocurrency](https://blog.dshr.org/2022/02/ee380-talk.html) - David Rosenthal  
 [The Magic of Digital Signatures on Ethereum](https://medium.com/mycrypto/the-magic-of-digital-signatures-on-ethereum-98fe184dc9c7) - Maarten Zuidhoorn  
 [Transparent Logs for Skeptical Clients](https://research.swtch.com/tlog) - Russ Cox  
+[Chesterton’s Fence: A Lesson in Second Order Thinking](https://fs.blog/chestertons-fence/) - fs.blog  
 
 ### Must Watch
 [Blockchain Class](https://cryptocurrencyclass.github.io/) - Patrick McCorry  
