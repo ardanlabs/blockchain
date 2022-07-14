@@ -37,6 +37,7 @@ Occasionally we run into material that we feel is important. This is a section p
 [The Mystery Behind Block Time](https://medium.facilelogin.com/the-mystery-behind-block-time-63351e35603a) - Prabath Siriwardena  
 [The Technological Case Against Bitcoin and Blockchain](https://lukeplant.me.uk/blog/posts/the-technological-case-against-bitcoin-and-blockchain/) - Luke Plant  
 [How Zero-Knowledge Proofs Became Ethereum’s Magic Bullets](https://thedefiant.io/zero-knowledge-ethereum-layer-1/) - Alex Shipp  
+[Mental models for L1 and L2](https://mirror.xyz/0xaFaBa30769374EA0F971300dE79c62Bf94B464d5/k8Fr68ELdjIwJpGPpag_dnUarnypD5IUahpp6wT0qmk) - Patrick McCorry  
 
 ### Bitcoin
 [Bitcoin in Go: libsv](https://github.com/libsv)  
