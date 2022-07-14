@@ -14,6 +14,9 @@ Occasionally we run into material that we feel is important. This is a section p
 ### Documentation
 [Digital Accounts, Signatures and Verification](https://www.ardanlabs.com/blog/2022/02/blockchain-01-digital-accounts-signatures-verification.html) - Bill Kennedy  
 [Transaction Distribution and Synchronization](https://www.ardanlabs.com/blog/2022/03/blockchain-02-transaction-distribution-synchronization.html) - Bill Kennedy  
+[Redundant Storage And Consensus](https://www.ardanlabs.com/blog/2022/04/blockchain-03-redundant-storage-and-consensus.html) - Bill Kennedy  
+[Fraud Detection](https://www.ardanlabs.com/blog/2022/05/blockchain-04-fraud-detection.html) - Bill Kennedy  
+[Practical Uses Of Blockchain Technology](https://www.ardanlabs.com/blog/2022/06/practical-uses-blockchain-technology.html) - Bill Kennedy  
 
 ### Apps
 [END Domains](https://app.ens.domains/)  
