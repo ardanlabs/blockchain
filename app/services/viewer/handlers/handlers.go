@@ -4,7 +4,6 @@ package handlers
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"os"
 
@@ -24,11 +23,7 @@ func UIMux(build string, shutdown chan os.Signal, log *zap.SugaredLogger) (*web.
 	)
 
 	// Register the index page for the website.
-	ig, err := newIndex()
-	if err != nil {
-		return nil, fmt.Errorf("loading index template: %w", err)
-	}
-	app.Handle(http.MethodGet, "", "/", ig.handler)
+	app.Handle(http.MethodGet, "", "/", handler)
 
 	// Register the assets.
 	fs := http.FileServer(http.Dir("app/services/viewer/assets"))
