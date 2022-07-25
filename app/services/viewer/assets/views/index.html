@@ -6,17 +6,21 @@
         <meta charset="utf-8">
         <link rel="stylesheet" href="/assets/styles/main.css?v1">
         <script src="/assets/scripts/main.js?v1"></script>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
     </head>
     <body>
-        <div id="flex-container">
-            <div id="msg-block1">
+        <div id="flex-container" class="container-fluid flex-column">
+            <div id="msg-block1" class="flex-column">
                 <div id="first-msg1" class="block info" onclick="showMempool(1, 8080)">Node 1: Connecting...</div>
+                <div class="d-flex" id="blocks1"></div>
             </div>
-            <div id="msg-block2">
+            <div id="msg-block2" class="flex-column">
                 <div id="first-msg2" class="block info" onclick="showMempool(2, 8280)">Node 2: Connecting...</div>
+                <div class="d-flex" id="blocks2"></div>
             </div>
-			<div id="msg-block3">
+            <div id="msg-block3" class="flex-column">
                 <div id="first-msg3" class="block info" onclick="showMempool(3, 8380)">Node 3: Connecting...</div>
+                <div class="d-flex" id="blocks3"></div>
             </div>
         </div>
 		<div id="transactions">
@@ -33,5 +37,8 @@
 			<div id="mempool-content">
 			</div>
 		</div>
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/popper.js@1.14.7/dist/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
     </body>
 </html>

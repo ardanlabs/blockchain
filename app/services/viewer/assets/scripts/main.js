@@ -44,6 +44,7 @@ function connect(wsUrl, httpUrl, nodeID, accountID) {
     socket.onmessage = function(event) {
         let text = event.data;
         if (text.startsWith("viewer: block:")) {
+            const blockMsgStart = 'viewer: block:'
             text = text.substring(blockMsgStart.length);
             let block = JSON.parse(text);
             handleNewBlock(block);
@@ -124,28 +125,26 @@ function getBlockTable(block) {
 }
 
 function addBlock(nodeID, blockNumber, block, successfullNode) {
-    const msgBlock = document.getElementById(`msg-block${nodeID}`);
+    const blocks = document.getElementById(`blocks${nodeID}`);
     const blockTable = getBlockTable(block);
     let extraClass = "";
     if (successfullNode) {
         extraClass = " mine";
     }
-    msgBlock.innerHTML += `
+    blocks.innerHTML += `
         <div id="block-${nodeID}-${blockNumber}" class="block${extraClass}" onclick="showTransactions(${nodeID}, ${blockNumber})">
             ${blockTable}
         </div>
     `;
-    msgBlock.scrollTop = msgBlock.scrollHeight;
+    blocks.scrollTop = blocks.scrollHeight;
 }
 
 function addArrow(nodeID) {
-    const msgBlock = document.getElementById(`msg-block${nodeID}`);
-    msgBlock.innerHTML += `
-        <svg version="1.1" xmlns="http://www.w3.org/2000/svg" height="32" viewBox="0 0 300 34">
-            <line stroke="rgb(0,0,0)" stroke-opacity="1.0" stroke-width="2.5" x1="220" y1="0" x2="220" y2="32"/>
-            <line stroke="rgb(0,0,0)" stroke-opacity="1.0" stroke-width="2.5" x1="212" y1="24" x2="220" y2="32"/>
-            <line stroke="rgb(0,0,0)" stroke-opacity="1.0" stroke-width="2.5" x1="228" y1="24" x2="220" y2="32"/>
-        </svg>
+    const blocks = document.getElementById(`blocks${nodeID}`);
+    blocks.innerHTML += `
+    <svg style="width:24px;height:24px" viewBox="0 0 24 24">
+        <path fill="currentColor" d="M3.9,12C3.9,10.29 5.29,8.9 7,8.9H11V7H7A5,5 0 0,0 2,12A5,5 0 0,0 7,17H11V15.1H7C5.29,15.1 3.9,13.71 3.9,12M8,13H16V11H8V13M17,7H13V8.9H17C18.71,8.9 20.1,10.29 20.1,12C20.1,13.71 18.71,15.1 17,15.1H13V17H17A5,5 0 0,0 22,12A5,5 0 0,0 17,7Z" />
+    </svg>
     `;
 }
 
