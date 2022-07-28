@@ -12,7 +12,7 @@ export interface transaction {
   v: number,
   value: number,
 }
-export type block = {
+export interface block {
   block: {
     number: number,
     prev_block_hash: string,
@@ -26,4 +26,16 @@ export type block = {
   },
   hash: string,
   trans: transaction[]
+}
+
+export interface node {
+  active: boolean,
+  wsUrl: string,
+  httpUrl: string,
+  port: number,
+  nodeID: number,
+  accountID: string, // soon to be account type
+  state: 'Connecting...' | 'Mining...' | 'Connected' | 'Connection open',
+  blocks: block[],
+  successfull: boolean,
 }

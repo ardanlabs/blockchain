@@ -21,6 +21,7 @@ function connect(wsUrl, httpUrl, nodeID, accountID) {
         if (block.block.beneficiary == accountID) {
             successfullNode = true;
         }
+        console.log(allTransactions, 'all')
         addBlock(nodeID, blockHashes.size, block, successfullNode);
     }
 
@@ -43,6 +44,7 @@ function connect(wsUrl, httpUrl, nodeID, accountID) {
   
     socket.onmessage = function(event) {
         let text = event.data;
+        console.log(allTransactions, 'all')
         if (text.startsWith("viewer: block:")) {
             const blockMsgStart = 'viewer: block:'
             text = text.substring(blockMsgStart.length);

@@ -1,80 +1,135 @@
 import './App.css'
-import BlockContainer from './components/blockContainer'
+import React, { Component } from 'react'
+import MsgBlock from './components/msgBlock'
+import nodes from './nodes'
+import { transaction, node, block } from '../types/index.d'
 
-function App() {
-  const block = {
-    block: {
-      number: 1,
-      prev_block_hash:
-        '0x0000000000000000000000000000000000000000000000000000000000000000',
-      timestamp: 1651588397,
-      beneficiary: '0xFef311483Cc040e1A89fb9bb469eeB8A70935EF8',
-      difficulty: 6,
-      mining_reward: 700,
-      state_root:
-        '0x187c4fd4c30c3ae694644dda31978228a9e6326f82384105093e11cb5a0d28a9',
-      trans_root:
-        '0xf716309d9ece8aa06decc5d21b4062333d8cab4b1b49b7e07110f3f85471c479',
-      nonce: 1968008507403245300,
-    },
-    hash: '0x00000085712967b34f22f848da7d6ce660c7afb2b4f08e1b1252ee890774df11',
-    trans: [
-      {
-        chain_id: 1,
-        nonce: 1,
-        to: '0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76',
-        value: 100,
-        tip: 0,
-        data: null,
-        v: 29,
-        r: 9.602438913698971e76,
-        s: 1.031947833322543e76,
-        timestamp: 1651588397,
-        gas_price: 15,
-        gas_units: 1,
-      },
-    ],
+// State type is created
+export type State = {
+  nodes: node[]
+  allTransactions: transaction[][]
+  lastBlockHash: string
+  blockHashes: Set<string>
+}
+
+class App extends Component<{}, State> {
+  // State is created for the App
+  constructor(props: any) {
+    super(props)
+    this.state = {
+      nodes: nodes,
+      allTransactions: [],
+      lastBlockHash: '',
+      blockHashes: new Set(),
+    }
   }
-  return (
-    <div className="App">
-      <header className="App-header">
-        <h2>Ardan Node Viewer</h2>
-      </header>
-      <div id="flex-container" className="container-fluid flex-column">
-        <div id="msg-block1" className="flex-column">
-          <div id="first-msg1" className="block info">
-            Node 1: Connecting...
-          </div>
-          <div className="d-flex" id="blocks1"></div>
-          <BlockContainer {...{nodeID: "1", blockNumber: 1, block, successfullNode: true}} />
+  // This function add the blocks once the webhook returns them
+  public handleNewBlock(block: block, nodeID: number, accountID: string){
+    let successfullNode = false;
+    if (block.block.beneficiary === accountID) {
+      successfullNode = true;
+    }
+    // We set the new state to add the blocks and transactions
+    this.setState(() => {
+      // Here we can push and add
+      this.state.nodes[nodeID - 1].blocks.push(block)
+      if (!this.state.blockHashes.has(block.hash)) {
+        this.state.blockHashes.add(block.hash);
+      }
+      // But here we need to return an object with the keys to update
+      return {
+        lastBlockHash: block.hash,
+        nodes: [...nodes, {...nodes[nodeID - 1], successfull: successfullNode}]
+      }
+    })
+    console.log(this.state)
+  }
+  public componentDidMount() {
+    let self = this;
+    // The connect function triggers the ws connection
+    const connect = (
+      wsUrl: string,
+      httpUrl: string,
+      nodeID: number,
+      accountID: string,
+    ) => {
+      // This creates an empty array for each node
+      this.state.allTransactions.push([])
+      // Request listener handles the entry of new conections
+      const reqListener = function(this: any) {
+        var responseJson = JSON.parse(this.responseText); 
+        for (let i = 0; i < responseJson.length; i++) {
+          // for each block received, we mutate the state
+          self.handleNewBlock(responseJson[i], nodeID, accountID);
+        }
+      }
+
+      const ws = new WebSocket(wsUrl)
+      ws.onopen = () => {
+        var oReq = new XMLHttpRequest();
+        // we wait for the request to load and then call the reqListener
+        // also nodeID and the request itself are binded to the function to be used inside with 'this'
+        oReq.addEventListener('load', reqListener.bind(oReq, nodeID), false)
+        oReq.open("GET", httpUrl)
+        oReq.send()
+      }
+      ws.onmessage = (evt: MessageEvent) => {
+        const data: any = JSON.parse(evt.data)
+        console.log(data)
+        // OnMessage functionality to be migrated, still working on it
+      }
+    }
+    // Call to start all nodes, nodes can be found inside './src/nodes.tsx'
+    nodes.forEach((node) => {
+      // If node is inactive it doesn't make the call
+      if (node.active) {
+        connect(node.wsUrl, node.httpUrl, node.nodeID, node.accountID)
+      }
+    })
+  }
+  render() {
+    const msgsBlocks: JSX.Element[] = []
+    // We implement the nodes inside the UI grouping them inside an JSX.element array
+    nodes.forEach((node) => {
+      // If node is inactive it doesn't add it to the UI
+      if (node.active) {
+        msgsBlocks.push(
+          <MsgBlock
+            key={node.nodeID}
+            // MsgBlock props
+            {...{
+              nodeID: node.nodeID,
+              nodeState: node.state,
+              blocksProp: node.blocks,
+              successfullNode: node.successfull,
+            }}
+          />,
+        )
+      }
+    })
+    return (
+      <div className="App">
+        <header className="App-header">
+          <h2>Ardan Node Viewer</h2>
+        </header>
+        <div id="flex-container" className="container-fluid flex-column">
+          { msgsBlocks }
         </div>
-        <div id="msg-block2" className="flex-column">
-          <div id="first-msg2" className="block info">
-            Node 2: Connecting...
-          </div>
-          <div className="d-flex" id="blocks2"></div>
+        <div id="transactions">
+          <button className="button-transactions-hide">
+            <strong>X</strong>
+          </button>
+          <div id="transactions-content"></div>
         </div>
-        <div id="msg-block3" className="flex-column">
-          <div id="first-msg3" className="block info">
-            Node 3: Connecting...
-          </div>
-          <div className="d-flex" id="blocks3"></div>
+        <div id="mempool">
+          <button className="button-transactions-hide">
+            <strong>X</strong>
+          </button>
+          <div id="mempool-content"></div>
         </div>
       </div>
-      <div id="transactions">
-        <button className="button-transactions-hide">
-          <strong>X</strong>
-        </button>
-        <div id="transactions-content"></div>
-      </div>
-      <div id="mempool">
-        <button className="button-transactions-hide">
-          <strong>X</strong>
-        </button>
-        <div id="mempool-content"></div>
-      </div>
-    </div>
-  )
+    )
+  }
 }
 
 export default App
