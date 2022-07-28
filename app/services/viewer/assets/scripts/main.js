@@ -127,6 +127,7 @@ function getBlockTable(block) {
 function addBlock(nodeID, blockNumber, block, successfullNode) {
     const blocks = document.getElementById(`blocks${nodeID}`);
     const blockTable = getBlockTable(block);
+    console.log(block)
     let extraClass = "";
     if (successfullNode) {
         extraClass = " mine";

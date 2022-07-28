@@ -83,6 +83,9 @@ vup:
 viewer:
 	python -m webbrowser "http://localhost"
 
+react:
+	npm start --prefix app/services/viewer/assets/frontend/
+
 # ==============================================================================
 # Wallet support
 
