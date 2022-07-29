@@ -14,15 +14,17 @@ const MsgBlock: FC<MsgBlockProps> = ({
   nodeState,
   successfullNode,
 }) => {
+  console.log(successfullNode, 'msg')
+  
   return (
     <div id="msg-block1" className="flex-column">
       <div id="first-msg1" className="block info">
         Node {nodeID}: {nodeState}
       </div>
       <BlocksContainer
+        key={nodeID}
         {...{
           nodeID: nodeID,
-          blockNumber: 1,
           blocksProp: blocksProp,
           successfullNode: successfullNode,
         }}

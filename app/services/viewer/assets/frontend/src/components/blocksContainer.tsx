@@ -14,9 +14,13 @@ const BlocksContainer: FC<BlocksContainerProps> = (props: {
   successfullNode: boolean,
 }) => {
   const { blocksProp, nodeID, successfullNode } = props
+  console.log(successfullNode, 'blocksContainer')
   let blocks: JSX.Element[] = []
+  const addedBlocks: Set<string> = new Set()
   blocksProp.forEach((block) =>{
-    blocks.push(<Block key={block.block.number} {...{nodeID, blockNumber: block.block.number, successfullNode, block }} />)
+    if (!addedBlocks.has(`${nodeID}-${block.block.number}`))
+      blocks.push(<Block key={block.block.number} {...{nodeID, blockNumber: block.block.number, successfullNode, block }} />)
+    addedBlocks.add(`${nodeID}-${block.block.number}`)
   })
   return <div id={`blocks-${nodeID}`}>{blocks}</div>
 }

@@ -22,6 +22,8 @@ const Block: FC<BlockProps> = ({
   }
 
   const classes = `block${extraClass}`
+  console.log(successfullNode, 'block');
+  
   return (
     <div id={id} className={classes}>
       <BlockTable {...{ block }} />
