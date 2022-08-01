@@ -53,8 +53,7 @@
   border: 1px solid black;
 }
 
-#mempool {
-  display: none;
+.mempool {
   border: 2px solid black;
   background: var(--primary-color);
   padding: 10px;
@@ -66,10 +65,34 @@
   position: absolute;
   top: 0;
   overflow-y: scroll;
-  overflow-x: scroll;
+  overflow-x: hidden;
 }
 
-#mempool button {
+.mempool button {
+  position: absolute;
+  right: 0;
+  margin: 5px;
+  padding: 3px;
+  background-color: var(--ternary-color);
+  color: var(--secondary-color);
+  border: 1px solid black;
+}
+
+.my-modal {
+  border: 2px solid black;
+  background: var(--primary-color);
+  padding: 10px;
+  margin: 20px;
+  width: 90vw;
+  max-width: 60rem;
+  height: 95vh;
+  z-index: 1000;
+  position: absolute;
+  top: 0;
+  overflow-y: scroll;
+  overflow-x: hidden;
+}
+.my-modal button {
   position: absolute;
   right: 0;
   margin: 5px;

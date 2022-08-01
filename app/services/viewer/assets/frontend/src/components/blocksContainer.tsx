@@ -14,7 +14,6 @@ const BlocksContainer: FC<BlocksContainerProps> = (props: {
   successfullNode: boolean,
 }) => {
   const { blocksProp, nodeID, successfullNode } = props
-  console.log(successfullNode, 'blocksContainer')
   let blocks: JSX.Element[] = []
   const addedBlocks: Set<string> = new Set()
   blocksProp.forEach((block) =>{

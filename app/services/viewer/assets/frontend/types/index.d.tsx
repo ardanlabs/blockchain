@@ -27,6 +27,7 @@ export interface block {
   hash: string,
   trans: transaction[]
 }
+export type nodeStatus = "Connecting..." | "Mining..." | "Connected" | "Connection open"
 
 export interface node {
   active: boolean,
@@ -35,7 +36,7 @@ export interface node {
   port: number,
   nodeID: number,
   accountID: string, // soon to be account type
-  state: 'Connecting...' | 'Mining...' | 'Connected' | 'Connection open',
+  state: nodeStatus,
   blocks: block[],
   successfull: boolean,
 }

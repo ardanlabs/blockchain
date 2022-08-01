@@ -228,6 +228,7 @@ function showMempool(nodeID, port) {
     
         const mempoolContent = document.getElementById("mempool-content");
         var responseJson = JSON.parse(this.responseText);
+        console.log(this.responseText)
         for (i = 0; i < responseJson.length; i++) {
             mempoolTable = getMempoolTable(responseJson[i]);
             mempoolContent.innerHTML += `

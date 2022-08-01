@@ -1,4 +1,4 @@
-import React, { FC } from 'react'
+import React, { FC, useState } from 'react'
 import { block } from '../../types/index.d'
 import BlockTable from './blockTable'
 
@@ -7,6 +7,7 @@ interface BlockProps {
   blockNumber: number,
   block: block,
   successfullNode: boolean,
+  clickHandler: Function,
 }
 
 const Block: FC<BlockProps> = ({
@@ -14,18 +15,20 @@ const Block: FC<BlockProps> = ({
   blockNumber,
   successfullNode,
   block,
+  clickHandler,
 }) => {
+  const [showTransactions, setShowTransactions] = useState(false);
   const id = `Block-${nodeID}-${blockNumber}`
   let extraClass: string = ''
+
   if (successfullNode) {
     extraClass = ' mine'
   }
 
   const classes = `block${extraClass}`
-  console.log(successfullNode, 'block');
-  
+
   return (
-    <div id={id} className={classes}>
+    <div id={id} className={classes} onClick={() => clickHandler(block)}>
       <BlockTable {...{ block }} />
     </div>
   )
