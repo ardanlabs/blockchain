@@ -4,9 +4,11 @@ import BlocksContainer from './components/blocksContainer'
 import TransactionTable from './components/transactionTable'
 import Modal from './components/modal'
 import nodes from './nodes'
-import { transaction, node, block, nodeStatus } from '../types/index.d'
+import { transaction, node, block, nodeStatus, mempoolTransaction } from '../types/index.d'
 import axios from 'axios';
 import MempoolTable from './components/mempoolTable'
+import CloseIcon from './components/icons/closeIcon'
+import ArrowDownIcon from './components/icons/arrowDownIcon'
 
 // State type is created
 export type State = {
@@ -21,9 +23,6 @@ export type State = {
   modalTransactions: JSX.Element[],
 }
 
-interface mempoolResponse {
-  data: object[]
-}
 
 class App extends Component<{}, State> {
   constructor(props: any) {
@@ -44,6 +43,14 @@ class App extends Component<{}, State> {
     this.handleNewBlock = this.handleNewBlock.bind(this);
     this.changeNodeState = this.changeNodeState.bind(this);
   }
+  componentDidMount(): void {
+    this.state.nodes.forEach((node) => {
+      // If node is inactive it doesn't make the call
+      if (node.active) {
+        this.connect(node.wsUrl, node.httpUrl, node.nodeID, node.accountID)
+      }
+    })
+  }
   // The connect function triggers the ws connection
   reqListener(response: block[], nodeID: number, accountID: string) {
     if(response.length) {
@@ -52,14 +59,6 @@ class App extends Component<{}, State> {
         this.handleNewBlock(response[i], nodeID, accountID)
       }
     }
-  }
-  componentDidMount(): void {
-    this.state.nodes.forEach((node) => {
-      // If node is inactive it doesn't make the call
-      if (node.active) {
-        this.connect(node.wsUrl, node.httpUrl, node.nodeID, node.accountID)
-      }
-    })
   }
   connect(
     wsUrl: string,
@@ -106,6 +105,20 @@ class App extends Component<{}, State> {
       }
       return;
     }
+    ws.onclose = (evt: CloseEvent) => {
+      const { connect } = this
+      console.log('Socket is closed. Reconnect will be attempted in 1 second.', evt.reason);
+      this.changeNodeState('Connecting...', nodeID)
+      setTimeout(function() {
+        connect(wsUrl, httpUrl, nodeID, accountID);
+      }, 1000);
+    }
+    
+    ws.onerror = function(err) {
+      console.log(err)
+      console.error('Socket encountered error: ', err, 'Closing socket');
+      ws.close();
+    };
   }
   changeNodeState(status: nodeStatus, nodeID: number){
     this.setState((prevState) => {
@@ -117,29 +130,36 @@ class App extends Component<{}, State> {
     })
   }
   showMempool(node: node){
-    this.setState({
-      currentNode: node,
-      showMempool: !this.state.showMempool,
-    })
     if(node.port) {
       try{
         axios.get(`http://localhost:${node.port}/v1/tx/uncommitted/list`)
         .then(res => {
           const response = res.data;
+          console.log(response);
           reqHandler(response);
         })
       } catch (error) {
         console.log(error)
       }
     }
-    const reqHandler = (response: mempoolResponse) => {
-      if ('data' in response && response.data.length) {
+    const reqHandler = (response: mempoolTransaction[]) => {
+      if (response.length) {
         const elements: JSX.Element[] = []
-        for (let i = 0; i < response.data.length; i++) {
+        for (let i = 0; i < response.length; i++) {
+          const element = response[i]
+          const isLast = response.indexOf(element) === response.length - 1
           elements.push(
-            <MempoolTable key={i} transaction={response.data[i]} />
+            <div>
+              <MempoolTable key={element.r} transaction={element} />
+              <ArrowDownIcon key={`${element.r}-arrow`} isLast={ isLast } />
+            </div>
           )
         }
+        this.setState({
+          mempool: elements,
+          currentNode: node,
+          showMempool: elements.length ? !this.state.showMempool : false,
+        })
       }
     }
   }
@@ -178,8 +198,12 @@ class App extends Component<{}, State> {
   blockClickHandler(event: block) {
     const elements: JSX.Element[] = []
     event.trans.forEach(element => {
+      const isLast = event.trans.indexOf(element) === event.trans.length - 1
       elements.push(
-        <TransactionTable key={element.r} transaction={element} />
+        <div>
+          <TransactionTable key={element.r} transaction={element} />
+          <ArrowDownIcon key={`${element.r}-arrow`} isLast={ isLast } />
+        </div>
       )
     })
     this.setState({
@@ -189,6 +213,9 @@ class App extends Component<{}, State> {
   }
   hideTransactionsTable() {
     this.setState({showTransactions: false})
+  }
+  hideMempoolTable() {
+    this.setState({showMempool: false})
   }
   // State is created for the App
   render() {
@@ -225,18 +252,13 @@ class App extends Component<{}, State> {
           {msgsBlocks}
         </div>
         <Modal classes="transactions" show={this.state.showTransactions}>
-          <button className="button-transactions-hide" onClick={() => this.hideTransactionsTable()}>
-            <strong>X</strong>
-          </button>
+          <CloseIcon classes="close-modal-button" onClick={() => this.hideTransactionsTable()} />
           <div id="transactions-content">
             {this.state.modalTransactions}
           </div>
         </Modal>
         <Modal classes="mempool" show={this.state.showMempool}>
-          <button className="button-transactions-hide" onClick={() => this.showMempool({} as node)}>
-            <strong>X</strong>
-          </button>
-          <div className="trans">Node {this.state.currentNode.nodeID}</div>
+          <CloseIcon classes="close-modal-button" onClick={() => this.hideMempoolTable()} />
           <div id="mempool-content">
             {this.state.mempool}
           </div>

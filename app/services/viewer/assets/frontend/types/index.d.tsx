@@ -1,6 +1,6 @@
 export interface transaction {
   chain_id: number,
-  data: null,
+  data: object,
   gas_price: number,
   gas_units: number,
   nonce: number,
@@ -39,4 +39,15 @@ export interface node {
   state: nodeStatus,
   blocks: block[],
   successfull: boolean,
+}
+
+export interface mempoolTransaction extends transaction {
+  from_account: string,
+  from_name: string,
+  from: string,
+  to_name: string,
+  chainID: string,
+  sig: string,
+  proof: string,
+  proof_order: string,
 }
