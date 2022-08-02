@@ -1,10 +1,12 @@
 import './App.css'
 import React, { Component } from 'react'
 import BlocksContainer from './components/blocksContainer'
+import TransactionTable from './components/transactionTable'
 import Modal from './components/modal'
 import nodes from './nodes'
 import { transaction, node, block, nodeStatus } from '../types/index.d'
 import axios from 'axios';
+import MempoolTable from './components/mempoolTable'
 
 // State type is created
 export type State = {
@@ -14,7 +16,9 @@ export type State = {
   blockHashes: Set<string>
   currentNode: node,
   showMempool: boolean,
+  mempool: JSX.Element[],
   showTransactions: boolean,
+  modalTransactions: JSX.Element[],
 }
 
 interface mempoolResponse {
@@ -31,7 +35,9 @@ class App extends Component<{}, State> {
       blockHashes: new Set(),
       currentNode: {} as node,
       showMempool: false,
+      mempool: [],
       showTransactions: false,
+      modalTransactions: [],
     }
     this.connect = this.connect.bind(this);
     this.reqListener = this.reqListener.bind(this);
@@ -115,7 +121,6 @@ class App extends Component<{}, State> {
       currentNode: node,
       showMempool: !this.state.showMempool,
     })
-    console.log(!this.state.showMempool)
     if(node.port) {
       try{
         axios.get(`http://localhost:${node.port}/v1/tx/uncommitted/list`)
@@ -129,8 +134,11 @@ class App extends Component<{}, State> {
     }
     const reqHandler = (response: mempoolResponse) => {
       if ('data' in response && response.data.length) {
+        const elements: JSX.Element[] = []
         for (let i = 0; i < response.data.length; i++) {
-          console.log(response.data[i])
+          elements.push(
+            <MempoolTable key={i} transaction={response.data[i]} />
+          )
         }
       }
     }
@@ -167,12 +175,23 @@ class App extends Component<{}, State> {
       }
     })
   }
-  componentDidUpdate(prevProps: Readonly<{}>, prevState: Readonly<State>, snapshot?: any): void {
-    console.log(prevState)
+  blockClickHandler(event: block) {
+    const elements: JSX.Element[] = []
+    event.trans.forEach(element => {
+      elements.push(
+        <TransactionTable key={element.r} transaction={element} />
+      )
+    })
+    this.setState({
+      modalTransactions: elements,
+      showTransactions: !this.state.showTransactions,
+    })
+  }
+  hideTransactionsTable() {
+    this.setState({showTransactions: false})
   }
   // State is created for the App
   render() {
-    console.log(this.state.showTransactions, 'trans show')
     const msgsBlocks: JSX.Element[] = []
     this.state.nodes.forEach((node) => {
       // We implement the nodes inside the UI grouping them inside an JSX.element array
@@ -190,6 +209,7 @@ class App extends Component<{}, State> {
                 nodeID: nodeID,
                 blocksProp: blocks,
                 successfullNode: successfull,
+                clickHandler: (evt: block) => this.blockClickHandler(evt)
               }}
             />
         </div>
@@ -204,18 +224,22 @@ class App extends Component<{}, State> {
         <div id="flex-container" className="container-fluid flex-column">
           {msgsBlocks}
         </div>
-        <Modal classes="transactions" show={this.state.showMempool}>
-          <button className="button-transactions-hide">
+        <Modal classes="transactions" show={this.state.showTransactions}>
+          <button className="button-transactions-hide" onClick={() => this.hideTransactionsTable()}>
             <strong>X</strong>
           </button>
-          <div id="transactions-content"></div>
+          <div id="transactions-content">
+            {this.state.modalTransactions}
+          </div>
         </Modal>
         <Modal classes="mempool" show={this.state.showMempool}>
           <button className="button-transactions-hide" onClick={() => this.showMempool({} as node)}>
             <strong>X</strong>
           </button>
           <div className="trans">Node {this.state.currentNode.nodeID}</div>
-          <div id="mempool-content"></div>
+          <div id="mempool-content">
+            {this.state.mempool}
+          </div>
         </Modal>
       </div>
     )
