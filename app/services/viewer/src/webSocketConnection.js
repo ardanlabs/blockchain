@@ -17,7 +17,6 @@ export default function connect(wsUrl, httpUrl, nodeID, accountID) {
     if (block.block.beneficiary === accountID) {
       successfullNode = true
     }
-   console.log(nodeID, blockHashes.size, block, successfullNode)
   }
   const reqListener = function () {
     var responseJson = JSON.parse(this.responseText)

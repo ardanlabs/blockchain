@@ -6,8 +6,6 @@ interface mempoolTableProps {
 }
 
 const MempoolTable: FC<mempoolTableProps> = ({ transaction }) => {
-  console.log(transaction)
-  
   return (
     <div>
       <table>

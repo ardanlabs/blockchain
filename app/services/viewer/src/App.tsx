@@ -21,6 +21,7 @@ export type State = {
   mempool: JSX.Element[],
   showTransactions: boolean,
   modalTransactions: JSX.Element[],
+  activlyMining: boolean[],
 }
 
 
@@ -37,6 +38,7 @@ class App extends Component<{}, State> {
       mempool: [],
       showTransactions: false,
       modalTransactions: [],
+      activlyMining: [false, false, false],
     }
     this.connect = this.connect.bind(this);
     this.reqListener = this.reqListener.bind(this);
@@ -95,12 +97,18 @@ class App extends Component<{}, State> {
         }
         if (text.includes("MINING: completed")) {
             this.changeNodeState('Connected', nodeID)
+            let activlyMiningModified = this.state.activlyMining
+            activlyMiningModified[nodeID - 1] = false
+            this.setState({activlyMining : activlyMiningModified })
             return;
         }
         if (text.includes("MINING: running")) {
           console.info(text.replace('viewer: ', ''))
           this.changeNodeState('Mining...', nodeID)
-            return;
+          let activlyMiningModified = this.state.activlyMining
+          activlyMiningModified[nodeID - 1] = true
+          this.setState({activlyMining : activlyMiningModified })
+          return;
         }
       }
       return;
@@ -115,7 +123,6 @@ class App extends Component<{}, State> {
     }
     
     ws.onerror = function(err) {
-      console.log(err)
       console.error('Socket encountered error: ', err, 'Closing socket');
       ws.close();
     };
@@ -135,11 +142,10 @@ class App extends Component<{}, State> {
         axios.get(`http://localhost:${node.port}/v1/tx/uncommitted/list`)
         .then(res => {
           const response = res.data;
-          console.log(response);
           reqHandler(response);
         })
       } catch (error) {
-        console.log(error)
+        console.error(error)
       }
     }
     const reqHandler = (response: mempoolTransaction[]) => {
@@ -223,11 +229,12 @@ class App extends Component<{}, State> {
     this.state.nodes.forEach((node) => {
       // We implement the nodes inside the UI grouping them inside an JSX.element array
       const { nodeID, state, blocks, successfull } = node
+      const extraClasses = this.state.activlyMining[nodeID - 1] ? ' mining' : ''
       // If node is inactive it doesn't add it to the UI
       if (node.active) {
         msgsBlocks.push(
           <div key={nodeID + 'msg-block'} id={`msg-block${nodeID}`} className="flex-column">
-            <div id={`first-msg${nodeID}`} className="block info" onClick={() => this.showMempool(node)}>
+            <div id={`first-msg${nodeID}`} className={`block info${extraClasses}`} onClick={() => this.showMempool(node)}> 
               Node {nodeID}: {state}
             </div>
             <BlocksContainer

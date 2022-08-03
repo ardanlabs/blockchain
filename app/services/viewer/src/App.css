@@ -157,14 +157,29 @@
 [id^=blocks] .block {
   border: 2px solid var(--borders);
   border-radius: 10px;
-  background-color: var(--secondary-color);
-  color: var(--ternary-color);
+  background-color: var(--modals);
+  color: var(--secondary-color);
   padding: 10px;
   margin: 10px 0;
 }
 
 .block.info {
   background: var(--primary-color);
+}
+
+.mining {
+  animation: flash 2s ease-in-out 0s infinite alternate
+}
+
+@keyframes flash {
+  0%, 100% {
+    background-color: var(--primary-color);
+    color: var(--ternary-color);
+  }
+  50% {
+    background-color: var(--ternary-color);
+    color: var(--primary-color);
+  }
 }
 
 .block.mine {
@@ -184,6 +199,9 @@
   border-left: none;
 }
 
+table td.key {
+  font-weight: 700;
+}
 @media (max-width: 560px) {
   .my-modal {
     max-width: 560px !important;

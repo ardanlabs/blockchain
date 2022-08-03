@@ -1,4 +1,4 @@
-import React, { FC, useState } from 'react'
+import React, { FC } from 'react'
 import { block } from '../../types/index.d'
 import BlockTable from './blockTable'
 
@@ -17,7 +17,6 @@ const Block: FC<BlockProps> = ({
   block,
   clickHandler,
 }) => {
-  const [showTransactions, setShowTransactions] = useState(false);
   const id = `Block-${nodeID}-${blockNumber}`
   let extraClass: string = ''
 

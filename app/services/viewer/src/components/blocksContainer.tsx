@@ -17,8 +17,7 @@ const BlocksContainer: FC<BlocksContainerProps> = (props: {
   clickHandler: Function
 }) => {
   const { blocksProp, nodeID, successfullNode, clickHandler } = props
-  let blocks: JSX.Element[] = [],
-  lastBlockHash: string = ''
+  let blocks: JSX.Element[] = []
   const addedBlocks: Set<string> = new Set()
   for (let i = 0; i < blocksProp.length; i++) {
     const block = blocksProp[i];
@@ -39,7 +38,6 @@ const BlocksContainer: FC<BlocksContainerProps> = (props: {
       )
     }
     addedBlocks.add(`${nodeID}-${block.block.number}`)
-    lastBlockHash = block.hash
   }
   return <div id={`blocks-${nodeID}`}>{blocks}</div>
 }
