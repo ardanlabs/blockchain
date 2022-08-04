@@ -7,16 +7,10 @@ interface BlocksContainerProps {
   blocksProp: block[]
   nodeID: number
   successfullNode: boolean
-  clickHandler: Function
 }
 
-const BlocksContainer: FC<BlocksContainerProps> = (props: {
-  blocksProp: block[]
-  nodeID: number
-  successfullNode: boolean
-  clickHandler: Function
-}) => {
-  const { blocksProp, nodeID, successfullNode, clickHandler } = props
+const BlocksContainer: FC<BlocksContainerProps> = (BlocksContainerProps) => {
+  const { blocksProp, nodeID, successfullNode } = BlocksContainerProps
   let blocks: JSX.Element[] = []
   const addedBlocks: Set<string> = new Set()
   for (let i = 0; i < blocksProp.length; i++) {
@@ -30,7 +24,6 @@ const BlocksContainer: FC<BlocksContainerProps> = (props: {
               blockNumber: block.block.number,
               successfullNode,
               block,
-              clickHandler,
             }}
           />
           <LinkIcon key={`${block.block.number}-Link`} />
@@ -39,7 +32,7 @@ const BlocksContainer: FC<BlocksContainerProps> = (props: {
     }
     addedBlocks.add(`${nodeID}-${block.block.number}`)
   }
-  return <div id={`blocks-${nodeID}`}>{blocks}</div>
+  return <div id={`blocks-${nodeID}`} className="my-3">{blocks}</div>
 }
 
 export default BlocksContainer

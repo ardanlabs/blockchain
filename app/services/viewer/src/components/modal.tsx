@@ -8,13 +8,13 @@ interface modalProps {
 
 class Modal extends Component<modalProps> {
   render() {
-    const { show, classes } = this.props
+    const { show, classes, children } = this.props
     if(!show) {
       return null
     }
     return (
       <div className={`my-modal ${classes}`}>
-        {this.props.children}
+        {children}
       </div>
     )
   }

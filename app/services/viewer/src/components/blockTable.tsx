@@ -5,7 +5,8 @@ interface BlockTableProps {
   block: block
 }
 
-const BlockTable: FC<BlockTableProps> = ({ block }) => {
+const BlockTable: FC<BlockTableProps> = (BlocksContainerProps) => {
+  const { block } = BlocksContainerProps
   return (
     <table>
       <tbody>

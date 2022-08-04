@@ -1,7 +1,6 @@
 import './App.css'
 import React, { Component } from 'react'
 import BlocksContainer from './components/blocksContainer'
-import TransactionTable from './components/transactionTable'
 import Modal from './components/modal'
 import nodes from './nodes'
 import { transaction, node, block, nodeStatus, mempoolTransaction } from '../types/index.d'
@@ -19,8 +18,6 @@ export type State = {
   currentNode: node,
   showMempool: boolean,
   mempool: JSX.Element[],
-  showTransactions: boolean,
-  modalTransactions: JSX.Element[],
   activlyMining: boolean[],
 }
 
@@ -36,8 +33,6 @@ class App extends Component<{}, State> {
       currentNode: {} as node,
       showMempool: false,
       mempool: [],
-      showTransactions: false,
-      modalTransactions: [],
       activlyMining: [false, false, false],
     }
     this.connect = this.connect.bind(this);
@@ -201,25 +196,7 @@ class App extends Component<{}, State> {
       }
     })
   }
-  blockClickHandler(event: block) {
-    const elements: JSX.Element[] = []
-    event.trans.forEach(element => {
-      const isLast = event.trans.indexOf(element) === event.trans.length - 1
-      elements.push(
-        <div>
-          <TransactionTable key={element.r} transaction={element} />
-          <ArrowDownIcon key={`${element.r}-arrow`} isLast={ isLast } />
-        </div>
-      )
-    })
-    this.setState({
-      modalTransactions: elements,
-      showTransactions: !this.state.showTransactions,
-    })
-  }
-  hideTransactionsTable() {
-    this.setState({showTransactions: false})
-  }
+
   hideMempoolTable() {
     this.setState({showMempool: false})
   }
@@ -234,7 +211,7 @@ class App extends Component<{}, State> {
       if (node.active) {
         msgsBlocks.push(
           <div key={nodeID + 'msg-block'} id={`msg-block${nodeID}`} className="flex-column">
-            <div id={`first-msg${nodeID}`} className={`block info${extraClasses}`} onClick={() => this.showMempool(node)}> 
+            <div id={`first-msg${nodeID}`} className={`block-msg info${extraClasses}`} onClick={() => this.showMempool(node)}> 
               Node {nodeID}: {state}
             </div>
             <BlocksContainer
@@ -243,7 +220,6 @@ class App extends Component<{}, State> {
                 nodeID: nodeID,
                 blocksProp: blocks,
                 successfullNode: successfull,
-                clickHandler: (evt: block) => this.blockClickHandler(evt)
               }}
             />
         </div>
@@ -258,12 +234,6 @@ class App extends Component<{}, State> {
         <div id="flex-container" className="container-fluid flex-column">
           {msgsBlocks}
         </div>
-        <Modal classes="transactions" show={this.state.showTransactions}>
-          <CloseIcon classes="close-modal-button" onClick={() => this.hideTransactionsTable()} />
-          <div id="transactions-content">
-            {this.state.modalTransactions}
-          </div>
-        </Modal>
         <Modal classes="mempool" show={this.state.showMempool}>
           <CloseIcon classes="close-modal-button" onClick={() => this.hideMempoolTable()} />
           <div id="mempool-content">

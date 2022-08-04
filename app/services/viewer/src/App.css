@@ -38,11 +38,10 @@
   width: 65vw !important;
   min-width: 1315px;
 }
-#transactions-content, #mempool-content {
-  overflow-y: scroll;
-  height: auto;
+.block-details-modal {
+  height: fit-content !important;
+  width: fit-content !important;
 }
-
 #transactions button {
   position: absolute;
   right: 0;
@@ -83,6 +82,11 @@
   border: unset;
   cursor: pointer;
 }
+.my-modal [id$=-content] {
+  overflow-y: scroll;
+  height: auto;
+  margin-top: 30px;
+}
 
 .my-modal [id$=-content] div div{
   border: 2px solid var(--borders);
@@ -94,9 +98,6 @@
   align-items: center;
   justify-content: center;
 }
-
-
-
 
 /* Hide scrollbar for modal content in Chrome, Safari and Opera */
 .my-modal [id$=-content]::-webkit-scrollbar {
@@ -142,11 +143,32 @@
   margin: 10px
 }
 
-[id^=blocks] div:last-child svg{
+[id^=blocks] div:last-child svg:not(.close-modal-button){
   display: none;
 }
 
+.block-details {
+  border: 2px solid var(--borders);
+  border-radius: 10px;
+  background-color: var(--modals);
+  color: var(--secondary-color);
+  padding: 10px;
+  margin: 0 0 5px 0;
+  width: 300px;
+  height: 200px;
+}
 .block {
+  border: 2px solid var(--borders);
+  border-radius: 10px;
+  background-color: var(--modals);
+  color: var(--secondary-color);
+  padding: 10px;
+  margin: 0 0 5px 0;
+  width: fit-content;
+  height: fit-content;
+}
+
+.block-msg {
   border: 2px solid var(--borders);
   border-radius: 10px;
   color: var(--ternary-color);
@@ -154,7 +176,7 @@
   margin: 0 0 5px 0;
 }
 
-[id^=blocks] .block {
+[id^=blocks] .blockDetails {
   border: 2px solid var(--borders);
   border-radius: 10px;
   background-color: var(--modals);
@@ -163,7 +185,7 @@
   margin: 10px 0;
 }
 
-.block.info {
+.block-msg.info {
   background: var(--primary-color);
 }
 
@@ -182,9 +204,9 @@
   }
 }
 
-.block.mine {
+.block-details.mine {
   background-color: var(--ternary-color);
-  color: var(--secondary-color);
+  color: var(--secondary-modals);
 }
 
 .block table, td {
@@ -197,6 +219,27 @@
 }
 .block table, td.value {
   border-left: none;
+}
+
+.btn-outline-primary {
+  color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+.btn-outline-primary:hover {
+  color: #fff;
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.btn-outline-secondary {
+  color: var(--secondary-color);
+  border-color: var(--secondary-color);
+}
+
+.btn-outline-secondary:hover {
+  color: #fff;
+  background-color: var(--secondary-color);;
+  border-color: var(--secondary-color);;
 }
 
 table td.key {

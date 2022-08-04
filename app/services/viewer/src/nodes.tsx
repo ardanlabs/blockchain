@@ -24,7 +24,7 @@ const nodes: node[] = [
     successfull: false,
   },
 {
-    active: true,
+    active: false,
     wsUrl: 'ws://localhost:8380/v1/events',
     httpUrl: 'http://localhost:9380/v1/node/block/list/1/latest',
     port: 8380,

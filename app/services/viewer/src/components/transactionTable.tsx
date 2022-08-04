@@ -5,7 +5,8 @@ interface BlockTableProps {
   transaction: transaction
 }
 
-const TransactionTable: FC<BlockTableProps> = ({ transaction }) => {
+const TransactionTable: FC<BlockTableProps> = (BlockTableProps) => {
+  const { transaction } = BlockTableProps
   return (
     <div>
       <table>

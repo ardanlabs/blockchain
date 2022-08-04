@@ -5,7 +5,8 @@ interface mempoolTableProps {
   transaction: mempoolTransaction
 }
 
-const MempoolTable: FC<mempoolTableProps> = ({ transaction }) => {
+const MempoolTable: FC<mempoolTableProps> = (mempoolTableProps) => {
+  const { transaction } = mempoolTableProps
   return (
     <div>
       <table>
