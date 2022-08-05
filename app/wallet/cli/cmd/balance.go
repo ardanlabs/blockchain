@@ -42,7 +42,7 @@ func balanceRun(cmd *cobra.Command, args []string) {
 	accountID := database.PublicKeyToAccountID(privateKey.PublicKey)
 	fmt.Println("For Account:", accountID)
 
-	resp, err := http.Get(fmt.Sprintf("%s/v1/balances/list/%s", url, accountID))
+	resp, err := http.Get(fmt.Sprintf("%s/v1/accounts/list/%s", url, accountID))
 	if err != nil {
 		log.Fatal(err)
 	}
