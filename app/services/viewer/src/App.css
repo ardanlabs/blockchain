@@ -1,0 +1,256 @@
+:root {
+  /* Global variables */
+  --main-height: 820px;
+  --outer-box-heigth: 740px;
+  --primary-color: #F15825;
+  --secondary-color: #35495C;
+  --ternary-color: #EFEFEF;
+  --modals: #F0EAD6;
+  --borders:#00284d;
+}
+
+.App {
+  text-align: center;
+}
+
+.App-header {
+  background-color: var(--secondary-color);
+  min-height: 5vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: var(--ternary-color);
+}
+
+
+
+#flex-container {
+  display: flex;
+}
+
+.transactions {
+  width: 22vw !important;
+  min-width: 560px;
+}
+.mempool {
+  width: 65vw !important;
+  min-width: 1315px;
+}
+.block-details-modal {
+  height: fit-content !important;
+  width: fit-content !important;
+}
+#transactions button {
+  position: absolute;
+  right: 0;
+  margin: 5px;
+  padding: 3px;
+  background: var(--ternary-color);
+  color: var(--secondary-color);
+  border: 1px solid var(--secondary-color);
+}
+
+
+.my-modal {
+  display: flex;
+  justify-content: center;
+  border: 2px solid var(--borders);
+  border-radius: 8px;
+  background: var(--modals);
+  padding: 10px;
+  margin: 20px;
+  width: 90vw;
+  max-width: 65rem;
+  position: absolute; 
+  left: 0; 
+  right: 0; 
+  top: 0;
+  margin-left: auto; 
+  margin-right: auto; 
+  height: 95vh;
+  z-index: 1000;
+  overflow-y: hidden;
+  overflow-x: hidden;
+}
+
+.my-modal .close-modal-button {
+  position: absolute;
+  right: -6px;
+  background: none;
+  border: unset;
+  cursor: pointer;
+}
+.my-modal [id$=-content] {
+  overflow-y: scroll;
+  height: auto;
+  margin-top: 30px;
+}
+
+.my-modal [id$=-content] div div{
+  border: 2px solid var(--borders);
+  border-radius: 10px;
+  padding: 10px;
+  margin: 10px auto;
+  width: fit-content;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Hide scrollbar for modal content in Chrome, Safari and Opera */
+.my-modal [id$=-content]::-webkit-scrollbar {
+  display: none;
+}
+/* Hide scrollbar for modal content in IE, Edge and Firefox */
+.my-modal [id$=-content] {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+
+.trans {
+  border: 2px solid var(--borders);
+  border-radius: 10px;
+  background-color: var(--secondary-color);
+  color: var(--ternary-color);
+  padding: 10px;
+  margin: 5px 50px 5px 10px;
+  overflow: auto;
+  height: fit-content;
+}
+
+.trans table, td {
+  border: thin solid;
+  border-collapse: collapse;
+}
+
+.trans table, td.key {
+  border-right: none;
+}
+.trans table, td.value {
+  border-left: none;
+}
+
+[id^=blocks] {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  overflow-x: scroll;
+}
+[id^=msg-block] {
+  margin: 10px
+}
+
+[id^=blocks] div:last-child svg:not(.close-modal-button){
+  display: none;
+}
+
+.block-details {
+  border: 2px solid var(--borders);
+  border-radius: 10px;
+  background-color: var(--modals);
+  color: var(--secondary-color);
+  padding: 10px;
+  margin: 0 0 5px 0;
+  width: 300px;
+  height: 200px;
+}
+.block {
+  border: 2px solid var(--borders);
+  border-radius: 10px;
+  background-color: var(--modals);
+  color: var(--secondary-color);
+  padding: 10px;
+  margin: 0 0 5px 0;
+  width: fit-content;
+  height: fit-content;
+}
+
+.block-msg {
+  border: 2px solid var(--borders);
+  border-radius: 10px;
+  color: var(--ternary-color);
+  padding: 10px;
+  margin: 0 0 5px 0;
+}
+
+[id^=blocks] .blockDetails {
+  border: 2px solid var(--borders);
+  border-radius: 10px;
+  background-color: var(--modals);
+  color: var(--secondary-color);
+  padding: 10px;
+  margin: 10px 0;
+}
+
+.block-msg.info {
+  background: var(--primary-color);
+}
+
+.mining {
+  animation: flash 2s ease-in-out 0s infinite alternate
+}
+
+@keyframes flash {
+  0%, 100% {
+    background-color: var(--primary-color);
+    color: var(--ternary-color);
+  }
+  50% {
+    background-color: var(--ternary-color);
+    color: var(--primary-color);
+  }
+}
+
+.block-details.mine {
+  background-color: var(--ternary-color);
+  color: var(--secondary-modals);
+}
+
+.block table, td {
+  border: thin solid;
+  border-collapse: collapse;
+}
+
+.block table, td.key {
+  border-right: none;
+}
+.block table, td.value {
+  border-left: none;
+}
+
+.btn-outline-primary {
+  color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+.btn-outline-primary:hover {
+  color: #fff;
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.btn-outline-secondary {
+  color: var(--secondary-color);
+  border-color: var(--secondary-color);
+}
+
+.btn-outline-secondary:hover {
+  color: #fff;
+  background-color: var(--secondary-color);;
+  border-color: var(--secondary-color);;
+}
+
+table td.key {
+  font-weight: 700;
+}
+@media (max-width: 560px) {
+  .my-modal {
+    max-width: 560px !important;
+  }
+  .transactions {
+    width: 100vw !important;
+    min-width: 100vw !important;
+  }
+}

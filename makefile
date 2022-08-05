@@ -77,11 +77,9 @@ load3:
 # ==============================================================================
 # Viewer support
 
-vup:
-	go run app/services/viewer/main.go | go run app/tooling/logfmt/main.go
-
-viewer:
-	python -m webbrowser "http://localhost"
+react:
+	npm install --prefix app/services/viewer/
+	npm start --prefix app/services/viewer/
 
 # ==============================================================================
 # Wallet support
