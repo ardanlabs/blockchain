@@ -87,7 +87,7 @@ func (tx SignedTx) Validate() error {
 		return errors.New("invalid account for to account")
 	}
 
-	if err := signature.VerifySignature(tx.Tx, tx.V, tx.R, tx.S); err != nil {
+	if err := signature.VerifySignature(tx.V, tx.R, tx.S); err != nil {
 		return err
 	}
 

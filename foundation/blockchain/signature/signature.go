@@ -71,7 +71,7 @@ func Sign(value any, privateKey *ecdsa.PrivateKey) (v, r, s *big.Int, err error)
 }
 
 // VerifySignature verifies the signature conforms to our standards.
-func VerifySignature(value any, v, r, s *big.Int) error {
+func VerifySignature(v, r, s *big.Int) error {
 
 	// Check the recovery id is either 0 or 1.
 	uintV := v.Uint64() - ardanID

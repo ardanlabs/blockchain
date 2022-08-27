@@ -32,7 +32,7 @@ func Test_Signing(t *testing.T) {
 		t.Fatalf("Should be able to sign data: %s", err)
 	}
 
-	if err := signature.VerifySignature(value, v, r, s); err != nil {
+	if err := signature.VerifySignature(v, r, s); err != nil {
 		t.Fatalf("Should be able to verify the signature: %s", err)
 	}
 
