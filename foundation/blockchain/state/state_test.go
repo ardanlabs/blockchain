@@ -14,24 +14,47 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
+const (
+	miner1PrivateKey = "8dc79feefd3b86e2f9991def0e5ccd9a5128e104682407b308594bc1032ac7f0"
+	miner2PrivateKey = "5aed92a29e1014d83c1d8ac755878723d7e44d8dc129610d11b2022d09ad95bd"
+	miner3PrivateKey = "ce07a51ad1d72084aed971b24042f320b4673e852b59eb550375b9eb6747d74a"
+	jackPrivateKey   = "9f332e3700d8fc2446eaf6d15034cf96e0c2745e40353deef032a5dbf1dfed93"
+	jillPrivateKey   = "aed31b6b5a341af8f27e66fb0b7633cf20fc27049e3eb7f6f623a4655b719ebb"
+	sammyPrivateKey  = "601d7574860c135e9d3c1d52b0ee997404130edc2a1177c78fda92dd6a3dc2f7"
+
+	kennedyAccountID = database.AccountID("0xF01813E4B85e178A83e29B8E7bF26BD830a25f32")
+	pavelAccountID   = database.AccountID("0xdd6B972ffcc631a62CAE1BB9d80b7ff429c8ebA4")
+	ceasarAccountID  = database.AccountID("0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76")
+	babaAccountID    = database.AccountID("0x6Fe6CF3c8fF57c58d24BfC869668F48BCbDb3BD9")
+	edAccountID      = database.AccountID("0xa988b1866EaBF72B4c53b592c97aAD8e4b9bDCC0")
+	miner1AccountID  = database.AccountID("0xFef311483Cc040e1A89fb9bb469eeB8A70935EF8")
+	miner2AccountID  = database.AccountID("0xb8Ee4c7ac4ca3269fEc242780D7D960bd6272a61")
+
+	nonceZero = 0
+	chainID   = 1
+)
+
+// The number of blocks to use in the first node for these test scenarios.
+const blocksToHave = 15
+
 // ============================ TESTS CASES ===================================
 
 // Test_MineAndSyncBlock is the simple happy path. We do a transaction, mine a
 // block and offer it to another miner. No issues should be found.
 func Test_MineAndSyncBlock(t *testing.T) {
-	node1 := newNode(MINER1_PRIVATEKEY, t)
-	node2 := newNode(MINER2_PRIVATEKEY, t)
+	node1 := newNode(miner1PrivateKey, t)
+	node2 := newNode(miner2PrivateKey, t)
 
 	tx := database.Tx{
-		ChainID: CHAIN_ID,
+		ChainID: chainID,
 		Nonce:   1,
-		ToID:    KENNEDY_ACCOUNTID,
+		ToID:    kennedyAccountID,
 		Value:   1,
 		Tip:     0,
 		Data:    nil,
 	}
 
-	signedTx := newSignedTx(tx, JACK_PRIVATEKEY, t)
+	signedTx := newSignedTx(tx, jackPrivateKey, t)
 	if err := node1.UpsertWalletTransaction(signedTx); err != nil {
 		t.Fatalf("Error upserting wallet transaction: %v", err)
 	}
@@ -49,27 +72,24 @@ func Test_MineAndSyncBlock(t *testing.T) {
 
 // =============================================================================
 
-// The number of blocks to use in the first node for these test scenarios.
-const blocksToHave = 15
-
 // Test_ProposeBlockValidation is an umbrella, holding different
 // scenarios to validate proper handling of issues regarding block proposals.
 func Test_ProposeBlockValidation(t *testing.T) {
-	node1 := newNode(MINER1_PRIVATEKEY, t)
+	node1 := newNode(miner1PrivateKey, t)
 
 	// Let's add 15 blocks to Node1 starting with Nonce 1.
 	var blocks []database.Block
 	for i := 1; i <= blocksToHave; i++ {
 		tx := database.Tx{
-			ChainID: CHAIN_ID,
+			ChainID: chainID,
 			Nonce:   uint64(i),
-			ToID:    KENNEDY_ACCOUNTID,
+			ToID:    kennedyAccountID,
 			Value:   1,
 			Tip:     0,
 			Data:    nil,
 		}
 
-		signedTx := newSignedTx(tx, JACK_PRIVATEKEY, t)
+		signedTx := newSignedTx(tx, jackPrivateKey, t)
 		if err := node1.UpsertWalletTransaction(signedTx); err != nil {
 			t.Fatalf("Error upserting wallet transaction: %v", err)
 		}
@@ -92,7 +112,7 @@ func Test_ProposeBlockValidation(t *testing.T) {
 // add block #13. Remember zero indexing.
 func proposeBlockErrChainRaised(blocks []database.Block) func(t *testing.T) {
 	f := func(t *testing.T) {
-		node2 := newNode(MINER2_PRIVATEKEY, t)
+		node2 := newNode(miner2PrivateKey, t)
 
 		for i, blk := range blocks[:blocksToHave-2] {
 			switch {
@@ -121,7 +141,7 @@ func proposeBlockErrChainRaised(blocks []database.Block) func(t *testing.T) {
 // block #11, and finally trying to add block #12. Remember zero indexing.
 func proposeBlockOneMissingBlock(blocks []database.Block) func(t *testing.T) {
 	f := func(t *testing.T) {
-		node2 := newNode(MINER2_PRIVATEKEY, t)
+		node2 := newNode(miner2PrivateKey, t)
 
 		for i, blk := range blocks[:blocksToHave-2] {
 			switch {
@@ -145,28 +165,6 @@ func proposeBlockOneMissingBlock(blocks []database.Block) func(t *testing.T) {
 	return f
 }
 
-// ============================== TOOLKIT FOR TESTS ============================
-
-const (
-	MINER1_PRIVATEKEY = "8dc79feefd3b86e2f9991def0e5ccd9a5128e104682407b308594bc1032ac7f0"
-	MINER2_PRIVATEKEY = "5aed92a29e1014d83c1d8ac755878723d7e44d8dc129610d11b2022d09ad95bd"
-	MINER3_PRIVATEKEY = "ce07a51ad1d72084aed971b24042f320b4673e852b59eb550375b9eb6747d74a"
-	JACK_PRIVATEKEY   = "9f332e3700d8fc2446eaf6d15034cf96e0c2745e40353deef032a5dbf1dfed93"
-	JILL_PRIVATEKEY   = "aed31b6b5a341af8f27e66fb0b7633cf20fc27049e3eb7f6f623a4655b719ebb"
-	SAMMY_PRIVATEKEY  = "601d7574860c135e9d3c1d52b0ee997404130edc2a1177c78fda92dd6a3dc2f7"
-
-	KENNEDY_ACCOUNTID = database.AccountID("0xF01813E4B85e178A83e29B8E7bF26BD830a25f32")
-	PAVEL_ACCOUNTID   = database.AccountID("0xdd6B972ffcc631a62CAE1BB9d80b7ff429c8ebA4")
-	CESAR_ACCOUNTID   = database.AccountID("0xbEE6ACE826eC3DE1B6349888B9151B92522F7F76")
-	BABA_ACCOUNTID    = database.AccountID("0x6Fe6CF3c8fF57c58d24BfC869668F48BCbDb3BD9")
-	ED_ACCOUNTID      = database.AccountID("0xa988b1866EaBF72B4c53b592c97aAD8e4b9bDCC0")
-	MINER1_ACCOUNTID  = database.AccountID("0xFef311483Cc040e1A89fb9bb469eeB8A70935EF8")
-	MINER2_ACCOUNTID  = database.AccountID("0xb8Ee4c7ac4ca3269fEc242780D7D960bd6272a61")
-
-	NONCE_ZERO = 0
-	CHAIN_ID   = 1
-)
-
 // =============================================================================
 
 // noopWorker implements the Worker interface which does nothing.
@@ -188,7 +186,7 @@ func (n noopWorker) SignalShareTx(blockTx database.BlockTx) {}
 func newGenesis() genesis.Genesis {
 	g := genesis.Genesis{
 		Date:          time.Now().Add(time.Hour * 24 * -365),
-		ChainID:       CHAIN_ID,
+		ChainID:       chainID,
 		TransPerBlock: 10,
 		Difficulty:    1,
 		MiningReward:  700,

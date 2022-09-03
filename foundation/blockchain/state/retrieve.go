@@ -42,7 +42,7 @@ func (s *State) RetrieveKnownExternalPeers() []peer.Peer {
 	return s.knownPeers.Copy(s.host)
 }
 
-// RetrieveAllPeers retrieves a copy of the full known peer list which includes
+// RetrieveKnownPeers retrieves a copy of the full known peer list which includes
 // this node as well. Used by the PoA selection algorithm.
 func (s *State) RetrieveKnownPeers() []peer.Peer {
 	return s.knownPeers.Copy("")
