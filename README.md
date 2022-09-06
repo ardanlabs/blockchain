@@ -1,4 +1,4 @@
-# Ultimate Blockchain
+# Ultimate Go: Advanced Engineering
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/ardanlabs/blockchain)](https://goreportcard.com/report/github.com/ardanlabs/blockchain)
 [![go.mod Go version](https://img.shields.io/github/go-mod/go-version/ardanlabs/blockchain)](https://github.com/ardanlabs/blockchain)
@@ -6,7 +6,7 @@
 Copyright 2021, 2022, Ardan Labs  
 info@ardanlabs.com
 
-## Ultimate Go: Advanced Engineering Classes
+## Description
 
 This class teaches you how to build a semantically correct blockchain in Go. The implementation of the Ardan blockchain takes inspiration from both Bitcoin and Ethereum. The class is a mix of lecture and coding. During the class you will learn the different aspects of blockchain technology and pair program with the instructor as you build this code base from scratch.
 
