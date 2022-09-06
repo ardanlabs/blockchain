@@ -87,14 +87,14 @@ func (db *Database) Close() {
 	db.storage.Close()
 }
 
-// Reset re-initalizes the database back to the genesis state.
+// Reset re-initializes the database back to the genesis state.
 func (db *Database) Reset() error {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 
 	db.storage.Reset()
 
-	// Initalizes the database back to the genesis information.
+	// Initializes the database back to the genesis information.
 	db.latestBlock = Block{}
 	db.accounts = make(map[AccountID]Account)
 	for accountStr, balance := range db.genesis.Balances {

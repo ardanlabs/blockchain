@@ -19,7 +19,7 @@ func (w *Worker) peerOperations() {
 
 	// On startup talk to the origin node and get an updated
 	// peers list. Then share with the network that this node
-	// is avaiable for transaction and block submissions.
+	// is available for transaction and block submissions.
 	w.runPeersOperation()
 
 	for {

@@ -22,7 +22,7 @@ func New() *Events {
 }
 
 // Shutdown closes and removes all channels that were provided by
-// the call to Aquire.
+// the call to Acquire.
 func (evt *Events) Shutdown() {
 	evt.mu.RLock()
 	defer evt.mu.RUnlock()
@@ -45,7 +45,7 @@ func (evt *Events) Acquire(id string) chan string {
 	}
 
 	// Since a message will be dropped if the websocket receiver is
-	// not ready to receive, this arbitary buffer should give the receiver
+	// not ready to receive, this arbitrary buffer should give the receiver
 	// enough time to not lose a message. Websocket send could take long.
 	const messageBuffer = 100
 
@@ -54,7 +54,7 @@ func (evt *Events) Acquire(id string) chan string {
 }
 
 // Release closes and removes the channel that was provided by
-// the call to Aquire.
+// the call to Acquire.
 func (evt *Events) Release(id string) error {
 	evt.mu.Lock()
 	defer evt.mu.Unlock()
