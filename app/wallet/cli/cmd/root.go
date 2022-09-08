@@ -20,7 +20,7 @@ const (
 
 func init() {
 	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-	rootCmd.PersistentFlags().StringVarP(&accountName, "account", "a", "private.ecdsa", "Path to the private key.")
+	rootCmd.PersistentFlags().StringVarP(&accountName, "account", "a", "private.ecdsa", "The account to use.")
 	rootCmd.PersistentFlags().StringVarP(&accountPath, "account-path", "p", "zblock/accounts/", "Path to the directory with private keys.")
 }
 

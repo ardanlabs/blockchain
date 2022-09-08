@@ -5,10 +5,11 @@ import "github.com/ardanlabs/blockchain/foundation/blockchain/database"
 // UpsertWalletTransaction accepts a transaction from a wallet for inclusion.
 func (s *State) UpsertWalletTransaction(signedTx database.SignedTx) error {
 
-	// CORE NOTE: Just check the signed transaction has a proper signature and
-	// valid account for the recipient. It's up to the wallet to make sure the
-	// account has a proper balance and nonce. Fees will be taken if this
-	// transaction is mined into a block and those types of validation fail.
+	// CORE NOTE: Check the signed transaction has a proper signature, the
+	// from matches the signature, and there is a valid account format for the
+	// from and to fields. It's up to the wallet to make sure the account has a
+	// proper balance and nonce. Fees will be taken if this transaction is mined
+	// into a block and those types of validation fail.
 
 	if err := signedTx.Validate(); err != nil {
 		return err

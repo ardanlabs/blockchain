@@ -18,6 +18,7 @@ import (
 type Tx struct {
 	ChainID uint16    `json:"chain_id"` // Ethereum: The chain id that is listed in the genesis file.
 	Nonce   uint64    `json:"nonce"`    // Ethereum: Unique id for the transaction supplied by the user.
+	FromID  AccountID `json:"from"`     // Ethereum: Account sending the transaction. Will be checked against signature.
 	ToID    AccountID `json:"to"`       // Ethereum: Account receiving the benefit of the transaction.
 	Value   uint64    `json:"value"`    // Ethereum: Monetary value received from this transaction.
 	Tip     uint64    `json:"tip"`      // Ethereum: Tip offered by the sender as an incentive to mine this transaction.
@@ -25,14 +26,18 @@ type Tx struct {
 }
 
 // NewTx constructs a new transaction.
-func NewTx(chainID uint16, nonce uint64, toID AccountID, value uint64, tip uint64, data []byte) (Tx, error) {
+func NewTx(chainID uint16, nonce uint64, fromID AccountID, toID AccountID, value uint64, tip uint64, data []byte) (Tx, error) {
+	if !fromID.IsAccountID() {
+		return Tx{}, errors.New("from account is not properly formatted")
+	}
 	if !toID.IsAccountID() {
-		return Tx{}, fmt.Errorf("to account is not properly formatted")
+		return Tx{}, errors.New("to account is not properly formatted")
 	}
 
 	tx := Tx{
 		ChainID: chainID,
 		Nonce:   nonce,
+		FromID:  fromID,
 		ToID:    toID,
 		Value:   value,
 		Tip:     tip,
@@ -44,11 +49,6 @@ func NewTx(chainID uint16, nonce uint64, toID AccountID, value uint64, tip uint6
 
 // Sign uses the specified private key to sign the transaction.
 func (tx Tx) Sign(privateKey *ecdsa.PrivateKey) (SignedTx, error) {
-
-	// Validate the to account address is a valid address.
-	if !tx.ToID.IsAccountID() {
-		return SignedTx{}, fmt.Errorf("to account is not properly formatted")
-	}
 
 	// Sign the transaction with the private key to produce a signature.
 	v, r, s, err := signature.Sign(tx, privateKey)
@@ -80,15 +80,27 @@ type SignedTx struct {
 }
 
 // Validate verifies the transaction has a proper signature that conforms to our
-// standards and is associated with the data claimed to be signed. It also
-// checks the format of the to account.
+// standards. It also checks the from field matches the account that signed the
+// transaction. Last it checks the format of the from and to fields.
 func (tx SignedTx) Validate() error {
+	if !tx.FromID.IsAccountID() {
+		return errors.New("from account is not properly formatted")
+	}
 	if !tx.ToID.IsAccountID() {
-		return errors.New("invalid account for to account")
+		return errors.New("to account is not properly formatted")
 	}
 
 	if err := signature.VerifySignature(tx.V, tx.R, tx.S); err != nil {
 		return err
+	}
+
+	address, err := signature.FromAddress(tx.Tx, tx.V, tx.R, tx.S)
+	if err != nil {
+		return err
+	}
+
+	if address != string(tx.FromID) {
+		return errors.New("signature address doesn't match from address")
 	}
 
 	return nil

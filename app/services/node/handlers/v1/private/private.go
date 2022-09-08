@@ -39,7 +39,7 @@ func (h Handlers) SubmitNodeTransaction(ctx context.Context, w http.ResponseWrit
 
 	// Ask the state package to add this transaction to the mempool and perform
 	// any other business logic.
-	h.Log.Infow("add tran", "traceid", v.TraceID, "from:nonce", tx, "to", tx.ToID, "value", tx.Value, "tip", tx.Tip)
+	h.Log.Infow("add tran", "traceid", v.TraceID, "sig:nonce", tx, "fron", tx.FromID, "to", tx.ToID, "value", tx.Value, "tip", tx.Tip)
 	if err := h.State.UpsertNodeTransaction(tx); err != nil {
 		return v1.NewRequestError(err, http.StatusBadRequest)
 	}

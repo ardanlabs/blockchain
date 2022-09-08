@@ -340,6 +340,7 @@ function createTxHash(tx) {
     const blockTx = {
         chain_id: tx.chain_id,
         nonce: tx.nonce,
+        from: tx.from,
         to: tx.to,
         value: tx.value,
         tip: tx.tip,
@@ -472,6 +473,7 @@ function createTransaction() {
     const tx = {
         chain_id: chainID,
         nonce: nonce,
+        from: document.getElementById("from").options[document.getElementById("from").selectedIndex].getAttribute('p'),
         to: document.getElementById("to").value,
         value: Number(amountStr),
         tip: Number(tipStr),
