@@ -10,10 +10,6 @@ info@ardanlabs.com
 
 This class teaches you how to build a semantically correct blockchain in Go. The implementation of the Ardan blockchain takes inspiration from both Bitcoin and Ethereum. The class is a mix of lecture and coding. During the class you will learn the different aspects of blockchain technology and pair program with the instructor as you build this code base from scratch.
 
-Learn more about the project:
-
-[Class Schedule](https://www.eventbrite.com/o/ardan-labs-7092394651)
-
 ## Licensing
 
 ```
@@ -32,11 +28,15 @@ limitations under the License.
 
 ## Learn More
 
-**To learn about Corporate training events, options and special pricing please contact:**
+**Reach out about corporate training events, open enrollment live training sessions, and on-demand learning options.**
 
-William Kennedy  
-ArdanLabs (www.ardanlabs.com)  
-bill@ardanlabs.com  
+Ardan Labs (www.ardanlabs.com)  
+hello@ardanlabs.com
+
+To attend any of our high-performance tranings check out this link:  
+https://www.ardanlabs.com/training  
+
+## Index
 
 * [Purchase Video](https://github.com/ardanlabs/blockchain#purchase-video)
 * [Experience](https://github.com/ardanlabs/blockchain#our-experience)
