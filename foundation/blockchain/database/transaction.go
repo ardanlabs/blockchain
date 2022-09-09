@@ -82,7 +82,10 @@ type SignedTx struct {
 // Validate verifies the transaction has a proper signature that conforms to our
 // standards. It also checks the from field matches the account that signed the
 // transaction. Last it checks the format of the from and to fields.
-func (tx SignedTx) Validate() error {
+func (tx SignedTx) Validate(chainID uint16) error {
+	if tx.ChainID != chainID {
+		return fmt.Errorf("invalid chain id, got[%d] exp[%d]", tx.ChainID, chainID)
+	}
 	if !tx.FromID.IsAccountID() {
 		return errors.New("from account is not properly formatted")
 	}
