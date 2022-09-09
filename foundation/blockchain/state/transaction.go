@@ -11,10 +11,9 @@ func (s *State) UpsertWalletTransaction(signedTx database.SignedTx) error {
 	// proper balance and nonce. Fees will be taken if this transaction is mined
 	// into a block and those types of validation fail.
 
-	if err := signedTx.Validate(); err != nil {
+	if err := signedTx.Validate(s.genesis.ChainID); err != nil {
 		return err
 	}
-
 	const oneUnitOfGas = 1
 	tx := database.NewBlockTx(signedTx, s.genesis.GasPrice, oneUnitOfGas)
 	if err := s.mempool.Upsert(tx); err != nil {
@@ -32,7 +31,7 @@ func (s *State) UpsertNodeTransaction(tx database.BlockTx) error {
 
 	// Just check the signed transaction has a proper signature and valid
 	// account for the recipient.
-	if err := tx.Validate(); err != nil {
+	if err := tx.Validate(s.genesis.ChainID); err != nil {
 		return err
 	}
 

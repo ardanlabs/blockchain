@@ -12,11 +12,6 @@ import (
 )
 
 /*
-	-- Web Application
-	Then add a graphical way of seeing the data.
-
-	-- Chrome Wallet
-
 	-- Blockchain
 	On chain fork, only remove the block need to be removed and reset.
 
