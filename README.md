@@ -191,9 +191,12 @@ We use a Slack channel to share links, code, and examples during the training.  
 
 While many of the examples can be done using the online playground (http://play.golang.org), some may find it easier to complete them with their local editor.  To do so, you will want to load the training material locally to your machine.  From a command prompt, issue the following commands:
 
-```sh
-mkdir -p $(go env GOPATH)/src/github.com/ardanlabs && cd $_
-git clone https://github.com/ardanlabs/blockchain.git
+```
+$ cd $HOME
+$ mkdir code
+$ cd code
+$ git clone https://github.com/ardanlabs/smartcontract
+$ cd smartcontract
 ```
 
 ___
