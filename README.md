@@ -195,7 +195,7 @@ While many of the examples can be done using the online playground (http://play.
 $ cd $HOME
 $ mkdir code
 $ cd code
-$ git clone https://github.com/ardanlabs/smartcontract
+$ git clone https://github.com/ardanlabs/blockchain
 $ cd smartcontract
 ```
 
