@@ -175,7 +175,7 @@ The Ultimate Go and Service classes are critical classes to understanding the co
 [Ultimate Go Classes](https://www.ardanlabs.com/ultimate-go/#tabpanel)  
 [Scholarship](https://docs.google.com/forms/d/e/1FAIpQLSchEz6zg1fseR2XiIZgNB8Qm2a5JDB7n3EOWX5GeIP18OstaQ/viewform)  
 
-This is a free and great class to learning concepts behind blockchains. Watch videos 1, 2, 6 and 8.
+This is a free and great class to learning concepts behind blockchains. Watch videos 1, 2, 6 and 8.  
 [Blockchain Class](https://cryptocurrencyclass.github.io/) - Patrick McCorry  
 
 ### Joining the Go Slack Community
