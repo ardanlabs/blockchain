@@ -152,15 +152,6 @@ The material has been designed to be taught in a classroom environment. The code
 	* Knows how to maneuver around the file system.
 	* Understands what environment variables are.
 
-**You will get the most out of this advanced Go class if you have taken the Ultimate Go and Service classes first.**
-
-[Ultimate Go Classes](https://www.ardanlabs.com/ultimate-go)  
-[Scholarship](https://docs.google.com/forms/d/e/1FAIpQLSchEz6zg1fseR2XiIZgNB8Qm2a5JDB7n3EOWX5GeIP18OstaQ/viewform)  
-
-**This is a free and great class to learning concepts behind blockchains.**
-
-[Blockchain Class](https://cryptocurrencyclass.github.io/) - Patrick McCorry  
-
 ## Important Reading
 
 Please check out this page of [important reading](.documentation/reading/README.md). You will find articles and videos around topics related to this repo.
@@ -170,6 +161,8 @@ Please check out this page of [important reading](.documentation/reading/README.
 The following is a set of tasks that can be done prior to showing up for class.  We will also do this in class if anyone has not completed it.  However, the more attendees that complete this ahead of time the more time we have to cover additional training material.
 
 ### Prep Work
+
+**You will get the most out of this advanced Go class if you have taken the Ultimate Go and Service classes first.**
 
 The Ultimate Go and Service classes are critical classes to understanding the code in this class.  
 [Ultimate Go Classes](https://www.ardanlabs.com/ultimate-go/#tabpanel)  
@@ -196,7 +189,7 @@ $ cd $HOME
 $ mkdir code
 $ cd code
 $ git clone https://github.com/ardanlabs/blockchain
-$ cd smartcontract
+$ cd blockchain
 ```
 
 ___
