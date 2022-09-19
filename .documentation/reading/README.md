@@ -150,8 +150,11 @@ Occasionally we run into material that we feel is important. This is a section p
 [Crypto: The Wave of the Future or a Giant Ponzi Scheme?](https://www.youtube.com/watch?v=vZfUjL3y4KY) - Docket Media LLC  
 
 ### Vitalik Buterin (Creater of Ethereum)
+[Vitalik Blog](https://vitalik.ca/index.html)  
 [Lex Fridman Podcast: Vitalik Buterin: Ethereum, Cryptocurrency, and the Future of Money](https://www.youtube.com/watch?v=3x1b_S6Qp2Q)  
 [Tim Ferriss Show: Creator of Ethereum, Talking NFTs & More](https://www.youtube.com/watch?v=42uhsP4vvCE)  
+[An approximate introduction to how zk-SNARKs are possible](https://vitalik.ca/general/2021/01/26/snarks.html)  
+[An Incomplete Guide to Rollups](https://vitalik.ca/general/2021/01/05/rollup.html)  
 
 
 ## Ethereum
