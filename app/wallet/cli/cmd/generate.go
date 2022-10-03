@@ -7,6 +7,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
+/*
+	This gist shows how to create a wallet with PK's generated from a Mnemonic.
+	https://gist.github.com/miguelmota/ee0fd9756e1651f38f4cd38c6e99b8bf
+*/
+
 var generateCmd = &cobra.Command{
 	Use:   "generate",
 	Short: "Generate new key pair",

@@ -15,12 +15,12 @@ import (
 )
 
 const (
-	miner1PrivateKey = "8dc79feefd3b86e2f9991def0e5ccd9a5128e104682407b308594bc1032ac7f0"
-	miner2PrivateKey = "5aed92a29e1014d83c1d8ac755878723d7e44d8dc129610d11b2022d09ad95bd"
-	miner3PrivateKey = "ce07a51ad1d72084aed971b24042f320b4673e852b59eb550375b9eb6747d74a"
-	jackPrivateKey   = "9f332e3700d8fc2446eaf6d15034cf96e0c2745e40353deef032a5dbf1dfed93"
-	jillPrivateKey   = "aed31b6b5a341af8f27e66fb0b7633cf20fc27049e3eb7f6f623a4655b719ebb"
-	sammyPrivateKey  = "601d7574860c135e9d3c1d52b0ee997404130edc2a1177c78fda92dd6a3dc2f7"
+	miner1PrivateKey  = "8dc79feefd3b86e2f9991def0e5ccd9a5128e104682407b308594bc1032ac7f0"
+	miner2PrivateKey  = "5aed92a29e1014d83c1d8ac755878723d7e44d8dc129610d11b2022d09ad95bd"
+	miner3PrivateKey  = "ce07a51ad1d72084aed971b24042f320b4673e852b59eb550375b9eb6747d74a"
+	kennedyPrivateKey = "9f332e3700d8fc2446eaf6d15034cf96e0c2745e40353deef032a5dbf1dfed93"
+	edPrivateKey      = "aed31b6b5a341af8f27e66fb0b7633cf20fc27049e3eb7f6f623a4655b719ebb"
+	ceasarPrivateKey  = "601d7574860c135e9d3c1d52b0ee997404130edc2a1177c78fda92dd6a3dc2f7"
 
 	kennedyAccountID = database.AccountID("0xF01813E4B85e178A83e29B8E7bF26BD830a25f32")
 	pavelAccountID   = database.AccountID("0xdd6B972ffcc631a62CAE1BB9d80b7ff429c8ebA4")
@@ -48,13 +48,14 @@ func Test_MineAndSyncBlock(t *testing.T) {
 	tx := database.Tx{
 		ChainID: chainID,
 		Nonce:   1,
-		ToID:    kennedyAccountID,
+		FromID:  kennedyAccountID,
+		ToID:    edAccountID,
 		Value:   1,
 		Tip:     0,
 		Data:    nil,
 	}
 
-	signedTx := newSignedTx(tx, jackPrivateKey, t)
+	signedTx := newSignedTx(tx, kennedyPrivateKey, t)
 	if err := node1.UpsertWalletTransaction(signedTx); err != nil {
 		t.Fatalf("Error upserting wallet transaction: %v", err)
 	}
@@ -83,13 +84,14 @@ func Test_ProposeBlockValidation(t *testing.T) {
 		tx := database.Tx{
 			ChainID: chainID,
 			Nonce:   uint64(i),
-			ToID:    kennedyAccountID,
+			FromID:  kennedyAccountID,
+			ToID:    edAccountID,
 			Value:   1,
 			Tip:     0,
 			Data:    nil,
 		}
 
-		signedTx := newSignedTx(tx, jackPrivateKey, t)
+		signedTx := newSignedTx(tx, kennedyPrivateKey, t)
 		if err := node1.UpsertWalletTransaction(signedTx); err != nil {
 			t.Fatalf("Error upserting wallet transaction: %v", err)
 		}
