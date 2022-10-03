@@ -3,6 +3,7 @@
 package database
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 	"sync"
@@ -117,6 +118,19 @@ func (db *Database) Remove(accountID AccountID) {
 	delete(db.accounts, accountID)
 }
 
+// Query retrieves an account from the database.
+func (db *Database) Query(accountID AccountID) (Account, error) {
+	db.mu.RLock()
+	defer db.mu.RUnlock()
+
+	acount, exists := db.accounts[accountID]
+	if !exists {
+		return Account{}, errors.New("account does not exist")
+	}
+
+	return acount, nil
+}
+
 // CopyAccounts makes a copy of the current accounts in the database.
 func (db *Database) CopyAccounts() map[AccountID]Account {
 	db.mu.RLock()
@@ -201,16 +215,8 @@ func (db *Database) ApplyTransaction(block Block, tx BlockTx) error {
 
 		// Perform basic accounting checks.
 		{
-			if tx.ChainID != db.genesis.ChainID {
-				return fmt.Errorf("transaction invalid, wrong chain id, got %d, exp %d", tx.ChainID, db.genesis.ChainID)
-			}
-
-			if fromID == tx.ToID {
-				return fmt.Errorf("transaction invalid, sending money to yourself, from %s, to %s", fromID, tx.ToID)
-			}
-
-			if tx.Nonce <= from.Nonce {
-				return fmt.Errorf("transaction invalid, nonce too small, current %d, provided %d", from.Nonce, tx.Nonce)
+			if tx.Nonce != (from.Nonce + 1) {
+				return fmt.Errorf("transaction invalid, wrong nonce, got %d, exp %d", tx.Nonce, from.Nonce+1)
 			}
 
 			if from.Balance == 0 || from.Balance < (tx.Value+tx.Tip) {

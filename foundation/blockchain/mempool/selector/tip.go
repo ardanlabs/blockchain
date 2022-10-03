@@ -6,6 +6,12 @@ import (
 	"github.com/ardanlabs/blockchain/foundation/blockchain/database"
 )
 
+// CORE NOTE: On Ethereum a transaction will stay in the mempool and not be selected
+// unless the transaction holds the next expected nonce. Transactions can get stuck
+// in the mempool because of this. This is very complicated for us to implement for
+// now. So we will check the nonce for each transaction when the block is mined.
+// If the nonce is not expected, it will fail but the user continues to pay fees.
+
 // tipSelect returns transactions with the best tip while respecting the nonce
 // for each account/transaction.
 var tipSelect = func(m map[database.AccountID][]database.BlockTx, howMany int) []database.BlockTx {

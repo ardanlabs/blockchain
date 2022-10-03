@@ -158,7 +158,7 @@ func (h Handlers) Accounts(ctx context.Context, w http.ResponseWriter, r *http.R
 		if err != nil {
 			return err
 		}
-		account, err := h.State.QueryAccounts(accountID)
+		account, err := h.State.QueryAccount(accountID)
 		if err != nil {
 			return err
 		}

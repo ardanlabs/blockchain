@@ -1,8 +1,6 @@
 package state
 
 import (
-	"errors"
-
 	"github.com/ardanlabs/blockchain/foundation/blockchain/database"
 )
 
@@ -11,15 +9,9 @@ const QueryLastest = ^uint64(0) >> 1
 
 // =============================================================================
 
-// QueryAccounts returns a copy of the account from the database.
-func (s *State) QueryAccounts(account database.AccountID) (database.Account, error) {
-	accounts := s.db.CopyAccounts()
-
-	if info, exists := accounts[account]; exists {
-		return info, nil
-	}
-
-	return database.Account{}, errors.New("not found")
+// QueryAccount returns a copy of the account from the database.
+func (s *State) QueryAccount(account database.AccountID) (database.Account, error) {
+	return s.db.Query(account)
 }
 
 // QueryMempoolLength returns the current length of the mempool.
