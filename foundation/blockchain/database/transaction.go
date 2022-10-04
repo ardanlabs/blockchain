@@ -126,7 +126,7 @@ func (tx SignedTx) SignatureString() string {
 	return signature.SignatureString(tx.V, tx.R, tx.S)
 }
 
-// String implements the fmt.Stringer interface for logging.
+// String implements the Stringer interface for logging.
 func (tx SignedTx) String() string {
 	from, err := tx.FromAccount()
 	if err != nil {
