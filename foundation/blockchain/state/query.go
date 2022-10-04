@@ -56,12 +56,7 @@ func (s *State) QueryBlocksByAccount(accountID database.AccountID) ([]database.B
 		}
 
 		for _, tx := range block.MerkleTree.Values() {
-			fromID, err := tx.FromAccount()
-			if err != nil {
-				continue
-			}
-
-			if accountID == "" || fromID == accountID || tx.ToID == accountID {
+			if accountID == "" || tx.FromID == accountID || tx.ToID == accountID {
 				out = append(out, block)
 				break
 			}

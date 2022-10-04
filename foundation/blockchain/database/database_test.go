@@ -40,6 +40,7 @@ func Test_Transactions(t *testing.T) {
 				{
 					ChainID: 1,
 					Nonce:   1,
+					FromID:  "0xdd6B972ffcc631a62CAE1BB9d80b7ff429c8ebA4",
 					ToID:    "0xF01813E4B85e178A83e29B8E7bF26BD830a25f32",
 					Value:   100,
 					Tip:     50,
@@ -47,6 +48,7 @@ func Test_Transactions(t *testing.T) {
 				{
 					ChainID: 1,
 					Nonce:   2,
+					FromID:  "0xdd6B972ffcc631a62CAE1BB9d80b7ff429c8ebA4",
 					ToID:    "0xF01813E4B85e178A83e29B8E7bF26BD830a25f32",
 					Value:   100,
 					Tip:     50,
@@ -114,17 +116,20 @@ func TestNonceValidation(t *testing.T) {
 			txs: []database.Tx{
 				{
 					ChainID: 1,
+					Nonce:   1,
+					FromID:  "0xdd6B972ffcc631a62CAE1BB9d80b7ff429c8ebA4",
+					ToID:    "0xF01813E4B85e178A83e29B8E7bF26BD830a25f32",
+				},
+				{
+					ChainID: 1,
 					Nonce:   5,
+					FromID:  "0xdd6B972ffcc631a62CAE1BB9d80b7ff429c8ebA4",
 					ToID:    "0xF01813E4B85e178A83e29B8E7bF26BD830a25f32",
 				},
 				{
 					ChainID: 1,
-					Nonce:   3,
-					ToID:    "0xF01813E4B85e178A83e29B8E7bF26BD830a25f32",
-				},
-				{
-					ChainID: 1,
-					Nonce:   6,
+					Nonce:   2,
+					FromID:  "0xdd6B972ffcc631a62CAE1BB9d80b7ff429c8ebA4",
 					ToID:    "0xF01813E4B85e178A83e29B8E7bF26BD830a25f32",
 				},
 			},

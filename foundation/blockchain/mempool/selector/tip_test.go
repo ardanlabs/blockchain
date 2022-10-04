@@ -142,12 +142,7 @@ func TestTipSort(t *testing.T) {
 		f := func(t *testing.T) {
 			m := make(map[database.AccountID][]database.BlockTx)
 			for _, tx := range tst.txs {
-				from, err := tx.FromAccount()
-				if err != nil {
-					t.Fatalf("Test %s:\tShould be able to get from account: %s", tst.name, err)
-				}
-
-				m[from] = append(m[from], tx)
+				m[tx.FromID] = append(m[tx.FromID], tx)
 			}
 
 			sort, err := selector.Retrieve(selector.StrategyTip)
@@ -160,19 +155,10 @@ func TestTipSort(t *testing.T) {
 				t.Fatalf("Test %s:\tShould to get %d after sort, but got %d", tst.name, tst.howMany, len(txs))
 			}
 			for _, exp := range tst.best {
-				expFrom, err := exp.FromAccount()
-				if err != nil {
-					t.Fatalf("Test %s:\tShould be able to get from account: %s", tst.name, err)
-				}
-
+				expFrom := exp.FromID
 				found := false
 				for _, tx := range txs {
-					gotFrom, err := tx.FromAccount()
-					if err != nil {
-						t.Fatalf("Test %s:\tShould be able to get from account: %s", tst.name, err)
-					}
-
-					if exp.Nonce == tx.Nonce && expFrom == gotFrom {
+					if exp.Nonce == tx.Nonce && expFrom == tx.FromID {
 						found = true
 						break
 					}

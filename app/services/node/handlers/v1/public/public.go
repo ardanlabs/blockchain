@@ -119,14 +119,13 @@ func (h Handlers) Mempool(ctx context.Context, w http.ResponseWriter, r *http.Re
 
 	trans := []tx{}
 	for _, tran := range mempool {
-		account, _ := tran.FromAccount()
-		if acct != "" && ((acct != string(account)) && (acct != string(tran.ToID))) {
+		if acct != "" && ((acct != string(tran.FromID)) && (acct != string(tran.ToID))) {
 			continue
 		}
 
 		trans = append(trans, tx{
-			FromAccount: account,
-			FromName:    h.NS.Lookup(account),
+			FromAccount: tran.FromID,
+			FromName:    h.NS.Lookup(tran.FromID),
 			To:          tran.ToID,
 			ToName:      h.NS.Lookup(tran.ToID),
 			ChainID:     tran.ChainID,
@@ -212,11 +211,6 @@ func (h Handlers) BlocksByAccount(ctx context.Context, w http.ResponseWriter, r 
 
 		trans := make([]tx, len(values))
 		for i, tran := range values {
-			account, err := tran.FromAccount()
-			if err != nil {
-				return err
-			}
-
 			rawProof, order, err := blk.MerkleTree.Proof(tran)
 			if err != nil {
 				return err
@@ -227,8 +221,8 @@ func (h Handlers) BlocksByAccount(ctx context.Context, w http.ResponseWriter, r 
 			}
 
 			trans[i] = tx{
-				FromAccount: account,
-				FromName:    h.NS.Lookup(account),
+				FromAccount: tran.FromID,
+				FromName:    h.NS.Lookup(tran.FromID),
 				To:          tran.ToID,
 				ToName:      h.NS.Lookup(tran.ToID),
 				ChainID:     tran.ChainID,

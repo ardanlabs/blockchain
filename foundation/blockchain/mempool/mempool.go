@@ -145,12 +145,7 @@ func (mp *Mempool) PickBest(howMany ...uint16) []database.BlockTx {
 
 // mapKey is used to generate the map key.
 func mapKey(tx database.BlockTx) (string, error) {
-	account, err := tx.FromAccount()
-	if err != nil {
-		return "", err
-	}
-
-	return fmt.Sprintf("%s:%d", account, tx.Nonce), nil
+	return fmt.Sprintf("%s:%d", tx.FromID, tx.Nonce), nil
 }
 
 // accountFromMapKey extracts the account information from the mapkey.

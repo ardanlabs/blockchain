@@ -173,20 +173,13 @@ func (db *Database) ApplyMiningReward(block Block) {
 // ApplyTransaction performs the business logic for applying a transaction
 // to the database.
 func (db *Database) ApplyTransaction(block Block, tx BlockTx) error {
-
-	// Capture the from address from the signature of the transaction.
-	fromID, err := tx.FromAccount()
-	if err != nil {
-		return fmt.Errorf("invalid signature, %s", err)
-	}
-
 	db.mu.Lock()
 	defer db.mu.Unlock()
 	{
 		// Capture these accounts from the database.
-		from, exists := db.accounts[fromID]
+		from, exists := db.accounts[tx.FromID]
 		if !exists {
-			from = newAccount(fromID, 0)
+			from = newAccount(tx.FromID, 0)
 		}
 
 		to, exists := db.accounts[tx.ToID]
@@ -210,7 +203,7 @@ func (db *Database) ApplyTransaction(block Block, tx BlockTx) error {
 		bnfc.Balance += gasFee
 
 		// Make sure these changes get applied.
-		db.accounts[fromID] = from
+		db.accounts[tx.FromID] = from
 		db.accounts[block.Header.BeneficiaryID] = bnfc
 
 		// Perform basic accounting checks.
@@ -236,7 +229,7 @@ func (db *Database) ApplyTransaction(block Block, tx BlockTx) error {
 		from.Nonce = tx.Nonce
 
 		// Update the final changes to these accounts.
-		db.accounts[fromID] = from
+		db.accounts[tx.FromID] = from
 		db.accounts[tx.ToID] = to
 		db.accounts[block.Header.BeneficiaryID] = bnfc
 	}

@@ -115,12 +115,6 @@ func (tx SignedTx) Validate(chainID uint16) error {
 	return nil
 }
 
-// FromAccount extracts the account id that signed the transaction.
-func (tx SignedTx) FromAccount() (AccountID, error) {
-	address, err := signature.FromAddress(tx.Tx, tx.V, tx.R, tx.S)
-	return AccountID(address), err
-}
-
 // SignatureString returns the signature as a string.
 func (tx SignedTx) SignatureString() string {
 	return signature.SignatureString(tx.V, tx.R, tx.S)
@@ -128,12 +122,7 @@ func (tx SignedTx) SignatureString() string {
 
 // String implements the Stringer interface for logging.
 func (tx SignedTx) String() string {
-	from, err := tx.FromAccount()
-	if err != nil {
-		from = "unknown"
-	}
-
-	return fmt.Sprintf("%s:%d", from, tx.Nonce)
+	return fmt.Sprintf("%s:%d", tx.FromID, tx.Nonce)
 }
 
 // =============================================================================
