@@ -192,8 +192,6 @@ func (s *State) Accounts() map[database.AccountID]database.Account {
 	return s.db.Copy()
 }
 
-// =============================================================================
-
 // AddKnownPeer provides the ability to add a new peer to
 // the known peer list.
 func (s *State) AddKnownPeer(peer peer.Peer) bool {
