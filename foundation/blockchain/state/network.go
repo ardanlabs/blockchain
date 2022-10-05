@@ -19,7 +19,7 @@ func (s *State) NetSendBlockToPeers(block database.Block) error {
 	s.evHandler("state: NetSendBlockToPeers: started")
 	defer s.evHandler("state: NetSendBlockToPeers: completed")
 
-	for _, peer := range s.RetrieveKnownExternalPeers() {
+	for _, peer := range s.KnownExternalPeers() {
 		s.evHandler("state: NetSendBlockToPeers: send: block[%s] to peer[%s]", block.Hash(), peer)
 
 		url := fmt.Sprintf("%s/block/propose", fmt.Sprintf(baseURL, peer.Host))
@@ -47,7 +47,7 @@ func (s *State) NetSendTxToPeers(tx database.BlockTx) {
 	// based on the mempool key it received.
 
 	// For now, the Ardan blockchain just sends the full transaction.
-	for _, peer := range s.RetrieveKnownExternalPeers() {
+	for _, peer := range s.KnownExternalPeers() {
 		s.evHandler("state: NetSendTxToPeers: send: tx[%s] to peer[%s]", tx, peer)
 
 		url := fmt.Sprintf("%s/tx/submit", fmt.Sprintf(baseURL, peer.Host))
@@ -64,9 +64,9 @@ func (s *State) NetSendNodeAvailableToPeers() {
 	s.evHandler("state: NetSendNodeAvailableToPeers: started")
 	defer s.evHandler("state: NetSendNodeAvailableToPeers: completed")
 
-	host := peer.Peer{Host: s.RetrieveHost()}
+	host := peer.Peer{Host: s.Host()}
 
-	for _, peer := range s.RetrieveKnownExternalPeers() {
+	for _, peer := range s.KnownExternalPeers() {
 		s.evHandler("state: NetSendNodeAvailableToPeers: send: host[%s] to peer[%s]", host, peer)
 
 		url := fmt.Sprintf("%s/peers", fmt.Sprintf(baseURL, peer.Host))
@@ -129,7 +129,7 @@ func (s *State) NetRequestPeerBlocks(pr peer.Peer) error {
 	// transactions to have a complete account database. The cryptographic audit
 	// does take place as each full block is downloaded from peers.
 
-	from := s.RetrieveLatestBlock().Header.Number + 1
+	from := s.LatestBlock().Header.Number + 1
 	url := fmt.Sprintf("%s/block/list/%d/latest", fmt.Sprintf(baseURL, pr.Host), from)
 
 	var blocksData []database.BlockData

@@ -110,12 +110,12 @@ func (h Handlers) SubmitPeer(ctx context.Context, w http.ResponseWriter, r *http
 
 // Status returns the current status of the node.
 func (h Handlers) Status(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	latestBlock := h.State.RetrieveLatestBlock()
+	latestBlock := h.State.LatestBlock()
 
 	status := peer.PeerStatus{
 		LatestBlockHash:   latestBlock.Hash(),
 		LatestBlockNumber: latestBlock.Header.Number,
-		KnownPeers:        h.State.RetrieveKnownExternalPeers(),
+		KnownPeers:        h.State.KnownExternalPeers(),
 	}
 
 	return web.Respond(ctx, w, status, http.StatusOK)
@@ -161,6 +161,6 @@ func (h Handlers) BlocksByNumber(ctx context.Context, w http.ResponseWriter, r *
 
 // Mempool returns the set of uncommitted transactions.
 func (h Handlers) Mempool(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	txs := h.State.RetrieveMempool()
+	txs := h.State.Mempool()
 	return web.Respond(ctx, w, txs, http.StatusOK)
 }

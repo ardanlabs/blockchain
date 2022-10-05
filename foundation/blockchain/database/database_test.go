@@ -77,7 +77,7 @@ func Test_Transactions(t *testing.T) {
 
 			db.ApplyMiningReward(database.Block{Header: database.BlockHeader{BeneficiaryID: tst.miner, MiningReward: tst.minerReward}})
 
-			accounts := db.CopyAccounts()
+			accounts := db.Copy()
 			for account, info := range accounts {
 				finalValue, exists := tst.final[account]
 				if !exists {

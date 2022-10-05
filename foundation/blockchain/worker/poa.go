@@ -11,11 +11,11 @@ import (
 	"github.com/ardanlabs/blockchain/foundation/blockchain/state"
 )
 
-// CORE NOTE: The POA mining operation is managed by this goroutine. The node
-// starts a loop that is on a 12 second timer. At the beginning of each cycle
-// the selection algorithm is executed which determines if this node needs to
-// mine the next block. If this node is not selected, it waits for the next
-// cycle to check the selection algorithm again.
+// CORE NOTE: The POA mining operation is managed by this function which runs on
+// it's own goroutine. The node starts a loop that is on a 12 second timer. At
+// the beginning of each cycle the selection algorithm is executed which determines
+// if this node needs to mine the next block. If this node is not selected, it
+// waits for the next cycle to check the selection algorithm again.
 
 // cycleDuration sets the mining operation to happen every 5 seconds
 const secondsPerCycle = 5
@@ -58,7 +58,7 @@ func (w *Worker) runPoaOperation() {
 	w.evHandler("worker: runPoaOperation: SELECTED: %s", peer)
 
 	// If we are not selected, return and wait for the new block.
-	if peer != w.state.RetrieveHost() {
+	if peer != w.state.Host() {
 		return
 	}
 
@@ -69,7 +69,7 @@ func (w *Worker) runPoaOperation() {
 	}
 
 	// Make sure there are transactions in the mempool.
-	length := w.state.QueryMempoolLength()
+	length := w.state.MempoolLength()
 	if length == 0 {
 		w.evHandler("worker: runMiningOperation: MINING: no transactions to mine: Txs[%d]", length)
 		return
@@ -144,10 +144,10 @@ func (w *Worker) runPoaOperation() {
 func (w *Worker) selection() string {
 
 	// Retrive the know peers list which includes this node.
-	peers := w.state.RetrieveKnownPeers()
+	peers := w.state.KnownPeers()
 
 	// Just log information so we are clear what the list looks like.
-	w.evHandler("worker: runPoaOperation: selection: Host %s, List %v", w.state.RetrieveHost(), peers)
+	w.evHandler("worker: runPoaOperation: selection: Host %s, List %v", w.state.Host(), peers)
 
 	// Sort the current list of peers by host.
 	names := make([]string, len(peers))
@@ -158,7 +158,7 @@ func (w *Worker) selection() string {
 
 	// Based on the latest block, pick an index number from the registry.
 	h := fnv.New32a()
-	h.Write([]byte(w.state.RetrieveLatestBlock().Hash()))
+	h.Write([]byte(w.state.LatestBlock().Hash()))
 	integerHash := h.Sum32()
 	i := integerHash % uint32(len(names))
 

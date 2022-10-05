@@ -107,7 +107,7 @@ func (h Handlers) SubmitWalletTransaction(ctx context.Context, w http.ResponseWr
 
 // Genesis returns the genesis information.
 func (h Handlers) Genesis(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	gen := h.State.RetrieveGenesis()
+	gen := h.State.Genesis()
 	return web.Respond(ctx, w, gen, http.StatusOK)
 }
 
@@ -115,7 +115,7 @@ func (h Handlers) Genesis(ctx context.Context, w http.ResponseWriter, r *http.Re
 func (h Handlers) Mempool(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	acct := web.Param(r, "account")
 
-	mempool := h.State.RetrieveMempool()
+	mempool := h.State.Mempool()
 
 	trans := []tx{}
 	for _, tran := range mempool {
@@ -150,7 +150,7 @@ func (h Handlers) Accounts(ctx context.Context, w http.ResponseWriter, r *http.R
 	var accounts map[database.AccountID]database.Account
 	switch accountStr {
 	case "":
-		accounts = h.State.RetrieveAccounts()
+		accounts = h.State.Accounts()
 
 	default:
 		accountID, err := database.ToAccountID(accountStr)
@@ -176,8 +176,8 @@ func (h Handlers) Accounts(ctx context.Context, w http.ResponseWriter, r *http.R
 	}
 
 	ai := actInfo{
-		LastestBlock: h.State.RetrieveLatestBlock().Hash(),
-		Uncommitted:  len(h.State.RetrieveMempool()),
+		LastestBlock: h.State.LatestBlock().Hash(),
+		Uncommitted:  len(h.State.Mempool()),
 		Accounts:     resp,
 	}
 

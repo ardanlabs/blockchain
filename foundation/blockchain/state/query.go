@@ -14,11 +14,6 @@ func (s *State) QueryAccount(account database.AccountID) (database.Account, erro
 	return s.db.Query(account)
 }
 
-// QueryMempoolLength returns the current length of the mempool.
-func (s *State) QueryMempoolLength() int {
-	return s.mempool.Count()
-}
-
 // QueryBlocksByNumber returns the set of blocks based on block numbers. This
 // function reads the blockchain from disk first.
 func (s *State) QueryBlocksByNumber(from uint64, to uint64) []database.Block {

@@ -33,7 +33,7 @@ func (s *State) MineNewBlock(ctx context.Context) (database.Block, error) {
 	// If PoA is being used, drop the difficulty down to 1 to speed up
 	// the mining operation.
 	difficulty := s.genesis.Difficulty
-	if s.RetrieveConsensus() == ConsensusPOA {
+	if s.Consensus() == ConsensusPOA {
 		difficulty = 1
 	}
 

@@ -40,7 +40,7 @@ func (w *Worker) runPeersOperation() {
 	w.evHandler("worker: runPeersOperation: started")
 	defer w.evHandler("worker: runPeersOperation: completed")
 
-	for _, peer := range w.state.RetrieveKnownExternalPeers() {
+	for _, peer := range w.state.KnownExternalPeers() {
 
 		// Retrieve the status of this peer.
 		peerStatus, err := w.state.NetRequestPeerStatus(peer)
@@ -70,7 +70,7 @@ func (w *Worker) addNewPeers(knownPeers []peer.Peer) error {
 	for _, peer := range knownPeers {
 
 		// Don't add this running node to the known peer list.
-		if peer.Match(w.state.RetrieveHost()) {
+		if peer.Match(w.state.Host()) {
 			continue
 		}
 

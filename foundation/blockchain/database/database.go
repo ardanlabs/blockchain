@@ -131,8 +131,8 @@ func (db *Database) Query(accountID AccountID) (Account, error) {
 	return acount, nil
 }
 
-// CopyAccounts makes a copy of the current accounts in the database.
-func (db *Database) CopyAccounts() map[AccountID]Account {
+// Copy makes a copy of the current accounts in the database.
+func (db *Database) Copy() map[AccountID]Account {
 	db.mu.RLock()
 	defer db.mu.RUnlock()
 
