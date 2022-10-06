@@ -176,19 +176,13 @@ func toSignatureValues(sig []byte) (v, r, s *big.Int) {
 func ToSignatureBytes(v, r, s *big.Int) []byte {
 	sig := make([]byte, crypto.SignatureLength)
 
-	rBytes := r.Bytes()
-	if len(rBytes) == 31 {
-		copy(sig[1:], rBytes)
-	} else {
-		copy(sig, rBytes)
-	}
+	rBytes := make([]byte, 32)
+	r.FillBytes(rBytes)
+	copy(sig, rBytes)
 
-	sBytes := s.Bytes()
-	if len(sBytes) == 31 {
-		copy(sig[33:], sBytes)
-	} else {
-		copy(sig[32:], sBytes)
-	}
+	sBytes := make([]byte, 32)
+	s.FillBytes(sBytes)
+	copy(sig[32:], sBytes)
 
 	sig[64] = byte(v.Uint64() - ardanID)
 
