@@ -8,6 +8,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -90,11 +91,6 @@ func VerifySignature(v, r, s *big.Int) error {
 // FromAddress extracts the address for the account that signed the data.
 func FromAddress(value any, v, r, s *big.Int) (string, error) {
 
-	// NOTE: If the same exact data for the given signature is not provided
-	// we will get the wrong from address for this transaction. There is no
-	// way to check this on the node since we don't have a copy of the public
-	// key used. The public key is being extracted from the data and signature.
-
 	// Prepare the data for public key extraction.
 	data, err := stamp(value)
 	if err != nil {
@@ -146,18 +142,13 @@ func stamp(value any) ([]byte, error) {
 		return nil, err
 	}
 
-	// Hash the data data into a 32 byte array. This will provide
-	// a data length consistency with all data.
-	txHash := crypto.Keccak256(v)
-
-	// Convert the stamp into a slice of bytes. This stamp is
-	// used so signatures we produce when signing data
+	// This stamp is used so signatures we produce when signing data
 	// are always unique to the Ardan blockchain.
-	stamp := []byte("\x19Ardan Signed Message:\n32")
+	stamp := []byte(fmt.Sprintf("\x19Ardan Signed Message:\n%d", len(v)))
 
 	// Hash the stamp and txHash together in a final 32 byte array
 	// that represents the data.
-	data := crypto.Keccak256(stamp, txHash)
+	data := crypto.Keccak256(stamp, v)
 
 	return data, nil
 }

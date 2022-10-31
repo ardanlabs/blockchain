@@ -480,19 +480,11 @@ function createTransaction() {
         data: null,
     };
 
-    // Marshal the transaction to a string and convert the string to bytes.
-    const marshal = JSON.stringify(tx);
-    const marshalBytes = ethers.utils.toUtf8Bytes(marshal);
-
-    // Hash the transaction data into a 32 byte array. This will provide
-	// a data length consistency with all transactions.
-    const txHash = ethers.utils.keccak256(marshalBytes);
-    const bytes = ethers.utils.arrayify(txHash);
-
-    // Now sign the data. The underlying code will apply the Ardan stamp and
-    // ID to the signature thanks to changes made to the ether.js api.
+    // Convert the transaction to a JSON string and sign that as the data.
+    // The underlying code will apply the Ardan stamp and ID to the signature
+    // thanks to changes made to the ether.js api.
     const wallet = new ethers.Wallet(document.getElementById("from").value);
-    signature = wallet.signMessage(bytes);
+    signature = wallet.signMessage(JSON.stringify(tx));
 
     // Since everything is built on promises, wait for the signature to
     // be calculated and then send the transaction to the node.
