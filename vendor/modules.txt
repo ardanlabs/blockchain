@@ -1,7 +1,7 @@
 # github.com/ardanlabs/conf/v3 v3.1.2
 ## explicit; go 1.13
 github.com/ardanlabs/conf/v3
-# github.com/btcsuite/btcd/btcec/v2 v2.2.1
+# github.com/btcsuite/btcd/btcec/v2 v2.3.1
 ## explicit; go 1.17
 github.com/btcsuite/btcd/btcec/v2
 github.com/btcsuite/btcd/btcec/v2/ecdsa
@@ -9,10 +9,10 @@ github.com/btcsuite/btcd/btcec/v2/ecdsa
 ## explicit; go 1.17
 github.com/decred/dcrd/dcrec/secp256k1/v4
 github.com/decred/dcrd/dcrec/secp256k1/v4/ecdsa
-# github.com/dimfeld/httptreemux/v5 v5.4.0
+# github.com/dimfeld/httptreemux/v5 v5.5.0
 ## explicit; go 1.9
 github.com/dimfeld/httptreemux/v5
-# github.com/ethereum/go-ethereum v1.10.25
+# github.com/ethereum/go-ethereum v1.10.26
 ## explicit; go 1.17
 github.com/ethereum/go-ethereum/common
 github.com/ethereum/go-ethereum/common/hexutil
@@ -48,7 +48,7 @@ github.com/inconshreveable/mousetrap
 # github.com/leodido/go-urn v1.2.1
 ## explicit; go 1.13
 github.com/leodido/go-urn
-# github.com/spf13/cobra v1.5.0
+# github.com/spf13/cobra v1.6.1
 ## explicit; go 1.15
 github.com/spf13/cobra
 # github.com/spf13/pflag v1.0.5
@@ -69,13 +69,13 @@ go.uber.org/zap/internal/bufferpool
 go.uber.org/zap/internal/color
 go.uber.org/zap/internal/exit
 go.uber.org/zap/zapcore
-# golang.org/x/crypto v0.0.0-20220926161630-eccd6366d1be
+# golang.org/x/crypto v0.2.0
 ## explicit; go 1.17
 golang.org/x/crypto/sha3
-# golang.org/x/sys v0.0.0-20220928140112-f11e5e49a4ec
+# golang.org/x/sys v0.2.0
 ## explicit; go 1.17
 golang.org/x/sys/cpu
-# golang.org/x/text v0.3.7
+# golang.org/x/text v0.4.0
 ## explicit; go 1.17
 golang.org/x/text/internal/language
 golang.org/x/text/internal/language/compact
