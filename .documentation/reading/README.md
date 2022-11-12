@@ -195,6 +195,7 @@ Ethereum documentation that helps to better understand that blockchain project.
 [EIP-3668: CCIP Read: Secure offchain data retrieval](https://eips.ethereum.org/EIPS/eip-3668)  
 
 ### Beacon Chain and POS
+[Paths toward single-slot finality](https://notes.ethereum.org/@vbuterin/single_slot_finality) - Ethereum  
 [PROOF-OF-STAKE (POS)](https://ethereum.org/en/developers/docs/consensus-mechanisms/pos/)  
 [Beacon Chain](https://ethereum.org/en/upgrades/beacon-chain/)  
 [Proof of Stake FAQ](https://vitalik.ca/general/2017/12/31/pos_faq.html) - Vitalik Buterin    
