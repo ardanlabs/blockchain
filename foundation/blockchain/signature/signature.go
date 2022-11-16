@@ -155,9 +155,9 @@ func stamp(value any) ([]byte, error) {
 
 // toSignatureValues converts the signature into the r, s, v values.
 func toSignatureValues(sig []byte) (v, r, s *big.Int) {
-	r = new(big.Int).SetBytes(sig[:32])
-	s = new(big.Int).SetBytes(sig[32:64])
-	v = new(big.Int).SetBytes([]byte{sig[64] + ardanID})
+	r = big.NewInt(0).SetBytes(sig[:32])
+	s = big.NewInt(0).SetBytes(sig[32:64])
+	v = big.NewInt(0).SetBytes([]byte{sig[64] + ardanID})
 
 	return v, r, s
 }
