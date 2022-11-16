@@ -130,6 +130,33 @@ func ToVRSFromHexSignature(sigStr string) (v, r, s *big.Int, err error) {
 	return v, r, s, nil
 }
 
+// ToSignatureBytes converts the r, s, v values into a slice of bytes
+// with the removal of the ardanID.
+func ToSignatureBytes(v, r, s *big.Int) []byte {
+	sig := make([]byte, crypto.SignatureLength)
+
+	rBytes := make([]byte, 32)
+	r.FillBytes(rBytes)
+	copy(sig, rBytes)
+
+	sBytes := make([]byte, 32)
+	s.FillBytes(sBytes)
+	copy(sig[32:], sBytes)
+
+	sig[64] = byte(v.Uint64() - ardanID)
+
+	return sig
+}
+
+// ToSignatureBytesWithArdanID converts the r, s, v values into a slice of bytes
+// keeping the Ardan id.
+func ToSignatureBytesWithArdanID(v, r, s *big.Int) []byte {
+	sig := ToSignatureBytes(v, r, s)
+	sig[64] = byte(v.Uint64())
+
+	return sig
+}
+
 // =============================================================================
 
 // stamp returns a hash of 32 bytes that represents this data with
@@ -160,31 +187,4 @@ func toSignatureValues(sig []byte) (v, r, s *big.Int) {
 	v = big.NewInt(0).SetBytes([]byte{sig[64] + ardanID})
 
 	return v, r, s
-}
-
-// ToSignatureBytes converts the r, s, v values into a slice of bytes
-// with the removal of the ardanID.
-func ToSignatureBytes(v, r, s *big.Int) []byte {
-	sig := make([]byte, crypto.SignatureLength)
-
-	rBytes := make([]byte, 32)
-	r.FillBytes(rBytes)
-	copy(sig, rBytes)
-
-	sBytes := make([]byte, 32)
-	s.FillBytes(sBytes)
-	copy(sig[32:], sBytes)
-
-	sig[64] = byte(v.Uint64() - ardanID)
-
-	return sig
-}
-
-// ToSignatureBytesWithArdanID converts the r, s, v values into a slice of bytes
-// keeping the Ardan id.
-func ToSignatureBytesWithArdanID(v, r, s *big.Int) []byte {
-	sig := ToSignatureBytes(v, r, s)
-	sig[64] = byte(v.Uint64())
-
-	return sig
 }
