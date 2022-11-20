@@ -1,5 +1,6 @@
 # Ultimate Go: Advanced Engineering
 
+[![CircleCI](https://circleci.com/gh/ardanlabs/blockchain.svg?style=svg)](https://circleci.com/gh/ardanlabs/blockchain)
 [![Go Report Card](https://goreportcard.com/badge/github.com/ardanlabs/blockchain)](https://goreportcard.com/report/github.com/ardanlabs/blockchain)
 [![go.mod Go version](https://img.shields.io/github/go-mod/go-version/ardanlabs/blockchain)](https://github.com/ardanlabs/blockchain)
 
