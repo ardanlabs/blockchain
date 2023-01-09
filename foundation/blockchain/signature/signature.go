@@ -123,9 +123,9 @@ func ToVRSFromHexSignature(sigStr string) (v, r, s *big.Int, err error) {
 		return nil, nil, nil, err
 	}
 
-	r = new(big.Int).SetBytes(sig[:32])
-	s = new(big.Int).SetBytes(sig[32:64])
-	v = new(big.Int).SetBytes([]byte{sig[64]})
+	r = big.NewInt(0).SetBytes(sig[:32])
+	s = big.NewInt(0).SetBytes(sig[32:64])
+	v = big.NewInt(0).SetBytes([]byte{sig[64]})
 
 	return v, r, s, nil
 }
