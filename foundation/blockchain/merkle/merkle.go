@@ -134,19 +134,25 @@ func (t *Tree[T]) Rebuild() error {
 //
 // Given this proof and proof order from this function for the data in question.
 // proof = [
-//     "0x23d2d2f2a0cbfb260492d42604728cdf8fd63b7d84e4a58094b90dbdd103cd23",
-//     "0xdf25fb5ab5d1373ed6e260ead0a5c7b5fc78b0e9ccf9e09407a67bd2faaf3120",
-//     "0x9dc3d2d31256f20044646614d0a6326627ccc5f1c42019c552c5929a5b9170f3"]
+//
+//	"0x23d2d2f2a0cbfb260492d42604728cdf8fd63b7d84e4a58094b90dbdd103cd23",
+//	"0xdf25fb5ab5d1373ed6e260ead0a5c7b5fc78b0e9ccf9e09407a67bd2faaf3120",
+//	"0x9dc3d2d31256f20044646614d0a6326627ccc5f1c42019c552c5929a5b9170f3"]
 //
 // proof_order = [0, 1, 1]
 //
 // Process the dataHash against the proof like this.
 // bytes = concat(proof[0], dataHash)  -- Order 0 says proof comes first.
-//  sha1 = sha256.Sum256(bytes)
+//
+//	sha1 = sha256.Sum256(bytes)
+//
 // bytes = concat(sha1, proof[1])      -- Order 1 says proof comes second.
-//  sha2 = sha256.Sum256(bytes)
+//
+//	sha2 = sha256.Sum256(bytes)
+//
 // bytes = concat(sha2, proof[2])      -- Order 1 says proof comes second.
-//  root = sha256.Sum256(bytes)
+//
+//	root = sha256.Sum256(bytes)
 //
 // The calculated root should match merkle_root.
 func (t *Tree[T]) Proof(data T) ([][]byte, []int64, error) {
@@ -233,9 +239,7 @@ func (t *Tree[T]) VerifyData(data T) error {
 	return errors.New("merkle root is not equivalent to the merkle root calculated on the critical path")
 }
 
-// Values returns a slice of unique values stores in the tree. The last
-// value in the tree might be a duplicate when there are an odd number of
-// actual values.
+// Values returns a slice of unique values stores in the tree.
 func (t *Tree[T]) Values() []T {
 	var values []T
 	for _, tx := range t.Leafs {

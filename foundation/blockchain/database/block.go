@@ -167,12 +167,6 @@ func (b *Block) performPOW(ctx context.Context, ev func(v string, args ...any)) 
 			continue
 		}
 
-		// Did we timeout trying to solve the problem.
-		if ctx.Err() != nil {
-			ev("database: PerformPOW: MINING: CANCELLED")
-			return ctx.Err()
-		}
-
 		ev("database: PerformPOW: MINING: SOLVED: prevBlk[%s]: newBlk[%s]", b.Header.PrevBlockHash, hash)
 		ev("database: PerformPOW: MINING: attempts[%d]", attempts)
 
