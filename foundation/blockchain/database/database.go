@@ -175,64 +175,63 @@ func (db *Database) ApplyMiningReward(block Block) {
 func (db *Database) ApplyTransaction(block Block, tx BlockTx) error {
 	db.mu.Lock()
 	defer db.mu.Unlock()
-	{
-		// Capture these accounts from the database.
-		from, exists := db.accounts[tx.FromID]
-		if !exists {
-			from = newAccount(tx.FromID, 0)
-		}
 
-		to, exists := db.accounts[tx.ToID]
-		if !exists {
-			to = newAccount(tx.ToID, 0)
-		}
-
-		bnfc, exists := db.accounts[block.Header.BeneficiaryID]
-		if !exists {
-			bnfc = newAccount(block.Header.BeneficiaryID, 0)
-		}
-
-		// The account needs to pay the gas fee regardless. Take the
-		// remaining balance if the account doesn't hold enough for the
-		// full amount of gas. This is the only way to stop bad actors.
-		gasFee := tx.GasPrice * tx.GasUnits
-		if gasFee > from.Balance {
-			gasFee = from.Balance
-		}
-		from.Balance -= gasFee
-		bnfc.Balance += gasFee
-
-		// Make sure these changes get applied.
-		db.accounts[tx.FromID] = from
-		db.accounts[block.Header.BeneficiaryID] = bnfc
-
-		// Perform basic accounting checks.
-		{
-			if tx.Nonce != (from.Nonce + 1) {
-				return fmt.Errorf("transaction invalid, wrong nonce, got %d, exp %d", tx.Nonce, from.Nonce+1)
-			}
-
-			if from.Balance == 0 || from.Balance < (tx.Value+tx.Tip) {
-				return fmt.Errorf("transaction invalid, insufficient funds, bal %d, needed %d", from.Balance, (tx.Value + tx.Tip))
-			}
-		}
-
-		// Update the balances between the two parties.
-		from.Balance -= tx.Value
-		to.Balance += tx.Value
-
-		// Give the beneficiary the tip.
-		from.Balance -= tx.Tip
-		bnfc.Balance += tx.Tip
-
-		// Update the nonce for the next transaction check.
-		from.Nonce = tx.Nonce
-
-		// Update the final changes to these accounts.
-		db.accounts[tx.FromID] = from
-		db.accounts[tx.ToID] = to
-		db.accounts[block.Header.BeneficiaryID] = bnfc
+	// Capture these accounts from the database.
+	from, exists := db.accounts[tx.FromID]
+	if !exists {
+		from = newAccount(tx.FromID, 0)
 	}
+
+	to, exists := db.accounts[tx.ToID]
+	if !exists {
+		to = newAccount(tx.ToID, 0)
+	}
+
+	bnfc, exists := db.accounts[block.Header.BeneficiaryID]
+	if !exists {
+		bnfc = newAccount(block.Header.BeneficiaryID, 0)
+	}
+
+	// The account needs to pay the gas fee regardless. Take the
+	// remaining balance if the account doesn't hold enough for the
+	// full amount of gas. This is the only way to stop bad actors.
+	gasFee := tx.GasPrice * tx.GasUnits
+	if gasFee > from.Balance {
+		gasFee = from.Balance
+	}
+	from.Balance -= gasFee
+	bnfc.Balance += gasFee
+
+	// Make sure these changes get applied.
+	db.accounts[tx.FromID] = from
+	db.accounts[block.Header.BeneficiaryID] = bnfc
+
+	// Perform basic accounting checks.
+	{
+		if tx.Nonce != (from.Nonce + 1) {
+			return fmt.Errorf("transaction invalid, wrong nonce, got %d, exp %d", tx.Nonce, from.Nonce+1)
+		}
+
+		if from.Balance == 0 || from.Balance < (tx.Value+tx.Tip) {
+			return fmt.Errorf("transaction invalid, insufficient funds, bal %d, needed %d", from.Balance, (tx.Value + tx.Tip))
+		}
+	}
+
+	// Update the balances between the two parties.
+	from.Balance -= tx.Value
+	to.Balance += tx.Value
+
+	// Give the beneficiary the tip.
+	from.Balance -= tx.Tip
+	bnfc.Balance += tx.Tip
+
+	// Update the nonce for the next transaction check.
+	from.Nonce = tx.Nonce
+
+	// Update the final changes to these accounts.
+	db.accounts[tx.FromID] = from
+	db.accounts[tx.ToID] = to
+	db.accounts[block.Header.BeneficiaryID] = bnfc
 
 	return nil
 }
