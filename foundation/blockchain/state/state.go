@@ -14,6 +14,7 @@ import (
 /*
 	-- Blockchain
 	On chain fork, only remove the block need to be removed and reset.
+	Send batch of mempool tx's from txshare channel.
 
 	-- Testing
 	Fork Test
