@@ -21,8 +21,7 @@ import (
 		Accounting: Reverse each block
 
 	-- Testing
-	Fork Test
-	Mining Test
+	Worker concurrent testing
 */
 
 // =============================================================================
