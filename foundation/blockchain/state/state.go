@@ -15,6 +15,10 @@ import (
 	-- Blockchain
 	On chain fork, only remove the block need to be removed and reset.
 	Send batch of mempool tx's from txshare channel.
+	On Resync, only remove the blocks we know are bad.
+		Pass blk number to database.Reset
+		Set the correct lastblock
+		Accounting: Reverse each block
 
 	-- Testing
 	Fork Test
