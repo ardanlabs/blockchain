@@ -12,7 +12,7 @@ import (
 
 // peerUpdateInterval represents the interval of finding new peer nodes
 // and updating the blockchain on disk with missing blocks.
-const peerUpdateInterval = time.Minute
+const peerUpdateInterval = time.Second * 10
 
 // =============================================================================
 

@@ -17,8 +17,8 @@ import (
 // if this node needs to mine the next block. If this node is not selected, it
 // waits for the next cycle to check the selection algorithm again.
 
-// cycleDuration sets the mining operation to happen every 5 seconds
-const secondsPerCycle = 5
+// cycleDuration sets the mining operation to happen every 12 seconds
+const secondsPerCycle = 12
 const cycleDuration = secondsPerCycle * time.Second
 
 // poaOperations handles mining.
@@ -28,7 +28,7 @@ func (w *Worker) poaOperations() {
 
 	ticker := time.NewTicker(cycleDuration)
 
-	// Start this on a secondsPerCycle mark: ex. MM.00, MM.05, MM.10, MM.15.
+	// Start this on a secondsPerCycle mark: ex. MM.00, MM.12, MM.24, MM.36.
 	resetTicker(ticker, secondsPerCycle*time.Second)
 
 	for {
@@ -165,6 +165,8 @@ func (w *Worker) selection() string {
 	// Return the name of the node selected.
 	return names[i]
 }
+
+// =============================================================================
 
 // resetTicker makes sure the next tick happens on the described cadence.
 func resetTicker(ticker *time.Ticker, waitOnSecond time.Duration) {
