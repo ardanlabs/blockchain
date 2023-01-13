@@ -35,6 +35,9 @@ up:
 up2:
 	go run app/services/node/main.go -race --web-debug-host 0.0.0.0:7281 --web-public-host 0.0.0.0:8280 --web-private-host 0.0.0.0:9280 --state-beneficiary=miner2 --state-db-path zblock/miner2/ | go run app/tooling/logfmt/main.go
 
+up3:
+	go run app/services/node/main.go -race --web-debug-host 0.0.0.0:7381 --web-public-host 0.0.0.0:8380 --web-private-host 0.0.0.0:9380 --state-beneficiary=miner3 --state-db-path zblock/miner3/ | go run app/tooling/logfmt/main.go
+
 down:
 	kill -INT $(shell ps | grep "main -race" | grep -v grep | sed -n 1,1p | cut -c1-5)
 
