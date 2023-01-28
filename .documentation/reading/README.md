@@ -207,5 +207,12 @@ Ethereum documentation that helps to better understand that blockchain project.
 [The Ultimate Guide to Ethereum 2.0](https://blockdaemon.com/documentation/guides/the-ultimate-guide-to-ethereum-2-0) - Blockdaemon  
 [Optimistic Rollups](https://docs.ethhub.io/ethereum-roadmap/layer-2-scaling/optimistic_rollups) - EthHub  
 
+### Patrick McCorry Series
+[How Proof of Stake Ethereum Works](https://stonecoldpat.substack.com/p/how-proof-of-stake-ethereum-works)  
+[Modular Design and the Two Blockchains](https://stonecoldpat.substack.com/p/modular-design-and-the-two-blockchains)  
+[Epochs, Slots and Beacon Blocks](https://stonecoldpat.substack.com/p/epochs-slots-and-beacon-blocks)  
+[Validator Attestations and Voting Protocols](https://stonecoldpat.substack.com/p/validator-attestations-and-voting)  
+[Compensation and punishment](https://stonecoldpat.substack.com/p/compensation-and-punishment)  
+
 ### Zero Address
 [Etherscan Address Zero](https://etherscan.io/address/0x0000000000000000000000000000000000000000)  
