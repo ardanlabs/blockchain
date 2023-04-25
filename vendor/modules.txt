@@ -5,14 +5,14 @@ github.com/ardanlabs/conf/v3
 ## explicit; go 1.17
 github.com/btcsuite/btcd/btcec/v2
 github.com/btcsuite/btcd/btcec/v2/ecdsa
-# github.com/decred/dcrd/dcrec/secp256k1/v4 v4.1.0
+# github.com/decred/dcrd/dcrec/secp256k1/v4 v4.2.0
 ## explicit; go 1.17
 github.com/decred/dcrd/dcrec/secp256k1/v4
 github.com/decred/dcrd/dcrec/secp256k1/v4/ecdsa
 # github.com/dimfeld/httptreemux/v5 v5.5.0
 ## explicit; go 1.9
 github.com/dimfeld/httptreemux/v5
-# github.com/ethereum/go-ethereum v1.11.5
+# github.com/ethereum/go-ethereum v1.11.6
 ## explicit; go 1.19
 github.com/ethereum/go-ethereum/common
 github.com/ethereum/go-ethereum/common/hexutil
