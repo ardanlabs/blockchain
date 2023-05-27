@@ -1,5 +1,10 @@
 package worker
 
+import (
+	"context"
+	"sync"
+)
+
 // CORE NOTE: Sharing new transactions received directly by a wallet is
 // performed by this goroutine. When a wallet transaction is received,
 // the request goroutine shares it with this goroutine to send it over the
@@ -20,15 +25,30 @@ func (w *Worker) shareTxOperations() {
 	w.evHandler("worker: shareTxOperations: G started")
 	defer w.evHandler("worker: shareTxOperations: G completed")
 
-	for {
-		select {
-		case tx := <-w.txSharing:
-			if !w.isShutdown() {
-				w.state.NetSendTxToPeers(tx)
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	go func() {
+		defer wg.Done()
+
+		for {
+			select {
+			case tx := <-w.txSharing:
+				if !w.isShutdown() {
+					w.state.NetSendTxToPeers(ctx, tx)
+				}
+			case <-w.shut:
+				return
 			}
-		case <-w.shut:
-			w.evHandler("worker: shareTxOperations: received shut signal")
-			return
 		}
-	}
+	}()
+
+	<-w.shut
+	w.evHandler("worker: shareTxOperations: received shut signal")
+
+	cancel()
+	wg.Wait()
 }

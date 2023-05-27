@@ -2,11 +2,14 @@ package state
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
+	"sync"
+	"time"
 
 	"github.com/ardanlabs/blockchain/foundation/blockchain/database"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/peer"
@@ -27,7 +30,7 @@ func (s *State) NetSendBlockToPeers(block database.Block) error {
 		var status struct {
 			Status string `json:"status"`
 		}
-		if err := send(http.MethodPost, url, database.NewBlockData(block), &status); err != nil {
+		if err := send(context.TODO(), http.MethodPost, url, database.NewBlockData(block), &status); err != nil {
 			return fmt.Errorf("%s: %s", peer.Host, err)
 		}
 	}
@@ -36,9 +39,14 @@ func (s *State) NetSendBlockToPeers(block database.Block) error {
 }
 
 // NetSendTxToPeers shares a new block transaction with the known peers.
-func (s *State) NetSendTxToPeers(tx database.BlockTx) {
+func (s *State) NetSendTxToPeers(ctx context.Context, tx database.BlockTx) {
 	s.evHandler("state: NetSendTxToPeers: started")
 	defer s.evHandler("state: NetSendTxToPeers: completed")
+
+	var wg sync.WaitGroup
+
+	ctx, cancel := context.WithTimeout(ctx, time.Minute)
+	defer cancel()
 
 	// CORE NOTE: Bitcoin does not send the full transaction immediately to save
 	// on bandwidth. A node will send the transaction's mempool key first so the
@@ -47,15 +55,23 @@ func (s *State) NetSendTxToPeers(tx database.BlockTx) {
 	// based on the mempool key it received.
 
 	// For now, the Ardan blockchain just sends the full transaction.
-	for _, peer := range s.KnownExternalPeers() {
-		s.evHandler("state: NetSendTxToPeers: send: tx[%s] to peer[%s]", tx, peer)
+	for _, p := range s.KnownExternalPeers() {
+		wg.Add(1)
 
-		url := fmt.Sprintf("%s/tx/submit", fmt.Sprintf(baseURL, peer.Host))
+		go func(peer peer.Peer) {
+			defer wg.Done()
 
-		if err := send(http.MethodPost, url, tx, nil); err != nil {
-			s.evHandler("state: NetSendTxToPeers: WARNING: %s", err)
-		}
+			s.evHandler("state: NetSendTxToPeers: send: tx[%s] to peer[%s]", tx, peer)
+
+			url := fmt.Sprintf("%s/tx/submit", fmt.Sprintf(baseURL, peer.Host))
+
+			if err := send(ctx, http.MethodPost, url, tx, nil); err != nil {
+				s.evHandler("state: NetSendTxToPeers: WARNING: %s", err)
+			}
+		}(p)
 	}
+
+	wg.Wait()
 }
 
 // NetSendNodeAvailableToPeers shares this node is available to
@@ -71,7 +87,7 @@ func (s *State) NetSendNodeAvailableToPeers() {
 
 		url := fmt.Sprintf("%s/peers", fmt.Sprintf(baseURL, peer.Host))
 
-		if err := send(http.MethodPost, url, host, nil); err != nil {
+		if err := send(context.TODO(), http.MethodPost, url, host, nil); err != nil {
 			s.evHandler("state: NetSendNodeAvailableToPeers: WARNING: %s", err)
 		}
 	}
@@ -86,7 +102,7 @@ func (s *State) NetRequestPeerStatus(pr peer.Peer) (peer.PeerStatus, error) {
 	url := fmt.Sprintf("%s/status", fmt.Sprintf(baseURL, pr.Host))
 
 	var ps peer.PeerStatus
-	if err := send(http.MethodGet, url, nil, &ps); err != nil {
+	if err := send(context.TODO(), http.MethodGet, url, nil, &ps); err != nil {
 		return peer.PeerStatus{}, err
 	}
 
@@ -103,7 +119,7 @@ func (s *State) NetRequestPeerMempool(pr peer.Peer) ([]database.BlockTx, error) 
 	url := fmt.Sprintf("%s/tx/list", fmt.Sprintf(baseURL, pr.Host))
 
 	var mempool []database.BlockTx
-	if err := send(http.MethodGet, url, nil, &mempool); err != nil {
+	if err := send(context.TODO(), http.MethodGet, url, nil, &mempool); err != nil {
 		return nil, err
 	}
 
@@ -133,7 +149,7 @@ func (s *State) NetRequestPeerBlocks(pr peer.Peer) error {
 	url := fmt.Sprintf("%s/block/list/%d/latest", fmt.Sprintf(baseURL, pr.Host), from)
 
 	var blocksData []database.BlockData
-	if err := send(http.MethodGet, url, nil, &blocksData); err != nil {
+	if err := send(context.TODO(), http.MethodGet, url, nil, &blocksData); err != nil {
 		return err
 	}
 
@@ -156,7 +172,7 @@ func (s *State) NetRequestPeerBlocks(pr peer.Peer) error {
 // =============================================================================
 
 // send is a helper function to send an HTTP request to a node.
-func send(method string, url string, dataSend any, dataRecv any) error {
+func send(ctx context.Context, method string, url string, dataSend any, dataRecv any) error {
 	var req *http.Request
 
 	switch {
@@ -165,18 +181,19 @@ func send(method string, url string, dataSend any, dataRecv any) error {
 		if err != nil {
 			return err
 		}
-		req, err = http.NewRequest(method, url, bytes.NewReader(data))
+		req, err = http.NewRequestWithContext(ctx, method, url, bytes.NewReader(data))
 		if err != nil {
 			return err
 		}
 
 	default:
 		var err error
-		req, err = http.NewRequest(method, url, nil)
+		req, err = http.NewRequestWithContext(ctx, method, url, nil)
 		if err != nil {
 			return err
 		}
 	}
+	req.WithContext(ctx)
 
 	var client http.Client
 	resp, err := client.Do(req)
