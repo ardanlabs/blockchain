@@ -13,7 +13,7 @@ version: "3.9"
 # declaring a base node here to have others merge with.
 #
 x-node-config: &node
-  image: golang:1.18
+  image: golang:1.21
   command: |
     bash -c "make up"
   volumes:
@@ -74,7 +74,7 @@ services:
       - 9380:9380
 
   #viewer:
-  #  image: golang:1.18
+  #  image: golang:1.21
   #  command: "go run app/services/viewer/main.go | go run app/tooling/logfmt/main.go"
   #  volumes:
   #  - .:/source
