@@ -39,7 +39,7 @@ func New(root string) (*NameService, error) {
 		}
 
 		accountID := database.PublicKeyToAccountID(privateKey.PublicKey)
-		ns.accounts[accountID] = strings.TrimSuffix(path.Base(fileName), ".ecdsa")
+		ns.accounts[accountID] = strings.TrimSuffix(filepath.Base(fileName), ".ecdsa")
 
 		return nil
 	}
