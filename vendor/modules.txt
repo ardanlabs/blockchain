@@ -12,7 +12,7 @@ github.com/decred/dcrd/dcrec/secp256k1/v4/ecdsa
 # github.com/dimfeld/httptreemux/v5 v5.5.0
 ## explicit; go 1.9
 github.com/dimfeld/httptreemux/v5
-# github.com/ethereum/go-ethereum v1.13.12
+# github.com/ethereum/go-ethereum v1.13.13
 ## explicit; go 1.20
 github.com/ethereum/go-ethereum/common
 github.com/ethereum/go-ethereum/common/hexutil
@@ -67,7 +67,7 @@ github.com/spf13/pflag
 # go.uber.org/multierr v1.11.0
 ## explicit; go 1.19
 go.uber.org/multierr
-# go.uber.org/zap v1.26.0
+# go.uber.org/zap v1.27.0
 ## explicit; go 1.19
 go.uber.org/zap
 go.uber.org/zap/buffer
