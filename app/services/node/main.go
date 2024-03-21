@@ -11,7 +11,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/ardanlabs/blockchain/app/services/node/handlers"
+	"github.com/ardanlabs/blockchain/app/services/node/handlers/routes"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/database"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/genesis"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/peer"
@@ -206,7 +206,7 @@ func run(log *zap.SugaredLogger) error {
 	// related endpoints. This includes the standard library endpoints.
 
 	// Construct the mux for the debug calls.
-	debugMux := handlers.DebugMux(build, log)
+	debugMux := routes.DebugMux(build, log)
 
 	// Start the service listening for debug requests.
 	// Not concerned with shutting this down with load shedding.
@@ -234,7 +234,7 @@ func run(log *zap.SugaredLogger) error {
 	log.Infow("startup", "status", "initializing V1 public API support")
 
 	// Construct the mux for the public API calls.
-	publicMux := handlers.PublicMux(handlers.MuxConfig{
+	publicMux := routes.PublicMux(routes.MuxConfig{
 		Shutdown: shutdown,
 		Log:      log,
 		State:    state,
@@ -264,7 +264,7 @@ func run(log *zap.SugaredLogger) error {
 	log.Infow("startup", "status", "initializing V1 private API support")
 
 	// Construct the mux for the private API calls.
-	privateMux := handlers.PrivateMux(handlers.MuxConfig{
+	privateMux := routes.PrivateMux(routes.MuxConfig{
 		Shutdown: shutdown,
 		Log:      log,
 		State:    state,

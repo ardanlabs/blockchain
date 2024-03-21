@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"strconv"
 
-	v1 "github.com/ardanlabs/blockchain/business/web/v1"
+	"github.com/ardanlabs/blockchain/business/web/errs"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/database"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/peer"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/state"
@@ -41,7 +41,7 @@ func (h Handlers) SubmitNodeTransaction(ctx context.Context, w http.ResponseWrit
 	// any other business logic.
 	h.Log.Infow("add tran", "traceid", v.TraceID, "sig:nonce", tx, "fron", tx.FromID, "to", tx.ToID, "value", tx.Value, "tip", tx.Tip)
 	if err := h.State.UpsertNodeTransaction(tx); err != nil {
-		return v1.NewRequestError(err, http.StatusBadRequest)
+		return errs.NewTrusted(err, http.StatusBadRequest)
 	}
 
 	resp := struct {
@@ -77,7 +77,7 @@ func (h Handlers) ProposeBlock(ctx context.Context, w http.ResponseWriter, r *ht
 			h.State.Reorganize()
 		}
 
-		return v1.NewRequestError(errors.New("block not accepted"), http.StatusNotAcceptable)
+		return errs.NewTrusted(errors.New("block not accepted"), http.StatusNotAcceptable)
 	}
 
 	resp := struct {
@@ -135,15 +135,15 @@ func (h Handlers) BlocksByNumber(ctx context.Context, w http.ResponseWriter, r *
 
 	from, err := strconv.ParseUint(fromStr, 10, 64)
 	if err != nil {
-		return v1.NewRequestError(err, http.StatusBadRequest)
+		return errs.NewTrusted(err, http.StatusBadRequest)
 	}
 	to, err := strconv.ParseUint(toStr, 10, 64)
 	if err != nil {
-		return v1.NewRequestError(err, http.StatusBadRequest)
+		return errs.NewTrusted(err, http.StatusBadRequest)
 	}
 
 	if from > to {
-		return v1.NewRequestError(errors.New("from greater than to"), http.StatusBadRequest)
+		return errs.NewTrusted(errors.New("from greater than to"), http.StatusBadRequest)
 	}
 
 	blocks := h.State.QueryBlocksByNumber(from, to)

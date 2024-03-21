@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	v1 "github.com/ardanlabs/blockchain/business/web/v1"
+	"github.com/ardanlabs/blockchain/business/web/errs"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/database"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/state"
 	"github.com/ardanlabs/blockchain/foundation/events"
@@ -93,7 +93,7 @@ func (h Handlers) SubmitWalletTransaction(ctx context.Context, w http.ResponseWr
 	// It's up to the wallet to make sure the account has a proper balance and
 	// nonce. Fees will be taken if this transaction is mined into a block.
 	if err := h.State.UpsertWalletTransaction(signedTx); err != nil {
-		return v1.NewRequestError(err, http.StatusBadRequest)
+		return errs.NewTrusted(err, http.StatusBadRequest)
 	}
 
 	resp := struct {

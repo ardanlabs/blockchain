@@ -1,5 +1,6 @@
-// Package handlers manages the different versions of the API.
-package handlers
+// Package routes contains the full set of handler functions and routes
+// supported by the web api.
+package routes
 
 import (
 	"context"
@@ -9,8 +10,9 @@ import (
 	"os"
 
 	"github.com/ardanlabs/blockchain/app/services/node/handlers/debug/checkgrp"
-	v1 "github.com/ardanlabs/blockchain/app/services/node/handlers/v1"
-	"github.com/ardanlabs/blockchain/business/web/v1/mid"
+	"github.com/ardanlabs/blockchain/app/services/node/handlers/private"
+	"github.com/ardanlabs/blockchain/app/services/node/handlers/public"
+	"github.com/ardanlabs/blockchain/business/web/mid"
 	"github.com/ardanlabs/blockchain/foundation/blockchain/state"
 	"github.com/ardanlabs/blockchain/foundation/events"
 	"github.com/ardanlabs/blockchain/foundation/nameservice"
@@ -48,8 +50,8 @@ func PublicMux(cfg MuxConfig) http.Handler {
 	}
 	app.Handle(http.MethodOptions, "", "/*", h, mid.Cors("*"))
 
-	// Load the v1 routes.
-	v1.PublicRoutes(app, v1.Config{
+	// Load the routes.
+	public.Routes(app, public.Config{
 		Log:   cfg.Log,
 		State: cfg.State,
 		NS:    cfg.NS,
@@ -80,8 +82,8 @@ func PrivateMux(cfg MuxConfig) http.Handler {
 	}
 	app.Handle(http.MethodOptions, "", "/*", h, mid.Cors("*"))
 
-	// Load the v1 routes.
-	v1.PrivateRoutes(app, v1.Config{
+	// Load the routes.
+	private.Routes(app, private.Config{
 		Log:   cfg.Log,
 		State: cfg.State,
 		NS:    cfg.NS,
