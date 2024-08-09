@@ -37,20 +37,10 @@ var (
 	oneInitializer = []byte{0x01}
 )
 
-const (
-	// MinSigLen is the minimum length of a DER encoded signature and is when both R
-	// and S are 1 byte each.
-	// 0x30 + <1-byte> + 0x02 + 0x01 + <byte> + 0x2 + 0x01 + <byte>
-	MinSigLen = 8
-
-	// MaxSigLen is the maximum length of a DER encoded signature and is
-	// when both R and S are 33 bytes each.  It is 33 bytes because a
-	// 256-bit integer requires 32 bytes and an additional leading null byte
-	// might be required if the high bit is set in the value.
-	//
-	// 0x30 + <1-byte> + 0x02 + 0x21 + <33 bytes> + 0x2 + 0x21 + <33 bytes>
-	MaxSigLen = 72
-)
+// MinSigLen is the minimum length of a DER encoded signature and is when both R
+// and S are 1 byte each.
+// 0x30 + <1-byte> + 0x02 + 0x01 + <byte> + 0x2 + 0x01 + <byte>
+const MinSigLen = 8
 
 // canonicalPadding checks whether a big-endian encoded integer could
 // possibly be misinterpreted as a negative number (even though OpenSSL
@@ -78,15 +68,9 @@ func parseSig(sigStr []byte, der bool) (*Signature, error) {
 	// 0x30 <length of whole message> <0x02> <length of R> <R> 0x2
 	// <length of S> <S>.
 
-	// The signature must adhere to the minimum and maximum allowed length.
-	totalSigLen := len(sigStr)
-	if totalSigLen < MinSigLen {
+	if len(sigStr) < MinSigLen {
 		return nil, errors.New("malformed signature: too short")
 	}
-	if der && totalSigLen > MaxSigLen {
-		return nil, errors.New("malformed signature: too long")
-	}
-
 	// 0x30
 	index := 0
 	if sigStr[index] != 0x30 {
@@ -212,7 +196,7 @@ func parseSig(sigStr []byte, der bool) (*Signature, error) {
 }
 
 // ParseSignature parses a signature in BER format for the curve type `curve'
-// into a Signature type, performing some basic sanity checks.  If parsing
+// into a Signature type, perfoming some basic sanity checks.  If parsing
 // according to the more strict DER format is needed, use ParseDERSignature.
 func ParseSignature(sigStr []byte) (*Signature, error) {
 	return parseSig(sigStr, false)
