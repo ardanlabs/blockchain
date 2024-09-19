@@ -5,7 +5,7 @@ go 1.23.0
 require (
 	github.com/ardanlabs/conf/v3 v3.1.8
 	github.com/dimfeld/httptreemux/v5 v5.5.0
-	github.com/ethereum/go-ethereum v1.14.8
+	github.com/ethereum/go-ethereum v1.14.9
 	github.com/go-playground/locales v0.14.1
 	github.com/go-playground/universal-translator v0.18.1
 	github.com/go-playground/validator/v10 v10.22.1

@@ -12,8 +12,8 @@ github.com/decred/dcrd/dcrec/secp256k1/v4/ecdsa
 # github.com/dimfeld/httptreemux/v5 v5.5.0
 ## explicit; go 1.9
 github.com/dimfeld/httptreemux/v5
-# github.com/ethereum/go-ethereum v1.14.8
-## explicit; go 1.21
+# github.com/ethereum/go-ethereum v1.14.9
+## explicit; go 1.22
 github.com/ethereum/go-ethereum/common
 github.com/ethereum/go-ethereum/common/hexutil
 github.com/ethereum/go-ethereum/common/math
