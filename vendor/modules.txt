@@ -1,10 +1,6 @@
 # github.com/ardanlabs/conf/v3 v3.2.0
 ## explicit; go 1.18
 github.com/ardanlabs/conf/v3
-# github.com/btcsuite/btcd/btcec/v2 v2.3.4
-## explicit; go 1.17
-github.com/btcsuite/btcd/btcec/v2
-github.com/btcsuite/btcd/btcec/v2/ecdsa
 # github.com/decred/dcrd/dcrec/secp256k1/v4 v4.3.0
 ## explicit; go 1.17
 github.com/decred/dcrd/dcrec/secp256k1/v4
@@ -12,7 +8,7 @@ github.com/decred/dcrd/dcrec/secp256k1/v4/ecdsa
 # github.com/dimfeld/httptreemux/v5 v5.5.0
 ## explicit; go 1.9
 github.com/dimfeld/httptreemux/v5
-# github.com/ethereum/go-ethereum v1.14.11
+# github.com/ethereum/go-ethereum v1.14.12
 ## explicit; go 1.22
 github.com/ethereum/go-ethereum/common
 github.com/ethereum/go-ethereum/common/hexutil
@@ -24,7 +20,7 @@ github.com/ethereum/go-ethereum/crypto/secp256k1/libsecp256k1/src
 github.com/ethereum/go-ethereum/crypto/secp256k1/libsecp256k1/src/modules/recovery
 github.com/ethereum/go-ethereum/rlp
 github.com/ethereum/go-ethereum/rlp/internal/rlpstruct
-# github.com/gabriel-vasile/mimetype v1.4.6
+# github.com/gabriel-vasile/mimetype v1.4.7
 ## explicit; go 1.20
 github.com/gabriel-vasile/mimetype
 github.com/gabriel-vasile/mimetype/internal/charset
@@ -38,7 +34,7 @@ github.com/go-playground/locales/en
 # github.com/go-playground/universal-translator v0.18.1
 ## explicit; go 1.18
 github.com/go-playground/universal-translator
-# github.com/go-playground/validator/v10 v10.22.1
+# github.com/go-playground/validator/v10 v10.23.0
 ## explicit; go 1.18
 github.com/go-playground/validator/v10
 github.com/go-playground/validator/v10/translations/en
@@ -48,7 +44,7 @@ github.com/google/uuid
 # github.com/gorilla/websocket v1.5.3
 ## explicit; go 1.12
 github.com/gorilla/websocket
-# github.com/holiman/uint256 v1.3.1
+# github.com/holiman/uint256 v1.3.2
 ## explicit; go 1.19
 github.com/holiman/uint256
 # github.com/inconshreveable/mousetrap v1.1.0
@@ -78,17 +74,17 @@ go.uber.org/zap/internal/exit
 go.uber.org/zap/internal/pool
 go.uber.org/zap/internal/stacktrace
 go.uber.org/zap/zapcore
-# golang.org/x/crypto v0.28.0
+# golang.org/x/crypto v0.31.0
 ## explicit; go 1.20
 golang.org/x/crypto/sha3
-# golang.org/x/net v0.30.0
+# golang.org/x/net v0.32.0
 ## explicit; go 1.18
 golang.org/x/net/html
 golang.org/x/net/html/atom
-# golang.org/x/sys v0.26.0
+# golang.org/x/sys v0.28.0
 ## explicit; go 1.18
 golang.org/x/sys/cpu
-# golang.org/x/text v0.19.0
+# golang.org/x/text v0.21.0
 ## explicit; go 1.18
 golang.org/x/text/internal/language
 golang.org/x/text/internal/language/compact
