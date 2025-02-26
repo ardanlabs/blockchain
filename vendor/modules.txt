@@ -1,15 +1,15 @@
 # github.com/ardanlabs/conf/v3 v3.4.0
 ## explicit; go 1.18
 github.com/ardanlabs/conf/v3
-# github.com/decred/dcrd/dcrec/secp256k1/v4 v4.3.0
+# github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.0
 ## explicit; go 1.17
 github.com/decred/dcrd/dcrec/secp256k1/v4
 github.com/decred/dcrd/dcrec/secp256k1/v4/ecdsa
 # github.com/dimfeld/httptreemux/v5 v5.5.0
 ## explicit; go 1.9
 github.com/dimfeld/httptreemux/v5
-# github.com/ethereum/go-ethereum v1.15.0
-## explicit; go 1.22.0
+# github.com/ethereum/go-ethereum v1.15.3
+## explicit; go 1.23.0
 github.com/ethereum/go-ethereum/common
 github.com/ethereum/go-ethereum/common/hexutil
 github.com/ethereum/go-ethereum/common/math
@@ -34,7 +34,7 @@ github.com/go-playground/locales/en
 # github.com/go-playground/universal-translator v0.18.1
 ## explicit; go 1.18
 github.com/go-playground/universal-translator
-# github.com/go-playground/validator/v10 v10.24.0
+# github.com/go-playground/validator/v10 v10.25.0
 ## explicit; go 1.20
 github.com/go-playground/validator/v10
 github.com/go-playground/validator/v10/translations/en
@@ -54,7 +54,7 @@ github.com/inconshreveable/mousetrap
 ## explicit; go 1.18
 github.com/leodido/go-urn
 github.com/leodido/go-urn/scim/schema
-# github.com/spf13/cobra v1.8.1
+# github.com/spf13/cobra v1.9.1
 ## explicit; go 1.15
 github.com/spf13/cobra
 # github.com/spf13/pflag v1.0.6
@@ -74,8 +74,8 @@ go.uber.org/zap/internal/exit
 go.uber.org/zap/internal/pool
 go.uber.org/zap/internal/stacktrace
 go.uber.org/zap/zapcore
-# golang.org/x/crypto v0.33.0
-## explicit; go 1.20
+# golang.org/x/crypto v0.35.0
+## explicit; go 1.23.0
 golang.org/x/crypto/sha3
 # golang.org/x/net v0.35.0
 ## explicit; go 1.18
