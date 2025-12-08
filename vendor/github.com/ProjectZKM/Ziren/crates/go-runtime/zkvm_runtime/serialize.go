@@ -80,7 +80,7 @@ func serializeData(v reflect.Value) ([]byte, error) {
 			}
 			return b, nil
 		}
-		return nil, fmt.Errorf("unsupport type: %v, elem: %v", v.Kind(), v.Elem().Kind())
+		return nil, fmt.Errorf("unsupported type: %v, elem: %v", v.Kind(), v.Elem().Kind())
 	case reflect.String:
 		b := make([]byte, 8+len(v.String()))
 		binary.LittleEndian.PutUint64(b, uint64(len(v.String())))
@@ -110,5 +110,5 @@ func serializeData(v reflect.Value) ([]byte, error) {
 		}
 		return data, nil
 	}
-	return nil, fmt.Errorf("unsupport type: %v", v.Kind())
+	return nil, fmt.Errorf("unsupported type: %v", v.Kind())
 }

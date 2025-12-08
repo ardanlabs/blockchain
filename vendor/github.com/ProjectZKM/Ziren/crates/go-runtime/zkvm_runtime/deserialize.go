@@ -89,7 +89,7 @@ func deserializeData(data []byte, v reflect.Value, index int) (int, error) {
 			v.SetBytes(bytes)
 			return index + int(length), nil
 		}
-		return index, fmt.Errorf("unsupport type: %v, elem: %v", v.Kind(), v.Elem().Kind())
+		return index, fmt.Errorf("unsupported type: %v, elem: %v", v.Kind(), v.Elem().Kind())
 	case reflect.Array:
 		for i := 0; i < v.Len(); i++ {
 			var err error
@@ -126,5 +126,5 @@ func deserializeData(data []byte, v reflect.Value, index int) (int, error) {
 		}
 		return index, nil
 	}
-	return index, fmt.Errorf("unsupport type: %v", v.Kind())
+	return index, fmt.Errorf("unsupported type: %v", v.Kind())
 }
