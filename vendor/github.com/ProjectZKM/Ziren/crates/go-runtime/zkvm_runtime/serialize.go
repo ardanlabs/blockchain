@@ -70,7 +70,7 @@ func serializeData(v reflect.Value) ([]byte, error) {
 			}
 			return output, nil
 		}
-		return nil, fmt.Errorf("unsupport type: %v, elem: %v", v.Kind(), v.Elem().Kind())
+		return nil, fmt.Errorf("unsupported type: %v, elem: %v", v.Kind(), v.Elem().Kind())
 	case reflect.Array:
 		switch v.Type().Elem().Kind() {
 		case reflect.Uint8:
