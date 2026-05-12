@@ -16,7 +16,82 @@ func SyscallHintLen() int
 func SyscallHintRead(ptr []byte, len int)
 func SyscallCommit(index int, word uint32)
 func SyscallExit(code int)
+func SyscallEnterUnconstrained() int
+func SyscallExitUnconstrained()
 func SyscallKeccakSponge(input unsafe.Pointer, result unsafe.Pointer)
+
+// secp256k1 precompiles
+func SyscallSecp256k1Add(p unsafe.Pointer, q unsafe.Pointer)
+func SyscallSecp256k1Double(p unsafe.Pointer, dummy unsafe.Pointer)
+func SyscallSecp256k1Decompress(point unsafe.Pointer, isOdd uint32)
+
+// SHA-256 precompiles
+func SyscallSha256Extend(w unsafe.Pointer)
+func SyscallSha256Compress(w unsafe.Pointer, state unsafe.Pointer)
+
+// BN254 curve precompiles
+func SyscallBn254Add(p unsafe.Pointer, q unsafe.Pointer)
+func SyscallBn254Double(p unsafe.Pointer, dummy unsafe.Pointer)
+
+// BN254 field arithmetic precompiles (Fp: [8]u32 LE, Fp2: [16]u32 LE)
+func SyscallBn254FpAdd(a unsafe.Pointer, b unsafe.Pointer)
+func SyscallBn254FpSub(a unsafe.Pointer, b unsafe.Pointer)
+func SyscallBn254FpMul(a unsafe.Pointer, b unsafe.Pointer)
+func SyscallBn254Fp2Add(a unsafe.Pointer, b unsafe.Pointer)
+func SyscallBn254Fp2Sub(a unsafe.Pointer, b unsafe.Pointer)
+func SyscallBn254Fp2Mul(a unsafe.Pointer, b unsafe.Pointer)
+
+// BLS12-381 precompiles
+func SyscallBls12381Add(p unsafe.Pointer, q unsafe.Pointer)
+func SyscallBls12381Double(p unsafe.Pointer, dummy unsafe.Pointer)
+
+// BLS12-381 field arithmetic precompiles (Fp: [12]u32 LE, Fp2: [24]u32 LE)
+func SyscallBls12381FpAdd(a unsafe.Pointer, b unsafe.Pointer)
+func SyscallBls12381FpSub(a unsafe.Pointer, b unsafe.Pointer)
+func SyscallBls12381FpMul(a unsafe.Pointer, b unsafe.Pointer)
+func SyscallBls12381Fp2Add(a unsafe.Pointer, b unsafe.Pointer)
+func SyscallBls12381Fp2Sub(a unsafe.Pointer, b unsafe.Pointer)
+func SyscallBls12381Fp2Mul(a unsafe.Pointer, b unsafe.Pointer)
+
+// secp256r1 (P-256) precompiles
+func SyscallSecp256r1Add(p unsafe.Pointer, q unsafe.Pointer)
+func SyscallSecp256r1Double(p unsafe.Pointer, dummy unsafe.Pointer)
+func SyscallSecp256r1Decompress(point unsafe.Pointer, isOdd uint32)
+
+// uint256 multiplication
+func SyscallUint256Mul(x unsafe.Pointer, y unsafe.Pointer)
+
+// SyscallHintWrite writes to the hint stream (fd=4) using Ziren WRITE syscall.
+func SyscallHintWrite(write_buf []byte, nbytes int)
+
+// HintSlice writes bytes to the hint stream (fd=4) for unconstrained block pattern.
+func HintSlice(data []byte) {
+	// Write length as 4-byte LE, then data
+	lenBuf := make([]byte, 4)
+	lenBuf[0] = byte(len(data))
+	lenBuf[1] = byte(len(data) >> 8)
+	lenBuf[2] = byte(len(data) >> 16)
+	lenBuf[3] = byte(len(data) >> 24)
+	SyscallHintWrite(lenBuf, 4)
+	SyscallHintWrite(data, len(data))
+}
+
+// ReadHintVec reads a hint vector from the hint stream.
+// Reads two items: first a 4-byte LE length, then the actual data.
+func ReadHintVec() []byte {
+	// Read length prefix (4 bytes LE)
+	lenLen := SyscallHintLen()
+	lenBuf := make([]byte, ((lenLen + 3) / 4) * 4)
+	SyscallHintRead(lenBuf, lenLen)
+	dataLen := int(lenBuf[0]) | int(lenBuf[1])<<8 | int(lenBuf[2])<<16 | int(lenBuf[3])<<24
+
+	// Read actual data
+	_ = SyscallHintLen() // advance to next item
+	capacity := (dataLen + 3) / 4 * 4
+	buf := make([]byte, capacity)
+	SyscallHintRead(buf, dataLen)
+	return buf[:dataLen]
+}
 
 var PublicValuesHasher hash.Hash = sha256.New()
 
