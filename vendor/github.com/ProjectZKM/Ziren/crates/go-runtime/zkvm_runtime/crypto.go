@@ -20,16 +20,18 @@ func Sha256(data []byte) [32]byte {
 	msgLen := len(data)
 	bitLen := uint64(msgLen) * 8
 
-	// Append 0x80 byte
-	data = append(data, 0x80)
-	// Pad to 56 mod 64
-	for len(data)%64 != 56 {
-		data = append(data, 0x00)
+	// Copy into a freshly-sized buffer so we never mutate the caller's slice
+	// (callers may pass sub-slices that share a backing array with adjacent data).
+	finalBlockLen := msgLen % 64
+	paddedLen := msgLen - finalBlockLen + 64
+	if finalBlockLen >= 56 {
+		paddedLen += 64
 	}
-	// Append original length in bits as big-endian uint64
-	var lenBuf [8]byte
-	binary.BigEndian.PutUint64(lenBuf[:], bitLen)
-	data = append(data, lenBuf[:]...)
+	padded := make([]byte, paddedLen)
+	copy(padded, data)
+	padded[msgLen] = 0x80
+	binary.BigEndian.PutUint64(padded[paddedLen-8:], bitLen)
+	data = padded
 
 	// Process each 64-byte block
 	for offset := 0; offset < len(data); offset += 64 {

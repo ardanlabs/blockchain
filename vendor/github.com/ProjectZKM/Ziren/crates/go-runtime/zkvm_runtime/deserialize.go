@@ -78,18 +78,36 @@ func deserializeData(data []byte, v reflect.Value, index int) (int, error) {
 		v.SetUint(a)
 		return index + 8, nil
 	case reflect.Slice:
+		const maxSliceLen = 1_000_000
 		b := []byte{data[index], data[index+1], data[index+2], data[index+3],
 			data[index+4], data[index+5], data[index+6], data[index+7]}
 
 		length := binary.LittleEndian.Uint64(b)
 		index += 8
-		switch v.Type().Elem().Kind() {
-		case reflect.Uint8:
+		elemKind := v.Type().Elem().Kind()
+		if elemKind == reflect.Uint8 {
+			if length > uint64(len(data)-index) {
+				return index, fmt.Errorf("deserialize failed: []byte length %d exceeds remaining %d", length, len(data)-index)
+			}
 			bytes := data[index : index+int(length)]
 			v.SetBytes(bytes)
 			return index + int(length), nil
 		}
-		return index, fmt.Errorf("unsupported type: %v, elem: %v", v.Kind(), v.Elem().Kind())
+
+		if length > maxSliceLen {
+			return index, fmt.Errorf("deserialize failed: slice length %d exceeds max %d", length, maxSliceLen)
+		}
+		l := int(length)
+		slice := reflect.MakeSlice(v.Type(), l, l)
+		for i := 0; i < l; i++ {
+			var err error
+			index, err = deserializeData(data, slice.Index(i), index)
+			if err != nil {
+				return index, err
+			}
+		}
+		v.Set(slice)
+		return index, nil
 	case reflect.Array:
 		for i := 0; i < v.Len(); i++ {
 			var err error

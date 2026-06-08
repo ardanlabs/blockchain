@@ -15,10 +15,12 @@ func SyscallWrite(fd int, write_buf []byte, nbytes int) int
 func SyscallHintLen() int
 func SyscallHintRead(ptr []byte, len int)
 func SyscallCommit(index int, word uint32)
+func SyscallCommitDeferredProofs(index int, word uint32)
 func SyscallExit(code int)
 func SyscallEnterUnconstrained() int
 func SyscallExitUnconstrained()
 func SyscallKeccakSponge(input unsafe.Pointer, result unsafe.Pointer)
+func SyscallVerifyZKMProof(vkDigest unsafe.Pointer, pvDigest unsafe.Pointer)
 
 // secp256k1 precompiles
 func SyscallSecp256k1Add(p unsafe.Pointer, q unsafe.Pointer)
@@ -81,7 +83,7 @@ func HintSlice(data []byte) {
 func ReadHintVec() []byte {
 	// Read length prefix (4 bytes LE)
 	lenLen := SyscallHintLen()
-	lenBuf := make([]byte, ((lenLen + 3) / 4) * 4)
+	lenBuf := make([]byte, ((lenLen+3)/4)*4)
 	SyscallHintRead(lenBuf, lenLen)
 	dataLen := int(lenBuf[0]) | int(lenBuf[1])<<8 | int(lenBuf[2])<<16 | int(lenBuf[3])<<24
 
@@ -94,6 +96,7 @@ func ReadHintVec() []byte {
 }
 
 var PublicValuesHasher hash.Hash = sha256.New()
+var DeferredProofsDigest [8]uint32
 
 const EMBEDDED_RESERVED_INPUT_REGION_SIZE int = 1024 * 1024 * 1024
 const MAX_MEMORY int = 0x7f000000
@@ -127,6 +130,17 @@ func Commit[T any](value T) {
 	SyscallWrite(13, bytes, length)
 }
 
+func VerifyZKMProof(vkDigest *[8]uint32, pvDigest *[32]byte) {
+	SyscallVerifyZKMProof(unsafe.Pointer(vkDigest), unsafe.Pointer(pvDigest))
+}
+
+func CommitDeferredProofsDigest(digest [8]uint32) {
+	DeferredProofsDigest = digest
+	for i, word := range digest {
+		SyscallCommitDeferredProofs(i, word)
+	}
+}
+
 //go:linkname RuntimeExit zkvm.RuntimeExit
 func RuntimeExit(code int) {
 	hashBytes := PublicValuesHasher.Sum(nil)
@@ -136,6 +150,7 @@ func RuntimeExit(code int) {
 		word := binary.LittleEndian.Uint32(hashBytes[i*4 : (i+1)*4])
 		SyscallCommit(i, word)
 	}
+	CommitDeferredProofsDigest(DeferredProofsDigest)
 
 	SyscallExit(code)
 }

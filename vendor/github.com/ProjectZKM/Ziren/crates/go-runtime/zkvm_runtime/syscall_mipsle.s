@@ -38,6 +38,13 @@ TEXT ·SyscallCommit(SB), $0-8
 	SYSCALL
 	RET
 
+TEXT ·SyscallCommitDeferredProofs(SB), $0-8
+	MOVW index+0(FP), R4
+	MOVW word+4(FP), R5
+	MOVW $0x1A, R2
+	SYSCALL
+	RET
+
 TEXT ·SyscallExit(SB), $0-4
 	MOVW code+0(FP), R4    // a0 = code
 	MOVW $0, R2         // v0 = syscall 0
@@ -59,6 +66,13 @@ TEXT ·SyscallKeccakSponge(SB), $0-8
 	MOVW $0x01010009, R2   // v0 = KECCAK_SPONGE syscall
 	MOVW input+0(FP), R4   // a0 = input pointer
 	MOVW result+4(FP), R5  // a1 = result pointer
+	SYSCALL
+	RET
+
+TEXT ·SyscallVerifyZKMProof(SB), $0-8
+	MOVW $0x1B, R2
+	MOVW vkDigest+0(FP), R4
+	MOVW pvDigest+4(FP), R5
 	SYSCALL
 	RET
 

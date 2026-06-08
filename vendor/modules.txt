@@ -1,7 +1,7 @@
-# github.com/ProjectZKM/Ziren/crates/go-runtime/zkvm_runtime v0.0.0-20260416073033-7c2071eaa8d4
+# github.com/ProjectZKM/Ziren/crates/go-runtime/zkvm_runtime v0.0.0-20260607022201-88e0521b82d3
 ## explicit; go 1.24.0
 github.com/ProjectZKM/Ziren/crates/go-runtime/zkvm_runtime
-# github.com/ardanlabs/conf/v3 v3.11.0
+# github.com/ardanlabs/conf/v3 v3.12.0
 ## explicit; go 1.23.0
 github.com/ardanlabs/conf/v3
 # github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.1
@@ -41,7 +41,7 @@ github.com/go-playground/locales/en
 # github.com/go-playground/universal-translator v0.18.1
 ## explicit; go 1.18
 github.com/go-playground/universal-translator
-# github.com/go-playground/validator/v10 v10.30.2
+# github.com/go-playground/validator/v10 v10.30.3
 ## explicit; go 1.25.0
 github.com/go-playground/validator/v10
 github.com/go-playground/validator/v10/translations/en
@@ -81,13 +81,13 @@ go.uber.org/zap/internal/exit
 go.uber.org/zap/internal/pool
 go.uber.org/zap/internal/stacktrace
 go.uber.org/zap/zapcore
-# golang.org/x/crypto v0.51.0
+# golang.org/x/crypto v0.52.0
 ## explicit; go 1.25.0
 golang.org/x/crypto/sha3
-# golang.org/x/sys v0.44.0
+# golang.org/x/sys v0.46.0
 ## explicit; go 1.25.0
 golang.org/x/sys/cpu
-# golang.org/x/text v0.37.0
+# golang.org/x/text v0.38.0
 ## explicit; go 1.25.0
 golang.org/x/text/internal/language
 golang.org/x/text/internal/language/compact
