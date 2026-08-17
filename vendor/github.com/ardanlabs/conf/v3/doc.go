@@ -51,7 +51,7 @@ The following usage information would be output you can display.
 Usage: conf.test [options...] [arguments...]
 
 OPTIONS
-  -a, --a-string  <string>,[string...]  (default: A;B;C)        slice example
+  -a, --a-string  <string>;[string...]  (default: A;B;C)        slice example
       --an-int    <value>               (default: min:0;max:9)  map example
       --bool      <bool>
   -d, --e-dur     <duration>            (default: 1s)
@@ -62,7 +62,7 @@ OPTIONS
   -v, --version                                                 display version
 
 ENVIRONMENT
-  APP_A_STRING  <string>,[string...]  (default: A;B;C)        slice example
+  APP_A_STRING  <string>;[string...]  (default: A;B;C)        slice example
   APP_AN_INT    <value>               (default: min:0;max:9)  map example
   APP_BOOL      <bool>
   APP_DURATION  <duration>            (default: 1s)

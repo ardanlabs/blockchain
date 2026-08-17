@@ -162,7 +162,7 @@ func writeEnv(w *tabwriter.Writer, namespace string, fields []Field) {
 // type, manually-specified or not, since their presence is equated with a
 // 'true' value and their absence with a 'false' value. If a type cannot be
 // determined, it will simply give the name "value". Slices will be annotated
-// as "<Type>,[Type...]", where "Type" is whatever type name was chosen.
+// as "<Type>;[Type...]", where "Type" is whatever type name was chosen.
 // (adapted from package flag).
 func getTypeAndHelp(fld *Field) (name string, usage string) {
 
@@ -221,7 +221,7 @@ func getTypeAndHelp(fld *Field) (name string, usage string) {
 
 	switch {
 	case isSlice:
-		name = fmt.Sprintf("<%s>,[%s...]", name, name)
+		name = fmt.Sprintf("<%s>;[%s...]", name, name)
 	case name != "":
 		name = fmt.Sprintf("<%s>", name)
 	default:

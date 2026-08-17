@@ -103,12 +103,23 @@ const MAX_MEMORY int = 0x7f000000
 
 var RESERVED_INPUT_PTR int = MAX_MEMORY - EMBEDDED_RESERVED_INPUT_REGION_SIZE
 
+func readReservedInput(capacity int) int {
+	addr := RESERVED_INPUT_PTR
+	if capacity < 0 {
+		panic("input region overflowed")
+	}
+	if addr < 0 || addr > MAX_MEMORY-capacity {
+		panic("input region overflowed")
+	}
+	RESERVED_INPUT_PTR = addr + capacity
+	return addr
+}
+
 func Read[T any]() T {
 	len := SyscallHintLen()
 	var value []byte
 	capacity := (len + 3) / 4 * 4
-	addr := RESERVED_INPUT_PTR
-	RESERVED_INPUT_PTR += capacity
+	addr := readReservedInput(capacity)
 	ptr := unsafe.Pointer(uintptr(addr))
 	value = unsafe.Slice((*byte)(ptr), capacity)
 	var result T
